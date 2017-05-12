@@ -21,7 +21,9 @@ typedef void (*nadk_wifi_callback_t)(nadk_wifi_status_t);
 void nadk_wifi_init(nadk_wifi_callback_t callback);
 
 /**
- * Reconfigure the WiFI connection.
+ * Configure the WiFi connection.
+ *
+ * Note: Will automatically disconnect if already connected.
  *
  * @param ssid
  * @param password
