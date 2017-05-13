@@ -22,6 +22,12 @@ void nadk_ota_begin(uint16_t size) {
   // acquire mutex
   NADK_LOCK(nadk_ota_mutex);
 
+  // check handle
+  if (nadk_ota_handle != 0) {
+    ESP_LOGE(NADK_LOG_TAG, "nadk_ota_begin: leftover handle");
+    return;
+  }
+
   // log message
   ESP_LOGI(NADK_LOG_TAG, "nadk_ota_begin: start update");
 
@@ -59,7 +65,7 @@ void nadk_ota_finish() {
 
   // check handle
   if (nadk_ota_handle == 0) {
-    ESP_LOGE(NADK_LOG_TAG, "nadk_ota_forward: missing handle");
+    ESP_LOGE(NADK_LOG_TAG, "nadk_ota_finish: missing handle");
     return;
   }
 
