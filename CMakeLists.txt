@@ -34,6 +34,8 @@ set(SOURCE_FILES
         general.h
         led.c
         led.h
+        manager.c
+        manager.h
         mqtt.c
         mqtt.h
         nadk.c
