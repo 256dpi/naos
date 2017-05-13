@@ -2,20 +2,24 @@
 #define _NADK_GENERAL_H
 
 /**
- * The log tag.
+ * The NADK log tag.
  */
-#define NADK_LOG_TAG "CORE"
+#define NADK_LOG_TAG "NADK"
 
 /**
  * Acquire the specified mutex.
+ *
+ * @param mutex - The mutex to be locked.
  */
-#define NADK_LOCK(x) \
-  do {               \
-  } while (xSemaphoreTake(x, portMAX_DELAY) != pdPASS)
+#define NADK_LOCK(mutex) \
+  do {                   \
+  } while (xSemaphoreTake(mutex, portMAX_DELAY) != pdPASS)
 
 /**
  * Release the specified mutex.
+ *
+ * @param mutex - The mutex to be released.
  */
-#define NADK_UNLOCK(x) xSemaphoreGive(x)
+#define NADK_UNLOCK(mutex) xSemaphoreGive(mutex)
 
 #endif  // _NADK_GENERAL_H

@@ -6,7 +6,7 @@
  *
  * Note: Should only be called once on boot.
  *
- * @param device - The device to be managed.
+ * @param device - The device information.
  */
 void nadk_device_init(nadk_device_t* device);
 
@@ -23,9 +23,9 @@ void nadk_device_stop();
 /**
  * Forward a message to the device process.
  *
- * @param topic
- * @param payload
- * @param len
+ * @param topic - The topic.
+ * @param payload - The payload.
+ * @param len - The payload length.
  */
 void nadk_device_forward(const char* topic, const char* payload, unsigned int len);
 

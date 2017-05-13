@@ -25,24 +25,33 @@ typedef enum nadk_ble_id_t {
 } nadk_ble_id_t;
 
 /**
- * The attribute change callback.
+ * The attribute callback.
  */
-typedef void (*nadk_ble_callback_t)(nadk_ble_id_t);
+typedef void (*nadk_ble_attribute_callback_t)(nadk_ble_id_t);
 
 /**
- * The BLE module initializer.
+ * Initialize the BLE management system.
  *
- * Note: Function is not thread-safe.
+ * Note: Should only be called once on boot.
+ *
+ * @param cb - The attribute callback.
+ * @param device_type - The device type.
  */
-void nadk_ble_init(nadk_ble_callback_t cb, const char *device_type);
+void nadk_ble_init(nadk_ble_attribute_callback_t cb, const char *device_type);
 
 /**
  * Get the the string value of the characteristic with the supplied id.
+ *
+ * @param id - The attribute id.
+ * @paragraph - The destination buffer.
  */
 void nadk_ble_get_string(nadk_ble_id_t id, char *destination);
 
 /**
  * Set the the string value of the characteristic with the supplied id.
+ *
+ * @param id - The attribute id.
+ * @param str - The new string value.
  */
 void nadk_ble_set_string(nadk_ble_id_t id, char *str);
 

@@ -11,8 +11,8 @@ void nadk_led_init();
 /**
  * Set value of the LEDs.
  *
- * @param red
- * @param green
+ * @param red - Status of the red LED.
+ * @param green - Status of the green LED.
  */
 void nadk_led_set(bool red, bool green);
 

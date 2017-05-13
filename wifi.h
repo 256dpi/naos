@@ -9,24 +9,24 @@ typedef enum nadk_wifi_status_t { NADK_WIFI_STATUS_DISCONNECTED, NADK_WIFI_STATU
 /**
  * The status change callback.
  */
-typedef void (*nadk_wifi_callback_t)(nadk_wifi_status_t);
+typedef void (*nadk_wifi_status_callback_t)(nadk_wifi_status_t);
 
 /**
  * Initialize the WiFi management system.
  *
  * Note: Should only be called once on boot.
  *
- * @param callback
+ * @param callback - The status callback.
  */
-void nadk_wifi_init(nadk_wifi_callback_t callback);
+void nadk_wifi_init(nadk_wifi_status_callback_t callback);
 
 /**
  * Configure the WiFi connection.
  *
  * Note: Will automatically disconnect if already connected.
  *
- * @param ssid
- * @param password
+ * @param ssid - The WiFi AP SSID.
+ * @param password - The WiFi AP password.
  */
 void nadk_wifi_configure(const char *ssid, const char *password);
 

@@ -6,7 +6,7 @@
  *
  * Note: Should only be called once on boot.
  *
- * @param device - The device to be managed.
+ * @param device - The device information.
  */
 void nadk_manager_init(nadk_device_t* device);
 

@@ -21,7 +21,7 @@ static EventGroupHandle_t nadk_ble_init_event_group;
 
 static SemaphoreHandle_t nadk_ble_mutex;
 
-static nadk_ble_callback_t nadk_ble_callback = NULL;
+static nadk_ble_attribute_callback_t nadk_ble_callback = NULL;
 
 static nvs_handle nadk_ble_nvs_handle;
 
@@ -478,7 +478,7 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
   NADK_UNLOCK(nadk_ble_mutex);
 }
 
-void nadk_ble_init(nadk_ble_callback_t cb, const char *device_type) {
+void nadk_ble_init(nadk_ble_attribute_callback_t cb, const char *device_type) {
   // create mutex
   nadk_ble_mutex = xSemaphoreCreateMutex();
 

@@ -11,7 +11,7 @@ static SemaphoreHandle_t nadk_wifi_mutex;
 static bool nadk_wifi_connected = false;
 static bool nadk_wifi_started = false;
 
-static nadk_wifi_callback_t nadk_wifi_callback = NULL;
+static nadk_wifi_status_callback_t nadk_wifi_callback = NULL;
 
 static wifi_config_t nadk_wifi_config;
 
@@ -79,7 +79,7 @@ static esp_err_t nadk_wifi_event_handler(void *ctx, system_event_t *e) {
   return ESP_OK;
 }
 
-void nadk_wifi_init(nadk_wifi_callback_t callback) {
+void nadk_wifi_init(nadk_wifi_status_callback_t callback) {
   // store callback
   nadk_wifi_callback = callback;
 
