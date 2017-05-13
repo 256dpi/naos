@@ -12,14 +12,16 @@ void nadk_ota_init();
 
 /**
  * Begin with an OTA update.
+ *
+ * @param size - Size of the update.
  */
-void nadk_ota_begin();
+void nadk_ota_begin(uint16_t size);
 
 /**
  * Forward an incoming chunk of the new firmware image.
  *
- * @param chunk
- * @param len
+ * @param chunk - The data chunk.
+ * @param len - Length of the data chunk.
  */
 void nadk_ota_forward(const char *chunk, uint16_t len);
 

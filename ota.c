@@ -18,7 +18,7 @@ void nadk_ota_init() {
   nadk_ota_mutex = xSemaphoreCreateMutex();
 }
 
-void nadk_ota_begin() {
+void nadk_ota_begin(uint16_t size) {
   // acquire mutex
   NADK_LOCK(nadk_ota_mutex);
 
@@ -30,7 +30,7 @@ void nadk_ota_begin() {
   assert(nadk_ota_partition != NULL);
 
   // begin update
-  ESP_ERROR_CHECK(esp_ota_begin(nadk_ota_partition, OTA_SIZE_UNKNOWN, &nadk_ota_handle));
+  ESP_ERROR_CHECK(esp_ota_begin(nadk_ota_partition, size, &nadk_ota_handle));
 
   // release mutex
   NADK_UNLOCK(nadk_ota_mutex);
@@ -39,6 +39,12 @@ void nadk_ota_begin() {
 void nadk_ota_forward(const char *chunk, uint16_t len) {
   // acquire mutex
   NADK_LOCK(nadk_ota_mutex);
+
+  // check handle
+  if (nadk_ota_handle == 0) {
+    ESP_LOGE(NADK_LOG_TAG, "nadk_ota_forward: missing handle");
+    return;
+  }
 
   // write chunk
   ESP_ERROR_CHECK(esp_ota_write(nadk_ota_handle, (const void *)chunk, len));
@@ -51,8 +57,19 @@ void nadk_ota_finish() {
   // acquire mutex
   NADK_LOCK(nadk_ota_mutex);
 
+  // check handle
+  if (nadk_ota_handle == 0) {
+    ESP_LOGE(NADK_LOG_TAG, "nadk_ota_forward: missing handle");
+    return;
+  }
+
+  // TODO: Check if all data has been received.
+
   // end update
   ESP_ERROR_CHECK(esp_ota_end(nadk_ota_handle));
+
+  // reset handle
+  nadk_ota_handle = 0;
 
   // set boot partition
   ESP_ERROR_CHECK(esp_ota_set_boot_partition(nadk_ota_partition));
