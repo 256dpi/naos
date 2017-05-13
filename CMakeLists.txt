@@ -6,6 +6,7 @@ set(CMAKE_C_STANDARD 99)
 include_directories(
         test/build/include
         test/xtensa-esp32-elf/xtensa-esp32-elf/include
+        test/esp-idf/components/app_update/include
         test/esp-idf/components/bt/bluedroid/include
         test/esp-idf/components/bt/bluedroid/api/include
         test/esp-idf/components/bt/bluedroid/bta/include
@@ -17,6 +18,7 @@ include_directories(
         test/esp-idf/components/log/include
         test/esp-idf/components/nvs_flash/include
         test/esp-idf/components/driver/include
+        test/esp-idf/components/spi_flash/include
         test/esp-idf/components/tcpip_adapter/include
         test/esp-idf/components/lwip/include/lwip/port
         test/esp-idf/components/lwip/include/lwip
@@ -39,6 +41,8 @@ set(SOURCE_FILES
         mqtt.c
         mqtt.h
         nadk.c
+        ota.c
+        ota.h
         time.c
         wifi.c
         wifi.h
