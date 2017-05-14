@@ -6,11 +6,11 @@
 
 typedef struct {
   /**
-   * The name of the device.
+   * The device type.
    *
    * Will appear as the "device-type" characteristic over Bluetooth.
    */
-  const char *name;
+  const char *type;
 
   /**
    * The callback that is called once the device comes online and should be used to subscribe to topics and do other

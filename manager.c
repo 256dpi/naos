@@ -277,7 +277,7 @@ void nadk_manager_init(nadk_device_t *device) {
   nadk_led_init();
 
   // initialize bluetooth stack
-  nadk_ble_init(nadk_manager_ble_callback, device->name);
+  nadk_ble_init(nadk_manager_ble_callback, device->type);
 
   // initialize wifi stack
   nadk_wifi_init(nadk_manager_wifi_callback);
