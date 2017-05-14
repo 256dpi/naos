@@ -1,11 +1,21 @@
 #include <esp_log.h>
+#include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
-#include <nadk.h>
+#include <string.h>
 
+#include <nadk.h>
+#include <nadk/mqtt.h>
+#include <nadk/time.h>
+
+#include "ble.h"
 #include "device.h"
 #include "general.h"
+#include "ota.h"
+#include "mqtt.h"
+
+#define NADK_DEVICE_HEARTBEAT_INTERVAL 5000
 
 static SemaphoreHandle_t nadk_device_mutex;
 
@@ -15,28 +25,76 @@ static TaskHandle_t nadk_device_task;
 
 static bool nadk_device_process_started = false;
 
+static uint32_t nadk_device_last_heartbeat = 0;
+
+static uint16_t nadk_device_ota_remaining_data = 0;
+
 // TODO: Add offline device loop.
 // The callbacks could be: offline, connected, online, disconnected.
 
-static void nadk_device_process(void *p) {
-  // call setup function
-  if (nadk_device->setup_fn) {
-    // acquire mutex
-    NADK_LOCK(nadk_device_mutex);
+static void nadk_device_heartbeat() {
+  // send device name
+  char device_name[NADK_BLE_STRING_SIZE];
+  nadk_ble_get_string(NADK_BLE_ID_DEVICE_NAME, device_name);
+  nadk_publish_str("nadk/device-name", device_name, 0, false);
 
-    // call setup callback
-    nadk_device->setup_fn();
+  // send device type
+  nadk_publish_str("nadk/device-type", nadk_device->type, 0, false);
 
-    // release mutex
-    NADK_UNLOCK(nadk_device_mutex);
+  // send free heap space
+  nadk_publish_num("nadk/free-heap", esp_get_free_heap_size(), 0, false);
+
+  // send uptime
+  nadk_publish_num("nadk/uptime", nadk_millis(), 0, false);
+
+  // save time
+  nadk_device_last_heartbeat = nadk_millis();
+}
+
+static void nadk_device_request_next_chunk() {
+  // calculate next chunk
+  int chunk = NADK_MQTT_BUFFER_SIZE - 128;
+  if (nadk_device_ota_remaining_data < chunk) {
+    chunk = nadk_device_ota_remaining_data;
   }
+
+  // request first chunk
+  nadk_publish_num("nadk/ota/next", chunk, 0, false);
+}
+
+static void nadk_device_process(void *p) {
+  // acquire mutex
+  NADK_LOCK(nadk_device_mutex);
+
+  // subscribe to system topics
+  nadk_subscribe("nadk/ping", 0);
+  nadk_subscribe("nadk/ota", 0);
+  nadk_subscribe("nadk/ota/chunk", 0);
+
+  // call setup callback i present
+  if (nadk_device->setup_fn) {
+    nadk_device->setup_fn();
+  }
+
+  // send initial heartbeat
+  nadk_device_heartbeat();
+
+  // release mutex
+  NADK_UNLOCK(nadk_device_mutex);
 
   for (;;) {
     // acquire mutex
     NADK_LOCK(nadk_device_mutex);
 
-    // call loop function
-    nadk_device->loop_fn();
+    // send heartbeat if interval has been reached
+    if (nadk_millis() - nadk_device_last_heartbeat > NADK_DEVICE_HEARTBEAT_INTERVAL) {
+      nadk_device_heartbeat();
+    }
+
+    // call loop callback if present
+    if (nadk_device->loop_fn) {
+      nadk_device->loop_fn();
+    }
 
     // release mutex
     NADK_UNLOCK(nadk_device_mutex);
@@ -93,7 +151,7 @@ void nadk_device_stop() {
   ESP_LOGI(NADK_LOG_TAG, "nadk_device_stop: deleting task");
   vTaskDelete(nadk_device_task);
 
-  // run terminate function
+  // run terminate callback if present
   if (nadk_device->terminate_fn) {
     nadk_device->terminate_fn();
   }
@@ -103,14 +161,59 @@ void nadk_device_stop() {
 }
 
 void nadk_device_forward(const char *topic, const char *payload, unsigned int len) {
-  if (nadk_device->handle_fn) {
-    // acquire mutex
-    NADK_LOCK(nadk_device_mutex);
+  // acquire mutex
+  NADK_LOCK(nadk_device_mutex);
 
-    // forward message
-    nadk_device->handle_fn(topic, payload, len);
+  // check ping
+  if (strcmp(topic, "nadk/ping") == 0) {
+    // send heartbeat
+    nadk_device_heartbeat();
 
-    // release mutex
     NADK_UNLOCK(nadk_device_mutex);
+    return;
   }
+
+  // check ota
+  if (strcmp(topic, "nadk/ota") == 0) {
+    // get update size
+    nadk_device_ota_remaining_data = (uint16_t)atol(payload);
+
+    // begin update
+    nadk_ota_begin(nadk_device_ota_remaining_data);
+
+    // request first chunk
+    nadk_device_request_next_chunk();
+
+    NADK_UNLOCK(nadk_device_mutex);
+    return;
+  }
+
+  // check ota chunk
+  if (strcmp(topic, "nadk/ota/chunk") == 0) {
+    // forward chunk
+    nadk_ota_forward(payload, (uint16_t)len);
+    nadk_device_ota_remaining_data -= len;
+
+    // request next chunk if remaining data
+    if (nadk_device_ota_remaining_data > 0) {
+      nadk_device_request_next_chunk();
+
+      NADK_UNLOCK(nadk_device_mutex);
+      return;
+    }
+
+    // otherwise finish update
+    nadk_ota_finish();
+
+    NADK_UNLOCK(nadk_device_mutex);
+    return;
+  }
+
+  // call handle callback if present
+  if (nadk_device->handle_fn) {
+    nadk_device->handle_fn(topic, payload, len);
+  }
+
+  // release mutex
+  NADK_UNLOCK(nadk_device_mutex);
 }
