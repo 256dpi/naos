@@ -3,7 +3,7 @@
 
 #include <esp_mqtt.h>
 
-#define NADK_MQTT_BUFFER_SIZE 2048
+#define NADK_MQTT_BUFFER_SIZE 10000
 
 /**
  * Initialize the MQTT management system.
