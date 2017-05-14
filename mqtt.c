@@ -96,8 +96,15 @@ bool nadk_publish(const char *topic, void *payload, uint16_t len, int qos, bool 
   return esp_mqtt_publish(prefixed_topic, payload, len, qos, retained);
 }
 
-bool nadk_publish_str(const char *topic, const char *payload, int qos, bool retained) {
-  return nadk_publish(topic, (char *)payload, (uint16_t)strlen(payload), qos, retained);
+bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained) {
+  return nadk_publish(topic, (char *)str, (uint16_t)strlen(str), qos, retained);
+}
+
+bool nadk_publish_num(const char *topic, int num, int qos, bool retained) {
+  char buf[33];
+  itoa(num, buf, 10);
+
+  return nadk_publish_str(topic, buf, qos, retained);
 }
 
 void nadk_mqtt_stop() { esp_mqtt_stop(); }

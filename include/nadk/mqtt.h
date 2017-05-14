@@ -44,11 +44,24 @@ bool nadk_publish(const char *topic, void *payload, uint16_t len, int qos, bool 
  * Note: The topic is automatically prefixed with the configured base topic.
  *
  * @param topic
- * @param payload
+ * @param str
  * @param qos
  * @param retained
  * @return
  */
-bool nadk_publish_str(const char *topic, const char *payload, int qos, bool retained);
+bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained);
+
+/**
+ * Publish number to specified topic.
+ *
+ * Note: The topic is automatically prefixed with the configured base topic.
+ *
+ * @param topic
+ * @param num
+ * @param qos
+ * @param retained
+ * @return
+ */
+bool nadk_publish_num(const char *topic, int num, int qos, bool retained);
 
 #endif  // NADK_MQTT_H
