@@ -2,13 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <esp_mqtt.h>
-
 #include "mqtt.h"
 
 static char *nadk_mqtt_base_topic = NULL;
 
-static char nadk_mqtt_topic_cache[ESP_MQTT_BUFFER_SIZE];
+static char nadk_mqtt_topic_cache[256];
 
 static esp_mqtt_message_callback_t nadk_mqtt_message_callback = NULL;
 
@@ -56,7 +54,7 @@ void nadk_mqtt_init(esp_mqtt_status_callback_t scb, esp_mqtt_message_callback_t 
   nadk_mqtt_message_callback = mcb;
 
   // call init
-  esp_mqtt_init(scb, nadk_mqtt_message_handler);
+  esp_mqtt_init(scb, nadk_mqtt_message_handler, NADK_MQTT_BUFFER_SIZE, 2000);
 }
 
 void nadk_mqtt_start(const char *host, unsigned int port, const char *client_id, const char *username,
