@@ -13,7 +13,8 @@
 #include "device.h"
 #include "general.h"
 #include "ota.h"
-#include "mqtt.h"
+
+#define NADK_OTA_CHUNK_SIZE 9000
 
 #define NADK_DEVICE_HEARTBEAT_INTERVAL 5000
 
@@ -53,7 +54,7 @@ static void nadk_device_heartbeat() {
 
 static void nadk_device_request_next_chunk() {
   // calculate next chunk
-  int chunk = NADK_MQTT_BUFFER_SIZE - 128;
+  int chunk = NADK_OTA_CHUNK_SIZE;
   if (nadk_device_ota_remaining_data < chunk) {
     chunk = nadk_device_ota_remaining_data;
   }
