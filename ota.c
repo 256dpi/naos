@@ -25,6 +25,7 @@ void nadk_ota_begin(uint16_t size) {
   // check handle
   if (nadk_ota_handle != 0) {
     ESP_LOGE(NADK_LOG_TAG, "nadk_ota_begin: leftover handle");
+    NADK_UNLOCK(nadk_ota_mutex);
     return;
   }
 
@@ -49,6 +50,7 @@ void nadk_ota_forward(const char *chunk, uint16_t len) {
   // check handle
   if (nadk_ota_handle == 0) {
     ESP_LOGE(NADK_LOG_TAG, "nadk_ota_forward: missing handle");
+    NADK_UNLOCK(nadk_ota_mutex);
     return;
   }
 
@@ -66,6 +68,7 @@ void nadk_ota_finish() {
   // check handle
   if (nadk_ota_handle == 0) {
     ESP_LOGE(NADK_LOG_TAG, "nadk_ota_finish: missing handle");
+    NADK_UNLOCK(nadk_ota_mutex);
     return;
   }
 
