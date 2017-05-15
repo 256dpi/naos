@@ -3,7 +3,15 @@
 
 #include <esp_mqtt.h>
 
+#include <nadk/mqtt.h>
+
 #define NADK_MQTT_BUFFER_SIZE 10000
+
+/**
+ * The message callback.
+ */
+typedef void (*nadk_mqtt_message_callback_t)(const char *topic, const char *payload, unsigned int len,
+                                             nadk_scope_t scope);
 
 /**
  * Initialize the MQTT management system.
@@ -13,7 +21,7 @@
  * @param scb - The status callback.
  * @param mcb - The message callback.
  */
-void nadk_mqtt_init(esp_mqtt_status_callback_t scb, esp_mqtt_message_callback_t mcb);
+void nadk_mqtt_init(esp_mqtt_status_callback_t scb, nadk_mqtt_message_callback_t mcb);
 
 /**
  * Start the MQTT process.

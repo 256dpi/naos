@@ -26,7 +26,8 @@ void nadk_device_stop();
  * @param topic - The topic.
  * @param payload - The payload.
  * @param len - The payload length.
+ * @param scope - The scope.
  */
-void nadk_device_forward(const char* topic, const char* payload, unsigned int len);
+void nadk_device_forward(const char* topic, const char* payload, unsigned int len, nadk_scope_t scope);
 
 #endif  // _NADK_DEVICE_H

@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <nadk/mqtt.h>
+
 typedef struct {
   /**
    * The device type.
@@ -26,8 +28,9 @@ typedef struct {
    * @param topic
    * @param payload
    * @param len
+   * @param scope
    */
-  void (*handle_fn)(const char *topic, const char *payload, unsigned int len);
+  void (*handle_fn)(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope);
 
   /**
    * The callback that is called in a high frequency to do any necessary work of the device.

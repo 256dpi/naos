@@ -39,16 +39,16 @@ static void nadk_device_heartbeat() {
   // send device name
   char device_name[NADK_BLE_STRING_SIZE];
   nadk_ble_get_string(NADK_BLE_ID_DEVICE_NAME, device_name);
-  nadk_publish_str("nadk/device-name", device_name, 0, false);
+  nadk_publish_str("nadk/device-name", device_name, 0, false, NADK_SCOPE_DEVICE);
 
   // send device type
-  nadk_publish_str("nadk/device-type", nadk_device->type, 0, false);
+  nadk_publish_str("nadk/device-type", nadk_device->type, 0, false, NADK_SCOPE_DEVICE);
 
   // send free heap space
-  nadk_publish_num("nadk/free-heap", esp_get_free_heap_size(), 0, false);
+  nadk_publish_num("nadk/free-heap", esp_get_free_heap_size(), 0, false, NADK_SCOPE_DEVICE);
 
   // send uptime
-  nadk_publish_num("nadk/uptime", nadk_millis(), 0, false);
+  nadk_publish_num("nadk/uptime", nadk_millis(), 0, false, NADK_SCOPE_DEVICE);
 
   // save time
   nadk_device_last_heartbeat = nadk_millis();
@@ -62,7 +62,7 @@ static void nadk_device_request_next_chunk() {
   }
 
   // request first chunk
-  nadk_publish_num("nadk/ota/next", chunk, 0, false);
+  nadk_publish_num("nadk/ota/next", chunk, 0, false, NADK_SCOPE_DEVICE);
 }
 
 static void nadk_device_process(void *p) {
@@ -70,9 +70,9 @@ static void nadk_device_process(void *p) {
   NADK_LOCK(nadk_device_mutex);
 
   // subscribe to system topics
-  nadk_subscribe("nadk/ping", 0);
-  nadk_subscribe("nadk/ota", 0);
-  nadk_subscribe("nadk/ota/chunk", 0);
+  nadk_subscribe("nadk/ping", 0, NADK_SCOPE_DEVICE);
+  nadk_subscribe("nadk/ota", 0, NADK_SCOPE_DEVICE);
+  nadk_subscribe("nadk/ota/chunk", 0, NADK_SCOPE_DEVICE);
 
   // call setup callback i present
   if (nadk_device->setup_fn) {
@@ -163,12 +163,12 @@ void nadk_device_stop() {
   NADK_UNLOCK(nadk_device_mutex);
 }
 
-void nadk_device_forward(const char *topic, const char *payload, unsigned int len) {
+void nadk_device_forward(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
   // acquire mutex
   NADK_LOCK(nadk_device_mutex);
 
   // check ping
-  if (strcmp(topic, "nadk/ping") == 0) {
+  if (scope == NADK_SCOPE_DEVICE && strcmp(topic, "nadk/ping") == 0) {
     // send heartbeat
     nadk_device_heartbeat();
 
@@ -177,7 +177,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   }
 
   // check ota
-  if (strcmp(topic, "nadk/ota") == 0) {
+  if (scope == NADK_SCOPE_DEVICE && strcmp(topic, "nadk/ota") == 0) {
     // get update size
     nadk_device_ota_remaining_data = strtoll(payload, NULL, 10);
     ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: begin update with size %lld", nadk_device_ota_remaining_data);
@@ -193,7 +193,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   }
 
   // check ota chunk
-  if (strcmp(topic, "nadk/ota/chunk") == 0) {
+  if (scope == NADK_SCOPE_DEVICE && strcmp(topic, "nadk/ota/chunk") == 0) {
     // forward chunk
     nadk_ota_forward(payload, (uint16_t)len);
     nadk_device_ota_remaining_data -= len;
@@ -208,8 +208,8 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
     }
 
     // send finished message
-    nadk_publish_str("nadk/ota/finished", "", 0, false);
-    ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: finished update", nadk_device_ota_remaining_data);
+    nadk_publish_str("nadk/ota/finished", "", 0, false, NADK_SCOPE_DEVICE);
+    ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: finished update");
 
     // otherwise finish update
     nadk_ota_finish();
@@ -220,7 +220,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
 
   // call handle callback if present
   if (nadk_device->handle_fn) {
-    nadk_device->handle_fn(topic, payload, len);
+    nadk_device->handle_fn(topic, payload, len, scope);
   }
 
   // release mutex
