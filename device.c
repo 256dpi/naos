@@ -6,8 +6,6 @@
 #include <string.h>
 
 #include <nadk.h>
-#include <nadk/mqtt.h>
-#include <nadk/time.h>
 
 #include "ble.h"
 #include "device.h"

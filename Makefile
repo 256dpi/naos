@@ -9,7 +9,6 @@ endif
 fmt:
 	clang-format -i ./*.c ./*.h -style="{BasedOnStyle: Google, ColumnLimit: 120}"
 	clang-format -i ./include/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120}"
-	clang-format -i ./include/nadk/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120}"
 	clang-format -i ./test/main/*.c -style="{BasedOnStyle: Google, ColumnLimit: 120}"
 
 test/xtensa-esp32-elf:

@@ -3,7 +3,7 @@
 
 #include <esp_mqtt.h>
 
-#include <nadk/mqtt.h>
+#include <nadk.h>
 
 #define NADK_MQTT_BUFFER_SIZE 10000
 

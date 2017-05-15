@@ -1,8 +1,6 @@
 #include <stdio.h>
 
 #include <nadk.h>
-#include <nadk/mqtt.h>
-#include <nadk/time.h>
 
 static void setup() { nadk_subscribe("hello", 0, NADK_SCOPE_DEVICE); }
 
