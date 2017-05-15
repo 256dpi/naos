@@ -10,6 +10,8 @@ import (
 	"gopkg.in/tomb.v2"
 )
 
+// TODO: Rename Device to Announcement?
+
 // A Device is returned by the collector.
 type Device struct {
 	Type      string
