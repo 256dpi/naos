@@ -2,7 +2,7 @@ package main
 
 import "github.com/docopt/docopt-go"
 
-// TODO: Url as option and populate from nadm.rc.
+// TODO: Populate options from nadm.rc?
 
 var usage = `nadm - the networked artifacts device manager
 
