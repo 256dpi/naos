@@ -33,23 +33,33 @@ static long long int nadk_device_ota_remaining_data = 0;
 
 // TODO: Rename "ota" topic segments to "update".
 
-static void nadk_device_heartbeat() {
+static void nadk_device_send_heartbeat() {
   // send device name
   char device_name[NADK_BLE_STRING_SIZE];
   nadk_ble_get_string(NADK_BLE_ID_DEVICE_NAME, device_name);
-  nadk_publish_str("nadk/device-name", device_name, 0, false, NADK_SCOPE_DEVICE);
-
-  // send device type
-  nadk_publish_str("nadk/device-type", nadk_device->type, 0, false, NADK_SCOPE_DEVICE);
-
-  // send free heap space
-  nadk_publish_num("nadk/free-heap", esp_get_free_heap_size(), 0, false, NADK_SCOPE_DEVICE);
-
-  // send uptime
-  nadk_publish_num("nadk/uptime", nadk_millis(), 0, false, NADK_SCOPE_DEVICE);
 
   // save time
   nadk_device_last_heartbeat = nadk_millis();
+
+  // send heartbeat
+  char buf[64];
+  snprintf(buf, sizeof buf, "%s,%s,%d,%d", nadk_device->type, device_name, esp_get_free_heap_size(), nadk_millis());
+  nadk_publish_str("nadk/heartbeat", buf, 0, false, NADK_SCOPE_LOCAL);
+}
+
+static void nadk_device_send_announcement() {
+  // get device name
+  char device_name[NADK_BLE_STRING_SIZE];
+  nadk_ble_get_string(NADK_BLE_ID_DEVICE_NAME, device_name);
+
+  // get base topic
+  char base_topic[NADK_BLE_STRING_SIZE];
+  nadk_ble_get_string(NADK_BLE_ID_BASE_TOPIC, base_topic);
+
+  // send announce
+  char buf[64];
+  snprintf(buf, sizeof buf, "%s,%s,%s", nadk_device->type, device_name, base_topic);
+  nadk_publish_str("nadk/announcement", buf, 0, false, NADK_SCOPE_GLOBAL);
 }
 
 static void nadk_device_request_next_chunk() {
@@ -67,10 +77,13 @@ static void nadk_device_process(void *p) {
   // acquire mutex
   NADK_LOCK(nadk_device_mutex);
 
-  // subscribe to system topics
-  nadk_subscribe("nadk/ping", 0, NADK_SCOPE_DEVICE);
-  nadk_subscribe("nadk/ota", 0, NADK_SCOPE_DEVICE);
-  nadk_subscribe("nadk/ota/chunk", 0, NADK_SCOPE_DEVICE);
+  // subscribe to global topics
+  nadk_subscribe("nadk/collect", 0, NADK_SCOPE_GLOBAL);
+
+  // subscribe to device topics
+  nadk_subscribe("nadk/ping", 0, NADK_SCOPE_LOCAL);
+  nadk_subscribe("nadk/ota", 0, NADK_SCOPE_LOCAL);
+  nadk_subscribe("nadk/ota/chunk", 0, NADK_SCOPE_LOCAL);
 
   // call setup callback i present
   if (nadk_device->setup_fn) {
@@ -78,7 +91,7 @@ static void nadk_device_process(void *p) {
   }
 
   // send initial heartbeat
-  nadk_device_heartbeat();
+  nadk_device_send_heartbeat();
 
   // release mutex
   NADK_UNLOCK(nadk_device_mutex);
@@ -89,7 +102,7 @@ static void nadk_device_process(void *p) {
 
     // send heartbeat if interval has been reached
     if (nadk_millis() - nadk_device_last_heartbeat > NADK_DEVICE_HEARTBEAT_INTERVAL) {
-      nadk_device_heartbeat();
+      nadk_device_send_heartbeat();
     }
 
     // call loop callback if present
@@ -165,10 +178,19 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   // acquire mutex
   NADK_LOCK(nadk_device_mutex);
 
+  // check collect
+  if (scope == NADK_SCOPE_GLOBAL && strcmp(topic, "nadk/collect") == 0) {
+    // send announcement
+    nadk_device_send_announcement();
+
+    NADK_UNLOCK(nadk_device_mutex);
+    return;
+  }
+
   // check ping
   if (scope == NADK_SCOPE_LOCAL && strcmp(topic, "nadk/ping") == 0) {
     // send heartbeat
-    nadk_device_heartbeat();
+    nadk_device_send_heartbeat();
 
     NADK_UNLOCK(nadk_device_mutex);
     return;
