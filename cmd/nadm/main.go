@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"time"
 
 	"github.com/shiftr-io/nadm"
 	"gopkg.in/cheggaaa/pb.v1"
@@ -24,16 +23,15 @@ func collect(cmd *command) {
 
 	collector := nadm.NewCollector(cmd.oBrokerURL)
 
-	list, err := collector.Run(5 * time.Second)
-	exitIfSet(err)
+	collector.Start()
 
-	// TODO: Support streaming.
+	go func() {
+		for device := range collector.Devices {
+			fmt.Printf("- %s (%s) at %s\n", device.Name, device.Type, device.BaseTopic)
+		}
+	}()
 
-	fmt.Printf("Found %d device(s):\n", len(list))
-
-	for _, device := range list {
-		fmt.Printf("- %s (%s) at %s\n", device.Name, device.Type, device.BaseTopic)
-	}
+	waitForInterrupt()
 }
 
 func update(cmd *command) {

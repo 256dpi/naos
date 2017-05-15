@@ -3,10 +3,11 @@ package nadm
 import (
 	"fmt"
 	"strings"
-	"time"
+	"sync"
 
 	"github.com/gomqtt/client"
 	"github.com/gomqtt/packet"
+	"gopkg.in/tomb.v2"
 )
 
 // A Device is returned by the collector.
@@ -20,6 +21,11 @@ type Device struct {
 type Collector struct {
 	BrokerURL  string
 	BaseTopics []string
+
+	Devices chan *Device
+
+	mutex sync.Mutex
+	tomb  tomb.Tomb
 }
 
 // NewCollector creates and returns a new Collector.
@@ -29,11 +35,29 @@ func NewCollector(brokerURL string) *Collector {
 	}
 }
 
-// Run will collector devices and block for the specified duration.
-func (c *Collector) Run(timeout time.Duration) ([]Device, error) {
+// Start will start with the collection process.
+func (c *Collector) Start() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	c.Devices = make(chan *Device)
+
+	c.tomb = tomb.Tomb{}
+	c.tomb.Go(c.processor)
+}
+
+// Stop will stop the collection process.
+func (c *Collector) Stop() error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	c.tomb.Kill(nil)
+	return c.tomb.Wait()
+}
+
+func (c *Collector) processor() error {
 	// prepare channels
 	errs := make(chan error)
-	devices := make(chan Device)
 
 	// create client
 	cl := client.New()
@@ -58,7 +82,7 @@ func (c *Collector) Run(timeout time.Duration) ([]Device, error) {
 		}
 
 		// add device
-		devices <- Device{
+		c.Devices <- &Device{
 			Type:      data[0],
 			Name:      data[1],
 			BaseTopic: data[2],
@@ -68,13 +92,13 @@ func (c *Collector) Run(timeout time.Duration) ([]Device, error) {
 	// connect to the broker using the provided url
 	cf, err := cl.Connect(client.NewConfig(c.BrokerURL))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// wait for ack
 	err = cf.Wait()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// make sure client gets closed
@@ -83,36 +107,29 @@ func (c *Collector) Run(timeout time.Duration) ([]Device, error) {
 	// subscribe to announcement topic
 	sf, err := cl.Subscribe("/nadk/announcement", 0)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// wait for ack
 	err = sf.Wait()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// collect all devices
 	_, err = cl.Publish("/nadk/collect", []byte(""), 0, false)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// get deadline
-	deadline := time.After(timeout)
-
-	// prepare list
-	var list []Device
-
 	for {
-		// wait for error, device or deadline
+		// wait for error or kill
 		select {
 		case err := <-errs:
-			return nil, err
-		case dev := <-devices:
-			list = append(list, dev)
-		case <-deadline:
-			return list, nil
+			close(c.Devices)
+			return err
+		case <-c.tomb.Dying():
+			return tomb.ErrDying
 		}
 	}
 }

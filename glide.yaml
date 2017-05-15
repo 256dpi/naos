@@ -1,4 +1,4 @@
-package: github.com/shiftr-io/naos
+package: github.com/shiftr-io/nadm
 import:
 - package: github.com/docopt/docopt-go
   version: ^0.6.2
@@ -6,3 +6,4 @@ import:
   version: ^0.5.2
 - package: gopkg.in/cheggaaa/pb.v1
   version: ^1.0.15
+- package: gopkg.in/tomb.v2
