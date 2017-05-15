@@ -1,0 +1,40 @@
+hash: 97cb875ee1337406354811888329db6b5838f5e545aa8071fa6a8f67cf2d8090
+updated: 2017-05-14T15:09:13.824527845+02:00
+imports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/docopt/docopt-go
+  version: 784ddc588536785e7299f7272f39101f7faccc3f
+- name: github.com/gomqtt/client
+  version: 7a0aa6502e60a3458bbc91d00d08e6f9aa9a5f5d
+- name: github.com/gomqtt/packet
+  version: 8dfc4ffe91f1d702227e7ecde40aba55d654aefe
+- name: github.com/gomqtt/tools
+  version: 7e24ab8320def0d7e73acd3745a4a8f430399c9a
+- name: github.com/gomqtt/transport
+  version: 248e8f118bf28d88fe54012c6a2dd749cc3c98b3
+- name: github.com/gorilla/websocket
+  version: 3ab3a8b8831546bd18fd182c20687ca853b2bb13
+- name: github.com/jpillora/backoff
+  version: 06c7a16c845dc8e0bf575fafeeca0f5462f5eb4d
+- name: github.com/mattn/go-runewidth
+  version: 97311d9f7767e3d6f422ea06661bc2c7a19e8a5d
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert
+- name: golang.org/x/net
+  version: f315505cf3349909cdf013ea56690da34e96a451
+  subpackages:
+  - context
+- name: gopkg.in/cheggaaa/pb.v1
+  version: f6ccf2184de4dd34495277e38dc19b6e7fbe0ea2
+- name: gopkg.in/tomb.v2
+  version: d5d1b5820637886def9eef33e03a27a9f166942c
+testImports: []
