@@ -13,6 +13,8 @@ static SemaphoreHandle_t nadk_ota_mutex;
 static const esp_partition_t *nadk_ota_partition = NULL;
 static esp_ota_handle_t nadk_ota_handle = 0;
 
+// TODO: Rename module to update.
+
 void nadk_ota_init() {
   // create mutex
   nadk_ota_mutex = xSemaphoreCreateMutex();
@@ -37,7 +39,7 @@ void nadk_ota_begin(uint16_t size) {
   assert(nadk_ota_partition != NULL);
 
   // begin update
-  ESP_ERROR_CHECK(esp_ota_begin(nadk_ota_partition, size, &nadk_ota_handle));
+  ESP_ERROR_CHECK(esp_ota_begin(nadk_ota_partition, 0, &nadk_ota_handle));
 
   // release mutex
   NADK_UNLOCK(nadk_ota_mutex);
