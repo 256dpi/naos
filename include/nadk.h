@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef enum { NADK_SCOPE_DEVICE, NADK_SCOPE_GLOBAL } nadk_scope_t;
+typedef enum { NADK_SCOPE_LOCAL, NADK_SCOPE_GLOBAL } nadk_scope_t;
 
 /**
  * Subscribe to specified topic.

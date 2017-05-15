@@ -28,7 +28,7 @@ static const char *nadk_mqtt_with_base_topic(const char *topic) {
 
 static nadk_scope_t nadk_mqtt_scope_from_topic(const char *topic) {
   if (strncmp(topic, nadk_mqtt_base_topic, strlen(nadk_mqtt_base_topic)) == 0) {
-    return NADK_SCOPE_DEVICE;
+    return NADK_SCOPE_LOCAL;
   } else {
     return NADK_SCOPE_GLOBAL;
   }
@@ -82,8 +82,8 @@ void nadk_mqtt_start(const char *host, unsigned int port, const char *client_id,
 }
 
 bool nadk_subscribe(const char *topic, int qos, nadk_scope_t scope) {
-  // add base topic if scope is global
-  if (scope == NADK_SCOPE_GLOBAL) {
+  // add base topic if scope is local
+  if (scope == NADK_SCOPE_LOCAL) {
     topic = nadk_mqtt_with_base_topic(topic);
   }
 
@@ -91,8 +91,8 @@ bool nadk_subscribe(const char *topic, int qos, nadk_scope_t scope) {
 }
 
 bool nadk_unsubscribe(const char *topic, nadk_scope_t scope) {
-  // add base topic if scope is global
-  if (scope == NADK_SCOPE_GLOBAL) {
+  // add base topic if scope is local
+  if (scope == NADK_SCOPE_LOCAL) {
     topic = nadk_mqtt_with_base_topic(topic);
   }
 
@@ -100,8 +100,8 @@ bool nadk_unsubscribe(const char *topic, nadk_scope_t scope) {
 }
 
 bool nadk_publish(const char *topic, void *payload, uint16_t len, int qos, bool retained, nadk_scope_t scope) {
-  // add base topic if scope is global
-  if (scope == NADK_SCOPE_GLOBAL) {
+  // add base topic if scope is local
+  if (scope == NADK_SCOPE_LOCAL) {
     topic = nadk_mqtt_with_base_topic(topic);
   }
 
