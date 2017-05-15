@@ -7,18 +7,23 @@ import "github.com/docopt/docopt-go"
 var usage = `nadm - the networked artifacts device manager
 
 Usage:
-  nadm update <url> <base-topic> <image>
+  nadm collect [--broker=<broker>]
+  nadm update <base-topic> <image> [--broker=<broker>]
 
 Options:
-  -h --help  Show this screen.
+  -b --broker=<broker>  The broker URL.
+  -h --help             Show this screen.
 `
 
 type command struct {
 	// commands
-	cUpdate bool
+	cCollect, cUpdate bool
 
 	// arguments
-	aURL, aBaseTopic, aImage string
+	aBaseTopic, aImage string
+
+	// options
+	oBrokerURL string
 }
 
 func parseCommand() *command {
@@ -26,12 +31,15 @@ func parseCommand() *command {
 
 	return &command{
 		// commands
-		cUpdate: getBool(a["update"]),
+		cCollect: getBool(a["collect"]),
+		cUpdate:  getBool(a["update"]),
 
 		// arguments
-		aURL:       getString(a["<url>"]),
 		aBaseTopic: getString(a["<base-topic>"]),
 		aImage:     getString(a["<image>"]),
+
+		// options
+		oBrokerURL: getString(a["--broker"]),
 	}
 }
 
