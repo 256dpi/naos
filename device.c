@@ -119,7 +119,7 @@ void nadk_device_start() {
 
   // check if already running
   if (nadk_device_process_started) {
-    ESP_LOGE(NADK_LOG_TAG, "nadk_manager_start_device_process: already started");
+    ESP_LOGE(NADK_LOG_TAG, "nadk_device_start: already started");
     NADK_UNLOCK(nadk_device_mutex);
     return;
   }
