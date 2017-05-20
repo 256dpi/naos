@@ -2,11 +2,6 @@
 #define _NADK_BLE_H
 
 /**
- * The available size for stored strings.
- */
-#define NADK_BLE_STRING_SIZE 33
-
-/**
  * The available BLE attributes.
  */
 typedef enum nadk_ble_id_t {

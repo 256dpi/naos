@@ -68,7 +68,7 @@ typedef struct {
   esp_gatt_char_prop_t prop;
   uint8_t max_length;
   // ---
-  uint8_t storage[NADK_BLE_STRING_SIZE];
+  uint8_t *storage;
   uint8_t length;
   uint16_t handle;
   esp_bt_uuid_t _uuid;
@@ -142,7 +142,7 @@ static nadk_ble_gatts_char_t nadk_ble_char_base_topic = {
     .uuid = {0xB4, 0xCA, 0x63, 0x8C, 0x9B, 0xD0, 0xA2, 0x8E, 0x38, 0x49, 0xF8, 0x9F, 0xA8, 0xE3, 0xB7, 0xEA},
     .nvs_key = "base-topic",
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_length = 32};
+    .max_length = 64};
 
 static nadk_ble_gatts_char_t nadk_ble_char_connection_status = {
     .id = NADK_BLE_ID_CONNECTION_STATUS,
@@ -156,7 +156,7 @@ static nadk_ble_gatts_char_t nadk_ble_char_system_command = {
     .uuid = {0xAB, 0xD0, 0x76, 0xBD, 0x81, 0x29, 0x77, 0xA2, 0x0F, 0x45, 0x8E, 0x5A, 0x64, 0x18, 0xCF, 0x37},
     .nvs_key = NULL,
     .prop = ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_length = 32};
+    .max_length = 16};
 
 #define NADK_BLE_NUM_CHARS 12
 
@@ -503,13 +503,16 @@ void nadk_ble_init(nadk_ble_attribute_callback_t cb, const char *device_type) {
     c->_uuid.len = ESP_UUID_LEN_128;
     memcpy(c->_uuid.uuid.uuid128, c->uuid, ESP_UUID_LEN_128);
 
+    // allocate storage
+    c->storage = malloc(c->max_length + 1);
+
     // move on if no nvs key is set
     if (c->nvs_key == NULL) {
       continue;
     }
 
     // prepare length
-    size_t length = NADK_BLE_STRING_SIZE;
+    size_t length = c->max_length + 1;
 
     // read value
     esp_err_t err = nvs_get_str(nadk_ble_nvs_handle, c->nvs_key, (char *)c->storage, &length);
