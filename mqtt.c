@@ -10,6 +10,8 @@ static char nadk_mqtt_topic_cache[256];
 
 static nadk_mqtt_message_callback_t nadk_mqtt_message_callback = NULL;
 
+// TODO: Guarantee we always work with trimmed base topics.
+
 static const char *nadk_mqtt_with_base_topic(const char *topic) {
   // check base topic
   if (nadk_mqtt_base_topic == NULL) {
@@ -19,8 +21,11 @@ static const char *nadk_mqtt_with_base_topic(const char *topic) {
   // write base topic into cache
   strcpy(nadk_mqtt_topic_cache, nadk_mqtt_base_topic);
 
+  // write separator
+  nadk_mqtt_topic_cache[strlen(nadk_mqtt_base_topic)] = '/';
+
   // write topic into cache
-  strcpy(nadk_mqtt_topic_cache + strlen(nadk_mqtt_base_topic), topic);
+  strcpy(nadk_mqtt_topic_cache + strlen(nadk_mqtt_base_topic) + 1, topic);
 
   // return pointer to prefixed topic
   return nadk_mqtt_topic_cache;
@@ -46,7 +51,7 @@ static const char *nadk_mqtt_without_base_topic(const char *topic) {
   }
 
   // return adjusted pointer
-  return topic + strlen(nadk_mqtt_base_topic);
+  return topic + strlen(nadk_mqtt_base_topic) + 1;
 }
 
 static void nadk_mqtt_message_handler(const char *topic, const char *payload, unsigned int len) {
