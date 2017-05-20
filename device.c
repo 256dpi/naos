@@ -10,9 +10,10 @@
 #include "ble.h"
 #include "device.h"
 #include "general.h"
+#include "mqtt.h"
 #include "ota.h"
 
-#define NADK_OTA_CHUNK_SIZE 9000
+#define NADK_OTA_CHUNK_SIZE NADK_MQTT_BUFFER_SIZE - 256
 
 #define NADK_DEVICE_HEARTBEAT_INTERVAL 5000
 
