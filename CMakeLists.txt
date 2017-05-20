@@ -27,8 +27,6 @@ include_directories(
 
 set(SOURCE_FILES
         include/nadk.h
-        include/nadk/mqtt.h
-        include/nadk/time.h
         ble.c
         ble.h
         device.c
