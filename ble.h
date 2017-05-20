@@ -42,10 +42,12 @@ void nadk_ble_init(nadk_ble_attribute_callback_t cb, const char *device_type);
 /**
  * Get the the string value of the characteristic with the supplied id.
  *
+ * The caller is responsible to free the string after it has been used.
+ *
  * @param id - The attribute id.
- * @paragraph - The destination buffer.
+ * @return The copied string.
  */
-void nadk_ble_get_string(nadk_ble_id_t id, char *destination);
+char *nadk_ble_get_string(nadk_ble_id_t id);
 
 /**
  * Set the the string value of the characteristic with the supplied id.

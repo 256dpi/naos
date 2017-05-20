@@ -567,7 +567,7 @@ void nadk_ble_init(nadk_ble_attribute_callback_t cb, const char *device_type) {
   xEventGroupWaitBits(nadk_ble_init_event_group, NADK_BLE_INITIALIZED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
 }
 
-void nadk_ble_get_string(nadk_ble_id_t id, char *destination) {
+char *nadk_ble_get_string(nadk_ble_id_t id) {
   // acquire mutex
   NADK_LOCK(nadk_ble_mutex);
 
@@ -578,16 +578,20 @@ void nadk_ble_get_string(nadk_ble_id_t id, char *destination) {
 
     // check if ids match
     if (c->id == id) {
-      // copy string
-      strcpy(destination, (char *)c->storage);
+      // duplicate string
+      char *str = strdup((const char *)c->storage);
 
-      // exit loop
-      break;
+      // release mutex
+      NADK_UNLOCK(nadk_ble_mutex);
+
+      return str;
     }
   }
 
   // release mutex
   NADK_UNLOCK(nadk_ble_mutex);
+
+  return strdup("");
 }
 
 void nadk_ble_set_string(nadk_ble_id_t id, char *str) {

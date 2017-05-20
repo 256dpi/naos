@@ -34,9 +34,8 @@ static long long int nadk_device_ota_remaining_data = 0;
 // TODO: Rename "ota" topic segments to "update".
 
 static void nadk_device_send_heartbeat() {
-  // send device name
-  char device_name[NADK_BLE_STRING_SIZE];
-  nadk_ble_get_string(NADK_BLE_ID_DEVICE_NAME, device_name);
+  // get device name
+  char *device_name = nadk_ble_get_string(NADK_BLE_ID_DEVICE_NAME);
 
   // save time
   nadk_device_last_heartbeat = nadk_millis();
@@ -46,21 +45,24 @@ static void nadk_device_send_heartbeat() {
   snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d", nadk_device->type, nadk_device->version, device_name,
            esp_get_free_heap_size(), nadk_millis());
   nadk_publish_str("nadk/heartbeat", buf, 0, false, NADK_LOCAL);
+
+  // free string
+  free(device_name);
 }
 
 static void nadk_device_send_announcement() {
-  // get device name
-  char device_name[NADK_BLE_STRING_SIZE];
-  nadk_ble_get_string(NADK_BLE_ID_DEVICE_NAME, device_name);
-
-  // get base topic
-  char base_topic[NADK_BLE_STRING_SIZE];
-  nadk_ble_get_string(NADK_BLE_ID_BASE_TOPIC, base_topic);
+  // get device name & base topic
+  char *device_name = nadk_ble_get_string(NADK_BLE_ID_DEVICE_NAME);
+  char *base_topic = nadk_ble_get_string(NADK_BLE_ID_BASE_TOPIC);
 
   // send announce
   char buf[64];
   snprintf(buf, sizeof buf, "%s,%s,%s,%s", nadk_device->type, nadk_device->version, device_name, base_topic);
   nadk_publish_str("nadk/announcement", buf, 0, false, NADK_GLOBAL);
+
+  // free strings
+  free(device_name);
+  free(base_topic);
 }
 
 static void nadk_device_request_next_chunk() {

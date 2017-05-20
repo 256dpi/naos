@@ -63,41 +63,35 @@ static void nadk_manager_set_state(nadk_manager_state_t new_state) {
 }
 
 static void nadk_manager_configure_wifi() {
-  // get ssid
-  char wifi_ssid[NADK_BLE_STRING_SIZE];
-  nadk_ble_get_string(NADK_BLE_ID_WIFI_SSID, wifi_ssid);
-
-  // get password
-  char wifi_password[NADK_BLE_STRING_SIZE];
-  nadk_ble_get_string(NADK_BLE_ID_WIFI_PASSWORD, wifi_password);
+  // get ssid & password
+  char *wifi_ssid = nadk_ble_get_string(NADK_BLE_ID_WIFI_SSID);
+  char *wifi_password = nadk_ble_get_string(NADK_BLE_ID_WIFI_PASSWORD);
 
   // configure wifi
   nadk_wifi_configure(wifi_ssid, wifi_password);
+
+  // free strings
+  free(wifi_ssid);
+  free(wifi_password);
 }
 
 static void nadk_manager_start_mqtt() {
-  // get host
-  char mqtt_host[NADK_BLE_STRING_SIZE];
-  nadk_ble_get_string(NADK_BLE_ID_MQTT_HOST, mqtt_host);
-
-  // get client id
-  char mqtt_client_id[NADK_BLE_STRING_SIZE];
-  nadk_ble_get_string(NADK_BLE_ID_MQTT_CLIENT_ID, mqtt_client_id);
-
-  // get username
-  char mqtt_username[NADK_BLE_STRING_SIZE];
-  nadk_ble_get_string(NADK_BLE_ID_MQTT_USERNAME, mqtt_username);
-
-  // get password
-  char mqtt_password[NADK_BLE_STRING_SIZE];
-  nadk_ble_get_string(NADK_BLE_ID_MQTT_PASSWORD, mqtt_password);
-
-  // get base topic
-  char base_topic[NADK_BLE_STRING_SIZE];
-  nadk_ble_get_string(NADK_BLE_ID_BASE_TOPIC, base_topic);
+  // get settings
+  char *mqtt_host = nadk_ble_get_string(NADK_BLE_ID_MQTT_HOST);
+  char *mqtt_client_id = nadk_ble_get_string(NADK_BLE_ID_MQTT_CLIENT_ID);
+  char *mqtt_username = nadk_ble_get_string(NADK_BLE_ID_MQTT_USERNAME);
+  char *mqtt_password = nadk_ble_get_string(NADK_BLE_ID_MQTT_PASSWORD);
+  char *base_topic = nadk_ble_get_string(NADK_BLE_ID_BASE_TOPIC);
 
   // start mqtt
   nadk_mqtt_start(mqtt_host, 1883, mqtt_client_id, mqtt_username, mqtt_password, base_topic);
+
+  // free strings
+  free(mqtt_host);
+  free(mqtt_client_id);
+  free(mqtt_username);
+  free(mqtt_password);
+  free(base_topic);
 }
 
 static void nadk_manager_ble_callback(nadk_ble_id_t id) {
@@ -110,12 +104,14 @@ static void nadk_manager_ble_callback(nadk_ble_id_t id) {
   NADK_LOCK(nadk_manager_mutex);
 
   // get value
-  char value[NADK_BLE_STRING_SIZE];
-  nadk_ble_get_string(NADK_BLE_ID_COMMAND, value);
+  char *value = nadk_ble_get_string(NADK_BLE_ID_COMMAND);
 
   // detect command
   bool restart_mqtt = strcmp(value, "restart-mqtt") == 0;
   bool restart_wifi = strcmp(value, "restart-wifi") == 0;
+
+  // free string
+  free(value);
 
   // handle wifi restart
   if (restart_wifi) {
