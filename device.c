@@ -44,7 +44,7 @@ static void nadk_device_send_heartbeat() {
   // send heartbeat
   char buf[64];
   snprintf(buf, sizeof buf, "%s,%s,%d,%d", nadk_device->type, device_name, esp_get_free_heap_size(), nadk_millis());
-  nadk_publish_str("nadk/heartbeat", buf, 0, false, NADK_SCOPE_LOCAL);
+  nadk_publish_str("nadk/heartbeat", buf, 0, false, NADK_LOCAL);
 }
 
 static void nadk_device_send_announcement() {
@@ -59,7 +59,7 @@ static void nadk_device_send_announcement() {
   // send announce
   char buf[64];
   snprintf(buf, sizeof buf, "%s,%s,%s", nadk_device->type, device_name, base_topic);
-  nadk_publish_str("nadk/announcement", buf, 0, false, NADK_SCOPE_GLOBAL);
+  nadk_publish_str("nadk/announcement", buf, 0, false, NADK_GLOBAL);
 }
 
 static void nadk_device_request_next_chunk() {
@@ -70,7 +70,7 @@ static void nadk_device_request_next_chunk() {
   }
 
   // request first chunk
-  nadk_publish_num("nadk/ota/next", chunk, 0, false, NADK_SCOPE_LOCAL);
+  nadk_publish_num("nadk/ota/next", chunk, 0, false, NADK_LOCAL);
 }
 
 static void nadk_device_process(void *p) {
@@ -78,12 +78,12 @@ static void nadk_device_process(void *p) {
   NADK_LOCK(nadk_device_mutex);
 
   // subscribe to global topics
-  nadk_subscribe("nadk/collect", 0, NADK_SCOPE_GLOBAL);
+  nadk_subscribe("nadk/collect", 0, NADK_GLOBAL);
 
   // subscribe to device topics
-  nadk_subscribe("nadk/ping", 0, NADK_SCOPE_LOCAL);
-  nadk_subscribe("nadk/ota", 0, NADK_SCOPE_LOCAL);
-  nadk_subscribe("nadk/ota/chunk", 0, NADK_SCOPE_LOCAL);
+  nadk_subscribe("nadk/ping", 0, NADK_LOCAL);
+  nadk_subscribe("nadk/ota", 0, NADK_LOCAL);
+  nadk_subscribe("nadk/ota/chunk", 0, NADK_LOCAL);
 
   // call setup callback i present
   if (nadk_device->setup_fn) {
@@ -179,7 +179,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   NADK_LOCK(nadk_device_mutex);
 
   // check collect
-  if (scope == NADK_SCOPE_GLOBAL && strcmp(topic, "nadk/collect") == 0) {
+  if (scope == NADK_GLOBAL && strcmp(topic, "nadk/collect") == 0) {
     // send announcement
     nadk_device_send_announcement();
 
@@ -188,7 +188,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   }
 
   // check ping
-  if (scope == NADK_SCOPE_LOCAL && strcmp(topic, "nadk/ping") == 0) {
+  if (scope == NADK_LOCAL && strcmp(topic, "nadk/ping") == 0) {
     // send heartbeat
     nadk_device_send_heartbeat();
 
@@ -197,7 +197,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   }
 
   // check ota
-  if (scope == NADK_SCOPE_LOCAL && strcmp(topic, "nadk/ota") == 0) {
+  if (scope == NADK_LOCAL && strcmp(topic, "nadk/ota") == 0) {
     // get update size
     nadk_device_ota_remaining_data = strtoll(payload, NULL, 10);
     ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: begin update with size %lld", nadk_device_ota_remaining_data);
@@ -213,7 +213,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   }
 
   // check ota chunk
-  if (scope == NADK_SCOPE_LOCAL && strcmp(topic, "nadk/ota/chunk") == 0) {
+  if (scope == NADK_LOCAL && strcmp(topic, "nadk/ota/chunk") == 0) {
     // forward chunk
     nadk_ota_forward(payload, (uint16_t)len);
     nadk_device_ota_remaining_data -= len;
@@ -228,7 +228,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
     }
 
     // send finished message
-    nadk_publish_str("nadk/ota/finished", "", 0, false, NADK_SCOPE_LOCAL);
+    nadk_publish_str("nadk/ota/finished", "", 0, false, NADK_LOCAL);
     ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: finished update");
 
     // otherwise finish update

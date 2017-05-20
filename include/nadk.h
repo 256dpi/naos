@@ -4,12 +4,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef enum { NADK_SCOPE_LOCAL, NADK_SCOPE_GLOBAL } nadk_scope_t;
+typedef enum { NADK_LOCAL, NADK_GLOBAL } nadk_scope_t;
 
 /**
  * Subscribe to specified topic.
  *
- * The topic is automatically prefixed with the configured base topic if the scope is global.
+ * The topic is automatically prefixed with the configured base topic if the scope is local.
  *
  * @param topic
  * @param scope
@@ -20,7 +20,7 @@ bool nadk_subscribe(const char *topic, int qos, nadk_scope_t scope);
 /**
  * Unsubscribe from specified topic.
  *
- * The topic is automatically prefixed with the configured base topic if the scope is global.
+ * The topic is automatically prefixed with the configured base topic if the scope is local.
  *
  * @param topic
  * @param scope
@@ -31,7 +31,7 @@ bool nadk_unsubscribe(const char *topic, nadk_scope_t scope);
 /**
  * Publish bytes payload to specified topic.
  *
- * The topic is automatically prefixed with the configured base topic if the scope is global.
+ * The topic is automatically prefixed with the configured base topic if the scope is local.
  *
  * @param topic
  * @param payload
@@ -46,7 +46,7 @@ bool nadk_publish(const char *topic, void *payload, uint16_t len, int qos, bool 
 /**
  * Publish string to specified topic.
  *
- * The topic is automatically prefixed with the configured base topic if the scope is global.
+ * The topic is automatically prefixed with the configured base topic if the scope is local.
  *
  * @param topic
  * @param str
@@ -60,7 +60,7 @@ bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained
 /**
  * Publish number to specified topic.
  *
- * The topic is automatically prefixed with the configured base topic if the scope is global.
+ * The topic is automatically prefixed with the configured base topic if the scope is local.
  *
  * @param topic
  * @param num
