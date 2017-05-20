@@ -39,15 +39,11 @@ func update(cmd *command) {
 
 	fmt.Println("Begin with update...")
 
-	updater := nadm.NewUpdater(cmd.oBrokerURL, cmd.aBaseTopic, bytes)
+	m := nadm.NewManager(cmd.oBrokerURL)
 
 	bar := pb.StartNew(len(bytes))
 
-	updater.OnProgress = func(sent int) {
-		bar.Set(sent)
-	}
-
-	err = updater.Run()
+	err = m.UpdateFirmware(cmd.aBaseTopic, bytes, func(sent int) { bar.Set(sent) })
 	exitIfSet(err)
 
 	fmt.Println("Update finished!")

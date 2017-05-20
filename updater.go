@@ -9,32 +9,10 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// An Updater is responsible for updating a single device over MQTT to a new
-// image.
-type Updater struct {
-	BrokerURL string
-	BaseTopic string
-	Image     []byte
-
-	OnProgress func(sent int)
-}
-
-// NewUpdater creates and returns a new Updater.
-func NewUpdater(brokerURL, baseTopic string, image []byte) *Updater {
-	return &Updater{
-		BrokerURL: brokerURL,
-		BaseTopic: baseTopic,
-		Image:     image,
-	}
-}
-
-// TODO: Base Topic should never end in a slash.
-
-// TODO: Use tomb, and allow cancel and timeout.
-
-// Run will perform the update an block until it is done or an error has
-// occurred.
-func (u *Updater) Run() error {
+// UpdateFirmware will perform a firmware update an block until it is done or an
+// error has occurred. If progress is provided it will be called with the bytes
+// sent to the device.
+func (m *Manager) UpdateFirmware(baseTopic string, image []byte, progress func(int)) error {
 	// prepare channels
 	requests := make(chan int)
 	errs := make(chan error)
@@ -75,7 +53,7 @@ func (u *Updater) Run() error {
 	}
 
 	// connect to the broker using the provided url
-	cf, err := cl.Connect(client.NewConfig(u.BrokerURL))
+	cf, err := cl.Connect(client.NewConfig(m.BrokerURL))
 	if err != nil {
 		return err
 	}
@@ -90,7 +68,7 @@ func (u *Updater) Run() error {
 	defer cl.Close()
 
 	// subscribe to next chunk topic
-	sf, err := cl.Subscribe(u.BaseTopic+"/nadk/ota/next", 0)
+	sf, err := cl.Subscribe(baseTopic+"/nadk/ota/next", 0)
 	if err != nil {
 		return err
 	}
@@ -102,7 +80,7 @@ func (u *Updater) Run() error {
 	}
 
 	// subscribe to finished topic
-	sf, err = cl.Subscribe(u.BaseTopic+"/nadk/ota/finished", 0)
+	sf, err = cl.Subscribe(baseTopic+"/nadk/ota/finished", 0)
 	if err != nil {
 		return err
 	}
@@ -114,7 +92,7 @@ func (u *Updater) Run() error {
 	}
 
 	// begin update process by sending the size of the image
-	_, err = cl.Publish(u.BaseTopic+"/nadk/ota", []byte(strconv.Itoa(len(u.Image))), 0, false)
+	_, err = cl.Publish(baseTopic+"/nadk/ota", []byte(strconv.Itoa(len(image))), 0, false)
 	if err != nil {
 		return err
 	}
@@ -137,7 +115,7 @@ func (u *Updater) Run() error {
 		}
 
 		// calculate remaining bytes
-		remaining := len(u.Image) - total
+		remaining := len(image) - total
 
 		// prevent overflow
 		if next > remaining {
@@ -145,7 +123,7 @@ func (u *Updater) Run() error {
 		}
 
 		// send chunk
-		_, err := cl.Publish(u.BaseTopic+"/nadk/ota/chunk", u.Image[total:total+next], 0, false)
+		_, err := cl.Publish(baseTopic+"/nadk/ota/chunk", image[total:total+next], 0, false)
 		if err != nil {
 			return err
 		}
@@ -154,8 +132,8 @@ func (u *Updater) Run() error {
 		total += next
 
 		// update progress if available
-		if u.OnProgress != nil {
-			u.OnProgress(total)
+		if progress != nil {
+			progress(total)
 		}
 	}
 }
