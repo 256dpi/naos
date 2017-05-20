@@ -87,8 +87,8 @@ static void nadk_device_process(void *p) {
   nadk_subscribe("nadk/ota/chunk", 0, NADK_LOCAL);
 
   // call setup callback i present
-  if (nadk_device->setup_fn) {
-    nadk_device->setup_fn();
+  if (nadk_device->setup) {
+    nadk_device->setup();
   }
 
   // send initial heartbeat
@@ -107,8 +107,8 @@ static void nadk_device_process(void *p) {
     }
 
     // call loop callback if present
-    if (nadk_device->loop_fn) {
-      nadk_device->loop_fn();
+    if (nadk_device->loop) {
+      nadk_device->loop();
     }
 
     // release mutex
@@ -167,8 +167,8 @@ void nadk_device_stop() {
   vTaskDelete(nadk_device_task);
 
   // run terminate callback if present
-  if (nadk_device->terminate_fn) {
-    nadk_device->terminate_fn();
+  if (nadk_device->terminate) {
+    nadk_device->terminate();
   }
 
   // release mutex
@@ -240,8 +240,8 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   }
 
   // call handle callback if present
-  if (nadk_device->handle_fn) {
-    nadk_device->handle_fn(topic, payload, len, scope);
+  if (nadk_device->handle) {
+    nadk_device->handle(topic, payload, len, scope);
   }
 
   // release mutex
