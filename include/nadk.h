@@ -4,6 +4,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/**
+ * The messages scopes.
+ *
+ * The 'local' scope denotes messages that are transferred under the configured base topic of the device while the
+ * 'global' scope denotes messages that are transferred directly below the root.
+ */
 typedef enum { NADK_LOCAL, NADK_GLOBAL } nadk_scope_t;
 
 /**
