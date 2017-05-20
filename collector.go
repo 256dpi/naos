@@ -12,6 +12,7 @@ import (
 // An Announcement is returned by CollectAnnouncements.
 type Announcement struct {
 	Type      string
+	Version   string
 	Name      string
 	BaseTopic string
 }
@@ -39,7 +40,7 @@ func (m *Manager) CollectAnnouncements(d time.Duration) ([]*Announcement, error)
 		data := strings.Split(string(msg.Payload), ",")
 
 		// check length
-		if len(data) < 3 {
+		if len(data) < 4 {
 			errs <- fmt.Errorf("malformed payload: %s", string(msg.Payload))
 			return
 		}
@@ -47,8 +48,9 @@ func (m *Manager) CollectAnnouncements(d time.Duration) ([]*Announcement, error)
 		// add announcement
 		announcements <- &Announcement{
 			Type:      data[0],
-			Name:      data[1],
-			BaseTopic: data[2],
+			Version:   data[1],
+			Name:      data[2],
+			BaseTopic: data[3],
 		}
 	}
 

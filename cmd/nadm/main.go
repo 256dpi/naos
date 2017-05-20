@@ -27,7 +27,7 @@ func collect(cmd *command) {
 	exitIfSet(err)
 
 	for _, a := range list {
-		fmt.Printf("- %s (%s) at %s\n", a.Name, a.Type, a.BaseTopic)
+		fmt.Printf("- %s (%s - %s) at %s\n", a.Name, a.Type, a.Version, a.BaseTopic)
 	}
 }
 
