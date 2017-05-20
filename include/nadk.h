@@ -82,9 +82,7 @@ bool nadk_publish_num(const char *topic, int num, int qos, bool retained, nadk_s
  */
 typedef struct {
   /**
-   * The device type.
-   *
-   * Will appear as the "device-type" characteristic over Bluetooth.
+   * The device type name.
    */
   const char *type;
 
