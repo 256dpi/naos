@@ -9,23 +9,11 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// An Announcement is returned by the Manager.
+// An Announcement is returned by CollectAnnouncements.
 type Announcement struct {
 	Type      string
 	Name      string
 	BaseTopic string
-}
-
-// A Manager collects device announcements.
-type Manager struct {
-	BrokerURL string
-}
-
-// NewManager creates and returns a new Manager.
-func NewManager(brokerURL string) *Manager {
-	return &Manager{
-		BrokerURL: brokerURL,
-	}
 }
 
 // CollectAnnouncements will collect device Announcements.
