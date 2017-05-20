@@ -87,6 +87,11 @@ typedef struct {
   const char *type;
 
   /**
+   * The device firmware version.
+   */
+  const char *version;
+
+  /**
    * The callback that is called once the device comes online and should be used to subscribe to topics and do other
    * initialization work.
    */
