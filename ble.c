@@ -597,7 +597,7 @@ char *nadk_ble_get_string(nadk_ble_id_t id) {
   return strdup("");
 }
 
-void nadk_ble_set_string(nadk_ble_id_t id, char *str) {
+void nadk_ble_set_string(nadk_ble_id_t id, const char *str) {
   // acquire mutex
   NADK_LOCK(nadk_ble_mutex);
 

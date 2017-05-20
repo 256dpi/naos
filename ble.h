@@ -50,6 +50,6 @@ char *nadk_ble_get_string(nadk_ble_id_t id);
  * @param id - The attribute id.
  * @param str - The new string value.
  */
-void nadk_ble_set_string(nadk_ble_id_t id, char *str);
+void nadk_ble_set_string(nadk_ble_id_t id, const char *str);
 
 #endif  // _NADK_BLE_H
