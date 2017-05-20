@@ -19,19 +19,16 @@ func main() {
 }
 
 func collect(cmd *command) {
-	fmt.Println("Collecting devices...")
+	fmt.Println("Collecting device announcements...")
 
-	collector := nadm.NewCollector(cmd.oBrokerURL)
+	m := nadm.NewManager(cmd.oBrokerURL)
 
-	collector.Start()
+	list, err := m.CollectAnnouncements(cmd.oDuration)
+	exitIfSet(err)
 
-	go func() {
-		for device := range collector.Devices {
-			fmt.Printf("- %s (%s) at %s\n", device.Name, device.Type, device.BaseTopic)
-		}
-	}()
-
-	waitForInterrupt()
+	for _, a := range list {
+		fmt.Printf("- %s (%s) at %s\n", a.Name, a.Type, a.BaseTopic)
+	}
 }
 
 func update(cmd *command) {

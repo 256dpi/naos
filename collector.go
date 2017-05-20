@@ -3,63 +3,36 @@ package nadm
 import (
 	"fmt"
 	"strings"
-	"sync"
+	"time"
 
 	"github.com/gomqtt/client"
 	"github.com/gomqtt/packet"
-	"gopkg.in/tomb.v2"
 )
 
-// TODO: Rename Device to Announcement?
-
-// A Device is returned by the collector.
-type Device struct {
+// An Announcement is returned by the Manager.
+type Announcement struct {
 	Type      string
 	Name      string
 	BaseTopic string
 }
 
-// A Collector collects NADK devices connected to a broker.
-type Collector struct {
-	BrokerURL  string
-	BaseTopics []string
-
-	Devices chan *Device
-
-	mutex sync.Mutex
-	tomb  tomb.Tomb
+// A Manager collects device announcements.
+type Manager struct {
+	BrokerURL string
 }
 
-// NewCollector creates and returns a new Collector.
-func NewCollector(brokerURL string) *Collector {
-	return &Collector{
+// NewManager creates and returns a new Manager.
+func NewManager(brokerURL string) *Manager {
+	return &Manager{
 		BrokerURL: brokerURL,
 	}
 }
 
-// Start will start with the collection process.
-func (c *Collector) Start() {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	c.Devices = make(chan *Device)
-
-	c.tomb = tomb.Tomb{}
-	c.tomb.Go(c.processor)
-}
-
-// Stop will stop the collection process.
-func (c *Collector) Stop() error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	c.tomb.Kill(nil)
-	return c.tomb.Wait()
-}
-
-func (c *Collector) processor() error {
+// CollectAnnouncements will collect device Announcements.
+func (m *Manager) CollectAnnouncements(d time.Duration) ([]*Announcement, error) {
 	// prepare channels
 	errs := make(chan error)
+	announcements := make(chan *Announcement)
 
 	// create client
 	cl := client.New()
@@ -83,8 +56,8 @@ func (c *Collector) processor() error {
 			return
 		}
 
-		// add device
-		c.Devices <- &Device{
+		// add announcement
+		announcements <- &Announcement{
 			Type:      data[0],
 			Name:      data[1],
 			BaseTopic: data[2],
@@ -92,15 +65,15 @@ func (c *Collector) processor() error {
 	}
 
 	// connect to the broker using the provided url
-	cf, err := cl.Connect(client.NewConfig(c.BrokerURL))
+	cf, err := cl.Connect(client.NewConfig(m.BrokerURL))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// wait for ack
 	err = cf.Wait()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// make sure client gets closed
@@ -109,29 +82,36 @@ func (c *Collector) processor() error {
 	// subscribe to announcement topic
 	sf, err := cl.Subscribe("/nadk/announcement", 0)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// wait for ack
 	err = sf.Wait()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// collect all devices
 	_, err = cl.Publish("/nadk/collect", []byte(""), 0, false)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	// prepare list
+	var list []*Announcement
+
+	// set deadline
+	deadline := time.After(d)
+
 	for {
-		// wait for error or kill
+		// wait for error, announcement or deadline
 		select {
 		case err := <-errs:
-			close(c.Devices)
-			return err
-		case <-c.tomb.Dying():
-			return tomb.ErrDying
+			return list, err
+		case a := <-announcements:
+			list = append(list, a)
+		case <-deadline:
+			return list, nil
 		}
 	}
 }
