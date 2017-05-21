@@ -6,8 +6,6 @@ import (
 	"github.com/docopt/docopt-go"
 )
 
-// TODO: Populate options from nadm.rc?
-
 var usage = `nadm - the networked artifacts device manager
 
 Usage:

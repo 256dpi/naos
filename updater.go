@@ -3,7 +3,6 @@ package nadm
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/gomqtt/client"
 	"github.com/gomqtt/packet"
@@ -16,7 +15,6 @@ func (m *Manager) UpdateFirmware(baseTopic string, image []byte, progress func(i
 	// prepare channels
 	requests := make(chan int)
 	errs := make(chan error)
-	finished := make(chan struct{})
 
 	// create client
 	cl := client.New()
@@ -26,12 +24,6 @@ func (m *Manager) UpdateFirmware(baseTopic string, image []byte, progress func(i
 		// send errors
 		if err != nil {
 			errs <- err
-			return
-		}
-
-		// handle finished message
-		if strings.HasSuffix(msg.Topic, "nadk/ota/finished") {
-			close(finished)
 			return
 		}
 
@@ -68,19 +60,7 @@ func (m *Manager) UpdateFirmware(baseTopic string, image []byte, progress func(i
 	defer cl.Close()
 
 	// subscribe to next chunk topic
-	sf, err := cl.Subscribe(baseTopic+"/nadk/ota/next", 0)
-	if err != nil {
-		return err
-	}
-
-	// wait for ack
-	err = sf.Wait()
-	if err != nil {
-		return err
-	}
-
-	// subscribe to finished topic
-	sf, err = cl.Subscribe(baseTopic+"/nadk/ota/finished", 0)
+	sf, err := cl.Subscribe(baseTopic+"/nadk/update/next", 0)
 	if err != nil {
 		return err
 	}
@@ -92,7 +72,7 @@ func (m *Manager) UpdateFirmware(baseTopic string, image []byte, progress func(i
 	}
 
 	// begin update process by sending the size of the image
-	_, err = cl.Publish(baseTopic+"/nadk/ota", []byte(strconv.Itoa(len(image))), 0, false)
+	_, err = cl.Publish(baseTopic+"/nadk/update/begin", []byte(strconv.Itoa(len(image))), 0, false)
 	if err != nil {
 		return err
 	}
@@ -108,8 +88,6 @@ func (m *Manager) UpdateFirmware(baseTopic string, image []byte, progress func(i
 		select {
 		case err := <-errs:
 			return err
-		case <-finished:
-			return nil
 		case next = <-requests:
 			// continue
 		}
@@ -117,13 +95,30 @@ func (m *Manager) UpdateFirmware(baseTopic string, image []byte, progress func(i
 		// calculate remaining bytes
 		remaining := len(image) - total
 
+		// check if done
+		if remaining == 0 {
+			// send finish
+			_, err := cl.Publish(baseTopic+"/nadk/update/finish", nil, 0, false)
+			if err != nil {
+				return err
+			}
+
+			// disconnect
+			err = cl.Disconnect()
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}
+
 		// prevent overflow
 		if next > remaining {
 			next = remaining
 		}
 
 		// send chunk
-		_, err := cl.Publish(baseTopic+"/nadk/ota/chunk", image[total:total+next], 0, false)
+		_, err := cl.Publish(baseTopic+"/nadk/update/chunk", image[total:total+next], 0, false)
 		if err != nil {
 			return err
 		}

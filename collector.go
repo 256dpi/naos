@@ -34,8 +34,6 @@ func (m *Manager) CollectAnnouncements(d time.Duration) ([]*Announcement, error)
 			return
 		}
 
-		// TODO: Make sure nobody uses a comma.
-
 		// get data from payload
 		data := strings.Split(string(msg.Payload), ",")
 
@@ -101,6 +99,12 @@ func (m *Manager) CollectAnnouncements(d time.Duration) ([]*Announcement, error)
 		case a := <-announcements:
 			list = append(list, a)
 		case <-deadline:
+			// disconnect
+			err = cl.Disconnect()
+			if err != nil {
+				return list, err
+			}
+
 			return list, nil
 		}
 	}
