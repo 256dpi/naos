@@ -1,5 +1,5 @@
-#ifndef _NADK_MANAGER_H
-#define _NADK_MANAGER_H
+#ifndef _NADK_SYSTEM_H
+#define _NADK_SYSTEM_H
 
 /**
  * Initialize the system management system.
@@ -10,4 +10,4 @@
  */
 void nadk_system_init(nadk_device_t *device);
 
-#endif  // _NADK_MANAGER_H
+#endif  // _NADK_SYSTEM_H

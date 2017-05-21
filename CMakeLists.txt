@@ -27,23 +27,23 @@ include_directories(
 
 set(SOURCE_FILES
         include/nadk.h
-        ble.c
-        ble.h
-        device.c
-        device.h
-        general.c
-        general.h
-        led.c
-        led.h
-        mqtt.c
-        mqtt.h
-        nadk.c
-        system.c
-        system.h
-        update.c
-        update.h
-        wifi.c
-        wifi.h
+        src/ble.c
+        src/ble.h
+        src/device.c
+        src/device.h
+        src/general.c
+        src/general.h
+        src/led.c
+        src/led.h
+        src/mqtt.c
+        src/mqtt.h
+        src/nadk.c
+        src/system.c
+        src/system.h
+        src/update.c
+        src/update.h
+        src/wifi.c
+        src/wifi.h
         test/main/main.c)
 
 add_library(nadk ${SOURCE_FILES})
