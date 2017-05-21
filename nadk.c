@@ -1,5 +1,5 @@
 #include <nadk.h>
 
-#include "manager.h"
+#include "system.h"
 
-void nadk_init(nadk_device_t* device) { nadk_manager_init(device); }
+void nadk_init(nadk_device_t* device) { nadk_system_init(device); }

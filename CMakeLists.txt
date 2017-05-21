@@ -35,11 +35,11 @@ set(SOURCE_FILES
         general.h
         led.c
         led.h
-        manager.c
-        manager.h
         mqtt.c
         mqtt.h
         nadk.c
+        system.c
+        system.h
         update.c
         update.h
         wifi.c
