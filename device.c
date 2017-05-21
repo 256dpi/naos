@@ -70,8 +70,9 @@ static void nadk_device_process(void *p) {
   nadk_subscribe("nadk/collect", 0, NADK_GLOBAL);
 
   // subscribe to device topics
-  nadk_subscribe("nadk/update", 0, NADK_LOCAL);
+  nadk_subscribe("nadk/update/begin", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/chunk", 0, NADK_LOCAL);
+  nadk_subscribe("nadk/update/finish", 0, NADK_LOCAL);
 
   // call setup callback i present
   if (nadk_device->setup) {
@@ -176,7 +177,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   }
 
   // check ota
-  if (scope == NADK_LOCAL && strcmp(topic, "nadk/update") == 0) {
+  if (scope == NADK_LOCAL && strcmp(topic, "nadk/update/begin") == 0) {
     // get update size
     long long int total = strtoll(payload, NULL, 10);
     ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: begin update with size %lld", total);
