@@ -25,7 +25,7 @@ typedef enum {
 typedef void (*nadk_ble_attribute_callback_t)(nadk_ble_id_t);
 
 /**
- * Initialize the BLE management system.
+ * Initialize the BLE subsystem.
  *
  * Note: Should only be called once on boot.
  *

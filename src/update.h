@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /**
- * Initialize the firmware update management system.
+ * Initialize the firmware update subsystem.
  *
  * Note: Should only be called once on boot.
  */

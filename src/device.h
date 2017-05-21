@@ -4,7 +4,7 @@
 #include <nadk.h>
 
 /**
- * Initialize the device management system.
+ * Initialize the device subsystem.
  *
  * Note: Should only be called once on boot.
  *

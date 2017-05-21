@@ -14,7 +14,7 @@ typedef void (*nadk_mqtt_message_callback_t)(const char *topic, const char *payl
                                              nadk_scope_t scope);
 
 /**
- * Initialize the MQTT management system.
+ * Initialize the MQTT subsystem.
  *
  * Note: Should only be called once on boot.
  *

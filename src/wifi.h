@@ -12,7 +12,7 @@ typedef enum { NADK_WIFI_STATUS_DISCONNECTED, NADK_WIFI_STATUS_CONNECTED } nadk_
 typedef void (*nadk_wifi_status_callback_t)(nadk_wifi_status_t);
 
 /**
- * Initialize the WiFi management system.
+ * Initialize the WiFi subsystem.
  *
  * Note: Should only be called once on boot.
  *

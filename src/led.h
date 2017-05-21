@@ -2,7 +2,7 @@
 #define _NADK_LED_H
 
 /**
- * Initialize the LED management system.
+ * Initialize the LED subsystem.
  *
  * Note: Should only be called once on boot.
  */

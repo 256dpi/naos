@@ -2,7 +2,7 @@
 #define _NADK_SYSTEM_H
 
 /**
- * Initialize the system management system.
+ * Initialize the main system.
  *
  * Note: Should only be called once on boot.
  *
