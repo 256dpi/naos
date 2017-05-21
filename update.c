@@ -87,8 +87,6 @@ void nadk_update_finish() {
   // release mutex
   NADK_UNLOCK(nadk_update_mutex);
 
-  // TODO: Give other components time to shut down?
-
   // restart system
   esp_restart();
 }
