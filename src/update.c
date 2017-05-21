@@ -22,11 +22,10 @@ void nadk_update_begin(uint16_t size) {
   // acquire mutex
   NADK_LOCK(nadk_update_mutex);
 
-  // check handle
+  // end a previous update and discard its result
   if (nadk_update_handle != 0) {
-    ESP_LOGE(NADK_LOG_TAG, "nadk_update_begin: leftover handle");
-    NADK_UNLOCK(nadk_update_mutex);
-    return;
+    esp_ota_end(nadk_update_handle);
+    nadk_update_handle = 0;
   }
 
   // log message
