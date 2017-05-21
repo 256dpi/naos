@@ -9,6 +9,8 @@
 #include "device.h"
 #include "general.h"
 
+// TODO: Rename subsystem.
+
 static SemaphoreHandle_t nadk_device_mutex;
 
 static nadk_device_t *nadk_device_ref;

@@ -1,5 +1,8 @@
 #include <esp_log.h>
 #include <esp_system.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+#include <freertos/task.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,14 +17,15 @@
 
 #define NADK_DEVICE_HEARTBEAT_INTERVAL 5000
 
-static uint32_t nadk_manager_last_heartbeat = 0;
+static SemaphoreHandle_t nadk_manager_mutex;
+
+static TaskHandle_t nadk_manager_task;
+
+static bool nadk_manager_process_started = false;
 
 static void nadk_manager_send_heartbeat() {
   // get device name
   char *device_name = nadk_ble_get_string(NADK_BLE_ID_DEVICE_NAME);
-
-  // save time
-  nadk_manager_last_heartbeat = nadk_millis();
 
   // send heartbeat
   char buf[64];
@@ -48,15 +52,42 @@ static void nadk_manager_send_announcement() {
   free(base_topic);
 }
 
-// TODO: Run process when online.
-static void nadk_manager_process() {
-  // send heartbeat if interval has been reached
-  if (nadk_millis() - nadk_manager_last_heartbeat > NADK_DEVICE_HEARTBEAT_INTERVAL) {
+static void nadk_manager_process(void *p) {
+  for (;;) {
+    // send heartbeat
     nadk_manager_send_heartbeat();
+
+    // wait for next interval
+    nadk_sleep(NADK_DEVICE_HEARTBEAT_INTERVAL);
   }
 }
 
-void nadk_manager_setup() {
+void nadk_manager_init() {
+  // create mutex
+  nadk_manager_mutex = xSemaphoreCreateMutex();
+}
+
+void nadk_manager_start() {
+  // acquire mutex
+  NADK_LOCK(nadk_manager_mutex);
+
+  // check if already running
+  if (nadk_manager_process_started) {
+    ESP_LOGE(NADK_LOG_TAG, "nadk_manager_start: already started");
+    NADK_UNLOCK(nadk_manager_mutex);
+    return;
+  }
+
+  // set flag
+  nadk_manager_process_started = true;
+
+  // create task
+  ESP_LOGI(NADK_LOG_TAG, "nadk_device_start: create task");
+  xTaskCreatePinnedToCore(nadk_manager_process, "core-device", 2048, NULL, 2, &nadk_manager_task, 1);
+
+  // release mutex
+  NADK_UNLOCK(nadk_manager_mutex);
+
   // subscribe to global topics
   nadk_subscribe("nadk/collect", 0, NADK_GLOBAL);
 
@@ -67,9 +98,6 @@ void nadk_manager_setup() {
 
   // send initial announcement
   nadk_manager_send_announcement();
-
-  // send initial heartbeat
-  nadk_manager_send_heartbeat();
 }
 
 bool nadk_manager_handle(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
@@ -119,4 +147,23 @@ bool nadk_manager_handle(const char *topic, const char *payload, unsigned int le
   return false;
 }
 
-void nadk_manager_terminate() {}
+void nadk_manager_stop() {
+  // acquire mutex
+  NADK_LOCK(nadk_manager_mutex);
+
+  // check if task is still running
+  if (!nadk_manager_process_started) {
+    NADK_UNLOCK(nadk_manager_mutex);
+    return;
+  }
+
+  // set flag
+  nadk_manager_process_started = false;
+
+  // remove task
+  ESP_LOGI(NADK_LOG_TAG, "nadk_manager_stop: deleting task");
+  vTaskDelete(nadk_manager_task);
+
+  // release mutex
+  NADK_UNLOCK(nadk_manager_mutex);
+}

@@ -231,7 +231,7 @@ static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
         nadk_system_set_state(NADK_SYSTEM_STATE_NETWORKED);
 
         // setup manager
-        nadk_manager_setup();
+        nadk_manager_start();
 
         // start device
         nadk_device_start();
@@ -250,7 +250,7 @@ static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
       nadk_device_stop();
 
       // terminate manager
-      nadk_manager_terminate();
+      nadk_manager_stop();
 
       // restart mqtt
       nadk_system_start_mqtt();
@@ -282,8 +282,11 @@ void nadk_system_init(nadk_device_t *device) {
   // create mutex
   nadk_system_mutex = xSemaphoreCreateMutex();
 
-  // save device
+  // init device
   nadk_device_init(device);
+
+  // init manager
+  nadk_manager_init();
 
   // initialize LEDs
   nadk_led_init();
