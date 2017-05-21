@@ -85,7 +85,6 @@ static void nadk_device_process(void *p) {
   nadk_subscribe("nadk/collect", 0, NADK_GLOBAL);
 
   // subscribe to device topics
-  nadk_subscribe("nadk/ping", 0, NADK_LOCAL);
   nadk_subscribe("nadk/ota", 0, NADK_LOCAL);
   nadk_subscribe("nadk/ota/chunk", 0, NADK_LOCAL);
 
@@ -186,15 +185,6 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   if (scope == NADK_GLOBAL && strcmp(topic, "nadk/collect") == 0) {
     // send announcement
     nadk_device_send_announcement();
-
-    NADK_UNLOCK(nadk_device_mutex);
-    return;
-  }
-
-  // check ping
-  if (scope == NADK_LOCAL && strcmp(topic, "nadk/ping") == 0) {
-    // send heartbeat
-    nadk_device_send_heartbeat();
 
     NADK_UNLOCK(nadk_device_mutex);
     return;
