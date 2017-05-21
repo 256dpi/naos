@@ -112,9 +112,13 @@ func (m *Manager) UpdateFirmware(baseTopic string, image []byte, progress func(i
 			return nil
 		}
 
-		// prevent overflow
+		// check chunk size
 		if next > remaining {
+			// prevent overflow
 			next = remaining
+		} else if next > 4096 {
+			// limit to 4096 bytes
+			next = 4096
 		}
 
 		// send chunk
