@@ -1,6 +1,8 @@
 #ifndef _NADK_DEVICE_H
 #define _NADK_DEVICE_H
 
+#include <nadk.h>
+
 /**
  * Initialize the device management system.
  *
@@ -9,6 +11,13 @@
  * @param device - The device information.
  */
 void nadk_device_init(nadk_device_t* device);
+
+/**
+ * Will return the device.
+ *
+ * @return
+ */
+nadk_device_t* nadk_device();
 
 /**
  * Start the device process.

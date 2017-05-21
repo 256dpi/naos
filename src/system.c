@@ -10,6 +10,7 @@
 #include "device.h"
 #include "general.h"
 #include "led.h"
+#include "manager.h"
 #include "mqtt.h"
 #include "update.h"
 #include "wifi.h"
@@ -229,6 +230,9 @@ static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
         // change state
         nadk_system_set_state(NADK_SYSTEM_STATE_NETWORKED);
 
+        // setup manager
+        nadk_manager_setup();
+
         // start device
         nadk_device_start();
       }
@@ -245,6 +249,9 @@ static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
       // stop device
       nadk_device_stop();
 
+      // terminate manager
+      nadk_manager_terminate();
+
       // restart mqtt
       nadk_system_start_mqtt();
 
@@ -254,6 +261,16 @@ static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
 
   // release mutex
   NADK_UNLOCK(nadk_system_mutex);
+}
+
+static void nadk_system_message_callback(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
+  // allow manager to handle the message
+  if (nadk_manager_handle(topic, payload, len, scope)) {
+    return;
+  }
+
+  // if not handled, forward it to the device
+  nadk_device_forward(topic, payload, len, scope);
 }
 
 void nadk_system_init(nadk_device_t *device) {
@@ -278,7 +295,7 @@ void nadk_system_init(nadk_device_t *device) {
   nadk_wifi_init(nadk_system_wifi_callback);
 
   // initialize mqtt client
-  nadk_mqtt_init(nadk_system_mqtt_callback, nadk_device_forward);
+  nadk_mqtt_init(nadk_system_mqtt_callback, nadk_system_message_callback);
 
   // initialize OTA
   nadk_update_init();
