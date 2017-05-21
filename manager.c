@@ -282,7 +282,7 @@ void nadk_manager_init(nadk_device_t *device) {
   nadk_mqtt_init(nadk_manager_mqtt_callback, nadk_device_forward);
 
   // initialize OTA
-  nadk_ota_init();
+  nadk_update_init();
 
   // set initial state
   nadk_manager_set_state(NADK_MANAGER_STATE_DISCONNECTED);

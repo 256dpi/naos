@@ -8,88 +8,84 @@
 #include "general.h"
 #include "update.h"
 
-static SemaphoreHandle_t nadk_ota_mutex;
+static SemaphoreHandle_t nadk_update_mutex;
 
-static const esp_partition_t *nadk_ota_partition = NULL;
-static esp_ota_handle_t nadk_ota_handle = 0;
+static const esp_partition_t *nadk_update_partition = NULL;
+static esp_ota_handle_t nadk_update_handle = 0;
 
-// TODO: Rename module to update.
-
-void nadk_ota_init() {
+void nadk_update_init() {
   // create mutex
-  nadk_ota_mutex = xSemaphoreCreateMutex();
+  nadk_update_mutex = xSemaphoreCreateMutex();
 }
 
-void nadk_ota_begin(uint16_t size) {
+void nadk_update_begin(uint16_t size) {
   // acquire mutex
-  NADK_LOCK(nadk_ota_mutex);
+  NADK_LOCK(nadk_update_mutex);
 
   // check handle
-  if (nadk_ota_handle != 0) {
-    ESP_LOGE(NADK_LOG_TAG, "nadk_ota_begin: leftover handle");
-    NADK_UNLOCK(nadk_ota_mutex);
+  if (nadk_update_handle != 0) {
+    ESP_LOGE(NADK_LOG_TAG, "nadk_update_begin: leftover handle");
+    NADK_UNLOCK(nadk_update_mutex);
     return;
   }
 
   // log message
-  ESP_LOGI(NADK_LOG_TAG, "nadk_ota_begin: start update");
+  ESP_LOGI(NADK_LOG_TAG, "nadk_update_begin: start update");
 
   // get update partition
-  nadk_ota_partition = esp_ota_get_next_update_partition(NULL);
-  assert(nadk_ota_partition != NULL);
+  nadk_update_partition = esp_ota_get_next_update_partition(NULL);
+  assert(nadk_update_partition != NULL);
 
   // begin update
-  ESP_ERROR_CHECK(esp_ota_begin(nadk_ota_partition, 0, &nadk_ota_handle));
+  ESP_ERROR_CHECK(esp_ota_begin(nadk_update_partition, 0, &nadk_update_handle));
 
   // release mutex
-  NADK_UNLOCK(nadk_ota_mutex);
+  NADK_UNLOCK(nadk_update_mutex);
 }
 
-void nadk_ota_forward(const char *chunk, uint16_t len) {
+void nadk_update_write(const char *chunk, uint16_t len) {
   // acquire mutex
-  NADK_LOCK(nadk_ota_mutex);
+  NADK_LOCK(nadk_update_mutex);
 
   // check handle
-  if (nadk_ota_handle == 0) {
-    ESP_LOGE(NADK_LOG_TAG, "nadk_ota_forward: missing handle");
-    NADK_UNLOCK(nadk_ota_mutex);
+  if (nadk_update_handle == 0) {
+    ESP_LOGE(NADK_LOG_TAG, "nadk_update_write: missing handle");
+    NADK_UNLOCK(nadk_update_mutex);
     return;
   }
 
   // write chunk
-  ESP_ERROR_CHECK(esp_ota_write(nadk_ota_handle, (const void *)chunk, len));
+  ESP_ERROR_CHECK(esp_ota_write(nadk_update_handle, (const void *)chunk, len));
 
   // release mutex
-  NADK_UNLOCK(nadk_ota_mutex);
+  NADK_UNLOCK(nadk_update_mutex);
 }
 
-void nadk_ota_finish() {
+void nadk_update_finish() {
   // acquire mutex
-  NADK_LOCK(nadk_ota_mutex);
+  NADK_LOCK(nadk_update_mutex);
 
   // check handle
-  if (nadk_ota_handle == 0) {
-    ESP_LOGE(NADK_LOG_TAG, "nadk_ota_finish: missing handle");
-    NADK_UNLOCK(nadk_ota_mutex);
+  if (nadk_update_handle == 0) {
+    ESP_LOGE(NADK_LOG_TAG, "nadk_update_finish: missing handle");
+    NADK_UNLOCK(nadk_update_mutex);
     return;
   }
 
-  // TODO: Check if all data has been received.
-
   // end update
-  ESP_ERROR_CHECK(esp_ota_end(nadk_ota_handle));
+  ESP_ERROR_CHECK(esp_ota_end(nadk_update_handle));
 
   // reset handle
-  nadk_ota_handle = 0;
+  nadk_update_handle = 0;
 
   // set boot partition
-  ESP_ERROR_CHECK(esp_ota_set_boot_partition(nadk_ota_partition));
+  ESP_ERROR_CHECK(esp_ota_set_boot_partition(nadk_update_partition));
 
   // log message
-  ESP_LOGI(NADK_LOG_TAG, "nadk_ota_finish: update finished");
+  ESP_LOGI(NADK_LOG_TAG, "nadk_update_finish: update finished");
 
   // release mutex
-  NADK_UNLOCK(nadk_ota_mutex);
+  NADK_UNLOCK(nadk_update_mutex);
 
   // TODO: Give other components time to shut down?
 

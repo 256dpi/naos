@@ -183,7 +183,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
     ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: begin update with size %lld", total);
 
     // begin update
-    nadk_ota_begin((uint16_t)total);
+    nadk_update_begin((uint16_t) total);
 
     // request first chunk
     nadk_publish_num("nadk/update/next", NADK_OTA_CHUNK_SIZE, 0, false, NADK_LOCAL);
@@ -195,7 +195,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   // check ota chunk
   if (scope == NADK_LOCAL && strcmp(topic, "nadk/update/chunk") == 0) {
     // forward chunk
-    nadk_ota_forward(payload, (uint16_t)len);
+    nadk_update_write(payload, (uint16_t) len);
     ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: wrote %d bytes chunk", len);
 
     // request next chunk
@@ -208,7 +208,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   // check ota chunk
   if (scope == NADK_LOCAL && strcmp(topic, "nadk/update/finish") == 0) {
     // finish update
-    nadk_ota_finish();
+    nadk_update_finish();
 
     NADK_UNLOCK(nadk_device_mutex);
     return;

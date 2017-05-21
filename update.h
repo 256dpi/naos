@@ -1,33 +1,33 @@
-#ifndef _NADK_OTA_H
-#define _NADK_OTA_H
+#ifndef _NADK_UPDATE_H
+#define _NADK_UPDATE_H
 
 #include <stdint.h>
 
 /**
- * Initialize the OTA management system.
+ * Initialize the firmware update management system.
  *
  * Note: Should only be called once on boot.
  */
-void nadk_ota_init();
+void nadk_update_init();
 
 /**
- * Begin with an OTA update.
+ * Begin a new firmware update.
  *
- * @param size - Size of the update.
+ * @param size - Total size of the update.
  */
-void nadk_ota_begin(uint16_t size);
+void nadk_update_begin(uint16_t size);
 
 /**
- * Forward an incoming chunk of the new firmware image.
+ * Write an incoming chunk of the new firmware image.
  *
  * @param chunk - The data chunk.
  * @param len - Length of the data chunk.
  */
-void nadk_ota_forward(const char *chunk, uint16_t len);
+void nadk_update_write(const char *chunk, uint16_t len);
 
 /**
- * Finish an OTA update.
+ * Finish the firmware update.
  */
-void nadk_ota_finish();
+void nadk_update_finish();
 
-#endif  // _NADK_OTA_H
+#endif  // _NADK_UPDATE_H
