@@ -27,12 +27,8 @@ static bool nadk_device_process_started = false;
 
 static uint32_t nadk_device_last_heartbeat = 0;
 
-static long long int nadk_device_ota_remaining_data = 0;
-
 // TODO: Add offline device loop.
 // The callbacks could be: offline, connected, online, disconnected.
-
-// TODO: Rename "ota" topic segments to "update".
 
 static void nadk_device_send_heartbeat() {
   // get device name
@@ -66,17 +62,6 @@ static void nadk_device_send_announcement() {
   free(base_topic);
 }
 
-static void nadk_device_request_next_chunk() {
-  // calculate next chunk
-  int chunk = NADK_OTA_CHUNK_SIZE;
-  if (nadk_device_ota_remaining_data < chunk) {
-    chunk = (int)nadk_device_ota_remaining_data;
-  }
-
-  // request first chunk
-  nadk_publish_num("nadk/ota/next", chunk, 0, false, NADK_LOCAL);
-}
-
 static void nadk_device_process(void *p) {
   // acquire mutex
   NADK_LOCK(nadk_device_mutex);
@@ -85,8 +70,8 @@ static void nadk_device_process(void *p) {
   nadk_subscribe("nadk/collect", 0, NADK_GLOBAL);
 
   // subscribe to device topics
-  nadk_subscribe("nadk/ota", 0, NADK_LOCAL);
-  nadk_subscribe("nadk/ota/chunk", 0, NADK_LOCAL);
+  nadk_subscribe("nadk/update", 0, NADK_LOCAL);
+  nadk_subscribe("nadk/update/chunk", 0, NADK_LOCAL);
 
   // call setup callback i present
   if (nadk_device->setup) {
@@ -191,41 +176,37 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   }
 
   // check ota
-  if (scope == NADK_LOCAL && strcmp(topic, "nadk/ota") == 0) {
+  if (scope == NADK_LOCAL && strcmp(topic, "nadk/update") == 0) {
     // get update size
-    nadk_device_ota_remaining_data = strtoll(payload, NULL, 10);
-    ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: begin update with size %lld", nadk_device_ota_remaining_data);
+    long long int total = strtoll(payload, NULL, 10);
+    ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: begin update with size %lld", total);
 
     // begin update
-    nadk_ota_begin((uint16_t)nadk_device_ota_remaining_data);
+    nadk_ota_begin((uint16_t)total);
 
     // request first chunk
-    nadk_device_request_next_chunk();
+    nadk_publish_num("nadk/update/next", NADK_OTA_CHUNK_SIZE, 0, false, NADK_LOCAL);
 
     NADK_UNLOCK(nadk_device_mutex);
     return;
   }
 
   // check ota chunk
-  if (scope == NADK_LOCAL && strcmp(topic, "nadk/ota/chunk") == 0) {
+  if (scope == NADK_LOCAL && strcmp(topic, "nadk/update/chunk") == 0) {
     // forward chunk
     nadk_ota_forward(payload, (uint16_t)len);
-    nadk_device_ota_remaining_data -= len;
-    ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: wrote chunk %lld bytes remaining", nadk_device_ota_remaining_data);
+    ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: wrote %d bytes chunk", len);
 
-    // request next chunk if remaining data
-    if (nadk_device_ota_remaining_data > 0) {
-      nadk_device_request_next_chunk();
+    // request next chunk
+    nadk_publish_num("nadk/update/next", NADK_OTA_CHUNK_SIZE, 0, false, NADK_LOCAL);
 
-      NADK_UNLOCK(nadk_device_mutex);
-      return;
-    }
+    NADK_UNLOCK(nadk_device_mutex);
+    return;
+  }
 
-    // send finished message
-    nadk_publish_str("nadk/ota/finished", "", 0, false, NADK_LOCAL);
-    ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: finished update");
-
-    // otherwise finish update
+  // check ota chunk
+  if (scope == NADK_LOCAL && strcmp(topic, "nadk/update/finish") == 0) {
+    // finish update
     nadk_ota_finish();
 
     NADK_UNLOCK(nadk_device_mutex);
