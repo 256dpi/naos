@@ -22,4 +22,9 @@
  */
 #define NADK_UNLOCK(mutex) xSemaphoreGive(mutex)
 
+/**
+ * Will yield to other running processes.
+ */
+void nadk_yield();
+
 #endif  // _NADK_GENERAL_H

@@ -261,7 +261,7 @@ void nadk_manager_init(nadk_device_t *device) {
   // delay startup by max 5000ms
   int delay = esp_random() / 858994;
   ESP_LOGI(NADK_LOG_TAG, "nadk_manager_init: delay startup by %dms", delay);
-  vTaskDelay(delay / portTICK_PERIOD_MS);
+  nadk_sleep(delay);
 
   // create mutex
   nadk_manager_mutex = xSemaphoreCreateMutex();

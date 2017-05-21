@@ -103,7 +103,7 @@ static void nadk_device_process(void *p) {
     NADK_UNLOCK(nadk_device_mutex);
 
     // yield to other processes
-    vTaskDelay(1);
+    nadk_yield();
   }
 }
 

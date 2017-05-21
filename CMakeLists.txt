@@ -31,6 +31,7 @@ set(SOURCE_FILES
         ble.h
         device.c
         device.h
+        general.c
         general.h
         led.c
         led.h
@@ -39,7 +40,6 @@ set(SOURCE_FILES
         mqtt.c
         mqtt.h
         nadk.c
-        time.c
         update.c
         update.h
         wifi.c
