@@ -39,9 +39,9 @@ set(SOURCE_FILES
         mqtt.c
         mqtt.h
         nadk.c
-        ota.c
-        ota.h
         time.c
+        update.c
+        update.h
         wifi.c
         wifi.h
         test/main/main.c)

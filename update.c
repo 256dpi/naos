@@ -6,7 +6,7 @@
 #include <freertos/semphr.h>
 
 #include "general.h"
-#include "ota.h"
+#include "update.h"
 
 static SemaphoreHandle_t nadk_ota_mutex;
 

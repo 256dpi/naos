@@ -11,7 +11,7 @@
 #include "device.h"
 #include "general.h"
 #include "mqtt.h"
-#include "ota.h"
+#include "update.h"
 
 #define NADK_OTA_CHUNK_SIZE NADK_MQTT_BUFFER_SIZE - 256
 

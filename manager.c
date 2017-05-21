@@ -12,7 +12,7 @@
 #include "general.h"
 #include "led.h"
 #include "mqtt.h"
-#include "ota.h"
+#include "update.h"
 #include "wifi.h"
 
 SemaphoreHandle_t nadk_manager_mutex;
