@@ -4,7 +4,7 @@
 /**
  * The connection status emitted by the callback.
  */
-typedef enum nadk_wifi_status_t { NADK_WIFI_STATUS_DISCONNECTED, NADK_WIFI_STATUS_CONNECTED } nadk_wifi_status_t;
+typedef enum { NADK_WIFI_STATUS_DISCONNECTED, NADK_WIFI_STATUS_CONNECTED } nadk_wifi_status_t;
 
 /**
  * The status change callback.

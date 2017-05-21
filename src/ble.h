@@ -4,7 +4,7 @@
 /**
  * The available BLE attributes.
  */
-typedef enum nadk_ble_id_t {
+typedef enum {
   NADK_BLE_ID_WIFI_SSID,
   NADK_BLE_ID_WIFI_PASSWORD,
   NADK_BLE_ID_MQTT_HOST,
