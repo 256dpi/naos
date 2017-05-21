@@ -140,7 +140,7 @@ bool nadk_manager_handle(const char *topic, const char *payload, unsigned int le
 
   // check update chunk
   if (scope == NADK_LOCAL && strcmp(topic, "nadk/update/chunk") == 0) {
-    // forward chunk
+    // write chunk (very time expensive)
     nadk_update_write(payload, (uint16_t)len);
     ESP_LOGI(NADK_LOG_TAG, "nadk_manager_handle: wrote %d bytes chunk", len);
 
