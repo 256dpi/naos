@@ -11,17 +11,17 @@ import (
 func main() {
 	cmd := parseCommand()
 
+	m := nadm.NewManager(cmd.oBrokerURL)
+
 	if cmd.cCollect {
-		collect(cmd)
+		collect(m, cmd)
 	} else if cmd.cUpdate {
-		update(cmd)
+		update(m, cmd)
 	}
 }
 
-func collect(cmd *command) {
+func collect(m *nadm.Manager, cmd *command) {
 	fmt.Println("Collecting device announcements...")
-
-	m := nadm.NewManager(cmd.oBrokerURL)
 
 	list, err := m.CollectAnnouncements(cmd.oDuration)
 	exitIfSet(err)
@@ -31,20 +31,18 @@ func collect(cmd *command) {
 	}
 }
 
-func update(cmd *command) {
+func update(m *nadm.Manager, cmd *command) {
 	fmt.Println("Reading image...")
 
 	bytes, err := ioutil.ReadFile(cmd.aImage)
 	exitIfSet(err)
 
 	fmt.Println("Begin with update...")
-
-	m := nadm.NewManager(cmd.oBrokerURL)
-
 	bar := pb.StartNew(len(bytes))
 
 	err = m.UpdateFirmware(cmd.aBaseTopic, bytes, func(sent int) { bar.Set(sent) })
 	exitIfSet(err)
 
+	bar.Finish()
 	fmt.Println("Update finished!")
 }
