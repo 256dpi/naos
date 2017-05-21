@@ -12,9 +12,9 @@
 #include "mqtt.h"
 #include "update.h"
 
-#define NADK_UPDATE_CHUNK_SIZE NADK_MQTT_BUFFER_SIZE - 256
+#define NADK_MANAGER_CHUNK_SIZE NADK_MQTT_BUFFER_SIZE - 256
 
-#define NADK_DEVICE_HEARTBEAT_INTERVAL 5000
+#define NADK_MANAGER_HEARTBEAT_INTERVAL 5000
 
 static SemaphoreHandle_t nadk_manager_mutex;
 
@@ -53,11 +53,17 @@ static void nadk_manager_send_announcement() {
 
 static void nadk_manager_process(void *p) {
   for (;;) {
+    // acquire mutex
+    NADK_LOCK(nadk_manager_mutex);
+
     // send heartbeat
     nadk_manager_send_heartbeat();
 
+    // release mutex
+    NADK_UNLOCK(nadk_manager_mutex);
+
     // wait for next interval
-    nadk_sleep(NADK_DEVICE_HEARTBEAT_INTERVAL);
+    nadk_sleep(NADK_MANAGER_HEARTBEAT_INTERVAL);
   }
 }
 
@@ -81,29 +87,35 @@ void nadk_manager_start() {
   nadk_manager_process_started = true;
 
   // create task
-  ESP_LOGI(NADK_LOG_TAG, "nadk_device_start: create task");
-  xTaskCreatePinnedToCore(nadk_manager_process, "core-device", 2048, NULL, 2, &nadk_manager_task, 1);
-
-  // release mutex
-  NADK_UNLOCK(nadk_manager_mutex);
+  ESP_LOGI(NADK_LOG_TAG, "nadk_manager_start: create task");
+  xTaskCreatePinnedToCore(nadk_manager_process, "nadk-manager", 2048, NULL, 2, &nadk_manager_task, 1);
 
   // subscribe to global topics
   nadk_subscribe("nadk/collect", 0, NADK_GLOBAL);
 
-  // subscribe to device topics
+  // subscribe to local topics
   nadk_subscribe("nadk/update/begin", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/chunk", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/finish", 0, NADK_LOCAL);
 
   // send initial announcement
   nadk_manager_send_announcement();
+
+  // release mutex
+  NADK_UNLOCK(nadk_manager_mutex);
 }
 
 bool nadk_manager_handle(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
+  // acquire mutex
+  NADK_LOCK(nadk_manager_mutex);
+
   // check collect
   if (scope == NADK_GLOBAL && strcmp(topic, "nadk/collect") == 0) {
     // send announcement
     nadk_manager_send_announcement();
+
+    // release mutex
+    NADK_UNLOCK(nadk_manager_mutex);
 
     return true;
   }
@@ -112,13 +124,16 @@ bool nadk_manager_handle(const char *topic, const char *payload, unsigned int le
   if (scope == NADK_LOCAL && strcmp(topic, "nadk/update/begin") == 0) {
     // get update size
     long long int total = strtoll(payload, NULL, 10);
-    ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: begin update with size %lld", total);
+    ESP_LOGI(NADK_LOG_TAG, "nadk_manager_handle: begin update with size %lld", total);
 
     // begin update
     nadk_update_begin((uint16_t)total);
 
     // request first chunk
-    nadk_publish_num("nadk/update/next", NADK_UPDATE_CHUNK_SIZE, 0, false, NADK_LOCAL);
+    nadk_publish_num("nadk/update/next", NADK_MANAGER_CHUNK_SIZE, 0, false, NADK_LOCAL);
+
+    // release mutex
+    NADK_UNLOCK(nadk_manager_mutex);
 
     return true;
   }
@@ -127,10 +142,13 @@ bool nadk_manager_handle(const char *topic, const char *payload, unsigned int le
   if (scope == NADK_LOCAL && strcmp(topic, "nadk/update/chunk") == 0) {
     // forward chunk
     nadk_update_write(payload, (uint16_t)len);
-    ESP_LOGI(NADK_LOG_TAG, "nadk_device_forward: wrote %d bytes chunk", len);
+    ESP_LOGI(NADK_LOG_TAG, "nadk_manager_handle: wrote %d bytes chunk", len);
 
     // request next chunk
-    nadk_publish_num("nadk/update/next", NADK_UPDATE_CHUNK_SIZE, 0, false, NADK_LOCAL);
+    nadk_publish_num("nadk/update/next", NADK_MANAGER_CHUNK_SIZE, 0, false, NADK_LOCAL);
+
+    // release mutex
+    NADK_UNLOCK(nadk_manager_mutex);
 
     return true;
   }
@@ -140,8 +158,14 @@ bool nadk_manager_handle(const char *topic, const char *payload, unsigned int le
     // finish update
     nadk_update_finish();
 
+    // release mutex
+    NADK_UNLOCK(nadk_manager_mutex);
+
     return true;
   }
+
+  // release mutex
+  NADK_UNLOCK(nadk_manager_mutex);
 
   return false;
 }

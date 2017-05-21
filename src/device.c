@@ -77,7 +77,7 @@ void nadk_device_start() {
 
   // create task
   ESP_LOGI(NADK_LOG_TAG, "nadk_device_start: create task");
-  xTaskCreatePinnedToCore(nadk_device_process, "core-device", 8192, NULL, 2, &nadk_device_task, 1);
+  xTaskCreatePinnedToCore(nadk_device_process, "nadk-device", 8192, NULL, 2, &nadk_device_task, 1);
 
   // release mutex
   NADK_UNLOCK(nadk_device_mutex);
