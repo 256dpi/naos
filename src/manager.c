@@ -140,12 +140,12 @@ bool nadk_manager_handle(const char *topic, const char *payload, unsigned int le
 
   // check update chunk
   if (scope == NADK_LOCAL && strcmp(topic, "nadk/update/chunk") == 0) {
-    // request next chunk
-    nadk_publish_num("nadk/update/next", NADK_MANAGER_CHUNK_SIZE, 0, false, NADK_LOCAL);
-
-    // forward chunk (very time expensive)
+    // forward chunk
     nadk_update_write(payload, (uint16_t)len);
     ESP_LOGI(NADK_LOG_TAG, "nadk_manager_handle: wrote %d bytes chunk", len);
+
+    // request next chunk
+    nadk_publish_num("nadk/update/next", NADK_MANAGER_CHUNK_SIZE, 0, false, NADK_LOCAL);
 
     // release mutex
     NADK_UNLOCK(nadk_manager_mutex);
