@@ -12,4 +12,4 @@ void nadk_init(nadk_device_t* device) {
   nadk_system_init();
 }
 
-nadk_device_t *nadk_device() { return nadk_device_ref; }
+const nadk_device_t *nadk_device() { return nadk_device_ref; }
