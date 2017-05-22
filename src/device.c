@@ -25,7 +25,7 @@ static void nadk_device_process(void *p) {
     NADK_LOCK(nadk_device_mutex);
 
     // call loop callback
-    nadk_device()->loop();
+    nadk_config()->loop();
 
     // release mutex
     NADK_UNLOCK(nadk_device_mutex);
@@ -57,12 +57,12 @@ void nadk_device_start() {
   nadk_device_started = true;
 
   // call setup callback if present
-  if (nadk_device()->setup) {
-    nadk_device()->setup();
+  if (nadk_config()->setup) {
+    nadk_config()->setup();
   }
 
   // create task if loop is present
-  if (nadk_device()->loop != NULL) {
+  if (nadk_config()->loop != NULL) {
     ESP_LOGI(NADK_LOG_TAG, "nadk_device_start: create task");
     xTaskCreatePinnedToCore(nadk_device_process, "nadk-device", 8192, NULL, 2, &nadk_device_task, 1);
   }
@@ -85,12 +85,12 @@ void nadk_device_stop() {
   nadk_device_started = false;
 
   // run terminate callback if present
-  if (nadk_device()->terminate) {
-    nadk_device()->terminate();
+  if (nadk_config()->terminate) {
+    nadk_config()->terminate();
   }
 
   // remove task if loop is present
-  if (nadk_device()->loop != NULL) {
+  if (nadk_config()->loop != NULL) {
     ESP_LOGI(NADK_LOG_TAG, "nadk_device_stop: deleting task");
     vTaskDelete(nadk_device_task);
   }
@@ -101,7 +101,7 @@ void nadk_device_stop() {
 
 void nadk_device_forward(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
   // return immediately if no handle function exists
-  if (nadk_device()->handle == NULL) {
+  if (nadk_config()->handle == NULL) {
     return;
   }
 
@@ -109,7 +109,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   NADK_LOCK(nadk_device_mutex);
 
   // call handle callback
-  nadk_device()->handle(topic, payload, len, scope);
+  nadk_config()->handle(topic, payload, len, scope);
 
   // release mutex
   NADK_UNLOCK(nadk_device_mutex);

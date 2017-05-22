@@ -28,7 +28,7 @@ static void nadk_manager_send_heartbeat() {
 
   // send heartbeat
   char buf[64];
-  snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d", nadk_device()->type, nadk_device()->version, device_name,
+  snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d", nadk_config()->device_type, nadk_config()->firmware_version, device_name,
            esp_get_free_heap_size(), nadk_millis());
   nadk_publish_str("nadk/heartbeat", buf, 0, false, NADK_LOCAL);
 
@@ -43,7 +43,7 @@ static void nadk_manager_send_announcement() {
 
   // send announce
   char buf[64];
-  snprintf(buf, sizeof buf, "%s,%s,%s,%s", nadk_device()->type, nadk_device()->version, device_name, base_topic);
+  snprintf(buf, sizeof buf, "%s,%s,%s,%s", nadk_config()->device_type, nadk_config()->firmware_version, device_name, base_topic);
   nadk_publish_str("nadk/announcement", buf, 0, false, NADK_GLOBAL);
 
   // free strings

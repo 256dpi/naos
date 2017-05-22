@@ -2,9 +2,9 @@
 #define _NADK_GENERAL_H
 
 /**
- * The NADK log tag.
+ * The general log tag.
  */
-#define NADK_LOG_TAG "NADK"
+#define NADK_LOG_TAG "nadk"
 
 /**
  * Acquire the specified mutex.

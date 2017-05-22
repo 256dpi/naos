@@ -292,7 +292,7 @@ void nadk_system_init() {
   nadk_led_init();
 
   // initialize bluetooth stack
-  nadk_ble_init(nadk_system_ble_callback, nadk_device()->type);
+  nadk_ble_init(nadk_system_ble_callback, nadk_config()->device_type);
 
   // initialize wifi stack
   nadk_wifi_init(nadk_system_wifi_callback);

@@ -78,18 +78,18 @@ bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained
 bool nadk_publish_num(const char *topic, int num, int qos, bool retained, nadk_scope_t scope);
 
 /**
- * Declaration of a NADK device.
+ * The main configuration object.
  */
 typedef struct {
   /**
-   * The device type name.
+   * The device type.
    */
-  const char *type;
+  const char *device_type;
 
   /**
-   * The device firmware version.
+   * The firmware version.
    */
-  const char *version;
+  const char *firmware_version;
 
   /**
    * The callback that is called once the device comes online and should be used to subscribe to topics and do other
@@ -118,23 +118,23 @@ typedef struct {
    * The callback that is called once the device becomes offline.
    */
   void (*terminate)();
-} nadk_device_t;
+} nadk_config_t;
 
 /**
- * Initialize the NADK device management system.
+ * Initialize the NADK.
  *
  * Note: Should only be called once on boot.
  *
- * @param device - The device to be managed.
+ * @param config - The device to be managed.
  */
-void nadk_init(nadk_device_t *device);
+void nadk_init(nadk_config_t *config);
 
 /**
- * Will return the device passed to nadk_init().
+ * Will return the config passed to nadk_init().
  *
  * @return
  */
-const nadk_device_t *nadk_device();
+const nadk_config_t *nadk_config();
 
 /**
  * Returns the elapsed milliseconds since the start.
@@ -146,7 +146,7 @@ uint32_t nadk_millis();
 /**
  * Will sleep for the specified amount of milliseconds.
  *
- * Note: This function should only be used inside the device loop function.
+ * Note: This function should only be used inside the loop function.
  *
  * @param millis
  */

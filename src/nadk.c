@@ -2,14 +2,14 @@
 
 #include "system.h"
 
-static nadk_device_t *nadk_device_ref;
+static nadk_config_t *nadk_config_ref;
 
-void nadk_init(nadk_device_t *device) {
-  // set device reference
-  nadk_device_ref = device;
+void nadk_init(nadk_config_t *config) {
+  // set config reference
+  nadk_config_ref = config;
 
   // initialize system
   nadk_system_init();
 }
 
-const nadk_device_t *nadk_device() { return nadk_device_ref; }
+const nadk_config_t *nadk_config() { return nadk_config_ref; }
