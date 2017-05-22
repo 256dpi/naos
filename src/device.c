@@ -75,7 +75,7 @@ void nadk_device_stop() {
   // acquire mutex
   NADK_LOCK(nadk_device_mutex);
 
-  // check if task is still running
+  // check if started
   if (!nadk_device_started) {
     NADK_UNLOCK(nadk_device_mutex);
     return;
