@@ -129,7 +129,7 @@ typedef struct {
  *
  * Note: Should only be called once on boot.
  *
- * @param config - The device to be managed.
+ * @param config - The configuration object.
  */
 void nadk_init(nadk_config_t *config);
 
