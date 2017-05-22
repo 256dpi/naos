@@ -213,7 +213,7 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
     // handle registration event (status has been handled above)
     case ESP_GATTS_REG_EVT: {
       // set device name
-      ESP_ERROR_CHECK(esp_ble_gap_set_device_name("Core"));
+      ESP_ERROR_CHECK(esp_ble_gap_set_device_name("nadk"));
 
       // set advertisement config
       ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&nadk_ble_adv_data));
