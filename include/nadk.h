@@ -122,6 +122,12 @@ typedef struct {
    * The offline callback is called once the device becomes offline.
    */
   void (*offline_callback)();
+
+  /**
+   * If set, the device will randomly (up to 5s) delay startup to overcome WiFi and MQTT congestion issues if many
+   * devices restart at the same time.
+   */
+  bool delay_startup;
 } nadk_config_t;
 
 /**
