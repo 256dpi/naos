@@ -4,7 +4,7 @@
 
 static nadk_device_t *nadk_device_ref;
 
-void nadk_init(nadk_device_t* device) {
+void nadk_init(nadk_device_t *device) {
   // set device reference
   nadk_device_ref = device;
 

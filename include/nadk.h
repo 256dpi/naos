@@ -134,7 +134,7 @@ void nadk_init(nadk_device_t *device);
  *
  * @return
  */
-const nadk_device_t* nadk_device();
+const nadk_device_t *nadk_device();
 
 /**
  * Returns the elapsed milliseconds since the start.
