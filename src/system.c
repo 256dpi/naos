@@ -7,11 +7,11 @@
 #include <nadk.h>
 
 #include "ble.h"
-#include "device.h"
 #include "general.h"
 #include "led.h"
 #include "manager.h"
 #include "mqtt.h"
+#include "task.h"
 #include "update.h"
 #include "wifi.h"
 
@@ -119,8 +119,8 @@ static void nadk_system_ble_callback(nadk_ble_id_t id) {
 
     switch (nadk_system_current_state) {
       case NADK_SYSTEM_STATE_NETWORKED: {
-        // stop device
-        nadk_device_stop();
+        // stop task
+        nadk_task_stop();
 
         // fallthrough
       }
@@ -148,8 +148,8 @@ static void nadk_system_ble_callback(nadk_ble_id_t id) {
 
     switch (nadk_system_current_state) {
       case NADK_SYSTEM_STATE_NETWORKED: {
-        // stop device
-        nadk_device_stop();
+        // stop task
+        nadk_task_stop();
 
         // change state
         nadk_system_set_state(NADK_SYSTEM_STATE_CONNECTED);
@@ -233,8 +233,8 @@ static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
         // setup manager
         nadk_manager_start();
 
-        // start device
-        nadk_device_start();
+        // start task
+        nadk_task_start();
       }
 
       break;
@@ -246,8 +246,8 @@ static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
       // change state
       nadk_system_set_state(NADK_SYSTEM_STATE_CONNECTED);
 
-      // stop device
-      nadk_device_stop();
+      // stop task
+      nadk_task_stop();
 
       // terminate manager
       nadk_manager_stop();
@@ -269,8 +269,8 @@ static void nadk_system_message_callback(const char *topic, const char *payload,
     return;
   }
 
-  // if not handled, forward it to the device
-  nadk_device_forward(topic, payload, len, scope);
+  // if not handled, forward it to the task
+  nadk_task_forward(topic, payload, len, scope);
 }
 
 void nadk_system_init() {
@@ -282,8 +282,8 @@ void nadk_system_init() {
   // create mutex
   nadk_system_mutex = xSemaphoreCreateMutex();
 
-  // init device
-  nadk_device_init();
+  // init task
+  nadk_task_init();
 
   // init manager
   nadk_manager_init();

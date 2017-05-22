@@ -29,8 +29,6 @@ set(SOURCE_FILES
         include/nadk.h
         src/ble.c
         src/ble.h
-        src/device.c
-        src/device.h
         src/general.c
         src/general.h
         src/led.c
@@ -42,6 +40,8 @@ set(SOURCE_FILES
         src/nadk.c
         src/system.c
         src/system.h
+        src/task.c
+        src/task.h
         src/update.c
         src/update.h
         src/wifi.c

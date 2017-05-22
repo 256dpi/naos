@@ -6,10 +6,10 @@
 #include <string.h>
 
 #include "ble.h"
-#include "device.h"
 #include "general.h"
 #include "manager.h"
 #include "mqtt.h"
+#include "task.h"
 #include "update.h"
 
 #define NADK_MANAGER_CHUNK_SIZE NADK_MQTT_BUFFER_SIZE - 256
