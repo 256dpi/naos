@@ -8,20 +8,18 @@ static void handle(const char *topic, const char *payload, unsigned int len, nad
   printf("incoming: %s => %s\n", topic, payload);
 }
 
-static void loop() {
-  nadk_publish_str("hello", "world", 0, false, NADK_LOCAL);
-  nadk_sleep(1000);
-}
+static void loop() { nadk_publish_str("hello", "world", 0, false, NADK_LOCAL); }
 
 static void terminate() {}
 
 static nadk_config_t config = {
     .device_type = "nadk-test",
     .firmware_version = "0.0.1",
-    .setup = setup,
-    .handle = handle,
-    .loop = loop,
-    .terminate = terminate,
+    .online_callback = setup,
+    .message_callback = handle,
+    .loop_callback = loop,
+    .loop_interval = 1000,
+    .offline_callback = terminate,
 };
 
 void app_main() { nadk_init(&config); }

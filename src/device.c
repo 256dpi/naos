@@ -11,8 +11,6 @@
 
 // TODO: Rename subsystem.
 
-// TODO: Add offline device loop?
-
 static SemaphoreHandle_t nadk_device_mutex;
 
 static TaskHandle_t nadk_device_task;
@@ -25,15 +23,13 @@ static void nadk_device_process(void *p) {
     NADK_LOCK(nadk_device_mutex);
 
     // call loop callback
-    nadk_config()->loop();
+    nadk_config()->loop_callback();
 
     // release mutex
     NADK_UNLOCK(nadk_device_mutex);
 
-    // TODO: Allow setting a custom delay duration.
-
     // yield to other processes
-    nadk_yield();
+    nadk_sleep(nadk_config()->loop_interval);
   }
 }
 
@@ -57,12 +53,12 @@ void nadk_device_start() {
   nadk_device_started = true;
 
   // call setup callback if present
-  if (nadk_config()->setup) {
-    nadk_config()->setup();
+  if (nadk_config()->online_callback) {
+    nadk_config()->online_callback();
   }
 
   // create task if loop is present
-  if (nadk_config()->loop != NULL) {
+  if (nadk_config()->loop_callback != NULL) {
     ESP_LOGI(NADK_LOG_TAG, "nadk_device_start: create task");
     xTaskCreatePinnedToCore(nadk_device_process, "nadk-device", 8192, NULL, 2, &nadk_device_task, 1);
   }
@@ -85,12 +81,12 @@ void nadk_device_stop() {
   nadk_device_started = false;
 
   // run terminate callback if present
-  if (nadk_config()->terminate) {
-    nadk_config()->terminate();
+  if (nadk_config()->offline_callback) {
+    nadk_config()->offline_callback();
   }
 
   // remove task if loop is present
-  if (nadk_config()->loop != NULL) {
+  if (nadk_config()->loop_callback != NULL) {
     ESP_LOGI(NADK_LOG_TAG, "nadk_device_stop: deleting task");
     vTaskDelete(nadk_device_task);
   }
@@ -101,7 +97,7 @@ void nadk_device_stop() {
 
 void nadk_device_forward(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
   // return immediately if no handle function exists
-  if (nadk_config()->handle == NULL) {
+  if (nadk_config()->message_callback == NULL) {
     return;
   }
 
@@ -109,7 +105,7 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   NADK_LOCK(nadk_device_mutex);
 
   // call handle callback
-  nadk_config()->handle(topic, payload, len, scope);
+  nadk_config()->message_callback(topic, payload, len, scope);
 
   // release mutex
   NADK_UNLOCK(nadk_device_mutex);

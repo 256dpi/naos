@@ -92,13 +92,12 @@ typedef struct {
   const char *firmware_version;
 
   /**
-   * The callback that is called once the device comes online and should be used to subscribe to topics and do other
-   * initialization work.
+   * The callback that is called once the device comes online.
    */
-  void (*setup)();
+  void (*online_callback)();
 
   /**
-   * The callback that should be called with incoming MQTT messages.
+   * The message callback is called with incoming messages.
    *
    * Note: The base topic has already been removed from the topic and should not start with a '/'.
    *
@@ -107,17 +106,22 @@ typedef struct {
    * @param len
    * @param scope
    */
-  void (*handle)(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope);
+  void (*message_callback)(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope);
 
   /**
-   * The callback that is called in a high frequency to do any necessary work of the device.
+   * The loop callback is called in over and over as long as the device is online.
    */
-  void (*loop)();
+  void (*loop_callback)();
 
   /**
-   * The callback that is called once the device becomes offline.
+   * The interval of the loop callback in milliseconds.
    */
-  void (*terminate)();
+  int loop_interval;
+
+  /**
+   * The offline callback is called once the device becomes offline.
+   */
+  void (*offline_callback)();
 } nadk_config_t;
 
 /**
