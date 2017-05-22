@@ -17,7 +17,7 @@ static SemaphoreHandle_t nadk_device_mutex;
 
 static TaskHandle_t nadk_device_task;
 
-static bool nadk_device_process_started = false;
+static bool nadk_device_started = false;
 
 static void nadk_device_process(void *p) {
   for (;;) {
@@ -47,14 +47,14 @@ void nadk_device_start() {
   NADK_LOCK(nadk_device_mutex);
 
   // check if already running
-  if (nadk_device_process_started) {
+  if (nadk_device_started) {
     ESP_LOGE(NADK_LOG_TAG, "nadk_device_start: already started");
     NADK_UNLOCK(nadk_device_mutex);
     return;
   }
 
   // set flag
-  nadk_device_process_started = true;
+  nadk_device_started = true;
 
   // call setup callback if present
   if (nadk_device()->setup) {
@@ -76,13 +76,13 @@ void nadk_device_stop() {
   NADK_LOCK(nadk_device_mutex);
 
   // check if task is still running
-  if (!nadk_device_process_started) {
+  if (!nadk_device_started) {
     NADK_UNLOCK(nadk_device_mutex);
     return;
   }
 
   // set flag
-  nadk_device_process_started = false;
+  nadk_device_started = false;
 
   // run terminate callback if present
   if (nadk_device()->terminate) {
