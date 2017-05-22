@@ -273,7 +273,7 @@ static void nadk_system_message_callback(const char *topic, const char *payload,
   nadk_device_forward(topic, payload, len, scope);
 }
 
-void nadk_system_init(nadk_device_t *device) {
+void nadk_system_init() {
   // delay startup by max 5000ms
   int delay = esp_random() / 858994;
   ESP_LOGI(NADK_LOG_TAG, "nadk_system_init: delay startup by %dms", delay);
@@ -283,7 +283,7 @@ void nadk_system_init(nadk_device_t *device) {
   nadk_system_mutex = xSemaphoreCreateMutex();
 
   // init device
-  nadk_device_init(device);
+  nadk_device_init();
 
   // init manager
   nadk_manager_init();
@@ -292,7 +292,7 @@ void nadk_system_init(nadk_device_t *device) {
   nadk_led_init();
 
   // initialize bluetooth stack
-  nadk_ble_init(nadk_system_ble_callback, device->type);
+  nadk_ble_init(nadk_system_ble_callback, nadk_device()->type);
 
   // initialize wifi stack
   nadk_wifi_init(nadk_system_wifi_callback);

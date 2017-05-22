@@ -7,17 +7,8 @@
  * Initialize the device subsystem.
  *
  * Note: Should only be called once on boot.
- *
- * @param device - The device information.
  */
-void nadk_device_init(nadk_device_t* device);
-
-/**
- * Will return the device.
- *
- * @return
- */
-nadk_device_t* nadk_device();
+void nadk_device_init();
 
 /**
  * Start the device process.

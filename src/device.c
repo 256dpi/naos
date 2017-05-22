@@ -13,8 +13,6 @@
 
 static SemaphoreHandle_t nadk_device_mutex;
 
-static nadk_device_t *nadk_device_ref;
-
 static TaskHandle_t nadk_device_task;
 
 static bool nadk_device_process_started = false;
@@ -27,8 +25,8 @@ static void nadk_device_process(void *p) {
   NADK_LOCK(nadk_device_mutex);
 
   // call setup callback i present
-  if (nadk_device_ref->setup) {
-    nadk_device_ref->setup();
+  if (nadk_device()->setup) {
+    nadk_device()->setup();
   }
 
   // release mutex
@@ -39,8 +37,8 @@ static void nadk_device_process(void *p) {
     NADK_LOCK(nadk_device_mutex);
 
     // call loop callback if present
-    if (nadk_device_ref->loop) {
-      nadk_device_ref->loop();
+    if (nadk_device()->loop) {
+      nadk_device()->loop();
     }
 
     // release mutex
@@ -51,15 +49,10 @@ static void nadk_device_process(void *p) {
   }
 }
 
-void nadk_device_init(nadk_device_t *device) {
-  // set device reference
-  nadk_device_ref = device;
-
+void nadk_device_init() {
   // create mutex
   nadk_device_mutex = xSemaphoreCreateMutex();
 }
-
-nadk_device_t *nadk_device() { return nadk_device_ref; }
 
 void nadk_device_start() {
   // acquire mutex
@@ -101,8 +94,8 @@ void nadk_device_stop() {
   vTaskDelete(nadk_device_task);
 
   // run terminate callback if present
-  if (nadk_device_ref->terminate) {
-    nadk_device_ref->terminate();
+  if (nadk_device()->terminate) {
+    nadk_device()->terminate();
   }
 
   // release mutex
@@ -114,8 +107,8 @@ void nadk_device_forward(const char *topic, const char *payload, unsigned int le
   NADK_LOCK(nadk_device_mutex);
 
   // call handle callback if present
-  if (nadk_device_ref->handle) {
-    nadk_device_ref->handle(topic, payload, len, scope);
+  if (nadk_device()->handle) {
+    nadk_device()->handle(topic, payload, len, scope);
   }
 
   // release mutex

@@ -130,6 +130,13 @@ typedef struct {
 void nadk_init(nadk_device_t *device);
 
 /**
+ * Will return the device passed to nadk_init().
+ *
+ * @return
+ */
+nadk_device_t* nadk_device();
+
+/**
  * Returns the elapsed milliseconds since the start.
  *
  * @return

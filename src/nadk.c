@@ -2,4 +2,14 @@
 
 #include "system.h"
 
-void nadk_init(nadk_device_t* device) { nadk_system_init(device); }
+static nadk_device_t *nadk_device_ref;
+
+void nadk_init(nadk_device_t* device) {
+  // set device reference
+  nadk_device_ref = device;
+
+  // initialize system
+  nadk_system_init();
+}
+
+nadk_device_t *nadk_device() { return nadk_device_ref; }

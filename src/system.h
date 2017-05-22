@@ -5,9 +5,7 @@
  * Initialize the main system.
  *
  * Note: Should only be called once on boot.
- *
- * @param device - The device information.
  */
-void nadk_system_init(nadk_device_t *device);
+void nadk_system_init();
 
 #endif  // _NADK_SYSTEM_H
