@@ -43,7 +43,8 @@ static void nadk_manager_send_announcement() {
 
   // send announce
   char buf[64];
-  snprintf(buf, sizeof buf, "%s,%s,%s,%s", nadk_config()->device_type, nadk_config()->firmware_version, device_name, base_topic);
+  snprintf(buf, sizeof buf, "%s,%s,%s,%s", nadk_config()->device_type, nadk_config()->firmware_version, device_name,
+           base_topic);
   nadk_publish_str("nadk/announcement", buf, 0, false, NADK_GLOBAL);
 
   // free strings

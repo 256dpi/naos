@@ -15,8 +15,13 @@ static void loop() {
 
 static void terminate() {}
 
-nadk_config_t device = {
-    .device_type = "nadk-test", .firmware_version = "0.0.1", .setup = setup, .handle = handle, .loop = loop, .terminate = terminate,
+static nadk_config_t config = {
+    .device_type = "nadk-test",
+    .firmware_version = "0.0.1",
+    .setup = setup,
+    .handle = handle,
+    .loop = loop,
+    .terminate = terminate,
 };
 
-void app_main() { nadk_init(&device); }
+void app_main() { nadk_init(&config); }
