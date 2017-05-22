@@ -147,13 +147,4 @@ const nadk_config_t *nadk_config();
  */
 uint32_t nadk_millis();
 
-/**
- * Will sleep for the specified amount of milliseconds.
- *
- * Note: This function should only be used inside the loop function.
- *
- * @param millis
- */
-void nadk_sleep(int millis);
-
 #endif  // NADK_H

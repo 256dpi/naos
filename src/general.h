@@ -27,4 +27,11 @@
  */
 void nadk_yield();
 
+/**
+ * Will sleep for the specified amount of milliseconds.
+ *
+ * @param millis
+ */
+void nadk_sleep(int millis);
+
 #endif  // _NADK_GENERAL_H
