@@ -24,6 +24,8 @@ void nadk_update_begin(uint16_t size) {
 
   // end a previous update and discard its result
   if (nadk_update_handle != 0) {
+    // TODO: A esp_ota_cancel() function would be more appropriate here. (Check upstream)
+
     esp_ota_end(nadk_update_handle);
     nadk_update_handle = 0;
   }
@@ -34,6 +36,8 @@ void nadk_update_begin(uint16_t size) {
   // get update partition
   nadk_update_partition = esp_ota_get_next_update_partition(NULL);
   assert(nadk_update_partition != NULL);
+
+  // TODO: If we pass in the total, esp_ota_begin() crashes. (Check upstream)
 
   // begin update
   ESP_ERROR_CHECK(esp_ota_begin(nadk_update_partition, 0, &nadk_update_handle));
@@ -52,6 +56,8 @@ void nadk_update_write(const char *chunk, uint16_t len) {
     NADK_UNLOCK(nadk_update_mutex);
     return;
   }
+
+  // TODO: Calling esp_ota_write() is very slow. Are there options for speed it up? (Check upstream)
 
   // write chunk
   ESP_ERROR_CHECK(esp_ota_write(nadk_update_handle, (const void *)chunk, len));
