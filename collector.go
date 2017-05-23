@@ -18,7 +18,7 @@ type Announcement struct {
 }
 
 // CollectAnnouncements will collect device Announcements.
-func (m *Manager) CollectAnnouncements(d time.Duration) ([]*Announcement, error) {
+func CollectAnnouncements(url string, d time.Duration) ([]*Announcement, error) {
 	// prepare channels
 	errs := make(chan error)
 	announcements := make(chan *Announcement)
@@ -53,7 +53,7 @@ func (m *Manager) CollectAnnouncements(d time.Duration) ([]*Announcement, error)
 	}
 
 	// connect to the broker using the provided url
-	cf, err := cl.Connect(client.NewConfig(m.BrokerURL))
+	cf, err := cl.Connect(client.NewConfig(url))
 	if err != nil {
 		return nil, err
 	}

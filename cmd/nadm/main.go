@@ -36,9 +36,7 @@ func create(cmd *command) {
 func collect(cmd *command, inv *nadm.Inventory) {
 	fmt.Println("Collecting devices...")
 
-	m := nadm.NewManager(inv.Broker)
-
-	list, err := m.CollectAnnouncements(cmd.oDuration)
+	list, err := nadm.CollectAnnouncements(inv.Broker, cmd.oDuration)
 	exitIfSet(err)
 
 	if cmd.oClear {
@@ -62,8 +60,6 @@ func collect(cmd *command, inv *nadm.Inventory) {
 func update(cmd *command, inv *nadm.Inventory) {
 	fmt.Println("Reading image...")
 
-	m := nadm.NewManager(inv.Broker)
-
 	file, err := filepath.Abs(cmd.aImage)
 	exitIfSet(err)
 
@@ -78,7 +74,7 @@ func update(cmd *command, inv *nadm.Inventory) {
 		exitWithError(fmt.Sprintf("Device with name '%s' not found!", cmd.aName))
 	}
 
-	err = m.UpdateFirmware(device.BaseTopic, bytes, func(sent int) { bar.Set(sent) })
+	err = nadm.UpdateFirmware(inv.Broker, device.BaseTopic, bytes, func(sent int) { bar.Set(sent) })
 	exitIfSet(err)
 
 	bar.Finish()

@@ -45,9 +45,9 @@ func ReadInventory(path string) (*Inventory, error) {
 }
 
 // Save will write the inventory file to the specified path.
-func (c *Inventory) Save(path string) error {
+func (i *Inventory) Save(path string) error {
 	// encode data
-	data, err := json.MarshalIndent(c, "", "  ")
+	data, err := json.MarshalIndent(i, "", "  ")
 	if err != nil {
 		return err
 	}

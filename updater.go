@@ -11,7 +11,7 @@ import (
 // UpdateFirmware will perform a firmware update an block until it is done or an
 // error has occurred. If progress is provided it will be called with the bytes
 // sent to the device.
-func (m *Manager) UpdateFirmware(baseTopic string, image []byte, progress func(int)) error {
+func UpdateFirmware(url, baseTopic string, image []byte, progress func(int)) error {
 	// prepare channels
 	requests := make(chan int)
 	errs := make(chan error)
@@ -45,7 +45,7 @@ func (m *Manager) UpdateFirmware(baseTopic string, image []byte, progress func(i
 	}
 
 	// connect to the broker using the provided url
-	cf, err := cl.Connect(client.NewConfig(m.BrokerURL))
+	cf, err := cl.Connect(client.NewConfig(url))
 	if err != nil {
 		return err
 	}
