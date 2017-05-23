@@ -1,6 +1,7 @@
 package main
 
 import (
+	"path/filepath"
 	"time"
 
 	"github.com/docopt/docopt-go"
@@ -9,59 +10,69 @@ import (
 var usage = `nadm - the networked artifacts device manager
 
 Usage:
-  nadm collect [--broker=<url> --duration=<d>]
-  nadm update <base-topic> <image> [--broker=<url>]
+  nadm create [--inventory=<file>]
+  nadm collect [--duration=<d> --clear]
+  nadm update <name> <image>
 
 Options:
-  -b --broker=<url>  The broker URL.
-  -d --duration=<d>  The collection duration [default: 1s].
-  -h --help          Show this screen.
+  -i --inventory=<file>  The inventory file [default: ./nadm.json].
+  -d --duration=<d>      The collection duration [default: 1s].
+  -c --clear             Remove not available devices from inventory.
+  -h --help              Show this screen.
 `
 
 type command struct {
 	// commands
-	cCollect, cUpdate bool
+	cCreate, cCollect, cUpdate bool
 
 	// arguments
-	aBaseTopic, aImage string
+	aName, aImage string
 
 	// options
-	oBrokerURL string
+	oInventory string
+	oClear     bool
 	oDuration  time.Duration
 }
 
 func parseCommand() *command {
 	a, _ := docopt.Parse(usage, nil, true, "", false)
 
+	inv := getString(a["--inventory"])
+	if inv == "./nadm.json" {
+		i, err := filepath.Abs("nadm.json")
+		exitIfSet(err)
+		inv = i
+	} else {
+		i, err := filepath.Abs(inv)
+		exitIfSet(err)
+		inv = i
+	}
+
 	return &command{
 		// commands
+		cCreate:  getBool(a["create"]),
 		cCollect: getBool(a["collect"]),
 		cUpdate:  getBool(a["update"]),
 
 		// arguments
-		aBaseTopic: getString(a["<base-topic>"]),
-		aImage:     getString(a["<image>"]),
+		aName:  getString(a["<name>"]),
+		aImage: getString(a["<image>"]),
 
 		// options
-		oBrokerURL: getString(a["--broker"]),
+		oInventory: inv,
+		oClear:     getBool(a["--clear"]),
 		oDuration:  getDuration(a["--duration"]),
 	}
 }
 
 func getBool(field interface{}) bool {
-	if val, ok := field.(bool); ok {
-		return val
-	}
-
-	return false
+	val, _ := field.(bool)
+	return val
 }
 
 func getString(field interface{}) string {
-	if str, ok := field.(string); ok {
-		return str
-	}
-
-	return ""
+	str, _ := field.(string)
+	return str
 }
 
 func getDuration(field interface{}) time.Duration {
