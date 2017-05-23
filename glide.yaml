@@ -7,3 +7,4 @@ import:
 - package: gopkg.in/cheggaaa/pb.v1
   version: ^1.0.15
 - package: gopkg.in/tomb.v2
+- package: code.cloudfoundry.org/bytefmt

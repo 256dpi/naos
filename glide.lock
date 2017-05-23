@@ -1,6 +1,8 @@
-hash: 27567a75ca4feab346cd536cd40a00cad607d2ae3ee797709887df9b9f249646
-updated: 2017-05-15T18:53:26.284260831+02:00
+hash: 61f8ae69973b7d02c7c4f0f0f55034008474c17b93edf6016a53f6eb0c372221
+updated: 2017-05-23T23:35:54.486529696+02:00
 imports:
+- name: code.cloudfoundry.org/bytefmt
+  version: f4415fafc5619dd75599a54a7c91fb3948ad58bd
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
   subpackages:

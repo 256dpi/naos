@@ -3,8 +3,11 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"os/signal"
 	"path/filepath"
 
+	"code.cloudfoundry.org/bytefmt"
 	"github.com/shiftr-io/nadm"
 	"gopkg.in/cheggaaa/pb.v1"
 )
@@ -16,6 +19,8 @@ func main() {
 		create(cmd)
 	} else if cmd.cCollect {
 		collect(cmd, getInventory(cmd))
+	} else if cmd.cMonitor {
+		monitor(cmd, getInventory(cmd))
 	} else if cmd.cUpdate {
 		update(cmd, getInventory(cmd))
 	}
@@ -55,6 +60,30 @@ func collect(cmd *command, inv *nadm.Inventory) {
 	}
 
 	finish(cmd, inv)
+}
+
+func monitor(cmd *command, inv *nadm.Inventory) {
+	fmt.Println("Monitoring all devices...")
+
+	quit := make(chan struct{})
+
+	go func() {
+		exit := make(chan os.Signal)
+		signal.Notify(exit, os.Interrupt)
+		<-exit
+		close(quit)
+	}()
+
+	var baseTopics []string
+
+	for _, device := range inv.Devices {
+		baseTopics = append(baseTopics, device.BaseTopic)
+	}
+
+	err := nadm.MonitorDevices(inv.Broker, baseTopics, quit, func(hb *nadm.Heartbeat) {
+		fmt.Printf("Device %s (%s/%s), Free Heap Size: %s, Up Time: %s\n", hb.DeviceName, hb.DeviceType, hb.FirmwareVersion, bytefmt.ByteSize(uint64(hb.FreeHeapSize)), hb.UpTime.String())
+	})
+	exitIfSet(err)
 }
 
 func update(cmd *command, inv *nadm.Inventory) {
