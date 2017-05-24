@@ -6,29 +6,30 @@
 
 static char *nadk_mqtt_base_topic = NULL;
 
-static char nadk_mqtt_topic_cache[256];
-
 static nadk_mqtt_message_callback_t nadk_mqtt_message_callback = NULL;
 
 // TODO: Guarantee we always work with trimmed base topics.
 
-static const char *nadk_mqtt_with_base_topic(const char *topic) {
+// returned topics must be freed after use
+static char *nadk_mqtt_with_base_topic(const char *topic) {
   // check base topic
   if (nadk_mqtt_base_topic == NULL) {
-    return topic;
+    return strdup(topic);
   }
 
-  // write base topic into cache
-  strcpy(nadk_mqtt_topic_cache, nadk_mqtt_base_topic);
+  // allocate enough space
+  char * buf = malloc(strlen(nadk_mqtt_base_topic) + 1 + strlen(topic) + 1);
+
+  // write base topic
+  strcpy(buf, nadk_mqtt_base_topic);
 
   // write separator
-  nadk_mqtt_topic_cache[strlen(nadk_mqtt_base_topic)] = '/';
+  buf[strlen(nadk_mqtt_base_topic)] = '/';
 
   // write topic into cache
-  strcpy(nadk_mqtt_topic_cache + strlen(nadk_mqtt_base_topic) + 1, topic);
+  strcpy(buf + strlen(nadk_mqtt_base_topic) + 1, topic);
 
-  // return pointer to prefixed topic
-  return nadk_mqtt_topic_cache;
+  return buf;
 }
 
 static nadk_scope_t nadk_mqtt_scope_from_topic(const char *topic) {
@@ -92,7 +93,15 @@ bool nadk_subscribe(const char *topic, int qos, nadk_scope_t scope) {
     topic = nadk_mqtt_with_base_topic(topic);
   }
 
-  return esp_mqtt_subscribe(topic, qos);
+  // subscribe
+  bool ret = esp_mqtt_subscribe(topic, qos);
+
+  // free prefixed topic
+  if(scope == NADK_LOCAL) {
+    free((void*)topic);
+  }
+
+  return ret;
 }
 
 bool nadk_unsubscribe(const char *topic, nadk_scope_t scope) {
@@ -101,7 +110,15 @@ bool nadk_unsubscribe(const char *topic, nadk_scope_t scope) {
     topic = nadk_mqtt_with_base_topic(topic);
   }
 
-  return esp_mqtt_unsubscribe(topic);
+  // unsubscribe
+  bool ret = esp_mqtt_unsubscribe(topic);
+
+  // free prefixed topic
+  if(scope == NADK_LOCAL) {
+    free((void*)topic);
+  }
+
+  return ret;
 }
 
 bool nadk_publish(const char *topic, void *payload, uint16_t len, int qos, bool retained, nadk_scope_t scope) {
@@ -110,7 +127,15 @@ bool nadk_publish(const char *topic, void *payload, uint16_t len, int qos, bool 
     topic = nadk_mqtt_with_base_topic(topic);
   }
 
-  return esp_mqtt_publish(topic, payload, len, qos, retained);
+  // publish
+  bool ret = esp_mqtt_publish(topic, payload, len, qos, retained);
+
+  // free prefixed topic
+  if(scope == NADK_LOCAL) {
+    free((void*)topic);
+  }
+
+  return ret;
 }
 
 bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained, nadk_scope_t scope) {
