@@ -64,7 +64,7 @@ static void nadk_manager_process(void *p) {
     NADK_UNLOCK(nadk_manager_mutex);
 
     // wait for next interval
-    nadk_sleep(NADK_MANAGER_HEARTBEAT_INTERVAL);
+    nadk_delay(NADK_MANAGER_HEARTBEAT_INTERVAL);
   }
 }
 

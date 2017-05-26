@@ -23,15 +23,10 @@
 #define NADK_UNLOCK(mutex) xSemaphoreGive(mutex)
 
 /**
- * Will yield to other running processes.
- */
-void nadk_yield();
-
-/**
  * Will sleep for the specified amount of milliseconds.
  *
  * @param millis
  */
-void nadk_sleep(int millis);
+void nadk_delay(int millis);
 
 #endif  // _NADK_GENERAL_H

@@ -27,7 +27,7 @@ static void nadk_task_process(void *p) {
     NADK_UNLOCK(nadk_task_mutex);
 
     // yield to other processes
-    nadk_sleep(nadk_config()->loop_interval);
+    nadk_delay(nadk_config()->loop_interval);
   }
 }
 

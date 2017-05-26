@@ -278,7 +278,7 @@ void nadk_system_init() {
   if (nadk_config()->delay_startup) {
     int delay = esp_random() / 858994;
     ESP_LOGI(NADK_LOG_TAG, "nadk_system_init: delay startup by %dms", delay);
-    nadk_sleep(delay);
+    nadk_delay(delay);
   }
 
   // create mutex
