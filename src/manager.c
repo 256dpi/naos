@@ -1,4 +1,5 @@
 #include <esp_log.h>
+#include <esp_ota_ops.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -9,7 +10,6 @@
 #include "general.h"
 #include "manager.h"
 #include "mqtt.h"
-#include "task.h"
 #include "update.h"
 
 #define NADK_MANAGER_CHUNK_SIZE NADK_MQTT_BUFFER_SIZE - 256
@@ -28,8 +28,8 @@ static void nadk_manager_send_heartbeat() {
 
   // send heartbeat
   char buf[64];
-  snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d", nadk_config()->device_type, nadk_config()->firmware_version, device_name,
-           esp_get_free_heap_size(), nadk_millis());
+  snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s", nadk_config()->device_type, nadk_config()->firmware_version,
+           device_name, esp_get_free_heap_size(), nadk_millis(), esp_ota_get_running_partition()->label);
   nadk_publish_str("nadk/heartbeat", buf, 0, false, NADK_LOCAL);
 
   // free string
