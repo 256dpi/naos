@@ -81,7 +81,7 @@ func monitor(cmd *command, inv *nadm.Inventory) {
 	}
 
 	err := nadm.MonitorDevices(inv.Broker, baseTopics, quit, func(hb *nadm.Heartbeat) {
-		fmt.Printf("Device %s (%s/%s), Free Heap Size: %s, Up Time: %s\n", hb.DeviceName, hb.DeviceType, hb.FirmwareVersion, bytefmt.ByteSize(uint64(hb.FreeHeapSize)), hb.UpTime.String())
+		fmt.Printf("Device %s (%s/%s), Free Heap Size: %s, Up Time: %s, Start Partition: %s\n", hb.DeviceName, hb.DeviceType, hb.FirmwareVersion, bytefmt.ByteSize(uint64(hb.FreeHeapSize)), hb.UpTime.String(), hb.StartPartition)
 	})
 	exitIfSet(err)
 }

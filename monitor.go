@@ -17,6 +17,7 @@ type Heartbeat struct {
 	DeviceName      string
 	FreeHeapSize    int
 	UpTime          time.Duration
+	StartPartition  string
 }
 
 // MonitorDevices will listen to the passed base topics for heartbeats and call
@@ -40,7 +41,7 @@ func MonitorDevices(url string, baseTopics []string, quit chan struct{}, cb func
 		data := strings.Split(string(msg.Payload), ",")
 
 		// check length
-		if len(data) < 5 {
+		if len(data) < 6 {
 			errs <- fmt.Errorf("malformed payload: %s", string(msg.Payload))
 			return
 		}
@@ -56,6 +57,7 @@ func MonitorDevices(url string, baseTopics []string, quit chan struct{}, cb func
 			DeviceName:      data[2],
 			FreeHeapSize:    freeHeapSize,
 			UpTime:          time.Duration(upTime) * time.Millisecond,
+			StartPartition:  data[5],
 		})
 	}
 
