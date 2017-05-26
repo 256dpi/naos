@@ -18,7 +18,7 @@ static char *nadk_mqtt_with_base_topic(const char *topic) {
   }
 
   // allocate enough space
-  char * buf = malloc(strlen(nadk_mqtt_base_topic) + 1 + strlen(topic) + 1);
+  char *buf = malloc(strlen(nadk_mqtt_base_topic) + 1 + strlen(topic) + 1);
 
   // write base topic
   strcpy(buf, nadk_mqtt_base_topic);
@@ -97,8 +97,8 @@ bool nadk_subscribe(const char *topic, int qos, nadk_scope_t scope) {
   bool ret = esp_mqtt_subscribe(topic, qos);
 
   // free prefixed topic
-  if(scope == NADK_LOCAL) {
-    free((void*)topic);
+  if (scope == NADK_LOCAL) {
+    free((void *)topic);
   }
 
   return ret;
@@ -114,8 +114,8 @@ bool nadk_unsubscribe(const char *topic, nadk_scope_t scope) {
   bool ret = esp_mqtt_unsubscribe(topic);
 
   // free prefixed topic
-  if(scope == NADK_LOCAL) {
-    free((void*)topic);
+  if (scope == NADK_LOCAL) {
+    free((void *)topic);
   }
 
   return ret;
@@ -131,8 +131,8 @@ bool nadk_publish(const char *topic, void *payload, uint16_t len, int qos, bool 
   bool ret = esp_mqtt_publish(topic, payload, len, qos, retained);
 
   // free prefixed topic
-  if(scope == NADK_LOCAL) {
-    free((void*)topic);
+  if (scope == NADK_LOCAL) {
+    free((void *)topic);
   }
 
   return ret;
