@@ -492,7 +492,7 @@ void nadk_ble_init(nadk_ble_attribute_callback_t cb, const char *device_type) {
   ESP_ERROR_CHECK(nvs_flash_init());
 
   // open flash namespace
-  ESP_ERROR_CHECK(nvs_open("core-ble", NVS_READWRITE, &nadk_ble_nvs_handle));
+  ESP_ERROR_CHECK(nvs_open("nadk-ble", NVS_READWRITE, &nadk_ble_nvs_handle));
 
   // iterate through all characteristics
   for (int j = 0; j < NADK_BLE_NUM_CHARS; j++) {
