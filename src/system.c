@@ -8,7 +8,6 @@
 
 #include "ble.h"
 #include "general.h"
-#include "led.h"
 #include "manager.h"
 #include "mqtt.h"
 #include "task.h"
@@ -28,21 +27,18 @@ static void nadk_system_set_state(nadk_status_t status) {
     // handle disconnected state
     case NADK_DISCONNECTED: {
       name = "Disconnected";
-      nadk_led_set(false, false);
       break;
     }
 
     // handle connected state
     case NADK_CONNECTED: {
       name = "Connected";
-      nadk_led_set(true, false);
       break;
     }
 
     // handle networked state
     case NADK_NETWORKED: {
       name = "Networked";
-      nadk_led_set(false, true);
       break;
     }
   }
@@ -286,9 +282,6 @@ void nadk_system_init() {
 
   // init manager
   nadk_manager_init();
-
-  // initialize LEDs
-  nadk_led_init();
 
   // initialize bluetooth stack
   nadk_ble_init(nadk_system_ble_callback, nadk_config()->device_type);

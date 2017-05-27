@@ -31,8 +31,6 @@ set(SOURCE_FILES
         src/ble.h
         src/general.c
         src/general.h
-        src/led.c
-        src/led.h
         src/manager.c
         src/manager.h
         src/mqtt.c
