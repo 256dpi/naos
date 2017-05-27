@@ -93,6 +93,22 @@ void nadk_task_stop() {
   NADK_UNLOCK(nadk_task_mutex);
 }
 
+void nadk_task_notify(nadk_status_t status) {
+  // return immediately if no handle function exists
+  if (nadk_config()->status_callback == NULL) {
+    return;
+  }
+
+  // acquire mutex
+  NADK_LOCK(nadk_task_mutex);
+
+  // call handle callback
+  nadk_config()->status_callback(status);
+
+  // release mutex
+  NADK_UNLOCK(nadk_task_mutex);
+}
+
 void nadk_task_forward(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
   // return immediately if no handle function exists
   if (nadk_config()->message_callback == NULL) {

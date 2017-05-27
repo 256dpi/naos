@@ -21,6 +21,13 @@ void nadk_task_start();
 void nadk_task_stop();
 
 /**
+ * Notify the task about a status change.
+ *
+ * @param status
+ */
+void nadk_task_notify(nadk_status_t status);
+
+/**
  * Forward a message to the task process.
  *
  * @param topic - The topic.

@@ -17,36 +17,30 @@
 
 SemaphoreHandle_t nadk_system_mutex;
 
-typedef enum {
-  NADK_SYSTEM_STATE_DISCONNECTED,
-  NADK_SYSTEM_STATE_CONNECTED,
-  NADK_SYSTEM_STATE_NETWORKED
-} nadk_system_state_t;
+static nadk_status_t nadk_system_status;
 
-static nadk_system_state_t nadk_system_current_state;
-
-static void nadk_system_set_state(nadk_system_state_t new_state) {
+static void nadk_system_set_state(nadk_status_t status) {
   // default state name
   const char *name = "Unknown";
 
-  // triage state
-  switch (new_state) {
+  // triage status
+  switch (status) {
     // handle disconnected state
-    case NADK_SYSTEM_STATE_DISCONNECTED: {
+    case NADK_DISCONNECTED: {
       name = "Disconnected";
       nadk_led_set(false, false);
       break;
     }
 
     // handle connected state
-    case NADK_SYSTEM_STATE_CONNECTED: {
+    case NADK_CONNECTED: {
       name = "Connected";
       nadk_led_set(true, false);
       break;
     }
 
     // handle networked state
-    case NADK_SYSTEM_STATE_NETWORKED: {
+    case NADK_NETWORKED: {
       name = "Networked";
       nadk_led_set(false, true);
       break;
@@ -54,10 +48,13 @@ static void nadk_system_set_state(nadk_system_state_t new_state) {
   }
 
   // change state
-  nadk_system_current_state = new_state;
+  nadk_system_status = status;
 
   // update connection status
   nadk_ble_set_string(NADK_BLE_ID_CONNECTION_STATUS, (char *)name);
+
+  // notify task
+  nadk_task_notify(status);
 
   ESP_LOGI(NADK_LOG_TAG, "nadk_system_set_state: %s", name)
 }
@@ -117,25 +114,25 @@ static void nadk_system_ble_callback(nadk_ble_id_t id) {
   if (restart_wifi) {
     ESP_LOGI(NADK_LOG_TAG, "nadk_system_ble_callback: restart wifi");
 
-    switch (nadk_system_current_state) {
-      case NADK_SYSTEM_STATE_NETWORKED: {
+    switch (nadk_system_status) {
+      case NADK_NETWORKED: {
         // stop task
         nadk_task_stop();
 
         // fallthrough
       }
 
-      case NADK_SYSTEM_STATE_CONNECTED: {
+      case NADK_CONNECTED: {
         // stop mqtt client
         nadk_mqtt_stop();
 
         // change state
-        nadk_system_set_state(NADK_SYSTEM_STATE_DISCONNECTED);
+        nadk_system_set_state(NADK_DISCONNECTED);
 
         // fallthrough
       }
 
-      case NADK_SYSTEM_STATE_DISCONNECTED: {
+      case NADK_DISCONNECTED: {
         // restart wifi
         nadk_system_configure_wifi();
       }
@@ -146,18 +143,18 @@ static void nadk_system_ble_callback(nadk_ble_id_t id) {
   if (restart_mqtt) {
     ESP_LOGI(NADK_LOG_TAG, "nadk_system_ble_callback: restart mqtt");
 
-    switch (nadk_system_current_state) {
-      case NADK_SYSTEM_STATE_NETWORKED: {
+    switch (nadk_system_status) {
+      case NADK_NETWORKED: {
         // stop task
         nadk_task_stop();
 
         // change state
-        nadk_system_set_state(NADK_SYSTEM_STATE_CONNECTED);
+        nadk_system_set_state(NADK_CONNECTED);
 
         // fallthrough
       }
 
-      case NADK_SYSTEM_STATE_CONNECTED: {
+      case NADK_CONNECTED: {
         // stop mqtt client
         nadk_mqtt_stop();
 
@@ -167,7 +164,7 @@ static void nadk_system_ble_callback(nadk_ble_id_t id) {
         // fallthrough
       }
 
-      case NADK_SYSTEM_STATE_DISCONNECTED: {
+      case NADK_DISCONNECTED: {
         // do nothing if not yet connected
       }
     }
@@ -186,9 +183,9 @@ static void nadk_system_wifi_callback(nadk_wifi_status_t status) {
       ESP_LOGI(NADK_LOG_TAG, "nadk_system_wifi_callback: connected");
 
       // check if connection is new
-      if (nadk_system_current_state == NADK_SYSTEM_STATE_DISCONNECTED) {
+      if (nadk_system_status == NADK_DISCONNECTED) {
         // change sate
-        nadk_system_set_state(NADK_SYSTEM_STATE_CONNECTED);
+        nadk_system_set_state(NADK_CONNECTED);
 
         // start wifi
         nadk_system_start_mqtt();
@@ -201,12 +198,12 @@ static void nadk_system_wifi_callback(nadk_wifi_status_t status) {
       ESP_LOGI(NADK_LOG_TAG, "nadk_system_wifi_callback: disconnected");
 
       // check if disconnection is new
-      if (nadk_system_current_state >= NADK_SYSTEM_STATE_CONNECTED) {
+      if (nadk_system_status >= NADK_CONNECTED) {
         // stop mqtt
         nadk_mqtt_stop();
 
         // change state
-        nadk_system_set_state(NADK_SYSTEM_STATE_DISCONNECTED);
+        nadk_system_set_state(NADK_DISCONNECTED);
       }
 
       break;
@@ -226,9 +223,9 @@ static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
       ESP_LOGI(NADK_LOG_TAG, "nadk_system_mqtt_callback: connected");
 
       // check if connection is new
-      if (nadk_system_current_state == NADK_SYSTEM_STATE_CONNECTED) {
+      if (nadk_system_status == NADK_CONNECTED) {
         // change state
-        nadk_system_set_state(NADK_SYSTEM_STATE_NETWORKED);
+        nadk_system_set_state(NADK_NETWORKED);
 
         // setup manager
         nadk_manager_start();
@@ -244,7 +241,7 @@ static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
       ESP_LOGI(NADK_LOG_TAG, "nadk_system_mqtt_callback: disconnected");
 
       // change state
-      nadk_system_set_state(NADK_SYSTEM_STATE_CONNECTED);
+      nadk_system_set_state(NADK_CONNECTED);
 
       // stop task
       nadk_task_stop();
@@ -306,7 +303,7 @@ void nadk_system_init() {
   nadk_update_init();
 
   // set initial state
-  nadk_system_set_state(NADK_SYSTEM_STATE_DISCONNECTED);
+  nadk_system_set_state(NADK_DISCONNECTED);
 
   // initially configure wifi
   nadk_system_configure_wifi();

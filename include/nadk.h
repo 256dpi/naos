@@ -78,6 +78,11 @@ bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained
 bool nadk_publish_num(const char *topic, int num, int qos, bool retained, nadk_scope_t scope);
 
 /**
+ * The system statuses.
+ */
+typedef enum { NADK_DISCONNECTED, NADK_CONNECTED, NADK_NETWORKED } nadk_status_t;
+
+/**
  * The main configuration object.
  */
 typedef struct {
@@ -122,6 +127,11 @@ typedef struct {
    * The offline callback is called once the device becomes offline.
    */
   void (*offline_callback)();
+
+  /**
+   * The callback is called once the device has changed its status.
+   */
+  void (*status_callback)(nadk_status_t status);
 
   /**
    * If set, the device will randomly (up to 5s) delay startup to overcome WiFi and MQTT congestion issues if many
