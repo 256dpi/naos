@@ -18,7 +18,7 @@ SemaphoreHandle_t nadk_system_mutex;
 
 static nadk_status_t nadk_system_status;
 
-static void nadk_system_set_state(nadk_status_t status) {
+static void nadk_system_set_status(nadk_status_t status) {
   // default state name
   const char *name = "Unknown";
 
@@ -52,7 +52,7 @@ static void nadk_system_set_state(nadk_status_t status) {
   // notify task
   nadk_task_notify(status);
 
-  ESP_LOGI(NADK_LOG_TAG, "nadk_system_set_state: %s", name)
+  ESP_LOGI(NADK_LOG_TAG, "nadk_system_set_status: %s", name)
 }
 
 static void nadk_system_configure_wifi() {
@@ -123,7 +123,7 @@ static void nadk_system_ble_callback(nadk_ble_id_t id) {
         nadk_mqtt_stop();
 
         // change state
-        nadk_system_set_state(NADK_DISCONNECTED);
+        nadk_system_set_status(NADK_DISCONNECTED);
 
         // fallthrough
       }
@@ -145,7 +145,7 @@ static void nadk_system_ble_callback(nadk_ble_id_t id) {
         nadk_task_stop();
 
         // change state
-        nadk_system_set_state(NADK_CONNECTED);
+        nadk_system_set_status(NADK_CONNECTED);
 
         // fallthrough
       }
@@ -181,7 +181,7 @@ static void nadk_system_wifi_callback(nadk_wifi_status_t status) {
       // check if connection is new
       if (nadk_system_status == NADK_DISCONNECTED) {
         // change sate
-        nadk_system_set_state(NADK_CONNECTED);
+        nadk_system_set_status(NADK_CONNECTED);
 
         // start wifi
         nadk_system_start_mqtt();
@@ -199,7 +199,7 @@ static void nadk_system_wifi_callback(nadk_wifi_status_t status) {
         nadk_mqtt_stop();
 
         // change state
-        nadk_system_set_state(NADK_DISCONNECTED);
+        nadk_system_set_status(NADK_DISCONNECTED);
       }
 
       break;
@@ -221,7 +221,7 @@ static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
       // check if connection is new
       if (nadk_system_status == NADK_CONNECTED) {
         // change state
-        nadk_system_set_state(NADK_NETWORKED);
+        nadk_system_set_status(NADK_NETWORKED);
 
         // setup manager
         nadk_manager_start();
@@ -237,7 +237,7 @@ static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
       ESP_LOGI(NADK_LOG_TAG, "nadk_system_mqtt_callback: disconnected");
 
       // change state
-      nadk_system_set_state(NADK_CONNECTED);
+      nadk_system_set_status(NADK_CONNECTED);
 
       // stop task
       nadk_task_stop();
@@ -296,7 +296,7 @@ void nadk_system_init() {
   nadk_update_init();
 
   // set initial state
-  nadk_system_set_state(NADK_DISCONNECTED);
+  nadk_system_set_status(NADK_DISCONNECTED);
 
   // initially configure wifi
   nadk_system_configure_wifi();
