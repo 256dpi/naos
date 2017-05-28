@@ -5,8 +5,6 @@
 
 #include <nadk.h>
 
-#define NADK_MQTT_BUFFER_SIZE 10000
-
 /**
  * The message callback.
  */

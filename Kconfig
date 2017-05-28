@@ -1,0 +1,19 @@
+menu "nadk"
+
+config NADK_MQTT_BUFFER_SIZE
+    int "The MQTT read and write buffer size"
+    default 10000
+
+config NADK_MQTT_COMMAND_TIMEOUT
+    int "The MQTT command timeout"
+    default 2000
+
+config NADK_HEARTBEAT_INTERVAL
+    int "The heartbeat interval"
+    default 5000
+
+config NADK_UPDATE_MAX_CHUNK_SIZE
+    int "The max update chunk size"
+    default 4096
+
+endmenu

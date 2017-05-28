@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sdkconfig.h>
 
 #include "mqtt.h"
 
@@ -68,7 +69,7 @@ void nadk_mqtt_init(esp_mqtt_status_callback_t scb, nadk_mqtt_message_callback_t
   nadk_mqtt_message_callback = mcb;
 
   // call init
-  esp_mqtt_init(scb, nadk_mqtt_message_handler, NADK_MQTT_BUFFER_SIZE, 2000);
+  esp_mqtt_init(scb, nadk_mqtt_message_handler, CONFIG_NADK_MQTT_BUFFER_SIZE, CONFIG_NADK_MQTT_COMMAND_TIMEOUT);
 }
 
 void nadk_mqtt_start(const char *host, unsigned int port, const char *client_id, const char *username,

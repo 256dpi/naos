@@ -10,14 +10,9 @@
 #include "ble.h"
 #include "general.h"
 #include "manager.h"
-#include "mqtt.h"
 #include "nadk.h"
 #include "task.h"
 #include "update.h"
-
-#define NADK_MANAGER_CHUNK_SIZE NADK_MQTT_BUFFER_SIZE - 256
-
-#define NADK_MANAGER_HEARTBEAT_INTERVAL 5000
 
 static SemaphoreHandle_t nadk_manager_mutex;
 
@@ -71,7 +66,7 @@ static void nadk_manager_process(void *p) {
     NADK_UNLOCK(nadk_manager_mutex);
 
     // wait for next interval
-    nadk_delay(NADK_MANAGER_HEARTBEAT_INTERVAL);
+    nadk_delay(CONFIG_NADK_HEARTBEAT_INTERVAL);
   }
 }
 
@@ -159,7 +154,7 @@ void nadk_manager_handle(const char *topic, const char *payload, unsigned int le
     nadk_update_begin((uint16_t)total);
 
     // request first chunk
-    nadk_publish_int("nadk/update/next", NADK_MANAGER_CHUNK_SIZE, 0, false, NADK_LOCAL);
+    nadk_publish_int("nadk/update/next", CONFIG_NADK_UPDATE_MAX_CHUNK_SIZE, 0, false, NADK_LOCAL);
 
     // release mutex
     NADK_UNLOCK(nadk_manager_mutex);
@@ -174,7 +169,7 @@ void nadk_manager_handle(const char *topic, const char *payload, unsigned int le
     ESP_LOGI(NADK_LOG_TAG, "nadk_manager_handle: wrote %d bytes chunk", len);
 
     // request next chunk
-    nadk_publish_int("nadk/update/next", NADK_MANAGER_CHUNK_SIZE, 0, false, NADK_LOCAL);
+    nadk_publish_int("nadk/update/next", CONFIG_NADK_UPDATE_MAX_CHUNK_SIZE, 0, false, NADK_LOCAL);
 
     // release mutex
     NADK_UNLOCK(nadk_manager_mutex);
