@@ -12,11 +12,11 @@
 
 ### Discovery
 
-All devices will subscribe to the global `nadk/collect` topic and publish to the global `nadk/announcement` topic if requested. The published data has the following format: `type,version,name,base_topic`.
+All devices will subscribe to the global `nadk/collect` topic and publish to the global `nadk/announcement` topic if requested. The published data has the following format: `device_type,firmware_version,device_name,base_topic`.
 
 ### Heartbeat
 
-All devices will periodically publish to the local `nadk/heartbeat` topic. The published data has the following format: `type,version,name,free_heap,uptime`.
+All devices will periodically publish to the local `nadk/heartbeat` topic. The published data has the following format: `device_type,firmware_version,device_name,free_heap,up_time,running_partition`.
 
 ### Firmware Update
 
