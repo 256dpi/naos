@@ -36,6 +36,8 @@ typedef struct {
    */
   void (*online_callback)();
 
+  // TODO: Calling nadk_get() inside the update callback causes a deadlock.
+
   /**
    * The callback that is called when a parameter has been updated.
    *
@@ -43,6 +45,8 @@ typedef struct {
    * @param value - The value.
    */
   void (*update_callback)(const char *param, const char *value);
+
+  // TODO: Calling nadk_publish() and others inside the message callback causes a deadlock.
 
   /**
    * The message callback is called with incoming messages.
