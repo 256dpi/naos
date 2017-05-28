@@ -142,7 +142,7 @@ bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained
   return nadk_publish(topic, (char *)str, (uint16_t)strlen(str), qos, retained, scope);
 }
 
-bool nadk_publish_num(const char *topic, int num, int qos, bool retained, nadk_scope_t scope) {
+bool nadk_publish_int(const char *topic, int num, int qos, bool retained, nadk_scope_t scope) {
   char buf[33];
   itoa(num, buf, 10);
 

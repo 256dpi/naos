@@ -136,7 +136,7 @@ bool nadk_publish(const char *topic, void *payload, uint16_t len, int qos, bool 
 bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained, nadk_scope_t scope);
 
 /**
- * Publish number to specified topic.
+ * Publish integer to specified topic.
  *
  * The topic is automatically prefixed with the configured base topic if the scope is local.
  *
@@ -147,6 +147,6 @@ bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained
  * @param scope
  * @return
  */
-bool nadk_publish_num(const char *topic, int num, int qos, bool retained, nadk_scope_t scope);
+bool nadk_publish_int(const char *topic, int num, int qos, bool retained, nadk_scope_t scope);
 
 #endif  // NADK_H
