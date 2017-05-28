@@ -1,8 +1,6 @@
 #ifndef _NADK_MANAGER_H
 #define _NADK_MANAGER_H
 
-#include <stdbool.h>
-
 #include <nadk.h>
 
 /**
