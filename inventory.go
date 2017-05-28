@@ -3,6 +3,8 @@ package nadm
 import (
 	"encoding/json"
 	"io/ioutil"
+
+	"github.com/ryanuber/go-glob"
 )
 
 // A Inventory represents the contents of the inventory file.
@@ -59,4 +61,38 @@ func (i *Inventory) Save(path string) error {
 	}
 
 	return nil
+}
+
+// GetNames will return a list of names of devices that match the supplied
+// glob pattern.
+func (i *Inventory) GetNames(filter string) []string {
+	// prepare list
+	var names []string
+
+	// go over all devices
+	for name := range i.Devices {
+		// add name if it matches glob
+		if glob.Glob(filter, name) {
+			names = append(names, name)
+		}
+	}
+
+	return names
+}
+
+// GetBaseTopics will return a list of base topics for the devices that match
+// the supplied glob pattern.
+func (i *Inventory) GetBaseTopics(filter string) []string {
+	// prepare list
+	var baseTopics []string
+
+	// go over all devices
+	for name, baseTopic := range i.Devices {
+		// add base topic if name matches glob
+		if glob.Glob(filter, name) {
+			baseTopics = append(baseTopics, baseTopic)
+		}
+	}
+
+	return baseTopics
 }

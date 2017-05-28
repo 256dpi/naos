@@ -23,6 +23,8 @@ func main() {
 		monitor(cmd, getInventory(cmd))
 	} else if cmd.cUpdate {
 		update(cmd, getInventory(cmd))
+	} else if cmd.cSet {
+		set(cmd, getInventory(cmd))
 	}
 }
 
@@ -101,6 +103,18 @@ func update(cmd *command, inv *nadm.Inventory) {
 
 	bar.Finish()
 	fmt.Println("Update finished!")
+
+	finish(cmd, inv)
+}
+
+func set(cmd *command, inv *nadm.Inventory) {
+	fmt.Printf( "Setting param '%s' to '%s' on devices matching '%s'\n", cmd.aParam, cmd.aValue, cmd.aFilter)
+
+	baseTopics := inv.GetBaseTopics(cmd.aFilter)
+
+	nadm.SetParam(inv.Broker, cmd.aParam, cmd.aValue, baseTopics)
+
+	fmt.Println("Done!")
 
 	finish(cmd, inv)
 }

@@ -1,5 +1,5 @@
-hash: 61f8ae69973b7d02c7c4f0f0f55034008474c17b93edf6016a53f6eb0c372221
-updated: 2017-05-23T23:35:54.486529696+02:00
+hash: 21b823b5b672cc2e429864f96fe7abd5a45b255a94b94d72c5869681c4b1e903
+updated: 2017-05-28T16:51:27.505920777+02:00
 imports:
 - name: code.cloudfoundry.org/bytefmt
   version: f4415fafc5619dd75599a54a7c91fb3948ad58bd
@@ -27,6 +27,8 @@ imports:
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
   - difflib
+- name: github.com/ryanuber/go-glob
+  version: 256dc444b735e061061cf46c809487313d5b0065
 - name: github.com/stretchr/testify
   version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:

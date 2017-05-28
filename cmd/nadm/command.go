@@ -14,6 +14,7 @@ Usage:
   nadm collect [--duration=<d> --clear --inventory=<file>]
   nadm monitor [--inventory=<file>]
   nadm update <name> <image> [--inventory=<file>]
+  nadm set <filter> <param> <value> [--inventory=<file>]
 
 Options:
   -i --inventory=<file>  The inventory file [default: ./nadm.json].
@@ -24,10 +25,10 @@ Options:
 
 type command struct {
 	// commands
-	cCreate, cCollect, cMonitor, cUpdate bool
+	cCreate, cCollect, cMonitor, cUpdate, cSet bool
 
 	// arguments
-	aName, aImage string
+	aName, aImage, aFilter, aParam, aValue string
 
 	// options
 	oInventory string
@@ -55,10 +56,14 @@ func parseCommand() *command {
 		cCollect: getBool(a["collect"]),
 		cMonitor: getBool(a["monitor"]),
 		cUpdate:  getBool(a["update"]),
+		cSet:     getBool(a["set"]),
 
 		// arguments
-		aName:  getString(a["<name>"]),
-		aImage: getString(a["<image>"]),
+		aName:   getString(a["<name>"]),
+		aImage:  getString(a["<image>"]),
+		aFilter: getString(a["<filter>"]),
+		aParam:  getString(a["<param>"]),
+		aValue:  getString(a["<value>"]),
 
 		// options
 		oInventory: inv,
