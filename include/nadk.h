@@ -150,11 +150,5 @@ typedef struct {
 void nadk_init(nadk_config_t *config);
 
 
-/**
- * Returns the elapsed milliseconds since the start.
- *
- * @return
- */
-uint32_t nadk_millis();
 
 #endif  // NADK_H

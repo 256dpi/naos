@@ -29,4 +29,11 @@
  */
 void nadk_delay(int millis);
 
+/**
+ * Returns the elapsed milliseconds since the start.
+ *
+ * @return - The elapsed milliseconds.
+ */
+uint32_t nadk_millis();
+
 #endif  // _NADK_GENERAL_H
