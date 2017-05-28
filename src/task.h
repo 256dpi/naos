@@ -28,6 +28,11 @@ void nadk_task_stop();
 void nadk_task_notify(nadk_status_t status);
 
 /**
+ * Pass in a parameter update.
+ */
+void nadk_task_update(const char *param, const char *value);
+
+/**
  * Forward a message to the task process.
  *
  * @param topic - The topic.

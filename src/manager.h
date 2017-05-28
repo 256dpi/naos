@@ -18,14 +18,16 @@ void nadk_manager_init();
 void nadk_manager_start();
 
 /**
- * Allow manager to handle an incoming message. Will return true if the message has been handled.
+ * Handle an incoming message.
+ *
+ * The message is forwarded to the task if not handled by the manager.
  *
  * @param topic - The topic.
  * @param payload - The payload.
  * @param len - The payload length.
  * @param scope - The scope.
  */
-bool nadk_manager_handle(const char* topic, const char* payload, unsigned int len, nadk_scope_t scope);
+void nadk_manager_handle(const char* topic, const char* payload, unsigned int len, nadk_scope_t scope);
 
 /**
  * Stop the manager process.

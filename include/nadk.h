@@ -37,6 +37,14 @@ typedef struct {
   void (*online_callback)();
 
   /**
+   * The callback that is called when a parameter has been updated.
+   *
+   * @param param - The parameter.
+   * @param value - The value.
+   */
+  void (*update_callback)(const char *param, const char *value);
+
+  /**
    * The message callback is called with incoming messages.
    *
    * Note: The base topic has already been removed from the topic and should not start with a '/'.
@@ -148,5 +156,15 @@ bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained
  * @return
  */
 bool nadk_publish_int(const char *topic, int num, int qos, bool retained, nadk_scope_t scope);
+
+/**
+ * Will return the value of the requested parameter.
+ *
+ * Note: The returned pointer is valid until the next call to nadk_get().
+ *
+ * @param param - The parameter.
+ * @return Pointer to value.
+ */
+char *nadk_get(const char *param);
 
 #endif  // NADK_H

@@ -488,10 +488,7 @@ void nadk_ble_init(nadk_ble_attribute_callback_t cb, const char *device_type) {
   // create even group
   nadk_ble_init_event_group = xEventGroupCreate();
 
-  // initialize flash memory
-  ESP_ERROR_CHECK(nvs_flash_init());
-
-  // open flash namespace
+  // open nvs namespace
   ESP_ERROR_CHECK(nvs_open("nadk-ble", NVS_READWRITE, &nadk_ble_nvs_handle));
 
   // iterate through all characteristics

@@ -4,6 +4,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
+#include <nvs.h>
+#include <nvs_flash.h>
 #include <string.h>
 
 #include "ble.h"
@@ -11,6 +13,7 @@
 #include "manager.h"
 #include "mqtt.h"
 #include "nadk.h"
+#include "task.h"
 #include "update.h"
 
 #define NADK_MANAGER_CHUNK_SIZE NADK_MQTT_BUFFER_SIZE - 256
@@ -19,9 +22,13 @@
 
 static SemaphoreHandle_t nadk_manager_mutex;
 
+static nvs_handle nadk_manager_nvs_handle;
+
 static TaskHandle_t nadk_manager_task;
 
 static bool nadk_manager_process_started = false;
+
+static char *nadk_manager_param;
 
 static void nadk_manager_send_heartbeat() {
   // get device name
@@ -72,6 +79,9 @@ static void nadk_manager_process(void *p) {
 void nadk_manager_init() {
   // create mutex
   nadk_manager_mutex = xSemaphoreCreateMutex();
+
+  // open nvs namespace
+  ESP_ERROR_CHECK(nvs_open("nadk-manager", NVS_READWRITE, &nadk_manager_nvs_handle));
 }
 
 void nadk_manager_start() {
@@ -96,6 +106,7 @@ void nadk_manager_start() {
   nadk_subscribe("nadk/collect", 0, NADK_GLOBAL);
 
   // subscribe to local topics
+  nadk_subscribe("nadk/set/+", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/begin", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/chunk", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/finish", 0, NADK_LOCAL);
@@ -107,7 +118,7 @@ void nadk_manager_start() {
   NADK_UNLOCK(nadk_manager_mutex);
 }
 
-bool nadk_manager_handle(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
+void nadk_manager_handle(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
   // acquire mutex
   NADK_LOCK(nadk_manager_mutex);
 
@@ -119,7 +130,24 @@ bool nadk_manager_handle(const char *topic, const char *payload, unsigned int le
     // release mutex
     NADK_UNLOCK(nadk_manager_mutex);
 
-    return true;
+    return;
+  }
+
+  // check set
+  if (scope == NADK_LOCAL && strncmp(topic, "nadk/set/", 9) == 0) {
+    // get param
+    char *param = (char *)topic + 9;
+
+    // save param
+    ESP_ERROR_CHECK(nvs_set_str(nadk_manager_nvs_handle, param, payload));
+
+    // update task
+    nadk_task_update(param, payload);
+
+    // release mutex
+    NADK_UNLOCK(nadk_manager_mutex);
+
+    return;
   }
 
   // check update begin
@@ -137,7 +165,7 @@ bool nadk_manager_handle(const char *topic, const char *payload, unsigned int le
     // release mutex
     NADK_UNLOCK(nadk_manager_mutex);
 
-    return true;
+    return;
   }
 
   // check update chunk
@@ -152,7 +180,7 @@ bool nadk_manager_handle(const char *topic, const char *payload, unsigned int le
     // release mutex
     NADK_UNLOCK(nadk_manager_mutex);
 
-    return true;
+    return;
   }
 
   // check update finish
@@ -163,13 +191,47 @@ bool nadk_manager_handle(const char *topic, const char *payload, unsigned int le
     // release mutex
     NADK_UNLOCK(nadk_manager_mutex);
 
-    return true;
+    return;
   }
+
+  // if not handled, forward message to the task
+  nadk_task_forward(topic, payload, len, scope);
 
   // release mutex
   NADK_UNLOCK(nadk_manager_mutex);
 
-  return false;
+  return;
+}
+
+char *nadk_get(const char *param) {
+  // acquire mutex
+  NADK_LOCK(nadk_manager_mutex);
+
+  // free last param
+  if (nadk_manager_param != NULL) {
+    free(nadk_manager_param);
+    nadk_manager_param = NULL;
+  }
+
+  // get param size
+  size_t required_size;
+  esp_err_t err = nvs_get_str(nadk_manager_nvs_handle, param, NULL, &required_size);
+  if (err == ESP_ERR_NVS_NOT_FOUND) {
+    nadk_manager_param = strdup("");
+    NADK_UNLOCK(nadk_manager_mutex);
+    return nadk_manager_param;
+  } else {
+    ESP_ERROR_CHECK(err);
+  }
+
+  // allocate size
+  nadk_manager_param = malloc(required_size);
+  ESP_ERROR_CHECK(nvs_get_str(nadk_manager_nvs_handle, param, nadk_manager_param, &required_size));
+
+  // release mutex
+  NADK_UNLOCK(nadk_manager_mutex);
+
+  return nadk_manager_param;
 }
 
 void nadk_manager_stop() {

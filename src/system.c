@@ -2,6 +2,7 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+#include <nvs_flash.h>
 #include <string.h>
 
 #include "ble.h"
@@ -255,16 +256,6 @@ static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
   NADK_UNLOCK(nadk_system_mutex);
 }
 
-static void nadk_system_message_callback(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
-  // allow manager to handle the message
-  if (nadk_manager_handle(topic, payload, len, scope)) {
-    return;
-  }
-
-  // if not handled, forward it to the task
-  nadk_task_forward(topic, payload, len, scope);
-}
-
 void nadk_system_init() {
   // delay startup by max 5000ms if set
   if (nadk_config()->delay_startup) {
@@ -275,6 +266,9 @@ void nadk_system_init() {
 
   // create mutex
   nadk_system_mutex = xSemaphoreCreateMutex();
+
+  // initialize flash memory
+  ESP_ERROR_CHECK(nvs_flash_init());
 
   // init task
   nadk_task_init();
@@ -289,7 +283,7 @@ void nadk_system_init() {
   nadk_wifi_init(nadk_system_wifi_callback);
 
   // initialize mqtt client
-  nadk_mqtt_init(nadk_system_mqtt_callback, nadk_system_message_callback);
+  nadk_mqtt_init(nadk_system_mqtt_callback, nadk_manager_handle);
 
   // initialize OTA
   nadk_update_init();
