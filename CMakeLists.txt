@@ -36,6 +36,7 @@ set(SOURCE_FILES
         src/mqtt.c
         src/mqtt.h
         src/nadk.c
+        src/nadk.h
         src/system.c
         src/system.h
         src/task.c

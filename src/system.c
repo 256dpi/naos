@@ -4,12 +4,11 @@
 #include <freertos/semphr.h>
 #include <string.h>
 
-#include <nadk.h>
-
 #include "ble.h"
 #include "general.h"
 #include "manager.h"
 #include "mqtt.h"
+#include "nadk.h"
 #include "task.h"
 #include "update.h"
 #include "wifi.h"

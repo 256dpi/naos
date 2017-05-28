@@ -149,12 +149,6 @@ typedef struct {
  */
 void nadk_init(nadk_config_t *config);
 
-/**
- * Will return the config passed to nadk_init().
- *
- * @return
- */
-const nadk_config_t *nadk_config();
 
 /**
  * Returns the elapsed milliseconds since the start.
