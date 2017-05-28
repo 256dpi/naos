@@ -5,18 +5,18 @@ import (
 	"io/ioutil"
 )
 
-// A Device is a single device in an inventory.
-type Device struct {
-	Name      string `json:"name"`
-	Type      string `json:"type"`
-	Version   string `json:"version"`
-	BaseTopic string `json:"base-topic"`
-}
-
 // A Inventory represents the contents of the inventory file.
 type Inventory struct {
-	Broker  string             `json:"broker"`
-	Devices map[string]*Device `json:"devices"`
+	Broker  string            `json:"broker"`
+	Devices map[string]string `json:"devices"`
+}
+
+// NewInventory creates a new Inventory.
+func NewInventory(broker string) *Inventory {
+	return &Inventory{
+		Broker: broker,
+		Devices: make(map[string]string),
+	}
 }
 
 // ReadInventory will attempt to read the inventory file at the specified path.
@@ -38,7 +38,7 @@ func ReadInventory(path string) (*Inventory, error) {
 
 	// create map if missing
 	if inv.Devices == nil {
-		inv.Devices = make(map[string]*Device)
+		inv.Devices = make(map[string]string)
 	}
 
 	return &inv, nil

@@ -31,9 +31,7 @@ func create(cmd *command) {
 
 	fmt.Println("Please add your MQTT broker credentials.")
 
-	inv := &nadm.Inventory{
-		Broker: "mqtts://key:secret@broker.shiftr.io",
-	}
+	inv := nadm.NewInventory("mqtts://key:secret@broker.shiftr.io")
 
 	finish(cmd, inv)
 }
@@ -45,16 +43,11 @@ func collect(cmd *command, inv *nadm.Inventory) {
 	exitIfSet(err)
 
 	if cmd.oClear {
-		inv.Devices = make(map[string]*nadm.Device)
+		inv.Devices = make(map[string]string)
 	}
 
 	for _, a := range list {
-		inv.Devices[a.Name] = &nadm.Device{
-			Name:      a.Name,
-			Type:      a.Type,
-			Version:   a.Version,
-			BaseTopic: a.BaseTopic,
-		}
+		inv.Devices[a.Name] = a.BaseTopic
 
 		fmt.Printf("Found: %s (%s/%s) at %s\n", a.Name, a.Type, a.Version, a.BaseTopic)
 	}
@@ -76,8 +69,8 @@ func monitor(cmd *command, inv *nadm.Inventory) {
 
 	var baseTopics []string
 
-	for _, device := range inv.Devices {
-		baseTopics = append(baseTopics, device.BaseTopic)
+	for _, baseTopic := range inv.Devices {
+		baseTopics = append(baseTopics, baseTopic)
 	}
 
 	err := nadm.MonitorDevices(inv.Broker, baseTopics, quit, func(hb *nadm.Heartbeat) {
@@ -98,12 +91,12 @@ func update(cmd *command, inv *nadm.Inventory) {
 	fmt.Println("Begin with update...")
 	bar := pb.StartNew(len(bytes))
 
-	device, ok := inv.Devices[cmd.aName]
+	baseTopic, ok := inv.Devices[cmd.aName]
 	if !ok {
 		exitWithError(fmt.Sprintf("Device with name '%s' not found!", cmd.aName))
 	}
 
-	err = nadm.UpdateFirmware(inv.Broker, device.BaseTopic, bytes, func(sent int) { bar.Set(sent) })
+	err = nadm.UpdateFirmware(inv.Broker, baseTopic, bytes, func(sent int) { bar.Set(sent) })
 	exitIfSet(err)
 
 	bar.Finish()
