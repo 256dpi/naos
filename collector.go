@@ -18,6 +18,8 @@ type Announcement struct {
 }
 
 // Collect will collect Announcements.
+//
+// Note: Not correctly formatted announcements are ignored.
 func Collect(url string, d time.Duration) ([]*Announcement, error) {
 	// prepare channels
 	errs := make(chan error)
@@ -39,7 +41,6 @@ func Collect(url string, d time.Duration) ([]*Announcement, error) {
 
 		// check length
 		if len(data) < 4 {
-			errs <- fmt.Errorf("malformed payload: %s", string(msg.Payload))
 			return
 		}
 
