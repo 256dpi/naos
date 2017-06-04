@@ -99,6 +99,7 @@ void nadk_manager_start() {
 
   // subscribe to local topics
   nadk_subscribe("nadk/set/+", 0, NADK_LOCAL);
+  nadk_subscribe("nadk/get/+", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/begin", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/write", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/finish", 0, NADK_LOCAL);
@@ -135,6 +136,41 @@ void nadk_manager_handle(const char *topic, const char *payload, unsigned int le
 
     // update task
     nadk_task_update(param, payload);
+
+    // get value
+    char *value = nadk_get(param);
+
+    // construct topic
+    char *t = nadk_str_concat("nadk/value/", param);
+
+    // send value
+    nadk_publish_str(t, value, 0, false, NADK_LOCAL);
+
+    // free topic
+    free(t);
+
+    // release mutex
+    NADK_UNLOCK(nadk_manager_mutex);
+
+    return;
+  }
+
+  // check get
+  if (scope == NADK_LOCAL && strncmp(topic, "nadk/get/", 9) == 0) {
+    // get param
+    char *param = (char *)topic + 9;
+
+    // get value
+    char *value = nadk_get(param);
+
+    // construct topic
+    char *t = nadk_str_concat("nadk/value/", param);
+
+    // send value
+    nadk_publish_str(t, value, 0, false, NADK_LOCAL);
+
+    // free topic
+    free(t);
 
     // release mutex
     NADK_UNLOCK(nadk_manager_mutex);

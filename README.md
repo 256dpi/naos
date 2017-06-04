@@ -22,7 +22,7 @@ All devices will periodically publish to the local `nadk/heartbeat` topic. The p
 
 ### Configuration
 
-All devices will subscribe to the local `nadk/set/+` topic to handle configuration update requests. 
+All devices will subscribe to the local `nadk/set/+` and `nadk/get/+` topics to handle configuration write and read requests. The device will acknowledge each action by responding with the saved value on the local topic `nadk/value/+`.
 
 ### Firmware Update
 
