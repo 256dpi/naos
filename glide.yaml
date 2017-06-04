@@ -3,7 +3,7 @@ import:
 - package: github.com/docopt/docopt-go
   version: ^0.6.2
 - package: github.com/gomqtt/client
-  version: ^0.5.2
+  version: ^0.6.0
 - package: gopkg.in/cheggaaa/pb.v1
   version: ^1.0.15
 - package: gopkg.in/tomb.v2

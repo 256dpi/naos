@@ -18,7 +18,7 @@ func Set(url, param, value string, baseTopics []string, timeout time.Duration) (
 	return commonGetSet(url, param, value, true, baseTopics, timeout)
 }
 
-func commonGetSet(url, param, value string, set bool, baseTopics []string, d time.Duration) (map[string]string, error) {
+func commonGetSet(url, param, value string, set bool, baseTopics []string, timeout time.Duration) (map[string]string, error) {
 	// prepare channels
 	errs := make(chan error)
 	response := make(chan struct{})
@@ -53,7 +53,7 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, d tim
 	}
 
 	// wait for ack
-	err = cf.Wait()
+	err = cf.Wait(timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, d tim
 	}
 
 	// wait for ack
-	err = sf.Wait()
+	err = sf.Wait(timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, d tim
 		}
 
 		// wait for ack
-		err = pf.Wait()
+		err = pf.Wait(timeout)
 		if err != nil {
 			return nil, err
 		}
@@ -123,7 +123,7 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, d tim
 			if counter == 0 {
 				goto exit
 			}
-		case <-time.After(d):
+		case <-time.After(timeout):
 			goto exit
 		}
 	}

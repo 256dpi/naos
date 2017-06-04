@@ -3,6 +3,7 @@ package nadm
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/gomqtt/client"
 	"github.com/gomqtt/packet"
@@ -53,7 +54,7 @@ func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
 	}
 
 	// wait for ack
-	err = cf.Wait()
+	err = cf.Wait(5 * time.Second)
 	if err != nil {
 		return err
 	}
@@ -68,7 +69,7 @@ func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
 	}
 
 	// wait for ack
-	err = sf.Wait()
+	err = sf.Wait(5 * time.Second)
 	if err != nil {
 		return err
 	}

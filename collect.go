@@ -19,7 +19,7 @@ type Announcement struct {
 // Collect will collect Announcements.
 //
 // Note: Not correctly formatted announcements are ignored.
-func Collect(url string, d time.Duration) ([]*Announcement, error) {
+func Collect(url string, duration time.Duration) ([]*Announcement, error) {
 	// prepare channels
 	errs := make(chan error)
 	anns := make(chan *Announcement)
@@ -59,7 +59,7 @@ func Collect(url string, d time.Duration) ([]*Announcement, error) {
 	}
 
 	// wait for ack
-	err = cf.Wait()
+	err = cf.Wait(duration)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func Collect(url string, d time.Duration) ([]*Announcement, error) {
 	}
 
 	// wait for ack
-	err = sf.Wait()
+	err = sf.Wait(duration)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func Collect(url string, d time.Duration) ([]*Announcement, error) {
 	var list []*Announcement
 
 	// set deadline
-	deadline := time.After(d)
+	deadline := time.After(duration)
 
 	for {
 		// wait for error, announcement or deadline

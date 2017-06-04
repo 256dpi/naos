@@ -1,5 +1,5 @@
-hash: 21b823b5b672cc2e429864f96fe7abd5a45b255a94b94d72c5869681c4b1e903
-updated: 2017-05-28T16:51:27.505920777+02:00
+hash: 91ce50abdb87d215984ccf9aac4c933d786e72c36b66d36fe95b0bfc12eba227
+updated: 2017-06-04T20:43:17.350531856+02:00
 imports:
 - name: code.cloudfoundry.org/bytefmt
   version: f4415fafc5619dd75599a54a7c91fb3948ad58bd
@@ -10,13 +10,13 @@ imports:
 - name: github.com/docopt/docopt-go
   version: 784ddc588536785e7299f7272f39101f7faccc3f
 - name: github.com/gomqtt/client
-  version: 7a0aa6502e60a3458bbc91d00d08e6f9aa9a5f5d
+  version: 1929383b66fcfc6d66ea6de517df16cad0617b06
 - name: github.com/gomqtt/packet
   version: 8dfc4ffe91f1d702227e7ecde40aba55d654aefe
 - name: github.com/gomqtt/tools
   version: 7e24ab8320def0d7e73acd3745a4a8f430399c9a
 - name: github.com/gomqtt/transport
-  version: 248e8f118bf28d88fe54012c6a2dd749cc3c98b3
+  version: 3d19f772517f2f4148332238c11db03ad2d93ad7
 - name: github.com/gorilla/websocket
   version: 3ab3a8b8831546bd18fd182c20687ca853b2bb13
 - name: github.com/jpillora/backoff

@@ -68,7 +68,7 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heart
 	}
 
 	// wait for ack
-	err = cf.Wait()
+	err = cf.Wait(5 * time.Second)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heart
 	}
 
 	// wait for ack
-	err = sf.Wait()
+	err = sf.Wait(5 * time.Second)
 	if err != nil {
 		return err
 	}
