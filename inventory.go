@@ -190,7 +190,8 @@ func (i *Inventory) Set(pattern, param, value string, timeout time.Duration) ([]
 
 // Monitor will monitor the devices that match the supplied glob pattern and
 // update the inventory accordingly. The specified callback is called for every
-// heartbeat if available.
+// heartbeat with the update device and the heartbeat available at
+// device.LastHeartbeat.
 func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*Device)) error {
 	return Monitor(i.Broker, i.baseTopics(pattern), quit, func(heartbeat *Heartbeat) {
 		// get device

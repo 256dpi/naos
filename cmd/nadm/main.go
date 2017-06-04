@@ -98,6 +98,10 @@ func monitor(cmd *command, inv *nadm.Inventory) {
 }
 
 func update(cmd *command, inv *nadm.Inventory) {
+	// TODO: Implement multi device update with filters.
+
+	// TODO: Display as table with just a percentage.
+
 	fmt.Println("Reading image...")
 
 	file, err := filepath.Abs(cmd.aImage)
