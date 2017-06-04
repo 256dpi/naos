@@ -59,8 +59,8 @@ func UpdateFirmware(url, baseTopic string, image []byte, progress func(int)) err
 	// make sure client gets closed
 	defer cl.Close()
 
-	// subscribe to next chunk topic
-	sf, err := cl.Subscribe(baseTopic+"/nadk/update/next", 0)
+	// subscribe to next chunk request topic
+	sf, err := cl.Subscribe(baseTopic+"/nadk/update/request", 0)
 	if err != nil {
 		return err
 	}
@@ -81,14 +81,14 @@ func UpdateFirmware(url, baseTopic string, image []byte, progress func(int)) err
 	total := 0
 
 	for {
-		// the size of the next chunk
-		next := 0
+		// the max size of the next requested chunk
+		maxSize := 0
 
 		// wait for error or request
 		select {
 		case err := <-errs:
 			return err
-		case next = <-requests:
+		case maxSize = <-requests:
 			// continue
 		}
 
@@ -113,22 +113,22 @@ func UpdateFirmware(url, baseTopic string, image []byte, progress func(int)) err
 		}
 
 		// check chunk size
-		if next > remaining {
+		if maxSize > remaining {
 			// prevent overflow
-			next = remaining
-		} else if next > 4096 {
+			maxSize = remaining
+		} else if maxSize > 4096 {
 			// limit to 4096 bytes
-			next = 4096
+			maxSize = 4096
 		}
 
 		// write chunk
-		_, err := cl.Publish(baseTopic+"/nadk/update/write", image[total:total+next], 0, false)
+		_, err := cl.Publish(baseTopic+"/nadk/update/write", image[total:total+maxSize], 0, false)
 		if err != nil {
 			return err
 		}
 
 		// adjust counter
-		total += next
+		total += maxSize
 
 		// update progress if available
 		if progress != nil {
