@@ -49,7 +49,7 @@ func list(cmd *command, inv *nadm.Inventory) {
 		tbl.add(d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
 	}
 
-	fmt.Print(tbl.string())
+	tbl.string()
 }
 
 func collect(cmd *command, inv *nadm.Inventory) {
@@ -66,7 +66,7 @@ func collect(cmd *command, inv *nadm.Inventory) {
 		tbl.add(d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
 	}
 
-	fmt.Print(tbl.string())
+	tbl.print()
 
 	save(cmd, inv)
 }
@@ -81,12 +81,24 @@ func monitor(cmd *command, inv *nadm.Inventory) {
 		close(quit)
 	}()
 
-	lengths := []int{16, 16, 16, 9, 16, 9}
+	lines := 0
 
-	fmt.Println(makeRow([]string{"DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION"}, lengths))
+	err := inv.Monitor(cmd.aFilter, quit, func(d *nadm.Device) {
+		if lines > 0 {
+			fmt.Printf("\033[%dA", lines)
+		}
 
-	err := inv.Monitor(cmd.aFilter, quit, func(d *nadm.Device, hb *nadm.Heartbeat) {
-		fmt.Println(makeRow([]string{hb.DeviceName, hb.DeviceType, hb.FirmwareVersion, bytefmt.ByteSize(uint64(hb.FreeHeapSize)), hb.UpTime.String(), hb.StartPartition}, lengths))
+		tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION")
+		lines = 1
+
+		for _, device := range inv.Devices {
+			if device.LastHeartbeat != nil {
+				tbl.add(device.Name, device.Type, device.FirmwareVersion, bytefmt.ByteSize(uint64(device.LastHeartbeat.FreeHeapSize)), device.LastHeartbeat.UpTime.String(), device.LastHeartbeat.StartPartition)
+				lines++
+			}
+		}
+
+		tbl.string()
 	})
 	exitIfSet(err)
 }
@@ -127,7 +139,7 @@ func set(cmd *command, inv *nadm.Inventory) {
 		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
 	}
 
-	fmt.Print(tbl.string())
+	tbl.string()
 
 	save(cmd, inv)
 }
@@ -142,7 +154,7 @@ func get(cmd *command, inv *nadm.Inventory) {
 		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
 	}
 
-	fmt.Print(tbl.string())
+	tbl.string()
 
 	save(cmd, inv)
 }

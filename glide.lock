@@ -1,8 +1,10 @@
-hash: 91ce50abdb87d215984ccf9aac4c933d786e72c36b66d36fe95b0bfc12eba227
-updated: 2017-06-04T20:43:17.350531856+02:00
+hash: fbe9a83b9de07748c4924988db91db83c4208d180a6749d08f315469a12b1c58
+updated: 2017-06-04T21:33:38.266472999+02:00
 imports:
 - name: code.cloudfoundry.org/bytefmt
   version: f4415fafc5619dd75599a54a7c91fb3948ad58bd
+- name: github.com/buger/goterm
+  version: bc6c333206f446a53cac4db5d2e6a4316139d737
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
   subpackages:

@@ -1,6 +1,9 @@
 package main
 
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+)
 
 type table struct {
 	data [][]string
@@ -43,6 +46,10 @@ func (t *table) string() string {
 	}
 
 	return buf.String()
+}
+
+func (t *table) print() {
+	fmt.Print(t.string())
 }
 
 func makeRow(cells []string, lengths []int) string {

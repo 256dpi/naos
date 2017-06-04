@@ -15,6 +15,7 @@ type Device struct {
 	FirmwareVersion string            `json:"firmware_version"`
 	BaseTopic       string            `json:"base_topic"`
 	Parameters      map[string]string `json:"parameters"`
+	LastHeartbeat   *Heartbeat        `json:"-"`
 }
 
 // A Inventory represents the contents of the inventory file.
@@ -190,7 +191,7 @@ func (i *Inventory) Set(pattern, param, value string, timeout time.Duration) ([]
 // Monitor will monitor the devices that match the supplied glob pattern and
 // update the inventory accordingly. The specified callback is called for every
 // heartbeat if available.
-func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*Device, *Heartbeat)) error {
+func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*Device)) error {
 	return Monitor(i.Broker, i.baseTopics(pattern), quit, func(heartbeat *Heartbeat) {
 		// get device
 		device, ok := i.Devices[heartbeat.DeviceName]
@@ -201,10 +202,11 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*D
 		// update fields
 		device.Type = heartbeat.DeviceType
 		device.FirmwareVersion = heartbeat.FirmwareVersion
+		device.LastHeartbeat = heartbeat
 
 		// call user callback
 		if callback != nil {
-			callback(device, heartbeat)
+			callback(device)
 		}
 	})
 }

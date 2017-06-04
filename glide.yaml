@@ -10,3 +10,4 @@ import:
 - package: code.cloudfoundry.org/bytefmt
 - package: github.com/ryanuber/go-glob
   version: master
+- package: github.com/buger/goterm
