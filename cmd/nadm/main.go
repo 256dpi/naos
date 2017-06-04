@@ -112,7 +112,7 @@ func set(cmd *command, inv *nadm.Inventory) {
 		baseTopics = append(baseTopics, d.BaseTopic)
 	}
 
-	err := nadm.Set(inv.Broker, cmd.aParam, cmd.aValue, baseTopics)
+	_, err := nadm.Set(inv.Broker, cmd.aParam, cmd.aValue, baseTopics, 1*time.Second)
 	exitIfSet(err)
 
 	fmt.Println("Done!")

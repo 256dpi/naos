@@ -9,55 +9,21 @@ import (
 )
 
 // Set will publish the provided parameter for all specified base topics.
-func Set(url, param, value string, baseTopics []string) error {
-	// create client
-	cl := client.New()
-
-	// connect to the broker using the provided url
-	cf, err := cl.Connect(client.NewConfig(url))
-	if err != nil {
-		return err
-	}
-
-	// wait for ack
-	err = cf.Wait()
-	if err != nil {
-		return err
-	}
-
-	// make sure client gets closed
-	defer cl.Close()
-
-	// add subscriptions
-	for _, baseTopic := range baseTopics {
-		// publish config update
-		pf, err := cl.Publish(baseTopic+"/nadk/set/"+param, []byte(value), 0, false)
-		if err != nil {
-			return err
-		}
-
-		// wait for ack
-		err = pf.Wait()
-		if err != nil {
-			return err
-		}
-	}
-
-	// disconnect client
-	err = cl.Disconnect()
-	if err != nil {
-		return err
-	}
-
-	return nil
+func Set(url, param, value string, baseTopics []string, d time.Duration) (map[string]string, error) {
+	return commonGetSet(url, param, value, true, baseTopics, d)
 }
 
 // Get will publish the provided parameter for all specified base topics.
 func Get(url, param string, baseTopics []string, d time.Duration) (map[string]string, error) {
-	// prepare errors channel
-	errs := make(chan error)
+	return commonGetSet(url, param, "", false, baseTopics, d)
+}
 
-	// prepare response
+func commonGetSet(url, param, value string, set bool, baseTopics []string, d time.Duration) (map[string]string, error) {
+	// prepare channels
+	errs := make(chan error)
+	response := make(chan struct{})
+
+	// prepare table
 	table := make(map[string]string)
 
 	// create client
@@ -75,6 +41,7 @@ func Get(url, param string, baseTopics []string, d time.Duration) (map[string]st
 		for _, baseTopic := range baseTopics {
 			if strings.HasPrefix(msg.Topic, baseTopic) {
 				table[baseTopic] = strings.TrimPrefix(msg.Topic, baseTopic+"/nadk/value/")
+				response <- struct{}{}
 			}
 		}
 	}
@@ -119,8 +86,18 @@ func Get(url, param string, baseTopics []string, d time.Duration) (map[string]st
 
 	// add subscriptions
 	for _, baseTopic := range baseTopics {
+		// init variables
+		topic := baseTopic + "/nadk/get/" + param
+		payload := ""
+
+		// override if set is set
+		if set {
+			topic = baseTopic + "/nadk/set/" + param
+			payload = value
+		}
+
 		// publish config update
-		pf, err := cl.Publish(baseTopic+"/nadk/get/"+param, nil, 0, false)
+		pf, err := cl.Publish(topic, []byte(payload), 0, false)
 		if err != nil {
 			return nil, err
 		}
@@ -132,19 +109,29 @@ func Get(url, param string, baseTopics []string, d time.Duration) (map[string]st
 		}
 	}
 
-	// wait for errors or timeout
-	select {
-	case err = <-errs:
-		return nil, err
-	case <-time.After(d):
-		// move on
+	// prepare counter
+	counter := len(baseTopics)
+
+	// wait for errors, counter or timeout
+	for {
+		select {
+		case err = <-errs:
+			return table, err
+		case <-response:
+			counter--
+
+			if counter == 0 {
+				goto exit
+			}
+		case <-time.After(d):
+			goto exit
+		}
 	}
 
+exit:
+
 	// disconnect client
-	err = cl.Disconnect()
-	if err != nil {
-		return nil, err
-	}
+	cl.Disconnect()
 
 	return table, nil
 }

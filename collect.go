@@ -1,7 +1,6 @@
 package nadm
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -100,13 +99,14 @@ func Collect(url string, d time.Duration) ([]*Announcement, error) {
 		case a := <-anns:
 			list = append(list, a)
 		case <-deadline:
-			// disconnect
-			err = cl.Disconnect()
-			if err != nil {
-				return list, err
-			}
-
-			return list, nil
+			goto exit
 		}
 	}
+
+exit:
+
+	// disconnect client
+	cl.Disconnect()
+
+	return list, nil
 }

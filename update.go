@@ -105,11 +105,8 @@ func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
 				return err
 			}
 
-			// disconnect
-			err = cl.Disconnect()
-			if err != nil {
-				return err
-			}
+			// disconnect client
+			cl.Disconnect()
 
 			return nil
 		}

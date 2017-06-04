@@ -1,7 +1,6 @@
 package nadm
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -109,10 +108,7 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heart
 	}
 
 	// disconnect client
-	err = cl.Disconnect()
-	if err != nil{
-		return err
-	}
+	cl.Disconnect()
 
 	return nil
 }
