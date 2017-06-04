@@ -21,7 +21,7 @@ type Announcement struct {
 func CollectAnnouncements(url string, d time.Duration) ([]*Announcement, error) {
 	// prepare channels
 	errs := make(chan error)
-	announcements := make(chan *Announcement)
+	anns := make(chan *Announcement)
 
 	// create client
 	cl := client.New()
@@ -44,7 +44,7 @@ func CollectAnnouncements(url string, d time.Duration) ([]*Announcement, error) 
 		}
 
 		// add announcement
-		announcements <- &Announcement{
+		anns <- &Announcement{
 			Type:      data[0],
 			Version:   data[1],
 			Name:      data[2],
@@ -96,7 +96,7 @@ func CollectAnnouncements(url string, d time.Duration) ([]*Announcement, error) 
 		select {
 		case err := <-errs:
 			return list, err
-		case a := <-announcements:
+		case a := <-anns:
 			list = append(list, a)
 		case <-deadline:
 			// disconnect
