@@ -11,6 +11,7 @@ var usage = `nadm - the networked artifacts device manager
 
 Usage:
   nadm create [--inventory=<file>]
+  nadm list [--inventory=<file>]
   nadm collect [--duration=<d> --clear --inventory=<file>]
   nadm get <filter> <param> [--timeout=<d> --inventory=<file>]
   nadm set <filter> <param> <value> [--timeout=<d> --inventory=<file>]
@@ -28,24 +29,25 @@ Options:
 type command struct {
 	// commands
 	cCreate  bool
+	cList    bool
 	cCollect bool
+	cGet     bool
+	cSet     bool
 	cMonitor bool
 	cUpdate  bool
-	cSet     bool
-	cGet     bool
 
 	// arguments
-	aName   string
-	aImage  string
 	aFilter string
 	aParam  string
 	aValue  string
+	aName   string
+	aImage  string
 
 	// options
 	oInventory string
-	oClear     bool
 	oDuration  time.Duration
 	oTimeout   time.Duration
+	oClear     bool
 }
 
 func parseCommand() *command {
@@ -65,6 +67,7 @@ func parseCommand() *command {
 	return &command{
 		// commands
 		cCreate:  getBool(a["create"]),
+		cList:    getBool(a["list"]),
 		cCollect: getBool(a["collect"]),
 		cMonitor: getBool(a["monitor"]),
 		cUpdate:  getBool(a["update"]),

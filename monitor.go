@@ -11,9 +11,9 @@ import (
 
 // A Heartbeat is a single heartbeat emitted by Monitor.
 type Heartbeat struct {
+	DeviceName      string
 	DeviceType      string
 	FirmwareVersion string
-	DeviceName      string
 	FreeHeapSize    int
 	UpTime          time.Duration
 	StartPartition  string

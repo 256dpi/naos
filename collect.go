@@ -10,9 +10,9 @@ import (
 
 // An Announcement is returned by Collect.
 type Announcement struct {
+	DeviceName      string
 	DeviceType      string
 	FirmwareVersion string
-	DeviceName      string
 	BaseTopic       string
 }
 

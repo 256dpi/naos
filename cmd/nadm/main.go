@@ -17,6 +17,8 @@ func main() {
 
 	if cmd.cCreate {
 		create(cmd)
+	} else if cmd.cList {
+		list(cmd, getInventory(cmd))
 	} else if cmd.cCollect {
 		collect(cmd, getInventory(cmd))
 	} else if cmd.cMonitor {
@@ -37,7 +39,13 @@ func create(cmd *command) {
 
 	fmt.Println("Please add your MQTT broker credentials to proceed.")
 
-	finish(cmd, inv)
+	save(cmd, inv)
+}
+
+func list(cmd *command, inv *nadm.Inventory) {
+	for _, d := range inv.Devices {
+		fmt.Printf("%s (%s/%s) at %s\n", d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
+	}
 }
 
 func collect(cmd *command, inv *nadm.Inventory) {
@@ -56,7 +64,7 @@ func collect(cmd *command, inv *nadm.Inventory) {
 		fmt.Printf("%s (%s/%s) at %s\n", d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
 	}
 
-	finish(cmd, inv)
+	save(cmd, inv)
 }
 
 func monitor(cmd *command, inv *nadm.Inventory) {
@@ -100,7 +108,7 @@ func update(cmd *command, inv *nadm.Inventory) {
 	bar.Finish()
 	fmt.Println("Update finished!")
 
-	finish(cmd, inv)
+	save(cmd, inv)
 }
 
 func set(cmd *command, inv *nadm.Inventory) {
@@ -113,7 +121,7 @@ func set(cmd *command, inv *nadm.Inventory) {
 		fmt.Printf("%s: %s\n", device.Name, device.Parameters[cmd.aParam])
 	}
 
-	finish(cmd, inv)
+	save(cmd, inv)
 }
 
 func get(cmd *command, inv *nadm.Inventory) {
@@ -126,9 +134,9 @@ func get(cmd *command, inv *nadm.Inventory) {
 		fmt.Printf("%s: %s\n", device.Name, device.Parameters[cmd.aParam])
 	}
 
-	finish(cmd, inv)
+	save(cmd, inv)
 }
 
-func finish(cmd *command, inv *nadm.Inventory) {
+func save(cmd *command, inv *nadm.Inventory) {
 	inv.Save(cmd.oInventory)
 }

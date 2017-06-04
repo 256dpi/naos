@@ -10,8 +10,8 @@ import (
 
 // A Device represents a single device in an Inventory.
 type Device struct {
-	Type            string            `json:"type"`
 	Name            string            `json:"name"`
+	Type            string            `json:"type"`
 	FirmwareVersion string            `json:"firmware_version"`
 	BaseTopic       string            `json:"base_topic"`
 	Parameters      map[string]string `json:"parameters"`
