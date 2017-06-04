@@ -12,5 +12,6 @@ lint:
 	golint .
 	golint ./cmd/nadm
 
-copy:
+install:
+	gp run "go install github.com/shiftr-io/nadm/cmd/nadm"
 	gp run "cp ./bin/nadm /usr/local/bin" -r

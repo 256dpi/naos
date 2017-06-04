@@ -49,7 +49,7 @@ func list(cmd *command, inv *nadm.Inventory) {
 		tbl.add(d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
 	}
 
-	tbl.string()
+	tbl.print()
 }
 
 func collect(cmd *command, inv *nadm.Inventory) {
@@ -137,7 +137,7 @@ func set(cmd *command, inv *nadm.Inventory) {
 		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
 	}
 
-	tbl.string()
+	tbl.print()
 
 	save(cmd, inv)
 }
@@ -152,7 +152,7 @@ func get(cmd *command, inv *nadm.Inventory) {
 		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
 	}
 
-	tbl.string()
+	tbl.print()
 
 	save(cmd, inv)
 }
