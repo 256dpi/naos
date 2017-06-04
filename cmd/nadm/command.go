@@ -13,15 +13,16 @@ Usage:
   nadm create [--inventory=<file>]
   nadm list [--inventory=<file>]
   nadm collect [--duration=<d> --clear --inventory=<file>]
-  nadm get <filter> <param> [--timeout=<d> --inventory=<file>]
-  nadm set <filter> <param> <value> [--timeout=<d> --inventory=<file>]
-  nadm monitor <filter> [--inventory=<file>]
+  nadm get <param> [--filter=<pattern> --timeout=<d> --inventory=<file>]
+  nadm set <param> <value> [--filter=<pattern> --timeout=<d> --inventory=<file>]
+  nadm monitor [--filter=<pattern> --inventory=<file>]
   nadm update <name> <image> [--inventory=<file>]
 
 Options:
   -i --inventory=<file>  The inventory file [default: ./nadm.json].
-  -d --duration=<d>      The collection duration [default: 1s].
-  -t --timeout=<d>       The response timeout [default: 1s].
+  -d --duration=<ms>     The collection duration [default: 1s].
+  -t --timeout=<ms>      The response timeout [default: 1s].
+  -f --filter=<pattern>  The filter glob pattern [default: *].
   -c --clear             Remove not available devices from inventory.
   -h --help              Show this screen.
 `
@@ -37,16 +38,16 @@ type command struct {
 	cUpdate  bool
 
 	// arguments
-	aFilter string
-	aParam  string
-	aValue  string
-	aName   string
-	aImage  string
+	aParam string
+	aValue string
+	aName  string
+	aImage string
 
 	// options
 	oInventory string
 	oDuration  time.Duration
 	oTimeout   time.Duration
+	oFilter    string
 	oClear     bool
 }
 
@@ -75,17 +76,18 @@ func parseCommand() *command {
 		cGet:     getBool(a["get"]),
 
 		// arguments
-		aName:   getString(a["<name>"]),
-		aImage:  getString(a["<image>"]),
-		aFilter: getString(a["<filter>"]),
-		aParam:  getString(a["<param>"]),
-		aValue:  getString(a["<value>"]),
+		aName:  getString(a["<name>"]),
+		aImage: getString(a["<image>"]),
+
+		aParam: getString(a["<param>"]),
+		aValue: getString(a["<value>"]),
 
 		// options
 		oInventory: inv,
-		oClear:     getBool(a["--clear"]),
 		oDuration:  getDuration(a["--duration"]),
 		oTimeout:   getDuration(a["--timeout"]),
+		oFilter:    getString(a["--filter"]),
+		oClear:     getBool(a["--clear"]),
 	}
 }
 

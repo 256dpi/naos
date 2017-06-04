@@ -83,7 +83,7 @@ func monitor(cmd *command, inv *nadm.Inventory) {
 
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION")
 
-	err := inv.Monitor(cmd.aFilter, quit, func(d *nadm.Device) {
+	err := inv.Monitor(cmd.oFilter, quit, func(d *nadm.Device) {
 		tbl.clear()
 
 		for _, device := range inv.Devices {
@@ -128,7 +128,7 @@ func update(cmd *command, inv *nadm.Inventory) {
 }
 
 func set(cmd *command, inv *nadm.Inventory) {
-	list, err := inv.Set(cmd.aFilter, cmd.aParam, cmd.aValue, cmd.oTimeout)
+	list, err := inv.Set(cmd.oFilter, cmd.aParam, cmd.aValue, cmd.oTimeout)
 	exitIfSet(err)
 
 	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
@@ -143,7 +143,7 @@ func set(cmd *command, inv *nadm.Inventory) {
 }
 
 func get(cmd *command, inv *nadm.Inventory) {
-	list, err := inv.Get(cmd.aFilter, cmd.aParam, cmd.oTimeout)
+	list, err := inv.Get(cmd.oFilter, cmd.aParam, cmd.oTimeout)
 	exitIfSet(err)
 
 	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
