@@ -22,6 +22,8 @@ type Heartbeat struct {
 
 // Monitor will listen to the passed base topics for heartbeats and call the
 // supplied callback until the specified quit channel is closed.
+//
+// Note: Not correctly formatted heartbeats are ignored.
 func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heartbeat)) error {
 	// prepare channels
 	errs := make(chan error)
