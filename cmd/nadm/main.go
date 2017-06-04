@@ -95,7 +95,7 @@ func update(cmd *command, inv *nadm.Inventory) {
 		exitWithError(fmt.Sprintf("Device with name '%s' not found!", cmd.aName))
 	}
 
-	err = nadm.UpdateFirmware(inv.Broker, device.BaseTopic, bytes, func(sent int) { bar.Set(sent) })
+	err = nadm.Update(inv.Broker, device.BaseTopic, bytes, func(sent int) { bar.Set(sent) })
 	exitIfSet(err)
 
 	bar.Finish()
@@ -112,7 +112,7 @@ func set(cmd *command, inv *nadm.Inventory) {
 		baseTopics = append(baseTopics, d.BaseTopic)
 	}
 
-	err := nadm.SetParam(inv.Broker, cmd.aParam, cmd.aValue, baseTopics)
+	err := nadm.Set(inv.Broker, cmd.aParam, cmd.aValue, baseTopics)
 	exitIfSet(err)
 
 	fmt.Println("Done!")
@@ -128,7 +128,7 @@ func get(cmd *command, inv *nadm.Inventory) {
 		baseTopics = append(baseTopics, d.BaseTopic)
 	}
 
-	table, err := nadm.GetParam(inv.Broker, cmd.aParam, baseTopics, 1*time.Second)
+	table, err := nadm.Get(inv.Broker, cmd.aParam, baseTopics, 1*time.Second)
 	exitIfSet(err)
 
 	for baseTopic, value := range table {

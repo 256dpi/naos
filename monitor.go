@@ -10,7 +10,7 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// A Heartbeat is a single heartbeat emitted by MonitorDevices.
+// A Heartbeat is a single heartbeat emitted by Monitor.
 type Heartbeat struct {
 	DeviceType      string
 	FirmwareVersion string
@@ -20,9 +20,9 @@ type Heartbeat struct {
 	StartPartition  string
 }
 
-// MonitorDevices will listen to the passed base topics for heartbeats and call
-// the supplied callback until the specified quit channel is closed.
-func MonitorDevices(url string, baseTopics []string, quit chan struct{}, cb func(*Heartbeat)) error {
+// Monitor will listen to the passed base topics for heartbeats and call the
+// supplied callback until the specified quit channel is closed.
+func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heartbeat)) error {
 	// prepare channels
 	errs := make(chan error)
 

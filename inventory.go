@@ -125,7 +125,7 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 // update the inventory accordingly. The specified callback is called for every
 // heartbeat if available.
 func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*Device, *Heartbeat)) error {
-	return MonitorDevices(i.Broker, i.baseTopics(pattern), quit, func(heartbeat *Heartbeat) {
+	return Monitor(i.Broker, i.baseTopics(pattern), quit, func(heartbeat *Heartbeat) {
 		// get device
 		device, ok := i.Devices[heartbeat.DeviceName]
 		if !ok {

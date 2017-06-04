@@ -8,8 +8,8 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// SetParam will publish the provided parameter for all specified base topics.
-func SetParam(url, param, value string, baseTopics []string) error {
+// Set will publish the provided parameter for all specified base topics.
+func Set(url, param, value string, baseTopics []string) error {
 	// create client
 	cl := client.New()
 
@@ -52,8 +52,8 @@ func SetParam(url, param, value string, baseTopics []string) error {
 	return nil
 }
 
-// GetParam will publish the provided parameter for all specified base topics.
-func GetParam(url, param string, baseTopics []string, d time.Duration) (map[string]string, error) {
+// Get will publish the provided parameter for all specified base topics.
+func Get(url, param string, baseTopics []string, d time.Duration) (map[string]string, error) {
 	// prepare errors channel
 	errs := make(chan error)
 

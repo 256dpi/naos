@@ -8,10 +8,10 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// UpdateFirmware will perform a firmware update an block until it is done or an
-// error has occurred. If progress is provided it will be called with the bytes
-// sent to the device.
-func UpdateFirmware(url, baseTopic string, image []byte, progress func(int)) error {
+// Update will perform a firmware update an block until it is done or an error
+// has occurred. If progress is provided it will be called with the bytes sent
+// to the device.
+func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
 	// prepare channels
 	requests := make(chan int)
 	errs := make(chan error)
@@ -71,8 +71,8 @@ func UpdateFirmware(url, baseTopic string, image []byte, progress func(int)) err
 		return err
 	}
 
-	// begin update process by sending the size of the image
-	_, err = cl.Publish(baseTopic+"/nadk/update/begin", []byte(strconv.Itoa(len(image))), 0, false)
+	// begin update process by sending the size of the firmware
+	_, err = cl.Publish(baseTopic+"/nadk/update/begin", []byte(strconv.Itoa(len(firmware))), 0, false)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func UpdateFirmware(url, baseTopic string, image []byte, progress func(int)) err
 		}
 
 		// calculate remaining bytes
-		remaining := len(image) - total
+		remaining := len(firmware) - total
 
 		// check if done
 		if remaining == 0 {
@@ -122,7 +122,7 @@ func UpdateFirmware(url, baseTopic string, image []byte, progress func(int)) err
 		}
 
 		// write chunk
-		_, err := cl.Publish(baseTopic+"/nadk/update/write", image[total:total+maxSize], 0, false)
+		_, err := cl.Publish(baseTopic+"/nadk/update/write", firmware[total:total+maxSize], 0, false)
 		if err != nil {
 			return err
 		}
