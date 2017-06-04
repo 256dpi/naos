@@ -12,8 +12,8 @@ var usage = `nadm - the networked artifacts device manager
 Usage:
   nadm create [--inventory=<file>]
   nadm collect [--duration=<d> --clear --inventory=<file>]
-  nadm set <filter> <param> <value> [--timeout=<d> --inventory=<file>]
   nadm get <filter> <param> [--timeout=<d> --inventory=<file>]
+  nadm set <filter> <param> <value> [--timeout=<d> --inventory=<file>]
   nadm monitor <filter> [--inventory=<file>]
   nadm update <name> <image> [--inventory=<file>]
 
