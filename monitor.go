@@ -42,7 +42,6 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heart
 
 		// check length
 		if len(data) < 6 {
-			errs <- fmt.Errorf("malformed payload: %s", string(msg.Payload))
 			return
 		}
 
@@ -102,16 +101,16 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heart
 	// wait for error or quit
 	select {
 	case err = <-errs:
-		break
+		return err
 	case <-quit:
-		break
+		// move on
 	}
 
-	// attempt to disconnect
-	_err := cl.Disconnect()
-	if err == nil && _err != nil {
-		return _err
+	// disconnect client
+	err = cl.Disconnect()
+	if err != nil{
+		return err
 	}
 
-	return err
+	return nil
 }
