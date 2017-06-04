@@ -1,6 +1,8 @@
 #ifndef _NADK_GENERAL_H
 #define _NADK_GENERAL_H
 
+#include <stdint.h>
+
 /**
  * The general log tag.
  */
