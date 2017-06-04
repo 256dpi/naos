@@ -36,4 +36,15 @@ void nadk_delay(int millis);
  */
 uint32_t nadk_millis();
 
+/**
+ * Will concatenate two strings and return a new one.
+ *
+ * Note: The caller is responsible to free the returned buffer.
+ *
+ * @param str1 - The first string.
+ * @param str2 - The second string.
+ * @return The concatenated string.
+ */
+char *nadk_str_concat(const char *str1, const char *str2);
+
 #endif  // _NADK_GENERAL_H

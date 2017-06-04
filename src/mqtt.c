@@ -1,40 +1,22 @@
+#include <sdkconfig.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sdkconfig.h>
 
+#include "general.h"
 #include "mqtt.h"
 
-static char *nadk_mqtt_base_topic = NULL;
+static char *nadk_mqtt_base_topic_prefix = NULL;
 
 static nadk_mqtt_message_callback_t nadk_mqtt_message_callback = NULL;
 
-// TODO: Guarantee we always work with trimmed base topics.
-
 // returned topics must be freed after use
 static char *nadk_mqtt_with_base_topic(const char *topic) {
-  // check base topic
-  if (nadk_mqtt_base_topic == NULL) {
-    return strdup(topic);
-  }
-
-  // allocate enough space
-  char *buf = malloc(strlen(nadk_mqtt_base_topic) + 1 + strlen(topic) + 1);
-
-  // write base topic
-  strcpy(buf, nadk_mqtt_base_topic);
-
-  // write separator
-  buf[strlen(nadk_mqtt_base_topic)] = '/';
-
-  // write topic into cache
-  strcpy(buf + strlen(nadk_mqtt_base_topic) + 1, topic);
-
-  return buf;
+  return nadk_str_concat(nadk_mqtt_base_topic_prefix, topic);
 }
 
 static nadk_scope_t nadk_mqtt_scope_from_topic(const char *topic) {
-  if (strncmp(topic, nadk_mqtt_base_topic, strlen(nadk_mqtt_base_topic)) == 0) {
+  if (strncmp(topic, nadk_mqtt_base_topic_prefix, strlen(nadk_mqtt_base_topic_prefix)) == 0) {
     return NADK_LOCAL;
   } else {
     return NADK_GLOBAL;
@@ -42,18 +24,13 @@ static nadk_scope_t nadk_mqtt_scope_from_topic(const char *topic) {
 }
 
 static const char *nadk_mqtt_without_base_topic(const char *topic) {
-  // check base topic
-  if (nadk_mqtt_base_topic == NULL) {
-    return topic;
-  }
-
   // return immediately if string is not prefixed with the base topic
   if (nadk_mqtt_scope_from_topic(topic) == NADK_GLOBAL) {
     return topic;
   }
 
   // return adjusted pointer
-  return topic + strlen(nadk_mqtt_base_topic) + 1;
+  return topic + strlen(nadk_mqtt_base_topic_prefix);
 }
 
 static void nadk_mqtt_message_handler(const char *topic, const char *payload, unsigned int len) {
@@ -74,17 +51,13 @@ void nadk_mqtt_init(esp_mqtt_status_callback_t scb, nadk_mqtt_message_callback_t
 
 void nadk_mqtt_start(const char *host, unsigned int port, const char *client_id, const char *username,
                      const char *password, const char *base_topic) {
-  // free base topic if set
-  if (nadk_mqtt_base_topic != NULL) {
-    free(nadk_mqtt_base_topic);
-    nadk_mqtt_base_topic = NULL;
-  }
+  // free base topic prefix if set
+  if (nadk_mqtt_base_topic_prefix != NULL) free(nadk_mqtt_base_topic_prefix);
 
-  // set base topic if provided
-  if (base_topic != NULL) {
-    nadk_mqtt_base_topic = strdup(base_topic);
-  }
+  // set base topic prefix
+  nadk_mqtt_base_topic_prefix = nadk_str_concat(base_topic, "/");
 
+  // start the mqtt process
   esp_mqtt_start(host, port, client_id, username, password);
 }
 
@@ -150,4 +123,7 @@ bool nadk_publish_int(const char *topic, int num, int qos, bool retained, nadk_s
   return nadk_publish_str(topic, buf, qos, retained, scope);
 }
 
-void nadk_mqtt_stop() { esp_mqtt_stop(); }
+void nadk_mqtt_stop() {
+  // stop the mqtt process
+  esp_mqtt_stop();
+}
