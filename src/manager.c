@@ -154,7 +154,7 @@ void nadk_manager_handle(const char *topic, const char *payload, unsigned int le
     nadk_update_begin((uint16_t)total);
 
     // request first chunk
-    nadk_publish_int("nadk/update/next", CONFIG_NADK_UPDATE_MAX_CHUNK_SIZE, 0, false, NADK_LOCAL);
+    nadk_publish_int("nadk/update/request", CONFIG_NADK_UPDATE_MAX_CHUNK_SIZE, 0, false, NADK_LOCAL);
 
     // release mutex
     NADK_UNLOCK(nadk_manager_mutex);
@@ -169,7 +169,7 @@ void nadk_manager_handle(const char *topic, const char *payload, unsigned int le
     ESP_LOGI(NADK_LOG_TAG, "nadk_manager_handle: wrote chunk of %d bytes", len);
 
     // request next chunk
-    nadk_publish_int("nadk/update/next", CONFIG_NADK_UPDATE_MAX_CHUNK_SIZE, 0, false, NADK_LOCAL);
+    nadk_publish_int("nadk/update/request", CONFIG_NADK_UPDATE_MAX_CHUNK_SIZE, 0, false, NADK_LOCAL);
 
     // release mutex
     NADK_UNLOCK(nadk_manager_mutex);
