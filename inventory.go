@@ -63,7 +63,33 @@ func (i *Inventory) Save(path string) error {
 	return nil
 }
 
-// GetNames will return a list of names of devices that match the supplied
+// GetName will return the name of the device that matches the supplied base
+// topic or an empty string if the device has not been found.
+func (i *Inventory) GetName(baseTopic string) string {
+	// go over all devices
+	for n, bt := range i.Devices {
+		if bt == baseTopic {
+			return n
+		}
+	}
+
+	return ""
+}
+
+// GetBaseTopic will return the base topic for the given device or an empty
+// string if the device has not been found.
+func (i *Inventory) GetBaseTopic(deviceName string) string {
+	// go over all devices
+	for name, baseTopic := range i.Devices {
+		if name == deviceName {
+			return baseTopic
+		}
+	}
+
+	return ""
+}
+
+// GetNames will return a list of device names that match the supplied
 // glob pattern.
 func (i *Inventory) GetNames(filter string) []string {
 	// prepare list
