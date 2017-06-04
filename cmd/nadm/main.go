@@ -43,14 +43,16 @@ func create(cmd *command) {
 }
 
 func list(cmd *command, inv *nadm.Inventory) {
+	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "BASE TOPIC")
+
 	for _, d := range inv.Devices {
-		fmt.Printf("%s (%s/%s) at %s\n", d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
+		tbl.add(d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
 	}
+
+	fmt.Print(tbl.string())
 }
 
 func collect(cmd *command, inv *nadm.Inventory) {
-	fmt.Println("Collecting devices...")
-
 	if cmd.oClear {
 		inv.Devices = make(map[string]*nadm.Device)
 	}
@@ -58,18 +60,18 @@ func collect(cmd *command, inv *nadm.Inventory) {
 	list, err := inv.Collect(cmd.oDuration)
 	exitIfSet(err)
 
-	fmt.Printf("Found %d new device(s)\n", len(list))
+	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "BASE TOPIC")
 
 	for _, d := range list {
-		fmt.Printf("%s (%s/%s) at %s\n", d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
+		tbl.add(d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
 	}
+
+	fmt.Print(tbl.string())
 
 	save(cmd, inv)
 }
 
 func monitor(cmd *command, inv *nadm.Inventory) {
-	fmt.Printf("Monitoring devices matching '%s'...\n", cmd.aFilter)
-
 	quit := make(chan struct{})
 
 	go func() {
@@ -79,8 +81,12 @@ func monitor(cmd *command, inv *nadm.Inventory) {
 		close(quit)
 	}()
 
+	lengths := []int{16, 16, 16, 9, 16, 9}
+
+	fmt.Println(makeRow([]string{"DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION"}, lengths))
+
 	err := inv.Monitor(cmd.aFilter, quit, func(d *nadm.Device, hb *nadm.Heartbeat) {
-		fmt.Printf("%s (%s/%s), Free Heap Size: %s, Up Time: %s, Start Partition: %s\n", hb.DeviceName, hb.DeviceType, hb.FirmwareVersion, bytefmt.ByteSize(uint64(hb.FreeHeapSize)), hb.UpTime.String(), hb.StartPartition)
+		fmt.Println(makeRow([]string{hb.DeviceName, hb.DeviceType, hb.FirmwareVersion, bytefmt.ByteSize(uint64(hb.FreeHeapSize)), hb.UpTime.String(), hb.StartPartition}, lengths))
 	})
 	exitIfSet(err)
 }
@@ -112,27 +118,31 @@ func update(cmd *command, inv *nadm.Inventory) {
 }
 
 func set(cmd *command, inv *nadm.Inventory) {
-	fmt.Printf("Setting '%s' to '%s' on devices matching '%s'\n", cmd.aParam, cmd.aValue, cmd.aFilter)
-
 	list, err := inv.Set(cmd.aFilter, cmd.aParam, cmd.aValue, cmd.oTimeout)
 	exitIfSet(err)
 
+	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
+
 	for _, device := range list {
-		fmt.Printf("%s: %s\n", device.Name, device.Parameters[cmd.aParam])
+		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
 	}
+
+	fmt.Print(tbl.string())
 
 	save(cmd, inv)
 }
 
 func get(cmd *command, inv *nadm.Inventory) {
-	fmt.Printf("Getting '%s' from devices matching '%s'\n", cmd.aParam, cmd.aFilter)
-
 	list, err := inv.Get(cmd.aFilter, cmd.aParam, cmd.oTimeout)
 	exitIfSet(err)
 
+	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
+
 	for _, device := range list {
-		fmt.Printf("%s: %s\n", device.Name, device.Parameters[cmd.aParam])
+		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
 	}
+
+	fmt.Print(tbl.string())
 
 	save(cmd, inv)
 }
