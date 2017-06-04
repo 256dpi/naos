@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"time"
 
 	"code.cloudfoundry.org/bytefmt"
 	"github.com/shiftr-io/nadm"
@@ -25,6 +26,8 @@ func main() {
 		update(cmd, getInventory(cmd))
 	} else if cmd.cSet {
 		set(cmd, getInventory(cmd))
+	} else if cmd.cGet {
+		get(cmd, getInventory(cmd))
 	}
 }
 
@@ -108,11 +111,29 @@ func update(cmd *command, inv *nadm.Inventory) {
 }
 
 func set(cmd *command, inv *nadm.Inventory) {
-	fmt.Printf( "Setting param '%s' to '%s' on devices matching '%s'\n", cmd.aParam, cmd.aValue, cmd.aFilter)
+	fmt.Printf("Setting param '%s' to '%s' on devices matching '%s'\n", cmd.aParam, cmd.aValue, cmd.aFilter)
 
 	baseTopics := inv.GetBaseTopics(cmd.aFilter)
 
-	nadm.SetParam(inv.Broker, cmd.aParam, cmd.aValue, baseTopics)
+	err := nadm.SetParam(inv.Broker, cmd.aParam, cmd.aValue, baseTopics)
+	exitIfSet(err)
+
+	fmt.Println("Done!")
+
+	finish(cmd, inv)
+}
+
+func get(cmd *command, inv *nadm.Inventory) {
+	fmt.Printf("Getting param '%s' from devices matching '%s'\n", cmd.aParam, cmd.aFilter)
+
+	baseTopics := inv.GetBaseTopics(cmd.aFilter)
+
+	table, err := nadm.GetParam(inv.Broker, cmd.aParam, baseTopics, 1*time.Second)
+	exitIfSet(err)
+
+	for baseTopic, value := range table {
+		fmt.Printf("%s: %s\n", baseTopic, value)
+	}
 
 	fmt.Println("Done!")
 

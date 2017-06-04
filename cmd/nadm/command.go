@@ -15,6 +15,7 @@ Usage:
   nadm monitor [--inventory=<file>]
   nadm update <name> <image> [--inventory=<file>]
   nadm set <filter> <param> <value> [--inventory=<file>]
+  nadm get <filter> <param> [--inventory=<file>]
 
 Options:
   -i --inventory=<file>  The inventory file [default: ./nadm.json].
@@ -25,7 +26,7 @@ Options:
 
 type command struct {
 	// commands
-	cCreate, cCollect, cMonitor, cUpdate, cSet bool
+	cCreate, cCollect, cMonitor, cUpdate, cSet, cGet bool
 
 	// arguments
 	aName, aImage, aFilter, aParam, aValue string
@@ -57,6 +58,7 @@ func parseCommand() *command {
 		cMonitor: getBool(a["monitor"]),
 		cUpdate:  getBool(a["update"]),
 		cSet:     getBool(a["set"]),
+		cGet:     getBool(a["get"]),
 
 		// arguments
 		aName:   getString(a["<name>"]),
