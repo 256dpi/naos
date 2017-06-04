@@ -54,7 +54,7 @@ func collect(cmd *command, inv *nadm.Inventory) {
 	fmt.Printf("Found %d new device(s)\n", len(list))
 
 	for _, d := range list {
-		fmt.Printf("%s (%s/%s) at %s\n", d.Name, d.Type, d.Version, d.BaseTopic)
+		fmt.Printf("%s (%s/%s) at %s\n", d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
 	}
 
 	finish(cmd, inv)

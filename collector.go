@@ -9,16 +9,16 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// An Announcement is returned by CollectAnnouncements.
+// An Announcement is returned by Collect.
 type Announcement struct {
-	Type      string
-	Version   string
-	Name      string
-	BaseTopic string
+	DeviceType      string
+	FirmwareVersion string
+	DeviceName      string
+	BaseTopic       string
 }
 
-// CollectAnnouncements will collect device Announcements.
-func CollectAnnouncements(url string, d time.Duration) ([]*Announcement, error) {
+// Collect will collect Announcements.
+func Collect(url string, d time.Duration) ([]*Announcement, error) {
 	// prepare channels
 	errs := make(chan error)
 	anns := make(chan *Announcement)
@@ -45,10 +45,10 @@ func CollectAnnouncements(url string, d time.Duration) ([]*Announcement, error) 
 
 		// add announcement
 		anns <- &Announcement{
-			Type:      data[0],
-			Version:   data[1],
-			Name:      data[2],
-			BaseTopic: data[3],
+			DeviceType:      data[0],
+			FirmwareVersion: data[1],
+			DeviceName:      data[2],
+			BaseTopic:       data[3],
 		}
 	}
 

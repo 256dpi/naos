@@ -10,10 +10,10 @@ import (
 
 // A Device represents a single device in an Inventory.
 type Device struct {
-	Type      string `json:"type"`
-	Name      string `json:"name"`
-	Version   string `json:"version"`
-	BaseTopic string `json:"base_topic"`
+	Type            string `json:"type"`
+	Name            string `json:"name"`
+	FirmwareVersion string `json:"firmware_version"`
+	BaseTopic       string `json:"base_topic"`
 }
 
 // A Inventory represents the contents of the inventory file.
@@ -94,7 +94,7 @@ func (i *Inventory) Filter(pattern string) []*Device {
 // added to the inventory.
 func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 	// collect announcements
-	anns, err := CollectAnnouncements(i.Broker, duration)
+	anns, err := Collect(i.Broker, duration)
 	if err != nil {
 		return nil, err
 	}
@@ -105,16 +105,16 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 	// handle all announcements
 	for _, a := range anns {
 		// get current device or add one if not existing
-		d, ok := i.Devices[a.Name]
+		d, ok := i.Devices[a.DeviceName]
 		if !ok {
-			d = &Device{Name: a.Name}
-			i.Devices[a.Name] = d
+			d = &Device{Name: a.DeviceName}
+			i.Devices[a.DeviceName] = d
 			newDevices = append(newDevices, d)
 		}
 
 		// update fields
-		d.Type = a.Type
-		d.Version = a.Version
+		d.Type = a.DeviceType
+		d.FirmwareVersion = a.FirmwareVersion
 		d.BaseTopic = a.BaseTopic
 	}
 
@@ -134,7 +134,7 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*D
 
 		// update fields
 		device.Type = heartbeat.DeviceType
-		device.Version = heartbeat.FirmwareVersion
+		device.FirmwareVersion = heartbeat.FirmwareVersion
 
 		// call user callback
 		if callback != nil {
