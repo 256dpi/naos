@@ -4,10 +4,6 @@ import:
   version: ^0.6.2
 - package: github.com/gomqtt/client
   version: ^0.6.0
-- package: gopkg.in/cheggaaa/pb.v1
-  version: ^1.0.15
-- package: gopkg.in/tomb.v2
 - package: code.cloudfoundry.org/bytefmt
 - package: github.com/ryanuber/go-glob
   version: master
-- package: github.com/buger/goterm
