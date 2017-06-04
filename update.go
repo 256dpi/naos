@@ -8,7 +8,7 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// Update will perform a firmware update an block until it is done or an error
+// Update will perform a firmware update and block until it is done or an error
 // has occurred. If progress is provided it will be called with the bytes sent
 // to the device.
 func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
