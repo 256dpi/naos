@@ -12,10 +12,10 @@ var usage = `nadm - the networked artifacts device manager
 Usage:
   nadm create [--inventory=<file>]
   nadm collect [--duration=<d> --clear --inventory=<file>]
-  nadm monitor [--inventory=<file>]
-  nadm update <name> <image> [--inventory=<file>]
   nadm set <filter> <param> <value> [--inventory=<file>]
   nadm get <filter> <param> [--inventory=<file>]
+  nadm monitor <filter> [--inventory=<file>]
+  nadm update <name> <image> [--inventory=<file>]
 
 Options:
   -i --inventory=<file>  The inventory file [default: ./nadm.json].

@@ -61,7 +61,7 @@ func collect(cmd *command, inv *nadm.Inventory) {
 }
 
 func monitor(cmd *command, inv *nadm.Inventory) {
-	fmt.Println("Monitoring all devices...")
+	fmt.Printf("Monitoring devices matching '%s'...\n", cmd.aFilter)
 
 	quit := make(chan struct{})
 
@@ -73,8 +73,7 @@ func monitor(cmd *command, inv *nadm.Inventory) {
 	}()
 
 	var baseTopics []string
-
-	for _, d := range inv.Devices {
+	for _, d := range inv.Filter(cmd.aFilter) {
 		baseTopics = append(baseTopics, d.BaseTopic)
 	}
 
@@ -113,11 +112,8 @@ func update(cmd *command, inv *nadm.Inventory) {
 func set(cmd *command, inv *nadm.Inventory) {
 	fmt.Printf("Setting '%s' to '%s' on devices matching '%s'\n", cmd.aParam, cmd.aValue, cmd.aFilter)
 
-	devices := inv.Filter(cmd.aFilter)
-
 	var baseTopics []string
-
-	for _, d := range devices {
+	for _, d := range inv.Filter(cmd.aFilter) {
 		baseTopics = append(baseTopics, d.BaseTopic)
 	}
 
@@ -132,11 +128,8 @@ func set(cmd *command, inv *nadm.Inventory) {
 func get(cmd *command, inv *nadm.Inventory) {
 	fmt.Printf("Getting '%s' from devices matching '%s'\n", cmd.aParam, cmd.aFilter)
 
-	devices := inv.Filter(cmd.aFilter)
-
 	var baseTopics []string
-
-	for _, d := range devices {
+	for _, d := range inv.Filter(cmd.aFilter) {
 		baseTopics = append(baseTopics, d.BaseTopic)
 	}
 
