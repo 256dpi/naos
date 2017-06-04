@@ -57,7 +57,7 @@ void nadk_update_write(const char *chunk, uint16_t len) {
     return;
   }
 
-  // TODO: Calling esp_ota_write() is very slow. Are there options for speed it up? (Check upstream)
+  // TODO: Calling esp_ota_write() is very slow. Are there options for speeding it up? (Check upstream)
 
   // write chunk
   ESP_ERROR_CHECK(esp_ota_write(nadk_update_handle, (const void *)chunk, len));
