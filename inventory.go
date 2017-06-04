@@ -16,7 +16,7 @@ type Inventory struct {
 // NewInventory creates a new Inventory.
 func NewInventory(broker string) *Inventory {
 	return &Inventory{
-		Broker: broker,
+		Broker:  broker,
 		Devices: make(map[string]string),
 	}
 }
