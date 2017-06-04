@@ -40,7 +40,7 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, d tim
 		// update table
 		for _, baseTopic := range baseTopics {
 			if strings.HasPrefix(msg.Topic, baseTopic) {
-				table[baseTopic] = strings.TrimPrefix(msg.Topic, baseTopic+"/nadk/value/")
+				table[baseTopic] = string(msg.Payload)
 				response <- struct{}{}
 			}
 		}
