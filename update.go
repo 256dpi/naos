@@ -30,12 +30,14 @@ func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
 		// otherwise convert the chunk request
 		n, err := strconv.ParseInt(string(msg.Payload), 10, 0)
 		if err != nil {
+			cl.Close()
 			errs <- err
 			return
 		}
 
 		// check size
 		if n <= 0 {
+			cl.Close()
 			errs <- fmt.Errorf("invalid chunk request of size %d", n)
 			return
 		}
