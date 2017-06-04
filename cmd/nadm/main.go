@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"time"
 
 	"code.cloudfoundry.org/bytefmt"
 	"github.com/shiftr-io/nadm"
@@ -107,7 +106,7 @@ func update(cmd *command, inv *nadm.Inventory) {
 func set(cmd *command, inv *nadm.Inventory) {
 	fmt.Printf("Setting '%s' to '%s' on devices matching '%s'\n", cmd.aParam, cmd.aValue, cmd.aFilter)
 
-	list, err := inv.Set(cmd.aFilter, cmd.aParam, cmd.aValue, 1*time.Second)
+	list, err := inv.Set(cmd.aFilter, cmd.aParam, cmd.aValue, cmd.oTimeout)
 	exitIfSet(err)
 
 	for _, device := range list {
@@ -120,7 +119,7 @@ func set(cmd *command, inv *nadm.Inventory) {
 func get(cmd *command, inv *nadm.Inventory) {
 	fmt.Printf("Getting '%s' from devices matching '%s'\n", cmd.aParam, cmd.aFilter)
 
-	list, err := inv.Get(cmd.aFilter, cmd.aParam, 1*time.Second)
+	list, err := inv.Get(cmd.aFilter, cmd.aParam, cmd.oTimeout)
 	exitIfSet(err)
 
 	for _, device := range list {

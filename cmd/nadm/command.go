@@ -12,29 +12,40 @@ var usage = `nadm - the networked artifacts device manager
 Usage:
   nadm create [--inventory=<file>]
   nadm collect [--duration=<d> --clear --inventory=<file>]
-  nadm set <filter> <param> <value> [--inventory=<file>]
-  nadm get <filter> <param> [--inventory=<file>]
+  nadm set <filter> <param> <value> [--timeout=<d> --inventory=<file>]
+  nadm get <filter> <param> [--timeout=<d> --inventory=<file>]
   nadm monitor <filter> [--inventory=<file>]
   nadm update <name> <image> [--inventory=<file>]
 
 Options:
   -i --inventory=<file>  The inventory file [default: ./nadm.json].
   -d --duration=<d>      The collection duration [default: 1s].
+  -t --timeout=<d>       The response timeout [default: 1s].
   -c --clear             Remove not available devices from inventory.
   -h --help              Show this screen.
 `
 
 type command struct {
 	// commands
-	cCreate, cCollect, cMonitor, cUpdate, cSet, cGet bool
+	cCreate  bool
+	cCollect bool
+	cMonitor bool
+	cUpdate  bool
+	cSet     bool
+	cGet     bool
 
 	// arguments
-	aName, aImage, aFilter, aParam, aValue string
+	aName   string
+	aImage  string
+	aFilter string
+	aParam  string
+	aValue  string
 
 	// options
 	oInventory string
 	oClear     bool
 	oDuration  time.Duration
+	oTimeout   time.Duration
 }
 
 func parseCommand() *command {
@@ -71,6 +82,7 @@ func parseCommand() *command {
 		oInventory: inv,
 		oClear:     getBool(a["--clear"]),
 		oDuration:  getDuration(a["--duration"]),
+		oTimeout:   getDuration(a["--timeout"]),
 	}
 }
 
