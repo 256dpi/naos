@@ -121,8 +121,8 @@ func UpdateFirmware(url, baseTopic string, image []byte, progress func(int)) err
 			next = 4096
 		}
 
-		// send chunk
-		_, err := cl.Publish(baseTopic+"/nadk/update/chunk", image[total:total+next], 0, false)
+		// write chunk
+		_, err := cl.Publish(baseTopic+"/nadk/update/write", image[total:total+next], 0, false)
 		if err != nil {
 			return err
 		}
