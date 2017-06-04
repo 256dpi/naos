@@ -10,6 +10,8 @@
 
 ## Device Management Protocol
 
+The following device management protocol is based on an "action down, data up" principle and tries to be as slim as possible to ease implementation. 
+
 ### Discovery
 
 All devices will subscribe to the global `nadk/collect` topic and publish to the global `nadk/announcement` topic if requested. The published data has the following format: `device_type,firmware_version,device_name,base_topic`.
@@ -24,4 +26,4 @@ All devices will subscribe to the local `nadk/set/+` topic to handle configurati
 
 ### Firmware Update
 
-All devices will subscribe to the local `nadk/update/begin` topic and wait for an update request of the format `total_size`. If one is received the device will publish a request for the next chunk of data by publishing a `max_size` message to the local `nadk/update/next` topic. The other end will then publish the next chunk of data to the local `nadk/update/chunk` topic and wait for the next chunk request. When all data has been written the updater publishes a message to the local `nadk/update/finish` topic to make the device commit the update and restart to the newly received firmware.
+All devices will subscribe to the local `nadk/update/begin` topic and wait for an update request of the format `total_size`. If one is received the device will publish a request for the next chunk of data by publishing a `max_size` message to the local `nadk/update/next` topic. The other end will then publish the next chunk of data to the local `nadk/update/write` topic and wait for the next chunk request. When all data has been written the updater publishes a message to the local `nadk/update/finish` topic to make the device commit the update and restart to the newly received firmware.

@@ -102,7 +102,7 @@ void nadk_manager_start() {
   // subscribe to local topics
   nadk_subscribe("nadk/set/+", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/begin", 0, NADK_LOCAL);
-  nadk_subscribe("nadk/update/chunk", 0, NADK_LOCAL);
+  nadk_subscribe("nadk/update/write", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/finish", 0, NADK_LOCAL);
 
   // send initial announcement
@@ -162,11 +162,11 @@ void nadk_manager_handle(const char *topic, const char *payload, unsigned int le
     return;
   }
 
-  // check update chunk
-  if (scope == NADK_LOCAL && strcmp(topic, "nadk/update/chunk") == 0) {
+  // check update write
+  if (scope == NADK_LOCAL && strcmp(topic, "nadk/update/write") == 0) {
     // write chunk (very time expensive)
     nadk_update_write(payload, (uint16_t)len);
-    ESP_LOGI(NADK_LOG_TAG, "nadk_manager_handle: wrote %d bytes chunk", len);
+    ESP_LOGI(NADK_LOG_TAG, "nadk_manager_handle: wrote chunk of %d bytes", len);
 
     // request next chunk
     nadk_publish_int("nadk/update/next", CONFIG_NADK_UPDATE_MAX_CHUNK_SIZE, 0, false, NADK_LOCAL);
