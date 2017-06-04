@@ -16,6 +16,7 @@ type Device struct {
 	BaseTopic       string            `json:"base_topic"`
 	Parameters      map[string]string `json:"parameters"`
 	LastHeartbeat   *Heartbeat        `json:"-"`
+	UpdateStatus    *Status           `json:"-"`
 }
 
 // A Inventory represents the contents of the inventory file.
@@ -143,16 +144,12 @@ func (i *Inventory) Get(pattern, param string, timeout time.Duration) ([]*Device
 	// prepare list of answering devices
 	var answering []*Device
 
-	// get device list
-	devices := i.Filter(pattern)
-
 	// update device
 	for baseTopic, value := range table {
-		for _, device := range devices {
-			if device.BaseTopic == baseTopic {
-				device.Parameters[param] = value
-				answering = append(answering, device)
-			}
+		device := i.byBaseTopic(baseTopic)
+		if device != nil {
+			device.Parameters[param] = value
+			answering = append(answering, device)
 		}
 	}
 
@@ -169,19 +166,15 @@ func (i *Inventory) Set(pattern, param, value string, timeout time.Duration) ([]
 		return nil, err
 	}
 
-	// get device list
-	devices := i.Filter(pattern)
-
 	// prepare list of updated devices
 	var updated []*Device
 
 	// update device
 	for baseTopic, value := range table {
-		for _, device := range devices {
-			if device.BaseTopic == baseTopic {
-				device.Parameters[param] = value
-				updated = append(updated, device)
-			}
+		device := i.byBaseTopic(baseTopic)
+		if device != nil {
+			device.Parameters[param] = value
+			updated = append(updated, device)
 		}
 	}
 
@@ -212,6 +205,22 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*D
 	})
 }
 
+func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device)) {
+	UpdateMany(i.Broker, i.baseTopics(pattern), firmware, timeout, func(baseTopic string, status *Status){
+		// get device
+		device := i.byBaseTopic(baseTopic)
+		if device == nil {
+			return
+		}
+
+		// set status
+		device.UpdateStatus = status
+
+		// call callback
+		callback(device)
+	})
+}
+
 func (i *Inventory) baseTopics(pattern string) []string {
 	// prepare list
 	var l []string
@@ -222,4 +231,15 @@ func (i *Inventory) baseTopics(pattern string) []string {
 	}
 
 	return l
+}
+
+func (i *Inventory) byBaseTopic(baseTopic string) *Device {
+	// iterate through all devices
+	for _, d := range i.Devices {
+		if d.BaseTopic == baseTopic {
+			return d
+		}
+	}
+
+	return nil
 }

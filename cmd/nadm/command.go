@@ -16,12 +16,12 @@ Usage:
   nadm get <param> [--filter=<pattern> --timeout=<d> --inventory=<file>]
   nadm set <param> <value> [--filter=<pattern> --timeout=<d> --inventory=<file>]
   nadm monitor [--filter=<pattern> --inventory=<file>]
-  nadm update <name> <image> [--inventory=<file>]
+  nadm update <image> [--filter=<pattern> --inventory=<file>]
 
 Options:
   -i --inventory=<file>  The inventory file [default: ./nadm.json].
   -d --duration=<ms>     The collection duration [default: 1s].
-  -t --timeout=<ms>      The response timeout [default: 1s].
+  -t --timeout=<ms>      The response timeout [default: 5s].
   -f --filter=<pattern>  The filter glob pattern [default: *].
   -c --clear             Remove not available devices from inventory.
   -h --help              Show this screen.

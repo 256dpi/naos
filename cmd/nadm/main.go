@@ -6,10 +6,10 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 
 	"code.cloudfoundry.org/bytefmt"
 	"github.com/shiftr-io/nadm"
-	"gopkg.in/cheggaaa/pb.v1"
 )
 
 func main() {
@@ -102,27 +102,32 @@ func update(cmd *command, inv *nadm.Inventory) {
 
 	// TODO: Display as table with just a percentage.
 
-	fmt.Println("Reading image...")
-
 	file, err := filepath.Abs(cmd.aImage)
 	exitIfSet(err)
 
 	bytes, err := ioutil.ReadFile(file)
 	exitIfSet(err)
 
-	fmt.Println("Begin with update...")
-	bar := pb.StartNew(len(bytes))
+	tbl := newTable("DEVICE NAME", "PROGRESS", "ERROR")
 
-	device, ok := inv.Devices[cmd.aName]
-	if !ok {
-		exitWithError(fmt.Sprintf("Device with name '%s' not found!", cmd.aName))
-	}
+	inv.Update(cmd.oFilter, bytes, cmd.oTimeout, func(_ *nadm.Device){
+		tbl.clear()
 
-	err = nadm.Update(inv.Broker, device.BaseTopic, bytes, func(sent int) { bar.Set(sent) })
-	exitIfSet(err)
+		for _, device := range inv.Devices {
+			if device.UpdateStatus != nil {
+				errStr := ""
+				if device.UpdateStatus.Error != nil {
+					errStr = device.UpdateStatus.Error.Error()
+				}
 
-	bar.Finish()
-	fmt.Println("Update finished!")
+				progress := 100.0 / float64(len(bytes)) * float64(device.UpdateStatus.Progress)
+
+				tbl.add(device.Name, strconv.Itoa(int(progress)) + "%", errStr)
+			}
+		}
+
+		tbl.print()
+	})
 
 	save(cmd, inv)
 }

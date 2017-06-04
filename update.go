@@ -4,15 +4,61 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"sync"
 
 	"github.com/gomqtt/client"
 	"github.com/gomqtt/packet"
 )
 
+type Status struct {
+	Progress int
+	Error error
+}
+
+func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.Duration, callback func(string, *Status)) {
+	// prepare table
+	table := make(map[string]*Status)
+
+	// prepare wait group
+	var wg = sync.WaitGroup{}
+
+	for _, baseTopic := range baseTopics {
+		// create status
+		table[baseTopic] = &Status{}
+
+		// add process
+		wg.Add(1)
+
+		// run a single update in background
+		go func(bt string){
+			// begin update
+			err := Update(url, baseTopic, firmware, timeout, func(progress int){
+				// update progress
+				table[baseTopic].Progress = progress
+
+				// call callback
+				callback(baseTopic, table[baseTopic])
+			})
+			if err != nil {
+				// update error
+				table[baseTopic].Error = err
+
+				// call callback
+				callback(baseTopic, table[baseTopic])
+			}
+
+			// remove from wait group
+			wg.Done()
+		}(baseTopic)
+	}
+
+	wg.Wait()
+}
+
 // Update will perform a firmware update and block until it is done or an error
 // has occurred. If progress is provided it will be called with the bytes sent
 // to the device.
-func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
+func Update(url, baseTopic string, firmware []byte, timeout time.Duration, progress func(int)) error {
 	// prepare channels
 	requests := make(chan int)
 	errs := make(chan error)
@@ -31,14 +77,12 @@ func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
 		// otherwise convert the chunk request
 		n, err := strconv.ParseInt(string(msg.Payload), 10, 0)
 		if err != nil {
-			cl.Close()
 			errs <- err
 			return
 		}
 
 		// check size
 		if n <= 0 {
-			cl.Close()
 			errs <- fmt.Errorf("invalid chunk request of size %d", n)
 			return
 		}
@@ -54,7 +98,7 @@ func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
 	}
 
 	// wait for ack
-	err = cf.Wait(5 * time.Second)
+	err = cf.Wait(timeout)
 	if err != nil {
 		return err
 	}
@@ -69,13 +113,19 @@ func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
 	}
 
 	// wait for ack
-	err = sf.Wait(5 * time.Second)
+	err = sf.Wait(timeout)
 	if err != nil {
 		return err
 	}
 
 	// begin update process by sending the size of the firmware
-	_, err = cl.Publish(baseTopic+"/nadk/update/begin", []byte(strconv.Itoa(len(firmware))), 0, false)
+	pf, err := cl.Publish(baseTopic+"/nadk/update/begin", []byte(strconv.Itoa(len(firmware))), 0, false)
+	if err != nil {
+		return err
+	}
+
+	// wait for ack
+	err = pf.Wait(timeout)
 	if err != nil {
 		return err
 	}
@@ -91,6 +141,8 @@ func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
 		select {
 		case err := <-errs:
 			return err
+		case <-time.After(timeout):
+			return fmt.Errorf("update request timeout")
 		case maxSize = <-requests:
 			// continue
 		}
@@ -101,7 +153,13 @@ func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
 		// check if done
 		if remaining == 0 {
 			// send finish
-			_, err := cl.Publish(baseTopic+"/nadk/update/finish", nil, 0, false)
+			pf, err := cl.Publish(baseTopic+"/nadk/update/finish", nil, 0, false)
+			if err != nil {
+				return err
+			}
+
+			// wait for ack
+			err = pf.Wait(timeout)
 			if err != nil {
 				return err
 			}
@@ -122,7 +180,13 @@ func Update(url, baseTopic string, firmware []byte, progress func(int)) error {
 		}
 
 		// write chunk
-		_, err := cl.Publish(baseTopic+"/nadk/update/write", firmware[total:total+maxSize], 0, false)
+		pf, err := cl.Publish(baseTopic+"/nadk/update/write", firmware[total:total+maxSize], 0, false)
+		if err != nil {
+			return err
+		}
+
+		// wait for ack
+		err = pf.Wait(timeout)
 		if err != nil {
 			return err
 		}
