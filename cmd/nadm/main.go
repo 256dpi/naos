@@ -107,15 +107,12 @@ func update(cmd *command, inv *nadm.Inventory) {
 func set(cmd *command, inv *nadm.Inventory) {
 	fmt.Printf("Setting '%s' to '%s' on devices matching '%s'\n", cmd.aParam, cmd.aValue, cmd.aFilter)
 
-	var baseTopics []string
-	for _, d := range inv.Filter(cmd.aFilter) {
-		baseTopics = append(baseTopics, d.BaseTopic)
-	}
-
-	_, err := nadm.Set(inv.Broker, cmd.aParam, cmd.aValue, baseTopics, 1*time.Second)
+	list, err := inv.Set(cmd.aFilter, cmd.aParam, cmd.aValue, 1*time.Second)
 	exitIfSet(err)
 
-	fmt.Println("Done!")
+	for _, device := range list {
+		fmt.Printf("%s: %s\n", device.Name, device.Parameters[cmd.aParam])
+	}
 
 	finish(cmd, inv)
 }
@@ -123,19 +120,12 @@ func set(cmd *command, inv *nadm.Inventory) {
 func get(cmd *command, inv *nadm.Inventory) {
 	fmt.Printf("Getting '%s' from devices matching '%s'\n", cmd.aParam, cmd.aFilter)
 
-	var baseTopics []string
-	for _, d := range inv.Filter(cmd.aFilter) {
-		baseTopics = append(baseTopics, d.BaseTopic)
-	}
-
-	table, err := nadm.Get(inv.Broker, cmd.aParam, baseTopics, 1*time.Second)
+	list, err := inv.Get(cmd.aFilter, cmd.aParam, 1*time.Second)
 	exitIfSet(err)
 
-	for baseTopic, value := range table {
-		fmt.Printf("%s: %s\n", baseTopic, value)
+	for _, device := range list {
+		fmt.Printf("%s: %s\n", device.Name, device.Parameters[cmd.aParam])
 	}
-
-	fmt.Println("Done!")
 
 	finish(cmd, inv)
 }

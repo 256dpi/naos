@@ -10,10 +10,11 @@ import (
 
 // A Device represents a single device in an Inventory.
 type Device struct {
-	Type            string `json:"type"`
-	Name            string `json:"name"`
-	FirmwareVersion string `json:"firmware_version"`
-	BaseTopic       string `json:"base_topic"`
+	Type            string            `json:"type"`
+	Name            string            `json:"name"`
+	FirmwareVersion string            `json:"firmware_version"`
+	BaseTopic       string            `json:"base_topic"`
+	Parameters      map[string]string `json:"parameters"`
 }
 
 // A Inventory represents the contents of the inventory file.
@@ -50,6 +51,13 @@ func ReadInventory(path string) (*Inventory, error) {
 	// create map if missing
 	if inv.Devices == nil {
 		inv.Devices = make(map[string]*Device)
+	}
+
+	// iterate over all devices
+	for _, device := range inv.Devices {
+		if device.Parameters == nil {
+			device.Parameters = make(map[string]string)
+		}
 	}
 
 	return &inv, nil
@@ -107,7 +115,7 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 		// get current device or add one if not existing
 		d, ok := i.Devices[a.DeviceName]
 		if !ok {
-			d = &Device{Name: a.DeviceName}
+			d = &Device{Name: a.DeviceName, Parameters: make(map[string]string)}
 			i.Devices[a.DeviceName] = d
 			newDevices = append(newDevices, d)
 		}
@@ -119,6 +127,64 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 	}
 
 	return newDevices, nil
+}
+
+// Get will request specified parameter from all devices matching the supplied
+// glob pattern. The inventory is updated with the reported value and a list of
+// answering devices is returned.
+func (i *Inventory) Get(pattern, param string, timeout time.Duration) ([]*Device, error) {
+	// set parameter
+	table, err := Get(i.Broker, param, i.baseTopics(pattern), timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	// prepare list of answering devices
+	var answering []*Device
+
+	// get device list
+	devices := i.Filter(pattern)
+
+	// update device
+	for baseTopic, value := range table {
+		for _, device := range devices {
+			if device.BaseTopic == baseTopic {
+				device.Parameters[param] = value
+				answering = append(answering, device)
+			}
+		}
+	}
+
+	return answering, nil
+}
+
+// Set will set the specified parameter on all devices matching the supplied
+// glob pattern. The inventory is updated with the saved value and a list of
+// updated devices is returned.
+func (i *Inventory) Set(pattern, param, value string, timeout time.Duration) ([]*Device, error) {
+	// set parameter
+	table, err := Set(i.Broker, param, value, i.baseTopics(pattern), timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	// get device list
+	devices := i.Filter(pattern)
+
+	// prepare list of updated devices
+	var updated []*Device
+
+	// update device
+	for baseTopic, value := range table {
+		for _, device := range devices {
+			if device.BaseTopic == baseTopic {
+				device.Parameters[param] = value
+				updated = append(updated, device)
+			}
+		}
+	}
+
+	return updated, nil
 }
 
 // Monitor will monitor the devices that match the supplied glob pattern and

@@ -9,13 +9,13 @@ import (
 )
 
 // Set will publish the provided parameter for all specified base topics.
-func Set(url, param, value string, baseTopics []string, d time.Duration) (map[string]string, error) {
-	return commonGetSet(url, param, value, true, baseTopics, d)
+func Set(url, param, value string, baseTopics []string, timeout time.Duration) (map[string]string, error) {
+	return commonGetSet(url, param, value, true, baseTopics, timeout)
 }
 
 // Get will publish the provided parameter for all specified base topics.
-func Get(url, param string, baseTopics []string, d time.Duration) (map[string]string, error) {
-	return commonGetSet(url, param, "", false, baseTopics, d)
+func Get(url, param string, baseTopics []string, timeout time.Duration) (map[string]string, error) {
+	return commonGetSet(url, param, "", false, baseTopics, timeout)
 }
 
 func commonGetSet(url, param, value string, set bool, baseTopics []string, d time.Duration) (map[string]string, error) {
