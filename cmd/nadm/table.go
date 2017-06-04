@@ -7,10 +7,12 @@ import (
 
 type table struct {
 	data [][]string
+
+	writtenLines int
 }
 
 func newTable(headers ...string) *table {
-	return &table{[][]string{headers}}
+	return &table{data: [][]string{headers}}
 }
 
 func (t *table) add(cells ...string) *table {
@@ -49,7 +51,21 @@ func (t *table) string() string {
 }
 
 func (t *table) print() {
+	// print table
 	fmt.Print(t.string())
+
+	// save written lines
+	t.writtenLines = len(t.data)
+}
+
+func (t *table) clear() {
+	// move cursor up the amount of written lines
+	if t.writtenLines > 0 {
+		fmt.Printf("\033[%dA", t.writtenLines)
+	}
+
+	// reset data, but retain headers
+	t.data = [][]string{t.data[0]}
 }
 
 func makeRow(cells []string, lengths []int) string {

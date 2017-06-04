@@ -81,24 +81,18 @@ func monitor(cmd *command, inv *nadm.Inventory) {
 		close(quit)
 	}()
 
-	lines := 0
+	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION")
 
 	err := inv.Monitor(cmd.aFilter, quit, func(d *nadm.Device) {
-		if lines > 0 {
-			fmt.Printf("\033[%dA", lines)
-		}
-
-		tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION")
-		lines = 1
+		tbl.clear()
 
 		for _, device := range inv.Devices {
 			if device.LastHeartbeat != nil {
 				tbl.add(device.Name, device.Type, device.FirmwareVersion, bytefmt.ByteSize(uint64(device.LastHeartbeat.FreeHeapSize)), device.LastHeartbeat.UpTime.String(), device.LastHeartbeat.StartPartition)
-				lines++
 			}
 		}
 
-		tbl.string()
+		tbl.print()
 	})
 	exitIfSet(err)
 }
