@@ -72,12 +72,7 @@ func monitor(cmd *command, inv *nadm.Inventory) {
 		close(quit)
 	}()
 
-	var baseTopics []string
-	for _, d := range inv.Filter(cmd.aFilter) {
-		baseTopics = append(baseTopics, d.BaseTopic)
-	}
-
-	err := nadm.MonitorDevices(inv.Broker, baseTopics, quit, func(hb *nadm.Heartbeat) {
+	err := inv.Monitor(cmd.aFilter, quit, func(d *nadm.Device, hb *nadm.Heartbeat) {
 		fmt.Printf("%s (%s/%s), Free Heap Size: %s, Up Time: %s, Start Partition: %s\n", hb.DeviceName, hb.DeviceType, hb.FirmwareVersion, bytefmt.ByteSize(uint64(hb.FreeHeapSize)), hb.UpTime.String(), hb.StartPartition)
 	})
 	exitIfSet(err)

@@ -89,8 +89,9 @@ func (i *Inventory) Filter(pattern string) []*Device {
 	return devices
 }
 
-// Collect will collect announcements and update the inventory with new devices
-// for the given amount of time.
+// Collect will collect announcements and update the inventory with found devices
+// for the given amount of time. It will return a list of devices that have been
+// added to the inventory.
 func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 	// collect announcements
 	anns, err := CollectAnnouncements(i.Broker, duration)
@@ -118,4 +119,38 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 	}
 
 	return newDevices, nil
+}
+
+// Monitor will monitor the devices that match the supplied glob pattern and
+// update the inventory accordingly. The specified callback is called for every
+// heartbeat if available.
+func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*Device, *Heartbeat)) error {
+	return MonitorDevices(i.Broker, i.baseTopics(pattern), quit, func(heartbeat *Heartbeat) {
+		// get device
+		device, ok := i.Devices[heartbeat.DeviceName]
+		if !ok {
+			return
+		}
+
+		// update fields
+		device.Type = heartbeat.DeviceType
+		device.Version = heartbeat.FirmwareVersion
+
+		// call user callback
+		if callback != nil {
+			callback(device, heartbeat)
+		}
+	})
+}
+
+func (i *Inventory) baseTopics(pattern string) []string {
+	// prepare list
+	var l []string
+
+	// add all matching devices
+	for _, d := range i.Filter(pattern) {
+		l = append(l, d.BaseTopic)
+	}
+
+	return l
 }
