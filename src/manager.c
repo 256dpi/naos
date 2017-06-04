@@ -22,8 +22,6 @@ static TaskHandle_t nadk_manager_task;
 
 static bool nadk_manager_process_started = false;
 
-static char *nadk_manager_param;
-
 static void nadk_manager_send_heartbeat() {
   // get device name
   char *device_name = nadk_ble_get_string(NADK_BLE_ID_DEVICE_NAME);
@@ -198,34 +196,30 @@ void nadk_manager_handle(const char *topic, const char *payload, unsigned int le
 }
 
 char *nadk_get(const char *param) {
-  // acquire mutex
-  NADK_LOCK(nadk_manager_mutex);
+  // static reference to buffer
+  static char *buf;
 
   // free last param
-  if (nadk_manager_param != NULL) {
-    free(nadk_manager_param);
-    nadk_manager_param = NULL;
+  if (buf != NULL) {
+    free(buf);
+    buf = NULL;
   }
 
   // get param size
   size_t required_size;
   esp_err_t err = nvs_get_str(nadk_manager_nvs_handle, param, NULL, &required_size);
   if (err == ESP_ERR_NVS_NOT_FOUND) {
-    nadk_manager_param = strdup("");
-    NADK_UNLOCK(nadk_manager_mutex);
-    return nadk_manager_param;
+    buf = strdup("");
+    return buf;
   } else {
     ESP_ERROR_CHECK(err);
   }
 
   // allocate size
-  nadk_manager_param = malloc(required_size);
-  ESP_ERROR_CHECK(nvs_get_str(nadk_manager_nvs_handle, param, nadk_manager_param, &required_size));
+  buf = malloc(required_size);
+  ESP_ERROR_CHECK(nvs_get_str(nadk_manager_nvs_handle, param, buf, &required_size));
 
-  // release mutex
-  NADK_UNLOCK(nadk_manager_mutex);
-
-  return nadk_manager_param;
+  return buf;
 }
 
 void nadk_manager_stop() {
