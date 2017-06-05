@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -7,8 +6,8 @@
 static char *message = NULL;
 
 static void online() {
-  // print info
-  printf("online\n");
+  // log info
+  nadk_log("online");
 
   // subscribe to topic
   nadk_subscribe("hello", 0, NADK_LOCAL);
@@ -19,8 +18,8 @@ static void online() {
 }
 
 static void update(const char *param, const char *value) {
-  // print param change
-  printf("param: %s=%s\n", param, value);
+  // log param change
+  nadk_log("param: %s=%s", param, value);
 
   // clear and update message
   if (message != NULL) free(message);
@@ -28,8 +27,8 @@ static void update(const char *param, const char *value) {
 }
 
 static void handle(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
-  // print incoming message
-  printf("message: %s => %s (%d) [%d]\n", topic, payload, len, scope);
+  // log incoming message
+  nadk_log("message: %s => %s (%d) [%d]", topic, payload, len, scope);
 }
 
 static void loop() {
@@ -38,13 +37,13 @@ static void loop() {
 }
 
 static void offline() {
-  // print info
-  printf("offline\n");
+  // log info
+  nadk_log("offline");
 }
 
 static void status(nadk_status_t status) {
-  // print new status
-  printf("status: %d\n", status);
+  // log new status
+  nadk_log("status: %d", status);
 }
 
 static nadk_config_t config = {.device_type = "nadk-test",

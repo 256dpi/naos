@@ -1,6 +1,7 @@
 #ifndef NADK_H
 #define NADK_H
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -82,6 +83,14 @@ typedef struct {
    */
   bool delay_startup;
 } nadk_config_t;
+
+/**
+ * Write a log message.
+ *
+ * @param fmt - The message format.
+ * @param ... - The used arguments.
+ */
+void nadk_log(const char *fmt, ...);
 
 /**
  * Initialize the NADK.

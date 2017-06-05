@@ -36,3 +36,9 @@ monitor: test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
 	miniterm.py /dev/cu.SLAB_USBtoUART 115200 --rts 0 --dtr 0 --raw --exit-char 99
 
 run: build flash monitor
+
+update:
+	cd test/esp-idf; git fetch; git checkout master
+	cd test/esp-idf/; git submodule update --recursive
+	cd test/components/esp-mqtt/; git fetch; git checkout master
+	cd test/components/esp-mqtt/; git submodule update --recursive
