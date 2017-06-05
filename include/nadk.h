@@ -14,9 +14,25 @@
 typedef enum { NADK_LOCAL, NADK_GLOBAL } nadk_scope_t;
 
 /**
+ * Get the string representation of the specified scope.
+ *
+ * @param scope - The scope.
+ * @return The string value.
+ */
+const char *nadk_scope_str(nadk_scope_t scope);
+
+/**
  * The system statuses.
  */
 typedef enum { NADK_DISCONNECTED, NADK_CONNECTED, NADK_NETWORKED } nadk_status_t;
+
+/**
+ * Get the string representation of the specified status.
+ *
+ * @param scope - The status.
+ * @return The string value.
+ */
+const char *nadk_status_str(nadk_status_t status);
 
 /**
  * The main configuration object.
@@ -86,6 +102,8 @@ typedef struct {
 
 /**
  * Write a log message.
+ *
+ * The message will be printed in the console and published to the broker if the device has logging enabled.
  *
  * @param fmt - The message format.
  * @param ... - The used arguments.

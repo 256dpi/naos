@@ -1,7 +1,5 @@
 #include <nadk.h>
-#include <stdio.h>
 
-#include "general.h"
 #include "system.h"
 
 static nadk_config_t *nadk_config_ref;
@@ -16,20 +14,17 @@ void nadk_init(nadk_config_t *config) {
 
 const nadk_config_t *nadk_config() { return nadk_config_ref; }
 
-void nadk_log(const char *fmt, ...) {
-  // prepare args
-  va_list args;
+const char *nadk_scope_str(nadk_scope_t scope) {
+  switch(scope) {
+    case NADK_LOCAL: return "local";
+    case NADK_GLOBAL: return "global";
+  }
+}
 
-  // initialize list
-  va_start(args, fmt);
-
-  // process input
-  char buf[128];
-  vsprintf(buf, fmt, args);
-
-  // print log message esp like
-  printf("N (%d) %s: %s\n", nadk_millis(), nadk_config_ref->device_type, buf);
-
-  // free list
-  va_end(args);
+const char *nadk_status_str(nadk_status_t status) {
+  switch(status) {
+    case NADK_DISCONNECTED: return "disconnected";
+    case NADK_CONNECTED: return "connected";
+    case NADK_NETWORKED: return "networked";
+  }
 }

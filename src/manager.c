@@ -24,6 +24,8 @@ static TaskHandle_t nadk_manager_task;
 
 static bool nadk_manager_process_started = false;
 
+static bool nadk_manager_log_enabled = false;
+
 static void nadk_manager_send_heartbeat() {
   // get device name
   char *device_name = nadk_ble_get_string(NADK_BLE_ID_DEVICE_NAME);
@@ -96,12 +98,15 @@ void nadk_manager_start() {
   ESP_LOGI(NADK_LOG_TAG, "nadk_manager_start: create task");
   xTaskCreatePinnedToCore(nadk_manager_process, "nadk-manager", 2048, NULL, 2, &nadk_manager_task, 1);
 
+  // TODO: Optimize by issuing all subscriptions at once.
+
   // subscribe to global topics
   nadk_subscribe("nadk/collect", 0, NADK_GLOBAL);
 
   // subscribe to local topics
   nadk_subscribe("nadk/set/+", 0, NADK_LOCAL);
   nadk_subscribe("nadk/get/+", 0, NADK_LOCAL);
+  nadk_subscribe("nadk/log", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/begin", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/write", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/finish", 0, NADK_LOCAL);
@@ -180,6 +185,16 @@ void nadk_manager_handle(const char *topic, const char *payload, unsigned int le
     return;
   }
 
+  // check log
+  if (scope == NADK_LOCAL && strcmp(topic, "nadk/log") == 0) {
+    // enable or disable logging
+    if (strcmp(payload, "on") == 0) {
+      nadk_manager_log_enabled = true;
+    } else if (strcmp(payload, "off") == 0) {
+      nadk_manager_log_enabled = false;
+    }
+  }
+
   // check update begin
   if (scope == NADK_LOCAL && strcmp(topic, "nadk/update/begin") == 0) {
     // get update size
@@ -233,6 +248,31 @@ void nadk_manager_handle(const char *topic, const char *payload, unsigned int le
   return;
 }
 
+void nadk_log(const char *fmt, ...) {
+  // prepare args
+  va_list args;
+
+  // initialize list
+  va_start(args, fmt);
+
+  // process input
+  char buf[128];
+  vsprintf(buf, fmt, args);
+
+  // TODO: Add to offline log?
+
+  // publish message if enabled
+  if (nadk_manager_log_enabled) {
+    nadk_publish_str("message", buf, 0, false, NADK_LOCAL);
+  }
+
+  // print log message esp like
+  printf("N (%d) %s: %s\n", nadk_millis(), nadk_config()->device_type, buf);
+
+  // free list
+  va_end(args);
+}
+
 char *nadk_get(const char *param) {
   // static reference to buffer
   static char *buf;
@@ -270,8 +310,9 @@ void nadk_manager_stop() {
     return;
   }
 
-  // set flag
+  // set flags
   nadk_manager_process_started = false;
+  nadk_manager_log_enabled = false;
 
   // remove task
   ESP_LOGI(NADK_LOG_TAG, "nadk_manager_stop: deleting task");
