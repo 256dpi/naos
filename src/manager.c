@@ -24,7 +24,7 @@ static TaskHandle_t nadk_manager_task;
 
 static bool nadk_manager_process_started = false;
 
-static bool nadk_manager_log_enabled = false;
+static bool nadk_manager_recording = false;
 
 static void nadk_manager_send_heartbeat() {
   // get device name
@@ -106,7 +106,7 @@ void nadk_manager_start() {
   // subscribe to local topics
   nadk_subscribe("nadk/set/+", 0, NADK_LOCAL);
   nadk_subscribe("nadk/get/+", 0, NADK_LOCAL);
-  nadk_subscribe("nadk/log", 0, NADK_LOCAL);
+  nadk_subscribe("nadk/record", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/begin", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/write", 0, NADK_LOCAL);
   nadk_subscribe("nadk/update/finish", 0, NADK_LOCAL);
@@ -186,12 +186,12 @@ void nadk_manager_handle(const char *topic, const char *payload, unsigned int le
   }
 
   // check log
-  if (scope == NADK_LOCAL && strcmp(topic, "nadk/log") == 0) {
+  if (scope == NADK_LOCAL && strcmp(topic, "nadk/record") == 0) {
     // enable or disable logging
     if (strcmp(payload, "on") == 0) {
-      nadk_manager_log_enabled = true;
+      nadk_manager_recording = true;
     } else if (strcmp(payload, "off") == 0) {
-      nadk_manager_log_enabled = false;
+      nadk_manager_recording = false;
     }
   }
 
@@ -261,9 +261,9 @@ void nadk_log(const char *fmt, ...) {
 
   // TODO: Add to offline log?
 
-  // publish message if enabled
-  if (nadk_manager_log_enabled) {
-    nadk_publish_str("message", buf, 0, false, NADK_LOCAL);
+  // publish log message if enabled
+  if (nadk_manager_recording) {
+    nadk_publish_str("nadk/log", buf, 0, false, NADK_LOCAL);
   }
 
   // print log message esp like
@@ -312,7 +312,7 @@ void nadk_manager_stop() {
 
   // set flags
   nadk_manager_process_started = false;
-  nadk_manager_log_enabled = false;
+  nadk_manager_recording = false;
 
   // remove task
   ESP_LOGI(NADK_LOG_TAG, "nadk_manager_stop: deleting task");

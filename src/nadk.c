@@ -21,6 +21,8 @@ const char *nadk_scope_str(nadk_scope_t scope) {
     case NADK_GLOBAL:
       return "global";
   }
+
+  return "";
 }
 
 const char *nadk_status_str(nadk_status_t status) {
@@ -32,4 +34,6 @@ const char *nadk_status_str(nadk_status_t status) {
     case NADK_NETWORKED:
       return "networked";
   }
+
+  return "";
 }
