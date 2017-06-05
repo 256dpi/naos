@@ -101,6 +101,15 @@ typedef struct {
 } nadk_config_t;
 
 /**
+ * Initialize the NADK.
+ *
+ * Note: Should only be called once on boot.
+ *
+ * @param config - The configuration object.
+ */
+void nadk_init(nadk_config_t *config);
+
+/**
  * Write a log message.
  *
  * The message will be printed in the console and published to the broker if the device has logging enabled.
@@ -109,15 +118,6 @@ typedef struct {
  * @param ... - The used arguments.
  */
 void nadk_log(const char *fmt, ...);
-
-/**
- * Initialize the NADK.
- *
- * Note: Should only be called once on boot.
- *
- * @param config - The configuration object.
- */
-void nadk_init(nadk_config_t *config);
 
 /**
  * Subscribe to specified topic.
