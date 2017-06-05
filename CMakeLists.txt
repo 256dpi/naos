@@ -30,8 +30,6 @@ set(SOURCE_FILES
         include/nadk/utils.h
         src/ble.c
         src/ble.h
-        src/general.c
-        src/general.h
         src/manager.c
         src/manager.h
         src/mqtt.c
@@ -44,6 +42,8 @@ set(SOURCE_FILES
         src/task.h
         src/update.c
         src/update.h
+        src/utils.c
+        src/utils.h
         src/wifi.c
         src/wifi.h
         test/main/main.c)

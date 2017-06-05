@@ -5,8 +5,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
-#include "general.h"
 #include "update.h"
+#include "utils.h"
 
 static SemaphoreHandle_t nadk_update_mutex;
 

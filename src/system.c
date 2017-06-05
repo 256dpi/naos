@@ -6,12 +6,12 @@
 #include <string.h>
 
 #include "ble.h"
-#include "general.h"
 #include "manager.h"
 #include "mqtt.h"
 #include "nadk.h"
 #include "task.h"
 #include "update.h"
+#include "utils.h"
 #include "wifi.h"
 
 SemaphoreHandle_t nadk_system_mutex;

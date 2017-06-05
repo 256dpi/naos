@@ -3,7 +3,7 @@
 #include <esp_wifi.h>
 #include <string.h>
 
-#include "general.h"
+#include "utils.h"
 #include "wifi.h"
 
 static SemaphoreHandle_t nadk_wifi_mutex;

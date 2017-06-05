@@ -12,7 +12,7 @@
 #include <string.h>
 
 #include "ble.h"
-#include "general.h"
+#include "utils.h"
 
 #define NADK_BLE_INITIALIZED_BIT (1 << 0)
 

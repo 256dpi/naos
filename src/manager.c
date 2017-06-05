@@ -10,11 +10,11 @@
 #include <nadk/utils.h>
 
 #include "ble.h"
-#include "general.h"
 #include "manager.h"
 #include "nadk.h"
 #include "task.h"
 #include "update.h"
+#include "utils.h"
 
 static SemaphoreHandle_t nadk_manager_mutex;
 

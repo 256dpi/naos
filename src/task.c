@@ -6,9 +6,9 @@
 
 #include <nadk.h>
 
-#include "general.h"
 #include "nadk.h"
 #include "task.h"
+#include "utils.h"
 
 static SemaphoreHandle_t nadk_task_mutex;
 

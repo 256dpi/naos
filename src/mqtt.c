@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "general.h"
 #include "mqtt.h"
+#include "utils.h"
 
 static char *nadk_mqtt_base_topic_prefix = NULL;
 
