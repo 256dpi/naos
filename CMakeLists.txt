@@ -27,6 +27,7 @@ include_directories(
 
 set(SOURCE_FILES
         include/nadk.h
+        include/nadk/utils.h
         src/ble.c
         src/ble.h
         src/general.c

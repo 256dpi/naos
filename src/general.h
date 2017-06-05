@@ -32,13 +32,6 @@
 void nadk_delay(int millis);
 
 /**
- * Returns the elapsed milliseconds since the start.
- *
- * @return - The elapsed milliseconds.
- */
-uint32_t nadk_millis();
-
-/**
  * Will concatenate two strings and return a new one.
  *
  * Note: The caller is responsible to free the returned buffer.

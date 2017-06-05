@@ -7,6 +7,8 @@
 #include <nvs.h>
 #include <string.h>
 
+#include <nadk/utils.h>
+
 #include "ble.h"
 #include "general.h"
 #include "manager.h"
