@@ -120,6 +120,16 @@ void nadk_init(nadk_config_t *config);
 void nadk_log(const char *fmt, ...);
 
 /**
+ * Will return the value of the requested parameter.
+ *
+ * Note: The returned pointer is valid until the next call to nadk_get().
+ *
+ * @param param - The parameter.
+ * @return Pointer to value.
+ */
+char *nadk_get(const char *param);
+
+/**
  * Subscribe to specified topic.
  *
  * The topic is automatically prefixed with the configured base topic if the scope is local.
@@ -183,15 +193,5 @@ bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained
  * @return
  */
 bool nadk_publish_int(const char *topic, int num, int qos, bool retained, nadk_scope_t scope);
-
-/**
- * Will return the value of the requested parameter.
- *
- * Note: The returned pointer is valid until the next call to nadk_get().
- *
- * @param param - The parameter.
- * @return Pointer to value.
- */
-char *nadk_get(const char *param);
 
 #endif  // NADK_H
