@@ -16,7 +16,7 @@ Usage:
   nadm get <param> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
   nadm set <param> <value> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
   nadm monitor [--filter=<pattern> --timeout=<ms> --inventory=<file>]
-  nadm update <image> [--filter=<pattern> --inventory=<file>]
+  nadm update <image> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
 
 Options:
   -i --inventory=<file>  The inventory file [default: ./nadm.json].
