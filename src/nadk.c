@@ -19,10 +19,9 @@ const nadk_config_t *nadk_config() { return nadk_config_ref; }
 void nadk_log(const char *fmt, ...) {
   // prepare args
   va_list args;
-  int num;
 
   // initialize list
-  va_start(args, num);
+  va_start(args, fmt);
 
   // process input
   char buf[128];
