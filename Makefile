@@ -38,7 +38,7 @@ monitor: test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
 run: build flash monitor
 
 update:
-	cd test/esp-idf; git fetch; git checkout master
+	cd test/esp-idf; git pull; git checkout master
 	cd test/esp-idf/; git submodule update --recursive
-	cd test/components/esp-mqtt/; git fetch; git checkout master
+	cd test/components/esp-mqtt/; git pull; git checkout master
 	cd test/components/esp-mqtt/; git submodule update --recursive
