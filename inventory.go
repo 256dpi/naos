@@ -181,6 +181,17 @@ func (i *Inventory) Set(pattern, param, value string, timeout time.Duration) ([]
 	return updated, nil
 }
 
+// Record will enable log recording mode and yield the received log messages
+// until the provided channel has been closed.
+func (i *Inventory) Record(pattern string, quit chan struct{}, callback func(*Device, string)) error {
+	return Record(i.Broker, i.baseTopics(pattern), quit, func(log *Log) {
+		// call user callback
+		if callback != nil {
+			callback(i.byBaseTopic(log.BaseTopic), log.Message)
+		}
+	})
+}
+
 // Monitor will monitor the devices that match the supplied glob pattern and
 // update the inventory accordingly. The specified callback is called for every
 // heartbeat with the update device and the heartbeat available at

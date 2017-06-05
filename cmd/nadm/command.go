@@ -16,6 +16,7 @@ Usage:
   nadm get <param> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
   nadm set <param> <value> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
   nadm monitor [--filter=<pattern> --timeout=<ms> --inventory=<file>]
+  nadm record [--filter=<pattern> --inventory=<file>]
   nadm update <image> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
 
 Options:
@@ -35,6 +36,7 @@ type command struct {
 	cGet     bool
 	cSet     bool
 	cMonitor bool
+	cRecord  bool
 	cUpdate  bool
 
 	// arguments
@@ -70,10 +72,11 @@ func parseCommand() *command {
 		cCreate:  getBool(a["create"]),
 		cList:    getBool(a["list"]),
 		cCollect: getBool(a["collect"]),
-		cMonitor: getBool(a["monitor"]),
-		cUpdate:  getBool(a["update"]),
 		cSet:     getBool(a["set"]),
 		cGet:     getBool(a["get"]),
+		cMonitor: getBool(a["monitor"]),
+		cRecord:  getBool(a["record"]),
+		cUpdate:  getBool(a["update"]),
 
 		// arguments
 		aName:  getString(a["<name>"]),

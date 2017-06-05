@@ -21,14 +21,16 @@ func main() {
 		list(cmd, getInventory(cmd))
 	} else if cmd.cCollect {
 		collect(cmd, getInventory(cmd))
-	} else if cmd.cMonitor {
-		monitor(cmd, getInventory(cmd))
-	} else if cmd.cUpdate {
-		update(cmd, getInventory(cmd))
 	} else if cmd.cSet {
 		set(cmd, getInventory(cmd))
 	} else if cmd.cGet {
 		get(cmd, getInventory(cmd))
+	} else if cmd.cMonitor {
+		monitor(cmd, getInventory(cmd))
+	} else if cmd.cRecord {
+		record(cmd, getInventory(cmd))
+	} else if cmd.cUpdate {
+		update(cmd, getInventory(cmd))
 	}
 }
 
@@ -71,6 +73,36 @@ func collect(cmd *command, inv *nadm.Inventory) {
 	save(cmd, inv)
 }
 
+func set(cmd *command, inv *nadm.Inventory) {
+	list, err := inv.Set(cmd.oFilter, cmd.aParam, cmd.aValue, cmd.oTimeout)
+	exitIfSet(err)
+
+	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
+
+	for _, device := range list {
+		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
+	}
+
+	tbl.print()
+
+	save(cmd, inv)
+}
+
+func get(cmd *command, inv *nadm.Inventory) {
+	list, err := inv.Get(cmd.oFilter, cmd.aParam, cmd.oTimeout)
+	exitIfSet(err)
+
+	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
+
+	for _, device := range list {
+		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
+	}
+
+	tbl.print()
+
+	save(cmd, inv)
+}
+
 func monitor(cmd *command, inv *nadm.Inventory) {
 	quit := make(chan struct{})
 
@@ -93,6 +125,22 @@ func monitor(cmd *command, inv *nadm.Inventory) {
 		}
 
 		tbl.print()
+	})
+	exitIfSet(err)
+}
+
+func record(cmd *command, inv *nadm.Inventory) {
+	quit := make(chan struct{})
+
+	go func() {
+		exit := make(chan os.Signal)
+		signal.Notify(exit, os.Interrupt)
+		<-exit
+		close(quit)
+	}()
+
+	err := inv.Record(cmd.oFilter, quit, func(d *nadm.Device, msg string) {
+		fmt.Printf("[%s] %s\n", d.Name, msg)
 	})
 	exitIfSet(err)
 }
@@ -128,36 +176,6 @@ func update(cmd *command, inv *nadm.Inventory) {
 
 		tbl.print()
 	})
-
-	save(cmd, inv)
-}
-
-func set(cmd *command, inv *nadm.Inventory) {
-	list, err := inv.Set(cmd.oFilter, cmd.aParam, cmd.aValue, cmd.oTimeout)
-	exitIfSet(err)
-
-	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
-
-	for _, device := range list {
-		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
-	}
-
-	tbl.print()
-
-	save(cmd, inv)
-}
-
-func get(cmd *command, inv *nadm.Inventory) {
-	list, err := inv.Get(cmd.oFilter, cmd.aParam, cmd.oTimeout)
-	exitIfSet(err)
-
-	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
-
-	for _, device := range list {
-		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
-	}
-
-	tbl.print()
 
 	save(cmd, inv)
 }
