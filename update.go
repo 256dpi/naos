@@ -32,19 +32,19 @@ func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.D
 		// run a single update in background
 		go func(bt string){
 			// begin update
-			err := Update(url, baseTopic, firmware, timeout, func(progress int){
+			err := Update(url, bt, firmware, timeout, func(progress int){
 				// update progress
-				table[baseTopic].Progress = progress
+				table[bt].Progress = progress
 
 				// call callback
-				callback(baseTopic, table[baseTopic])
+				callback(bt, table[baseTopic])
 			})
 			if err != nil {
 				// update error
-				table[baseTopic].Error = err
+				table[bt].Error = err
 
 				// call callback
-				callback(baseTopic, table[baseTopic])
+				callback(bt, table[bt])
 			}
 
 			// remove from wait group
