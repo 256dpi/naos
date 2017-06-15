@@ -22,6 +22,9 @@ func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.D
 	// prepare wait group
 	var wg = sync.WaitGroup{}
 
+	// callback mutex
+	var cbmtx sync.Mutex
+
 	for _, baseTopic := range baseTopics {
 		// create status
 		table[baseTopic] = &Status{}
@@ -33,6 +36,10 @@ func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.D
 		go func(bt string){
 			// begin update
 			err := Update(url, bt, firmware, timeout, func(progress int){
+				// lock mutex
+				cbmtx.Lock()
+				defer cbmtx.Unlock()
+
 				// update progress
 				table[bt].Progress = progress
 
@@ -40,6 +47,10 @@ func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.D
 				callback(bt, table[baseTopic])
 			})
 			if err != nil {
+				// lock mutex
+				cbmtx.Lock()
+				defer cbmtx.Unlock()
+
 				// update error
 				table[bt].Error = err
 
