@@ -44,6 +44,78 @@ func create(cmd *command) {
 	save(cmd, inv)
 }
 
+//func create(cmd *command) {
+//	// get current working directory
+//	wd, err := os.Getwd()
+//	exitIfSet(err)
+//
+//	// define project dir
+//	pd := filepath.Join(wd, cmd.aName)
+//
+//	// create project
+//	_, err = naos.CreateProject(pd, cmd.aName)
+//	exitIfSet(err)
+//}
+//
+//func install() {
+//	// get current working directory
+//	wd, err := os.Getwd()
+//	exitIfSet(err)
+//
+//	// find project
+//	project, err := naos.FindProject(wd)
+//	exitIfSet(err)
+//
+//	pretty.Println(project)
+//
+//	// TODO: Install toolchain to "~/.naos".
+//	// TODO: Install esp-idf to "./.naos".
+//}
+//
+//func build() {
+//	// get current working directory
+//	wd, err := os.Getwd()
+//	exitIfSet(err)
+//
+//	// find project
+//	project, err := naos.FindProject(wd)
+//	exitIfSet(err)
+//
+//	pretty.Println(project)
+//
+//	// TODO: Copy sources files "./.naos"
+//	// TODO: Build using the esp-idf tools.
+//}
+//
+//func flash() {
+//	// get current working directory
+//	wd, err := os.Getwd()
+//	exitIfSet(err)
+//
+//	// find project
+//	project, err := naos.FindProject(wd)
+//	exitIfSet(err)
+//
+//	pretty.Println(project)
+//
+//	// TODO: Run build.
+//	// TODO: Upload using the esp-idf tools.
+//}
+//
+//func monitor() {
+//	// get current working directory
+//	wd, err := os.Getwd()
+//	exitIfSet(err)
+//
+//	// find project
+//	project, err := naos.FindProject(wd)
+//	exitIfSet(err)
+//
+//	pretty.Println(project)
+//
+//	// TODO: Run serial tool from esp tools.
+//}
+
 func list(cmd *command, inv *fleet.Inventory) {
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "BASE TOPIC")
 
