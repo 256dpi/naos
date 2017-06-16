@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/shiftr-io/naos/fleet"
+	"github.com/shiftr-io/naos"
 )
 
 func exitIfSet(errs ...error) {
@@ -20,8 +20,16 @@ func exitWithError(str string) {
 	os.Exit(1)
 }
 
-func getInventory(cmd *command) *fleet.Inventory {
-	inv, err := fleet.ReadInventory(cmd.oInventory)
+func home() string {
+	wd, err := os.Getwd()
 	exitIfSet(err)
-	return inv
+
+	return wd
+}
+
+func getProject(cmd *command) *naos.Project {
+	p, err := naos.FindProject(home())
+	exitIfSet(err)
+
+	return p
 }

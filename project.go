@@ -1,6 +1,12 @@
 package naos
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
+
+// InventoryFileName specifies the inventory file name.
+const InventoryFileName = "naos.json"
 
 // A Project is a project available on disk.
 type Project struct {
@@ -8,37 +14,33 @@ type Project struct {
 	Inventory *Inventory
 }
 
-// CreateProject will initialize a project in the specified directory with the
-// specified name.
-func CreateProject(path, name string) (*Project, error) {
-	// ensure project directory
+// CreateProject will initialize a project in the specified directory.
+func CreateProject(path string) (*Project, error) {
+	// ensure p directory
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
 		return nil, err
 	}
 
-	// create project
-	project := &Project{
+	// create p
+	p := &Project{
 		Location:  path,
-		Inventory: &Inventory{},
+		Inventory: NewInventory(),
 	}
 
 	// save inventory
-	err = project.Inventory.Save(path)
+	err = p.SaveInventory()
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Create "main.c".
-	// TODO: Create CMakeLists.txt.
-
-	return project, nil
+	return p, nil
 }
 
 // FindProject will look for project in the specified path.
 func FindProject(path string) (*Project, error) {
 	// attempt to read inventory
-	inv, err := ReadInventory(path)
+	inv, err := ReadInventory(filepath.Join(path, InventoryFileName))
 	if err != nil {
 		return nil, err
 	}
@@ -52,4 +54,15 @@ func FindProject(path string) (*Project, error) {
 	}
 
 	return project, nil
+}
+
+// SaveInventory will save the associated inventory to disk.
+func (p *Project) SaveInventory() error {
+	// save inventory
+	err := p.Inventory.Save(filepath.Join(p.Location, InventoryFileName))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

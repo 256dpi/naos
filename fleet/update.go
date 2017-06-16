@@ -10,11 +10,13 @@ import (
 	"github.com/gomqtt/packet"
 )
 
+// Status represents the ongoing update status of a device.
 type Status struct {
 	Progress int
 	Error    error
 }
 
+// UpdateMany will concurrently update multiple devices.
 func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.Duration, callback func(string, *Status)) {
 	// prepare table
 	table := make(map[string]*Status)

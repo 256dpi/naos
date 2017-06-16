@@ -8,7 +8,7 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// A single log emitted by Record.
+// Log is a log message emitted by Record.
 type Log struct {
 	Message   string
 	BaseTopic string

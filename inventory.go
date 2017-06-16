@@ -29,9 +29,8 @@ type Inventory struct {
 }
 
 // NewInventory creates a new Inventory.
-func NewInventory(broker string) *Inventory {
+func NewInventory() *Inventory {
 	return &Inventory{
-		Broker:  broker,
 		Devices: make(map[string]*Device),
 	}
 }
@@ -219,6 +218,9 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*D
 	})
 }
 
+// Update will update the devices that match the supplied glob pattern to the
+// specified image. The specified callback is called for every change in state
+// or progress.
 func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device)) {
 	fleet.UpdateMany(i.Broker, i.deviceBaseTopics(pattern), firmware, timeout, func(baseTopic string, status *fleet.Status) {
 		// get device

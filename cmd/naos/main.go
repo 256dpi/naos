@@ -18,126 +18,80 @@ func main() {
 	if cmd.cCreate {
 		create(cmd)
 	} else if cmd.cInstall {
-
+		install(cmd, getProject(cmd))
 	} else if cmd.cBuild {
-
+		build(cmd, getProject(cmd))
 	} else if cmd.cFlash {
-
+		flash(cmd, getProject(cmd))
 	} else if cmd.cAttach {
-
+		attach(cmd, getProject(cmd))
 	} else if cmd.cList {
-		list(cmd, getInventory(cmd))
+		list(cmd, getProject(cmd))
 	} else if cmd.cCollect {
-		collect(cmd, getInventory(cmd))
+		collect(cmd, getProject(cmd))
 	} else if cmd.cSet {
-		set(cmd, getInventory(cmd))
+		set(cmd, getProject(cmd))
 	} else if cmd.cGet {
-		get(cmd, getInventory(cmd))
+		get(cmd, getProject(cmd))
 	} else if cmd.cMonitor {
-		monitor(cmd, getInventory(cmd))
+		monitor(cmd, getProject(cmd))
 	} else if cmd.cRecord {
-		record(cmd, getInventory(cmd))
+		record(cmd, getProject(cmd))
 	} else if cmd.cUpdate {
-		update(cmd, getInventory(cmd))
+		update(cmd, getProject(cmd))
 	}
 }
 
 func create(cmd *command) {
-	inv := naos.NewInventory("mqtts://key:secret@broker.shiftr.io")
+	// create project
+	p, err := naos.CreateProject(home())
+	exitIfSet(err)
 
-	fmt.Printf("Created a new inventory at '%s'.\n", cmd.oInventory)
+	// set broker url
+	p.Inventory.Broker = "mqtts://key:secret@broker.shiftr.io"
+
+	fmt.Printf("Created a new project at '%s'.\n", p.Location)
 
 	fmt.Println("Please add your MQTT broker credentials to proceed.")
 
-	save(cmd, inv)
-
-	//	// get current working directory
-	//	wd, err := os.Getwd()
-	//	exitIfSet(err)
-	//
-	//	// define project dir
-	//	pd := filepath.Join(wd, cmd.aName)
-	//
-	//	// create project
-	//	_, err = naos.CreateProject(pd, cmd.aName)
-	//	exitIfSet(err)
+	save(cmd, p)
 }
 
-//func install() {
-//	// get current working directory
-//	wd, err := os.Getwd()
-//	exitIfSet(err)
-//
-//	// find project
-//	project, err := naos.FindProject(wd)
-//	exitIfSet(err)
-//
-//	pretty.Println(project)
-//
-//	// TODO: Install toolchain to "~/.naos".
-//	// TODO: Install esp-idf to "./.naos".
-//}
-//
-//func build() {
-//	// get current working directory
-//	wd, err := os.Getwd()
-//	exitIfSet(err)
-//
-//	// find project
-//	project, err := naos.FindProject(wd)
-//	exitIfSet(err)
-//
-//	pretty.Println(project)
-//
-//	// TODO: Copy sources files "./.naos"
-//	// TODO: Build using the esp-idf tools.
-//}
-//
-//func flash() {
-//	// get current working directory
-//	wd, err := os.Getwd()
-//	exitIfSet(err)
-//
-//	// find project
-//	project, err := naos.FindProject(wd)
-//	exitIfSet(err)
-//
-//	pretty.Println(project)
-//
-//	// TODO: Run build.
-//	// TODO: Upload using the esp-idf tools.
-//}
-//
-//func monitor() {
-//	// get current working directory
-//	wd, err := os.Getwd()
-//	exitIfSet(err)
-//
-//	// find project
-//	project, err := naos.FindProject(wd)
-//	exitIfSet(err)
-//
-//	pretty.Println(project)
-//
-//	// TODO: Run serial tool from esp tools.
-//}
+func install(cmd *command, p *naos.Project) {
+	// TODO: Install toolchain to "~/.naos".
+	// TODO: Install esp-idf to "./.naos".
+}
 
-func list(cmd *command, inv *naos.Inventory) {
+func build(cmd *command, p *naos.Project) {
+	// TODO: Copy sources files "./.naos"
+	// TODO: Build using the esp-idf tools.
+}
+
+func flash(cmd *command, p *naos.Project) {
+	// TODO: Run build.
+	// TODO: Upload using the esp-idf tools.
+}
+
+func attach(cmd *command, p *naos.Project) {
+	// TODO: Run serial tool from esp tools.
+}
+
+func list(cmd *command, p *naos.Project) {
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "BASE TOPIC")
 
-	for _, d := range inv.Devices {
+	for _, d := range p.Inventory.Devices {
 		tbl.add(d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
 	}
 
 	tbl.print()
 }
 
-func collect(cmd *command, inv *naos.Inventory) {
+func collect(cmd *command, p *naos.Project) {
 	if cmd.oClear {
-		inv.Devices = make(map[string]*naos.Device)
+		p.Inventory.Devices = make(map[string]*naos.Device)
 	}
 
-	list, err := inv.Collect(cmd.oDuration)
+	list, err := p.Inventory.Collect(cmd.oDuration)
 	exitIfSet(err)
 
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "BASE TOPIC")
@@ -148,11 +102,11 @@ func collect(cmd *command, inv *naos.Inventory) {
 
 	tbl.print()
 
-	save(cmd, inv)
+	save(cmd, p)
 }
 
-func set(cmd *command, inv *naos.Inventory) {
-	list, err := inv.Set(cmd.oFilter, cmd.aParam, cmd.aValue, cmd.oTimeout)
+func set(cmd *command, p *naos.Project) {
+	list, err := p.Inventory.Set(cmd.oFilter, cmd.aParam, cmd.aValue, cmd.oTimeout)
 	exitIfSet(err)
 
 	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
@@ -163,11 +117,11 @@ func set(cmd *command, inv *naos.Inventory) {
 
 	tbl.print()
 
-	save(cmd, inv)
+	save(cmd, p)
 }
 
-func get(cmd *command, inv *naos.Inventory) {
-	list, err := inv.Get(cmd.oFilter, cmd.aParam, cmd.oTimeout)
+func get(cmd *command, p *naos.Project) {
+	list, err := p.Inventory.Get(cmd.oFilter, cmd.aParam, cmd.oTimeout)
 	exitIfSet(err)
 
 	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
@@ -178,10 +132,10 @@ func get(cmd *command, inv *naos.Inventory) {
 
 	tbl.print()
 
-	save(cmd, inv)
+	save(cmd, p)
 }
 
-func monitor(cmd *command, inv *naos.Inventory) {
+func monitor(cmd *command, p *naos.Project) {
 	quit := make(chan struct{})
 
 	go func() {
@@ -193,10 +147,10 @@ func monitor(cmd *command, inv *naos.Inventory) {
 
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION")
 
-	err := inv.Monitor(cmd.oFilter, quit, func(d *naos.Device) {
+	err := p.Inventory.Monitor(cmd.oFilter, quit, func(d *naos.Device) {
 		tbl.clear()
 
-		for _, device := range inv.Devices {
+		for _, device := range p.Inventory.Devices {
 			if device.LastHeartbeat != nil {
 				tbl.add(device.Name, device.Type, device.FirmwareVersion, bytefmt.ByteSize(uint64(device.LastHeartbeat.FreeHeapSize)), device.LastHeartbeat.UpTime.String(), device.LastHeartbeat.StartPartition)
 			}
@@ -207,7 +161,7 @@ func monitor(cmd *command, inv *naos.Inventory) {
 	exitIfSet(err)
 }
 
-func record(cmd *command, inv *naos.Inventory) {
+func record(cmd *command, p *naos.Project) {
 	quit := make(chan struct{})
 
 	go func() {
@@ -217,13 +171,13 @@ func record(cmd *command, inv *naos.Inventory) {
 		close(quit)
 	}()
 
-	err := inv.Record(cmd.oFilter, quit, func(d *naos.Device, msg string) {
+	err := p.Inventory.Record(cmd.oFilter, quit, func(d *naos.Device, msg string) {
 		fmt.Printf("[%s] %s\n", d.Name, msg)
 	})
 	exitIfSet(err)
 }
 
-func update(cmd *command, inv *naos.Inventory) {
+func update(cmd *command, p *naos.Project) {
 	file, err := filepath.Abs(cmd.aImage)
 	exitIfSet(err)
 
@@ -232,10 +186,10 @@ func update(cmd *command, inv *naos.Inventory) {
 
 	tbl := newTable("DEVICE NAME", "PROGRESS", "ERROR")
 
-	inv.Update(cmd.oFilter, bytes, cmd.oTimeout, func(_ *naos.Device) {
+	p.Inventory.Update(cmd.oFilter, bytes, cmd.oTimeout, func(_ *naos.Device) {
 		tbl.clear()
 
-		for _, device := range inv.Devices {
+		for _, device := range p.Inventory.Devices {
 			if device.UpdateStatus != nil {
 				errStr := ""
 				if device.UpdateStatus.Error != nil {
@@ -251,9 +205,10 @@ func update(cmd *command, inv *naos.Inventory) {
 		tbl.print()
 	})
 
-	save(cmd, inv)
+	save(cmd, p)
 }
 
-func save(cmd *command, inv *naos.Inventory) {
-	inv.Save(cmd.oInventory)
+func save(cmd *command, p *naos.Project) {
+	err := p.SaveInventory()
+	exitIfSet(err)
 }

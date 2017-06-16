@@ -1,7 +1,6 @@
 package main
 
 import (
-	"path/filepath"
 	"time"
 
 	"github.com/docopt/docopt-go"
@@ -10,21 +9,20 @@ import (
 var usage = `naos - the networked artifacts operating system
 
 Usage:
-  naos create [--inventory=<file>]
-  naos install [--inventory=<file>]
-  naos build [--inventory=<file>]
-  naos flash [--erase --inventory=<file>]
+  naos create
+  naos install
+  naos build
+  naos flash [--erase]
   naos attach
-  naos list [--inventory=<file>]
-  naos collect [--clear --duration=<ms> --inventory=<file>]
-  naos get <param> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
-  naos set <param> <value> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
-  naos monitor [--filter=<pattern> --timeout=<ms> --inventory=<file>]
-  naos record [--filter=<pattern> --inventory=<file>]
-  naos update <image> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
+  naos list
+  naos collect [--clear --duration=<ms>]
+  naos get <param> [--filter=<pattern> --timeout=<ms>]
+  naos set <param> <value> [--filter=<pattern> --timeout=<ms>]
+  naos monitor [--filter=<pattern> --timeout=<ms>]
+  naos record [--filter=<pattern>]
+  naos update <image> [--filter=<pattern> --timeout=<ms>]
 
 Options:
-  -i --inventory=<file>  The inventory file [default: ./naos.json].
   -e --erase             Erase completely before flashing new image.
   -d --duration=<ms>     The collection duration [default: 1s].
   -t --timeout=<ms>      The response timeout [default: 5s].
@@ -55,27 +53,15 @@ type command struct {
 	aImage string
 
 	// options
-	oInventory string
-	oErase     bool
-	oDuration  time.Duration
-	oTimeout   time.Duration
-	oFilter    string
-	oClear     bool
+	oErase    bool
+	oDuration time.Duration
+	oTimeout  time.Duration
+	oFilter   string
+	oClear    bool
 }
 
 func parseCommand() *command {
 	a, _ := docopt.Parse(usage, nil, true, "", false)
-
-	inv := getString(a["--inventory"])
-	if inv == "./naos.json" {
-		i, err := filepath.Abs("naos.json")
-		exitIfSet(err)
-		inv = i
-	} else {
-		i, err := filepath.Abs(inv)
-		exitIfSet(err)
-		inv = i
-	}
 
 	return &command{
 		// commands
@@ -100,12 +86,11 @@ func parseCommand() *command {
 		aValue: getString(a["<value>"]),
 
 		// options
-		oInventory: inv,
-		oErase:     getBool(a["--erase"]),
-		oDuration:  getDuration(a["--duration"]),
-		oTimeout:   getDuration(a["--timeout"]),
-		oFilter:    getString(a["--filter"]),
-		oClear:     getBool(a["--clear"]),
+		oErase:    getBool(a["--erase"]),
+		oDuration: getDuration(a["--duration"]),
+		oTimeout:  getDuration(a["--timeout"]),
+		oFilter:   getString(a["--filter"]),
+		oClear:    getBool(a["--clear"]),
 	}
 }
 
