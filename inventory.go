@@ -20,6 +20,8 @@ type Device struct {
 	UpdateStatus    *fleet.Status     `json:"-"`
 }
 
+// TODO: Remove LastHeartbeat and UpdateStatus references?
+
 // A Inventory represents the contents of the inventory file.
 type Inventory struct {
 	Broker  string             `json:"broker"`
@@ -56,7 +58,7 @@ func ReadInventory(path string) (*Inventory, error) {
 		inv.Devices = make(map[string]*Device)
 	}
 
-	// iterate over all devices
+	// iterate over all devices and initialize parameters
 	for _, device := range inv.Devices {
 		if device.Parameters == nil {
 			device.Parameters = make(map[string]string)
@@ -83,9 +85,9 @@ func (i *Inventory) Save(path string) error {
 	return nil
 }
 
-// Filter will return a list of devices that have a name matching the supplied
+// FilterDevices will return a list of devices that have a name matching the supplied
 // glob pattern.
-func (i *Inventory) Filter(pattern string) []*Device {
+func (i *Inventory) FilterDevices(pattern string) []*Device {
 	// prepare list
 	var devices []*Device
 
@@ -137,7 +139,7 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 // answering devices is returned.
 func (i *Inventory) Get(pattern, param string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	table, err := fleet.Get(i.Broker, param, i.baseTopics(pattern), timeout)
+	table, err := fleet.Get(i.Broker, param, i.deviceBaseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +149,7 @@ func (i *Inventory) Get(pattern, param string, timeout time.Duration) ([]*Device
 
 	// update device
 	for baseTopic, value := range table {
-		device := i.byBaseTopic(baseTopic)
+		device := i.deviceByBaseTopic(baseTopic)
 		if device != nil {
 			device.Parameters[param] = value
 			answering = append(answering, device)
@@ -162,7 +164,7 @@ func (i *Inventory) Get(pattern, param string, timeout time.Duration) ([]*Device
 // updated devices is returned.
 func (i *Inventory) Set(pattern, param, value string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	table, err := fleet.Set(i.Broker, param, value, i.baseTopics(pattern), timeout)
+	table, err := fleet.Set(i.Broker, param, value, i.deviceBaseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +174,7 @@ func (i *Inventory) Set(pattern, param, value string, timeout time.Duration) ([]
 
 	// update device
 	for baseTopic, value := range table {
-		device := i.byBaseTopic(baseTopic)
+		device := i.deviceByBaseTopic(baseTopic)
 		if device != nil {
 			device.Parameters[param] = value
 			updated = append(updated, device)
@@ -185,10 +187,10 @@ func (i *Inventory) Set(pattern, param, value string, timeout time.Duration) ([]
 // Record will enable log recording mode and yield the received log messages
 // until the provided channel has been closed.
 func (i *Inventory) Record(pattern string, quit chan struct{}, callback func(*Device, string)) error {
-	return fleet.Record(i.Broker, i.baseTopics(pattern), quit, func(log *fleet.Log) {
+	return fleet.Record(i.Broker, i.deviceBaseTopics(pattern), quit, func(log *fleet.Log) {
 		// call user callback
 		if callback != nil {
-			callback(i.byBaseTopic(log.BaseTopic), log.Message)
+			callback(i.deviceByBaseTopic(log.BaseTopic), log.Message)
 		}
 	})
 }
@@ -198,7 +200,7 @@ func (i *Inventory) Record(pattern string, quit chan struct{}, callback func(*De
 // heartbeat with the update device and the heartbeat available at
 // device.LastHeartbeat.
 func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*Device)) error {
-	return fleet.Monitor(i.Broker, i.baseTopics(pattern), quit, func(heartbeat *fleet.Heartbeat) {
+	return fleet.Monitor(i.Broker, i.deviceBaseTopics(pattern), quit, func(heartbeat *fleet.Heartbeat) {
 		// get device
 		device, ok := i.Devices[heartbeat.DeviceName]
 		if !ok {
@@ -218,9 +220,9 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*D
 }
 
 func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device)) {
-	fleet.UpdateMany(i.Broker, i.baseTopics(pattern), firmware, timeout, func(baseTopic string, status *fleet.Status) {
+	fleet.UpdateMany(i.Broker, i.deviceBaseTopics(pattern), firmware, timeout, func(baseTopic string, status *fleet.Status) {
 		// get device
-		device := i.byBaseTopic(baseTopic)
+		device := i.deviceByBaseTopic(baseTopic)
 		if device == nil {
 			return
 		}
@@ -233,19 +235,19 @@ func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duratio
 	})
 }
 
-func (i *Inventory) baseTopics(pattern string) []string {
+func (i *Inventory) deviceBaseTopics(pattern string) []string {
 	// prepare list
 	var l []string
 
 	// add all matching devices
-	for _, d := range i.Filter(pattern) {
+	for _, d := range i.FilterDevices(pattern) {
 		l = append(l, d.BaseTopic)
 	}
 
 	return l
 }
 
-func (i *Inventory) byBaseTopic(baseTopic string) *Device {
+func (i *Inventory) deviceByBaseTopic(baseTopic string) *Device {
 	// iterate through all devices
 	for _, d := range i.Devices {
 		if d.BaseTopic == baseTopic {
