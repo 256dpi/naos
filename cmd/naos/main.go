@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"code.cloudfoundry.org/bytefmt"
-	"github.com/shiftr-io/naos/fleet"
+	"github.com/shiftr-io/naos"
 )
 
 func main() {
@@ -17,6 +17,14 @@ func main() {
 
 	if cmd.cCreate {
 		create(cmd)
+	} else if cmd.cInstall {
+
+	} else if cmd.cBuild {
+
+	} else if cmd.cFlash {
+
+	} else if cmd.cAttach {
+
 	} else if cmd.cList {
 		list(cmd, getInventory(cmd))
 	} else if cmd.cCollect {
@@ -35,28 +43,26 @@ func main() {
 }
 
 func create(cmd *command) {
-	inv := fleet.NewInventory("mqtts://key:secret@broker.shiftr.io")
+	inv := naos.NewInventory("mqtts://key:secret@broker.shiftr.io")
 
 	fmt.Printf("Created a new inventory at '%s'.\n", cmd.oInventory)
 
 	fmt.Println("Please add your MQTT broker credentials to proceed.")
 
 	save(cmd, inv)
+
+	//	// get current working directory
+	//	wd, err := os.Getwd()
+	//	exitIfSet(err)
+	//
+	//	// define project dir
+	//	pd := filepath.Join(wd, cmd.aName)
+	//
+	//	// create project
+	//	_, err = naos.CreateProject(pd, cmd.aName)
+	//	exitIfSet(err)
 }
 
-//func create(cmd *command) {
-//	// get current working directory
-//	wd, err := os.Getwd()
-//	exitIfSet(err)
-//
-//	// define project dir
-//	pd := filepath.Join(wd, cmd.aName)
-//
-//	// create project
-//	_, err = naos.CreateProject(pd, cmd.aName)
-//	exitIfSet(err)
-//}
-//
 //func install() {
 //	// get current working directory
 //	wd, err := os.Getwd()
@@ -116,7 +122,7 @@ func create(cmd *command) {
 //	// TODO: Run serial tool from esp tools.
 //}
 
-func list(cmd *command, inv *fleet.Inventory) {
+func list(cmd *command, inv *naos.Inventory) {
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "BASE TOPIC")
 
 	for _, d := range inv.Devices {
@@ -126,9 +132,9 @@ func list(cmd *command, inv *fleet.Inventory) {
 	tbl.print()
 }
 
-func collect(cmd *command, inv *fleet.Inventory) {
+func collect(cmd *command, inv *naos.Inventory) {
 	if cmd.oClear {
-		inv.Devices = make(map[string]*fleet.Device)
+		inv.Devices = make(map[string]*naos.Device)
 	}
 
 	list, err := inv.Collect(cmd.oDuration)
@@ -145,7 +151,7 @@ func collect(cmd *command, inv *fleet.Inventory) {
 	save(cmd, inv)
 }
 
-func set(cmd *command, inv *fleet.Inventory) {
+func set(cmd *command, inv *naos.Inventory) {
 	list, err := inv.Set(cmd.oFilter, cmd.aParam, cmd.aValue, cmd.oTimeout)
 	exitIfSet(err)
 
@@ -160,7 +166,7 @@ func set(cmd *command, inv *fleet.Inventory) {
 	save(cmd, inv)
 }
 
-func get(cmd *command, inv *fleet.Inventory) {
+func get(cmd *command, inv *naos.Inventory) {
 	list, err := inv.Get(cmd.oFilter, cmd.aParam, cmd.oTimeout)
 	exitIfSet(err)
 
@@ -175,7 +181,7 @@ func get(cmd *command, inv *fleet.Inventory) {
 	save(cmd, inv)
 }
 
-func monitor(cmd *command, inv *fleet.Inventory) {
+func monitor(cmd *command, inv *naos.Inventory) {
 	quit := make(chan struct{})
 
 	go func() {
@@ -187,7 +193,7 @@ func monitor(cmd *command, inv *fleet.Inventory) {
 
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION")
 
-	err := inv.Monitor(cmd.oFilter, quit, func(d *fleet.Device) {
+	err := inv.Monitor(cmd.oFilter, quit, func(d *naos.Device) {
 		tbl.clear()
 
 		for _, device := range inv.Devices {
@@ -201,7 +207,7 @@ func monitor(cmd *command, inv *fleet.Inventory) {
 	exitIfSet(err)
 }
 
-func record(cmd *command, inv *fleet.Inventory) {
+func record(cmd *command, inv *naos.Inventory) {
 	quit := make(chan struct{})
 
 	go func() {
@@ -211,13 +217,13 @@ func record(cmd *command, inv *fleet.Inventory) {
 		close(quit)
 	}()
 
-	err := inv.Record(cmd.oFilter, quit, func(d *fleet.Device, msg string) {
+	err := inv.Record(cmd.oFilter, quit, func(d *naos.Device, msg string) {
 		fmt.Printf("[%s] %s\n", d.Name, msg)
 	})
 	exitIfSet(err)
 }
 
-func update(cmd *command, inv *fleet.Inventory) {
+func update(cmd *command, inv *naos.Inventory) {
 	file, err := filepath.Abs(cmd.aImage)
 	exitIfSet(err)
 
@@ -226,7 +232,7 @@ func update(cmd *command, inv *fleet.Inventory) {
 
 	tbl := newTable("DEVICE NAME", "PROGRESS", "ERROR")
 
-	inv.Update(cmd.oFilter, bytes, cmd.oTimeout, func(_ *fleet.Device) {
+	inv.Update(cmd.oFilter, bytes, cmd.oTimeout, func(_ *naos.Device) {
 		tbl.clear()
 
 		for _, device := range inv.Devices {
@@ -248,6 +254,6 @@ func update(cmd *command, inv *fleet.Inventory) {
 	save(cmd, inv)
 }
 
-func save(cmd *command, inv *fleet.Inventory) {
+func save(cmd *command, inv *naos.Inventory) {
 	inv.Save(cmd.oInventory)
 }

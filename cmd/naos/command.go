@@ -11,6 +11,10 @@ var usage = `naos - the networked artifacts operating system
 
 Usage:
   naos create [--inventory=<file>]
+  naos install [--inventory=<file>]
+  naos build [--inventory=<file>]
+  naos flash [--erase --inventory=<file>]
+  naos attach
   naos list [--inventory=<file>]
   naos collect [--clear --duration=<ms> --inventory=<file>]
   naos get <param> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
@@ -21,6 +25,7 @@ Usage:
 
 Options:
   -i --inventory=<file>  The inventory file [default: ./naos.json].
+  -e --erase             Erase completely before flashing new image.
   -d --duration=<ms>     The collection duration [default: 1s].
   -t --timeout=<ms>      The response timeout [default: 5s].
   -f --filter=<pattern>  The filter glob pattern [default: *].
@@ -31,6 +36,10 @@ Options:
 type command struct {
 	// commands
 	cCreate  bool
+	cInstall bool
+	cBuild   bool
+	cFlash   bool
+	cAttach  bool
 	cList    bool
 	cCollect bool
 	cGet     bool
@@ -47,6 +56,7 @@ type command struct {
 
 	// options
 	oInventory string
+	oErase     bool
 	oDuration  time.Duration
 	oTimeout   time.Duration
 	oFilter    string
@@ -70,6 +80,10 @@ func parseCommand() *command {
 	return &command{
 		// commands
 		cCreate:  getBool(a["create"]),
+		cInstall: getBool(a["install"]),
+		cBuild:   getBool(a["build"]),
+		cFlash:   getBool(a["flash"]),
+		cAttach:  getBool(a["attach"]),
 		cList:    getBool(a["list"]),
 		cCollect: getBool(a["collect"]),
 		cSet:     getBool(a["set"]),
@@ -87,6 +101,7 @@ func parseCommand() *command {
 
 		// options
 		oInventory: inv,
+		oErase:     getBool(a["--erase"]),
 		oDuration:  getDuration(a["--duration"]),
 		oTimeout:   getDuration(a["--timeout"]),
 		oFilter:    getString(a["--filter"]),

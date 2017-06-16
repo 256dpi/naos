@@ -1,4 +1,4 @@
-package fleet
+package naos
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ryanuber/go-glob"
+	"github.com/shiftr-io/naos/fleet"
 )
 
 // A Device represents a single device in an Inventory.
@@ -15,8 +16,8 @@ type Device struct {
 	FirmwareVersion string            `json:"firmware_version"`
 	BaseTopic       string            `json:"base_topic"`
 	Parameters      map[string]string `json:"parameters"`
-	LastHeartbeat   *Heartbeat        `json:"-"`
-	UpdateStatus    *Status           `json:"-"`
+	LastHeartbeat   *fleet.Heartbeat  `json:"-"`
+	UpdateStatus    *fleet.Status     `json:"-"`
 }
 
 // A Inventory represents the contents of the inventory file.
@@ -104,7 +105,7 @@ func (i *Inventory) Filter(pattern string) []*Device {
 // added to the inventory.
 func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 	// collect announcements
-	anns, err := Collect(i.Broker, duration)
+	anns, err := fleet.Collect(i.Broker, duration)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +137,7 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 // answering devices is returned.
 func (i *Inventory) Get(pattern, param string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	table, err := Get(i.Broker, param, i.baseTopics(pattern), timeout)
+	table, err := fleet.Get(i.Broker, param, i.baseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +162,7 @@ func (i *Inventory) Get(pattern, param string, timeout time.Duration) ([]*Device
 // updated devices is returned.
 func (i *Inventory) Set(pattern, param, value string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	table, err := Set(i.Broker, param, value, i.baseTopics(pattern), timeout)
+	table, err := fleet.Set(i.Broker, param, value, i.baseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +185,7 @@ func (i *Inventory) Set(pattern, param, value string, timeout time.Duration) ([]
 // Record will enable log recording mode and yield the received log messages
 // until the provided channel has been closed.
 func (i *Inventory) Record(pattern string, quit chan struct{}, callback func(*Device, string)) error {
-	return Record(i.Broker, i.baseTopics(pattern), quit, func(log *Log) {
+	return fleet.Record(i.Broker, i.baseTopics(pattern), quit, func(log *fleet.Log) {
 		// call user callback
 		if callback != nil {
 			callback(i.byBaseTopic(log.BaseTopic), log.Message)
@@ -197,7 +198,7 @@ func (i *Inventory) Record(pattern string, quit chan struct{}, callback func(*De
 // heartbeat with the update device and the heartbeat available at
 // device.LastHeartbeat.
 func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*Device)) error {
-	return Monitor(i.Broker, i.baseTopics(pattern), quit, func(heartbeat *Heartbeat) {
+	return fleet.Monitor(i.Broker, i.baseTopics(pattern), quit, func(heartbeat *fleet.Heartbeat) {
 		// get device
 		device, ok := i.Devices[heartbeat.DeviceName]
 		if !ok {
@@ -217,7 +218,7 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*D
 }
 
 func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device)) {
-	UpdateMany(i.Broker, i.baseTopics(pattern), firmware, timeout, func(baseTopic string, status *Status) {
+	fleet.UpdateMany(i.Broker, i.baseTopics(pattern), firmware, timeout, func(baseTopic string, status *fleet.Status) {
 		// get device
 		device := i.byBaseTopic(baseTopic)
 		if device == nil {
