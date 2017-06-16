@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.7)
-project(nadk)
+project(naos)
 
 set(CMAKE_C_STANDARD 99)
 
@@ -26,16 +26,16 @@ include_directories(
         include)
 
 set(SOURCE_FILES
-        include/nadk.h
-        include/nadk/utils.h
+        include/naos.h
+        include/naos/utils.h
         src/ble.c
         src/ble.h
         src/manager.c
         src/manager.h
         src/mqtt.c
         src/mqtt.h
-        src/nadk.c
-        src/nadk.h
+        src/naos.c
+        src/naos.h
         src/system.c
         src/system.h
         src/task.c
@@ -48,4 +48,4 @@ set(SOURCE_FILES
         src/wifi.h
         test/main/main.c)
 
-add_library(nadk ${SOURCE_FILES})
+add_library(naos ${SOURCE_FILES})

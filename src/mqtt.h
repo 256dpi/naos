@@ -1,15 +1,15 @@
-#ifndef _NADK_MQTT_H
-#define _NADK_MQTT_H
+#ifndef _NAOS_MQTT_H
+#define _NAOS_MQTT_H
 
 #include <esp_mqtt.h>
 
-#include <nadk.h>
+#include <naos.h>
 
 /**
  * The message callback.
  */
-typedef void (*nadk_mqtt_message_callback_t)(const char *topic, const char *payload, unsigned int len,
-                                             nadk_scope_t scope);
+typedef void (*naos_mqtt_message_callback_t)(const char *topic, const char *payload, unsigned int len,
+                                             naos_scope_t scope);
 
 /**
  * Initialize the MQTT subsystem.
@@ -19,7 +19,7 @@ typedef void (*nadk_mqtt_message_callback_t)(const char *topic, const char *payl
  * @param scb - The status callback.
  * @param mcb - The message callback.
  */
-void nadk_mqtt_init(esp_mqtt_status_callback_t scb, nadk_mqtt_message_callback_t mcb);
+void naos_mqtt_init(esp_mqtt_status_callback_t scb, naos_mqtt_message_callback_t mcb);
 
 /**
  * Start the MQTT process.
@@ -31,12 +31,12 @@ void nadk_mqtt_init(esp_mqtt_status_callback_t scb, nadk_mqtt_message_callback_t
  * @param password - The client password.
  * @param base_topic - The base topic.
  */
-void nadk_mqtt_start(const char *host, unsigned int port, const char *client_id, const char *username,
+void naos_mqtt_start(const char *host, unsigned int port, const char *client_id, const char *username,
                      const char *password, const char *base_topic);
 
 /**
  * Stop the MQTT process.
  */
-void nadk_mqtt_stop();
+void naos_mqtt_stop();
 
-#endif  // _NADK_MQTT_H
+#endif  // _NAOS_MQTT_H

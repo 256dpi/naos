@@ -8,76 +8,76 @@
 #include "ble.h"
 #include "manager.h"
 #include "mqtt.h"
-#include "nadk.h"
+#include "naos.h"
 #include "task.h"
 #include "update.h"
 #include "utils.h"
 #include "wifi.h"
 
-SemaphoreHandle_t nadk_system_mutex;
+SemaphoreHandle_t naos_system_mutex;
 
-static nadk_status_t nadk_system_status;
+static naos_status_t naos_system_status;
 
-static void nadk_system_set_status(nadk_status_t status) {
+static void naos_system_set_status(naos_status_t status) {
   // default state name
   const char *name = "Unknown";
 
   // triage status
   switch (status) {
     // handle disconnected state
-    case NADK_DISCONNECTED: {
+    case NAOS_DISCONNECTED: {
       name = "Disconnected";
       break;
     }
 
     // handle connected state
-    case NADK_CONNECTED: {
+    case NAOS_CONNECTED: {
       name = "Connected";
       break;
     }
 
     // handle networked state
-    case NADK_NETWORKED: {
+    case NAOS_NETWORKED: {
       name = "Networked";
       break;
     }
   }
 
   // change state
-  nadk_system_status = status;
+  naos_system_status = status;
 
   // update connection status
-  nadk_ble_set_string(NADK_BLE_ID_CONNECTION_STATUS, (char *)name);
+  naos_ble_set_string(NAOS_BLE_ID_CONNECTION_STATUS, (char *)name);
 
   // notify task
-  nadk_task_notify(status);
+  naos_task_notify(status);
 
-  ESP_LOGI(NADK_LOG_TAG, "nadk_system_set_status: %s", name)
+  ESP_LOGI(NAOS_LOG_TAG, "naos_system_set_status: %s", name)
 }
 
-static void nadk_system_configure_wifi() {
+static void naos_system_configure_wifi() {
   // get ssid & password
-  char *wifi_ssid = nadk_ble_get_string(NADK_BLE_ID_WIFI_SSID);
-  char *wifi_password = nadk_ble_get_string(NADK_BLE_ID_WIFI_PASSWORD);
+  char *wifi_ssid = naos_ble_get_string(NAOS_BLE_ID_WIFI_SSID);
+  char *wifi_password = naos_ble_get_string(NAOS_BLE_ID_WIFI_PASSWORD);
 
   // configure wifi
-  nadk_wifi_configure(wifi_ssid, wifi_password);
+  naos_wifi_configure(wifi_ssid, wifi_password);
 
   // free strings
   free(wifi_ssid);
   free(wifi_password);
 }
 
-static void nadk_system_start_mqtt() {
+static void naos_system_start_mqtt() {
   // get settings
-  char *mqtt_host = nadk_ble_get_string(NADK_BLE_ID_MQTT_HOST);
-  char *mqtt_client_id = nadk_ble_get_string(NADK_BLE_ID_MQTT_CLIENT_ID);
-  char *mqtt_username = nadk_ble_get_string(NADK_BLE_ID_MQTT_USERNAME);
-  char *mqtt_password = nadk_ble_get_string(NADK_BLE_ID_MQTT_PASSWORD);
-  char *base_topic = nadk_ble_get_string(NADK_BLE_ID_BASE_TOPIC);
+  char *mqtt_host = naos_ble_get_string(NAOS_BLE_ID_MQTT_HOST);
+  char *mqtt_client_id = naos_ble_get_string(NAOS_BLE_ID_MQTT_CLIENT_ID);
+  char *mqtt_username = naos_ble_get_string(NAOS_BLE_ID_MQTT_USERNAME);
+  char *mqtt_password = naos_ble_get_string(NAOS_BLE_ID_MQTT_PASSWORD);
+  char *base_topic = naos_ble_get_string(NAOS_BLE_ID_BASE_TOPIC);
 
   // start mqtt
-  nadk_mqtt_start(mqtt_host, 1883, mqtt_client_id, mqtt_username, mqtt_password, base_topic);
+  naos_mqtt_start(mqtt_host, 1883, mqtt_client_id, mqtt_username, mqtt_password, base_topic);
 
   // free strings
   free(mqtt_host);
@@ -87,17 +87,17 @@ static void nadk_system_start_mqtt() {
   free(base_topic);
 }
 
-static void nadk_system_ble_callback(nadk_ble_id_t id) {
+static void naos_system_ble_callback(naos_ble_id_t id) {
   // dismiss any other changed characteristic
-  if (id != NADK_BLE_ID_COMMAND) {
+  if (id != NAOS_BLE_ID_COMMAND) {
     return;
   }
 
   // acquire mutex
-  NADK_LOCK(nadk_system_mutex);
+  NAOS_LOCK(naos_system_mutex);
 
   // get value
-  char *value = nadk_ble_get_string(NADK_BLE_ID_COMMAND);
+  char *value = naos_ble_get_string(NAOS_BLE_ID_COMMAND);
 
   // detect command
   bool restart_mqtt = strcmp(value, "restart-mqtt") == 0;
@@ -108,98 +108,98 @@ static void nadk_system_ble_callback(nadk_ble_id_t id) {
 
   // handle wifi restart
   if (restart_wifi) {
-    ESP_LOGI(NADK_LOG_TAG, "nadk_system_ble_callback: restart wifi");
+    ESP_LOGI(NAOS_LOG_TAG, "naos_system_ble_callback: restart wifi");
 
-    switch (nadk_system_status) {
-      case NADK_NETWORKED: {
+    switch (naos_system_status) {
+      case NAOS_NETWORKED: {
         // stop task
-        nadk_task_stop();
+        naos_task_stop();
 
         // fallthrough
       }
 
-      case NADK_CONNECTED: {
+      case NAOS_CONNECTED: {
         // stop mqtt client
-        nadk_mqtt_stop();
+        naos_mqtt_stop();
 
         // change state
-        nadk_system_set_status(NADK_DISCONNECTED);
+        naos_system_set_status(NAOS_DISCONNECTED);
 
         // fallthrough
       }
 
-      case NADK_DISCONNECTED: {
+      case NAOS_DISCONNECTED: {
         // restart wifi
-        nadk_system_configure_wifi();
+        naos_system_configure_wifi();
       }
     }
   }
 
   // handle mqtt restart
   if (restart_mqtt) {
-    ESP_LOGI(NADK_LOG_TAG, "nadk_system_ble_callback: restart mqtt");
+    ESP_LOGI(NAOS_LOG_TAG, "naos_system_ble_callback: restart mqtt");
 
-    switch (nadk_system_status) {
-      case NADK_NETWORKED: {
+    switch (naos_system_status) {
+      case NAOS_NETWORKED: {
         // stop task
-        nadk_task_stop();
+        naos_task_stop();
 
         // change state
-        nadk_system_set_status(NADK_CONNECTED);
+        naos_system_set_status(NAOS_CONNECTED);
 
         // fallthrough
       }
 
-      case NADK_CONNECTED: {
+      case NAOS_CONNECTED: {
         // stop mqtt client
-        nadk_mqtt_stop();
+        naos_mqtt_stop();
 
         // restart mqtt
-        nadk_system_start_mqtt();
+        naos_system_start_mqtt();
 
         // fallthrough
       }
 
-      case NADK_DISCONNECTED: {
+      case NAOS_DISCONNECTED: {
         // do nothing if not yet connected
       }
     }
   }
 
   // release mutex
-  NADK_UNLOCK(nadk_system_mutex);
+  NAOS_UNLOCK(naos_system_mutex);
 }
 
-static void nadk_system_wifi_callback(nadk_wifi_status_t status) {
+static void naos_system_wifi_callback(naos_wifi_status_t status) {
   // acquire mutex
-  NADK_LOCK(nadk_system_mutex);
+  NAOS_LOCK(naos_system_mutex);
 
   switch (status) {
-    case NADK_WIFI_STATUS_CONNECTED: {
-      ESP_LOGI(NADK_LOG_TAG, "nadk_system_wifi_callback: connected");
+    case NAOS_WIFI_STATUS_CONNECTED: {
+      ESP_LOGI(NAOS_LOG_TAG, "naos_system_wifi_callback: connected");
 
       // check if connection is new
-      if (nadk_system_status == NADK_DISCONNECTED) {
+      if (naos_system_status == NAOS_DISCONNECTED) {
         // change sate
-        nadk_system_set_status(NADK_CONNECTED);
+        naos_system_set_status(NAOS_CONNECTED);
 
         // start wifi
-        nadk_system_start_mqtt();
+        naos_system_start_mqtt();
       }
 
       break;
     }
 
-    case NADK_WIFI_STATUS_DISCONNECTED: {
-      ESP_LOGI(NADK_LOG_TAG, "nadk_system_wifi_callback: disconnected");
+    case NAOS_WIFI_STATUS_DISCONNECTED: {
+      ESP_LOGI(NAOS_LOG_TAG, "naos_system_wifi_callback: disconnected");
 
       // check if disconnection is new
-      if (nadk_system_status >= NADK_CONNECTED) {
+      if (naos_system_status >= NAOS_CONNECTED) {
         // stop mqtt
-        nadk_mqtt_stop();
+        naos_mqtt_stop();
 
         // change state
-        nadk_system_set_status(NADK_DISCONNECTED);
+        naos_system_set_status(NAOS_DISCONNECTED);
       }
 
       break;
@@ -207,90 +207,90 @@ static void nadk_system_wifi_callback(nadk_wifi_status_t status) {
   }
 
   // release mutex
-  NADK_UNLOCK(nadk_system_mutex);
+  NAOS_UNLOCK(naos_system_mutex);
 }
 
-static void nadk_system_mqtt_callback(esp_mqtt_status_t status) {
+static void naos_system_mqtt_callback(esp_mqtt_status_t status) {
   // acquire mutex
-  NADK_LOCK(nadk_system_mutex);
+  NAOS_LOCK(naos_system_mutex);
 
   switch (status) {
     case ESP_MQTT_STATUS_CONNECTED: {
-      ESP_LOGI(NADK_LOG_TAG, "nadk_system_mqtt_callback: connected");
+      ESP_LOGI(NAOS_LOG_TAG, "naos_system_mqtt_callback: connected");
 
       // check if connection is new
-      if (nadk_system_status == NADK_CONNECTED) {
+      if (naos_system_status == NAOS_CONNECTED) {
         // change state
-        nadk_system_set_status(NADK_NETWORKED);
+        naos_system_set_status(NAOS_NETWORKED);
 
         // setup manager
-        nadk_manager_start();
+        naos_manager_start();
 
         // start task
-        nadk_task_start();
+        naos_task_start();
       }
 
       break;
     }
 
     case ESP_MQTT_STATUS_DISCONNECTED: {
-      ESP_LOGI(NADK_LOG_TAG, "nadk_system_mqtt_callback: disconnected");
+      ESP_LOGI(NAOS_LOG_TAG, "naos_system_mqtt_callback: disconnected");
 
       // change state
-      nadk_system_set_status(NADK_CONNECTED);
+      naos_system_set_status(NAOS_CONNECTED);
 
       // stop task
-      nadk_task_stop();
+      naos_task_stop();
 
       // terminate manager
-      nadk_manager_stop();
+      naos_manager_stop();
 
       // restart mqtt
-      nadk_system_start_mqtt();
+      naos_system_start_mqtt();
 
       break;
     }
   }
 
   // release mutex
-  NADK_UNLOCK(nadk_system_mutex);
+  NAOS_UNLOCK(naos_system_mutex);
 }
 
-void nadk_system_init() {
+void naos_system_init() {
   // delay startup by max 5000ms if set
-  if (nadk_config()->delay_startup) {
+  if (naos_config()->delay_startup) {
     int delay = esp_random() / 858994;
-    ESP_LOGI(NADK_LOG_TAG, "nadk_system_init: delay startup by %dms", delay);
-    nadk_delay(delay);
+    ESP_LOGI(NAOS_LOG_TAG, "naos_system_init: delay startup by %dms", delay);
+    naos_delay(delay);
   }
 
   // create mutex
-  nadk_system_mutex = xSemaphoreCreateMutex();
+  naos_system_mutex = xSemaphoreCreateMutex();
 
   // initialize flash memory
   ESP_ERROR_CHECK(nvs_flash_init());
 
   // init task
-  nadk_task_init();
+  naos_task_init();
 
   // init manager
-  nadk_manager_init();
+  naos_manager_init();
 
   // initialize bluetooth stack
-  nadk_ble_init(nadk_system_ble_callback, nadk_config()->device_type);
+  naos_ble_init(naos_system_ble_callback, naos_config()->device_type);
 
   // initialize wifi stack
-  nadk_wifi_init(nadk_system_wifi_callback);
+  naos_wifi_init(naos_system_wifi_callback);
 
   // initialize mqtt client
-  nadk_mqtt_init(nadk_system_mqtt_callback, nadk_manager_handle);
+  naos_mqtt_init(naos_system_mqtt_callback, naos_manager_handle);
 
   // initialize OTA
-  nadk_update_init();
+  naos_update_init();
 
   // set initial state
-  nadk_system_set_status(NADK_DISCONNECTED);
+  naos_system_set_status(NAOS_DISCONNECTED);
 
   // initially configure wifi
-  nadk_system_configure_wifi();
+  naos_system_configure_wifi();
 }

@@ -6,18 +6,18 @@
 #include "utils.h"
 #include "wifi.h"
 
-static SemaphoreHandle_t nadk_wifi_mutex;
+static SemaphoreHandle_t naos_wifi_mutex;
 
-static bool nadk_wifi_connected = false;
-static bool nadk_wifi_started = false;
+static bool naos_wifi_connected = false;
+static bool naos_wifi_started = false;
 
-static nadk_wifi_status_callback_t nadk_wifi_callback = NULL;
+static naos_wifi_status_callback_t naos_wifi_callback = NULL;
 
-static wifi_config_t nadk_wifi_config;
+static wifi_config_t naos_wifi_config;
 
-static esp_err_t nadk_wifi_event_handler(void *ctx, system_event_t *e) {
+static esp_err_t naos_wifi_event_handler(void *ctx, system_event_t *e) {
   // acquire mutex
-  NADK_LOCK(nadk_wifi_mutex);
+  NAOS_LOCK(naos_wifi_mutex);
 
   switch (e->event_id) {
     case SYSTEM_EVENT_STA_START: {
@@ -29,15 +29,15 @@ static esp_err_t nadk_wifi_event_handler(void *ctx, system_event_t *e) {
 
     case SYSTEM_EVENT_STA_GOT_IP: {
       // update local flag if changed
-      if (!nadk_wifi_connected) {
-        nadk_wifi_connected = true;
+      if (!naos_wifi_connected) {
+        naos_wifi_connected = true;
 
         // release mutex
-        NADK_UNLOCK(nadk_wifi_mutex);
+        NAOS_UNLOCK(naos_wifi_mutex);
 
         // call callback if available
-        if (nadk_wifi_callback) {
-          nadk_wifi_callback(NADK_WIFI_STATUS_CONNECTED);
+        if (naos_wifi_callback) {
+          naos_wifi_callback(NAOS_WIFI_STATUS_CONNECTED);
         }
 
         return ESP_OK;
@@ -48,20 +48,20 @@ static esp_err_t nadk_wifi_event_handler(void *ctx, system_event_t *e) {
 
     case SYSTEM_EVENT_STA_DISCONNECTED: {
       // attempt reconnect if station is not down
-      if (nadk_wifi_started) {
+      if (naos_wifi_started) {
         ESP_ERROR_CHECK(esp_wifi_connect());
       }
 
       // update local flag if changed
-      if (nadk_wifi_connected) {
-        nadk_wifi_connected = false;
+      if (naos_wifi_connected) {
+        naos_wifi_connected = false;
 
         // release mutex
-        NADK_UNLOCK(nadk_wifi_mutex);
+        NAOS_UNLOCK(naos_wifi_mutex);
 
         // call callback if available
-        if (nadk_wifi_callback) {
-          nadk_wifi_callback(NADK_WIFI_STATUS_DISCONNECTED);
+        if (naos_wifi_callback) {
+          naos_wifi_callback(NAOS_WIFI_STATUS_DISCONNECTED);
         }
 
         return ESP_OK;
@@ -74,23 +74,23 @@ static esp_err_t nadk_wifi_event_handler(void *ctx, system_event_t *e) {
   }
 
   // release mutex
-  NADK_UNLOCK(nadk_wifi_mutex);
+  NAOS_UNLOCK(naos_wifi_mutex);
 
   return ESP_OK;
 }
 
-void nadk_wifi_init(nadk_wifi_status_callback_t callback) {
+void naos_wifi_init(naos_wifi_status_callback_t callback) {
   // store callback
-  nadk_wifi_callback = callback;
+  naos_wifi_callback = callback;
 
   // create mutex
-  nadk_wifi_mutex = xSemaphoreCreateMutex();
+  naos_wifi_mutex = xSemaphoreCreateMutex();
 
   // init tcpip adapter
   tcpip_adapter_init();
 
   // start event loop
-  ESP_ERROR_CHECK(esp_event_loop_init(nadk_wifi_event_handler, NULL));
+  ESP_ERROR_CHECK(esp_event_loop_init(naos_wifi_event_handler, NULL));
 
   // get default wifi initialization config
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -105,40 +105,40 @@ void nadk_wifi_init(nadk_wifi_status_callback_t callback) {
   esp_wifi_set_auto_connect(false);
 }
 
-void nadk_wifi_configure(const char *ssid, const char *password) {
+void naos_wifi_configure(const char *ssid, const char *password) {
   // immediately return if ssid is not set
   if (strlen(ssid) == 0) {
     return;
   }
 
   // acquire mutex
-  NADK_LOCK(nadk_wifi_mutex);
+  NAOS_LOCK(naos_wifi_mutex);
 
   // stop station if already started
-  if (nadk_wifi_started) {
+  if (naos_wifi_started) {
     // update local flag
-    nadk_wifi_started = false;
+    naos_wifi_started = false;
 
     // stop wifi
     ESP_ERROR_CHECK(esp_wifi_stop());
   }
 
   // assign ssid and password
-  strcpy((char *)nadk_wifi_config.sta.ssid, ssid);
-  strcpy((char *)nadk_wifi_config.sta.password, password);
+  strcpy((char *)naos_wifi_config.sta.ssid, ssid);
+  strcpy((char *)naos_wifi_config.sta.password, password);
 
   // set to station mode
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
   // assign configuration
-  ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &nadk_wifi_config));
+  ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &naos_wifi_config));
 
   // update local flag
-  nadk_wifi_started = true;
+  naos_wifi_started = true;
 
   // start wifi
   ESP_ERROR_CHECK(esp_wifi_start());
 
   // release mutex
-  NADK_UNLOCK(nadk_wifi_mutex);
+  NAOS_UNLOCK(naos_wifi_mutex);
 }

@@ -1,18 +1,18 @@
-menu "nadk"
+menu "naos"
 
-config NADK_MQTT_BUFFER_SIZE
+config NAOS_MQTT_BUFFER_SIZE
     int "The MQTT read and write buffer size"
     default 10000
 
-config NADK_MQTT_COMMAND_TIMEOUT
+config NAOS_MQTT_COMMAND_TIMEOUT
     int "The MQTT command timeout"
     default 2000
 
-config NADK_HEARTBEAT_INTERVAL
+config NAOS_HEARTBEAT_INTERVAL
     int "The heartbeat interval"
     default 5000
 
-config NADK_UPDATE_MAX_CHUNK_SIZE
+config NAOS_UPDATE_MAX_CHUNK_SIZE
     int "The max update chunk size"
     default 4096
 

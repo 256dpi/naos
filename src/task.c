@@ -4,140 +4,140 @@
 #include <freertos/task.h>
 #include <string.h>
 
-#include <nadk.h>
+#include <naos.h>
 
-#include "nadk.h"
+#include "naos.h"
 #include "task.h"
 #include "utils.h"
 
-static SemaphoreHandle_t nadk_task_mutex;
+static SemaphoreHandle_t naos_task_mutex;
 
-static TaskHandle_t nadk_task_ref;
+static TaskHandle_t naos_task_ref;
 
-static bool nadk_task_started = false;
+static bool naos_task_started = false;
 
-static void nadk_task_process(void *p) {
+static void naos_task_process(void *p) {
   for (;;) {
     // acquire mutex
-    NADK_LOCK(nadk_task_mutex);
+    NAOS_LOCK(naos_task_mutex);
 
     // call loop callback
-    nadk_config()->loop_callback();
+    naos_config()->loop_callback();
 
     // release mutex
-    NADK_UNLOCK(nadk_task_mutex);
+    NAOS_UNLOCK(naos_task_mutex);
 
     // yield to other processes
-    nadk_delay(nadk_config()->loop_interval);
+    naos_delay(naos_config()->loop_interval);
   }
 }
 
-void nadk_task_init() {
+void naos_task_init() {
   // create mutex
-  nadk_task_mutex = xSemaphoreCreateMutex();
+  naos_task_mutex = xSemaphoreCreateMutex();
 }
 
-void nadk_task_start() {
+void naos_task_start() {
   // acquire mutex
-  NADK_LOCK(nadk_task_mutex);
+  NAOS_LOCK(naos_task_mutex);
 
   // check if already running
-  if (nadk_task_started) {
-    ESP_LOGE(NADK_LOG_TAG, "nadk_task_start: already started");
-    NADK_UNLOCK(nadk_task_mutex);
+  if (naos_task_started) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_task_start: already started");
+    NAOS_UNLOCK(naos_task_mutex);
     return;
   }
 
   // set flag
-  nadk_task_started = true;
+  naos_task_started = true;
 
   // call setup callback if present
-  if (nadk_config()->online_callback) {
-    nadk_config()->online_callback();
+  if (naos_config()->online_callback) {
+    naos_config()->online_callback();
   }
 
   // create task if loop is present
-  if (nadk_config()->loop_callback != NULL) {
-    ESP_LOGI(NADK_LOG_TAG, "nadk_task_start: create task");
-    xTaskCreatePinnedToCore(nadk_task_process, "nadk-task", 8192, NULL, 2, &nadk_task_ref, 1);
+  if (naos_config()->loop_callback != NULL) {
+    ESP_LOGI(NAOS_LOG_TAG, "naos_task_start: create task");
+    xTaskCreatePinnedToCore(naos_task_process, "naos-task", 8192, NULL, 2, &naos_task_ref, 1);
   }
 
   // release mutex
-  NADK_UNLOCK(nadk_task_mutex);
+  NAOS_UNLOCK(naos_task_mutex);
 }
 
-void nadk_task_stop() {
+void naos_task_stop() {
   // acquire mutex
-  NADK_LOCK(nadk_task_mutex);
+  NAOS_LOCK(naos_task_mutex);
 
   // check if started
-  if (!nadk_task_started) {
-    NADK_UNLOCK(nadk_task_mutex);
+  if (!naos_task_started) {
+    NAOS_UNLOCK(naos_task_mutex);
     return;
   }
 
   // set flag
-  nadk_task_started = false;
+  naos_task_started = false;
 
   // run terminate callback if present
-  if (nadk_config()->offline_callback) {
-    nadk_config()->offline_callback();
+  if (naos_config()->offline_callback) {
+    naos_config()->offline_callback();
   }
 
   // remove task if loop is present
-  if (nadk_config()->loop_callback != NULL) {
-    ESP_LOGI(NADK_LOG_TAG, "nadk_task_stop: deleting task");
-    vTaskDelete(nadk_task_ref);
+  if (naos_config()->loop_callback != NULL) {
+    ESP_LOGI(NAOS_LOG_TAG, "naos_task_stop: deleting task");
+    vTaskDelete(naos_task_ref);
   }
 
   // release mutex
-  NADK_UNLOCK(nadk_task_mutex);
+  NAOS_UNLOCK(naos_task_mutex);
 }
 
-void nadk_task_notify(nadk_status_t status) {
+void naos_task_notify(naos_status_t status) {
   // return immediately if no callback exists
-  if (nadk_config()->status_callback == NULL) {
+  if (naos_config()->status_callback == NULL) {
     return;
   }
 
   // acquire mutex
-  NADK_LOCK(nadk_task_mutex);
+  NAOS_LOCK(naos_task_mutex);
 
   // call handle callback
-  nadk_config()->status_callback(status);
+  naos_config()->status_callback(status);
 
   // release mutex
-  NADK_UNLOCK(nadk_task_mutex);
+  NAOS_UNLOCK(naos_task_mutex);
 }
 
-void nadk_task_update(const char *param, const char *value) {
+void naos_task_update(const char *param, const char *value) {
   // return immediately if no callback exists
-  if (nadk_config()->update_callback == NULL) {
+  if (naos_config()->update_callback == NULL) {
     return;
   }
 
   // acquire mutex
-  NADK_LOCK(nadk_task_mutex);
+  NAOS_LOCK(naos_task_mutex);
 
   // call handle callback
-  nadk_config()->update_callback(param, value);
+  naos_config()->update_callback(param, value);
 
   // release mutex
-  NADK_UNLOCK(nadk_task_mutex);
+  NAOS_UNLOCK(naos_task_mutex);
 }
 
-void nadk_task_forward(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
+void naos_task_forward(const char *topic, const char *payload, unsigned int len, naos_scope_t scope) {
   // return immediately if no callback exists
-  if (nadk_config()->message_callback == NULL) {
+  if (naos_config()->message_callback == NULL) {
     return;
   }
 
   // acquire mutex
-  NADK_LOCK(nadk_task_mutex);
+  NAOS_LOCK(naos_task_mutex);
 
   // call handle callback
-  nadk_config()->message_callback(topic, payload, len, scope);
+  naos_config()->message_callback(topic, payload, len, scope);
 
   // release mutex
-  NADK_UNLOCK(nadk_task_mutex);
+  NAOS_UNLOCK(naos_task_mutex);
 }

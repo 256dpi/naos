@@ -14,17 +14,17 @@
 #include "ble.h"
 #include "utils.h"
 
-#define NADK_BLE_INITIALIZED_BIT (1 << 0)
+#define NAOS_BLE_INITIALIZED_BIT (1 << 0)
 
-static EventGroupHandle_t nadk_ble_init_event_group;
+static EventGroupHandle_t naos_ble_init_event_group;
 
-static SemaphoreHandle_t nadk_ble_mutex;
+static SemaphoreHandle_t naos_ble_mutex;
 
-static nadk_ble_attribute_callback_t nadk_ble_callback = NULL;
+static naos_ble_attribute_callback_t naos_ble_callback = NULL;
 
-static nvs_handle nadk_ble_nvs_handle;
+static nvs_handle naos_ble_nvs_handle;
 
-static esp_ble_adv_params_t nadk_ble_adv_params = {
+static esp_ble_adv_params_t naos_ble_adv_params = {
     .adv_int_min = 0x20,
     .adv_int_max = 0x40,
     .adv_type = ADV_TYPE_IND,
@@ -33,7 +33,7 @@ static esp_ble_adv_params_t nadk_ble_adv_params = {
     .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
 
-static esp_ble_adv_data_t nadk_ble_adv_data = {
+static esp_ble_adv_data_t naos_ble_adv_data = {
     .set_scan_rsp = false,
     .include_name = true,
     .include_txpower = true,
@@ -57,11 +57,11 @@ static struct {
   uint16_t service_handle;
   bool client_connected;
   uint16_t client_handle;
-} nadk_ble_gatts_profile = {
+} naos_ble_gatts_profile = {
     .uuid = {0xB5, 0x33, 0x50, 0x9D, 0xEE, 0xFF, 0x03, 0x81, 0x4F, 0x4E, 0x61, 0x48, 0x1B, 0xBA, 0x2F, 0x63}};
 
 typedef struct {
-  nadk_ble_id_t id;
+  naos_ble_id_t id;
   uint8_t uuid[16];
   const char *nvs_key;
   esp_gatt_char_prop_t prop;
@@ -71,105 +71,105 @@ typedef struct {
   uint8_t length;
   uint16_t handle;
   esp_bt_uuid_t _uuid;
-} nadk_ble_gatts_char_t;
+} naos_ble_gatts_char_t;
 
-static nadk_ble_gatts_char_t nadk_ble_char_wifi_ssid = {
-    .id = NADK_BLE_ID_WIFI_SSID,
+static naos_ble_gatts_char_t naos_ble_char_wifi_ssid = {
+    .id = NAOS_BLE_ID_WIFI_SSID,
     .uuid = {0x10, 0xA5, 0x75, 0x82, 0x56, 0xA3, 0x86, 0xBE, 0x90, 0x4C, 0x04, 0xCA, 0x27, 0xD3, 0x2D, 0x80},
     .nvs_key = "wifi-ssid",
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_length = 32};
 
-static nadk_ble_gatts_char_t nadk_ble_char_wifi_password = {
-    .id = NADK_BLE_ID_WIFI_PASSWORD,
+static naos_ble_gatts_char_t naos_ble_char_wifi_password = {
+    .id = NAOS_BLE_ID_WIFI_PASSWORD,
     .uuid = {0x51, 0xC1, 0xB2, 0x8F, 0x49, 0xC3, 0x91, 0x97, 0xB7, 0x4C, 0x60, 0xF3, 0x61, 0x32, 0x88, 0xB3},
     .nvs_key = "wifi-password",
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_length = 32};
 
-static nadk_ble_gatts_char_t nadk_ble_char_mqtt_host = {
-    .id = NADK_BLE_ID_MQTT_HOST,
+static naos_ble_gatts_char_t naos_ble_char_mqtt_host = {
+    .id = NAOS_BLE_ID_MQTT_HOST,
     .uuid = {0x57, 0xAC, 0x40, 0x5D, 0x35, 0x4A, 0x1F, 0xBE, 0xBC, 0x4E, 0x42, 0x45, 0xF2, 0xFF, 0x3F, 0x19},
     .nvs_key = "mqtt-host",
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_length = 32};
 
-static nadk_ble_gatts_char_t nadk_ble_char_mqtt_port = {
-    .id = NADK_BLE_ID_MQTT_PORT,
+static naos_ble_gatts_char_t naos_ble_char_mqtt_port = {
+    .id = NAOS_BLE_ID_MQTT_PORT,
     .uuid = {0x55, 0x97, 0xD4, 0x82, 0x73, 0x42, 0x6F, 0x9A, 0x87, 0x47, 0x6C, 0x54, 0x4C, 0x76, 0x8A, 0xCB},
     .nvs_key = "mqtt-port",
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_length = 5};
 
-static nadk_ble_gatts_char_t nadk_ble_char_mqtt_client_id = {
-    .id = NADK_BLE_ID_MQTT_CLIENT_ID,
+static naos_ble_gatts_char_t naos_ble_char_mqtt_client_id = {
+    .id = NAOS_BLE_ID_MQTT_CLIENT_ID,
     .uuid = {0x3B, 0x6C, 0x91, 0xBF, 0xA5, 0xC8, 0xA8, 0xBB, 0xF6, 0x4B, 0xCC, 0x65, 0x43, 0xE5, 0xC4, 0x08},
     .nvs_key = "mqtt-client-id",
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_length = 32};
 
-static nadk_ble_gatts_char_t nadk_ble_char_mqtt_username = {
-    .id = NADK_BLE_ID_MQTT_USERNAME,
+static naos_ble_gatts_char_t naos_ble_char_mqtt_username = {
+    .id = NAOS_BLE_ID_MQTT_USERNAME,
     .uuid = {0x57, 0x02, 0xA0, 0x06, 0xD8, 0x72, 0xF5, 0x80, 0x9C, 0x44, 0xE9, 0x85, 0x9A, 0xA5, 0xB4, 0xAB},
     .nvs_key = "mqtt-username",
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_length = 32};
 
-static nadk_ble_gatts_char_t nadk_ble_char_mqtt_password = {
-    .id = NADK_BLE_ID_MQTT_PASSWORD,
+static naos_ble_gatts_char_t naos_ble_char_mqtt_password = {
+    .id = NAOS_BLE_ID_MQTT_PASSWORD,
     .uuid = {0x25, 0x19, 0xD4, 0x21, 0x55, 0x21, 0x52, 0x80, 0xC3, 0x4F, 0x58, 0x06, 0xB1, 0xB1, 0xEC, 0xC5},
     .nvs_key = "mqtt-password",
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_length = 32};
 
-static nadk_ble_gatts_char_t nadk_ble_char_device_type = {
-    .id = NADK_BLE_ID_DEVICE_TYPE,
+static naos_ble_gatts_char_t naos_ble_char_device_type = {
+    .id = NAOS_BLE_ID_DEVICE_TYPE,
     .uuid = {0x91, 0x91, 0x7B, 0x75, 0xA8, 0x8E, 0x83, 0x88, 0x08, 0x43, 0x6E, 0x19, 0x20, 0x31, 0xEA, 0x0C},
     .nvs_key = NULL,
     .prop = ESP_GATT_CHAR_PROP_BIT_READ,
     .max_length = 32};
 
-static nadk_ble_gatts_char_t nadk_ble_char_device_name = {
-    .id = NADK_BLE_ID_DEVICE_NAME,
+static naos_ble_gatts_char_t naos_ble_char_device_name = {
+    .id = NAOS_BLE_ID_DEVICE_NAME,
     .uuid = {0x56, 0x0B, 0x6D, 0xEB, 0x3C, 0xAB, 0x6A, 0x92, 0xEA, 0x40, 0xF3, 0x28, 0x50, 0x78, 0x42, 0x25},
     .nvs_key = "device-name",
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_length = 32};
 
-static nadk_ble_gatts_char_t nadk_ble_char_base_topic = {
-    .id = NADK_BLE_ID_BASE_TOPIC,
+static naos_ble_gatts_char_t naos_ble_char_base_topic = {
+    .id = NAOS_BLE_ID_BASE_TOPIC,
     .uuid = {0xB4, 0xCA, 0x63, 0x8C, 0x9B, 0xD0, 0xA2, 0x8E, 0x38, 0x49, 0xF8, 0x9F, 0xA8, 0xE3, 0xB7, 0xEA},
     .nvs_key = "base-topic",
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_length = 64};
 
-static nadk_ble_gatts_char_t nadk_ble_char_connection_status = {
-    .id = NADK_BLE_ID_CONNECTION_STATUS,
+static naos_ble_gatts_char_t naos_ble_char_connection_status = {
+    .id = NAOS_BLE_ID_CONNECTION_STATUS,
     .uuid = {0x7C, 0xEB, 0x12, 0xD3, 0xF6, 0xD9, 0x00, 0xA2, 0x3C, 0x43, 0x50, 0x3A, 0xE0, 0x7C, 0x99, 0x59},
     .nvs_key = NULL,
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE,
     .max_length = 32};
 
-static nadk_ble_gatts_char_t nadk_ble_char_system_command = {
-    .id = NADK_BLE_ID_COMMAND,
+static naos_ble_gatts_char_t naos_ble_char_system_command = {
+    .id = NAOS_BLE_ID_COMMAND,
     .uuid = {0xAB, 0xD0, 0x76, 0xBD, 0x81, 0x29, 0x77, 0xA2, 0x0F, 0x45, 0x8E, 0x5A, 0x64, 0x18, 0xCF, 0x37},
     .nvs_key = NULL,
     .prop = ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_length = 16};
 
-#define NADK_BLE_NUM_CHARS 12
+#define NAOS_BLE_NUM_CHARS 12
 
-static nadk_ble_gatts_char_t *nadk_ble_gatts_chars[NADK_BLE_NUM_CHARS] = {
-    &nadk_ble_char_wifi_ssid,     &nadk_ble_char_wifi_password,     &nadk_ble_char_mqtt_host,
-    &nadk_ble_char_mqtt_port,     &nadk_ble_char_mqtt_client_id,    &nadk_ble_char_mqtt_username,
-    &nadk_ble_char_mqtt_password, &nadk_ble_char_device_type,       &nadk_ble_char_device_name,
-    &nadk_ble_char_base_topic,    &nadk_ble_char_connection_status, &nadk_ble_char_system_command};
+static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
+    &naos_ble_char_wifi_ssid,     &naos_ble_char_wifi_password,     &naos_ble_char_mqtt_host,
+    &naos_ble_char_mqtt_port,     &naos_ble_char_mqtt_client_id,    &naos_ble_char_mqtt_username,
+    &naos_ble_char_mqtt_password, &naos_ble_char_device_type,       &naos_ble_char_device_name,
+    &naos_ble_char_base_topic,    &naos_ble_char_connection_status, &naos_ble_char_system_command};
 
-static void nadk_ble_gap_event_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
+static void naos_ble_gap_event_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
   switch (e) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT: {
       // begin with advertisement
-      ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&nadk_ble_adv_params));
+      ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
 
       break;
     }
@@ -177,33 +177,33 @@ static void nadk_ble_gap_event_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT: {
       // check status
       if (p->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-        ESP_LOGE(NADK_LOG_TAG, "ESP_GAP_BLE_ADV_START_COMPLETE_EVT: %d", p->adv_data_raw_cmpl.status);
+        ESP_LOGE(NAOS_LOG_TAG, "ESP_GAP_BLE_ADV_START_COMPLETE_EVT: %d", p->adv_data_raw_cmpl.status);
       }
 
       break;
     }
 
     default: {
-      // ESP_LOGI(NADK_LOG_TAG, "Unhandled GAP Event: %d", e);
+      // ESP_LOGI(NAOS_LOG_TAG, "Unhandled GAP Event: %d", e);
     }
   }
 }
 
-static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_ble_gatts_cb_param_t *p) {
+static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_ble_gatts_cb_param_t *p) {
   // acquire mutex
-  NADK_LOCK(nadk_ble_mutex);
+  NAOS_LOCK(naos_ble_mutex);
 
   // pre-check for registration event
   if (e == ESP_GATTS_REG_EVT) {
     ESP_ERROR_CHECK(p->reg.status);
 
     // store gatts interface after registration
-    nadk_ble_gatts_profile.interface = i;
+    naos_ble_gatts_profile.interface = i;
   }
 
   // return immediately if event is not general or does not belong to our interface
-  if (i != ESP_GATT_IF_NONE && i != nadk_ble_gatts_profile.interface) {
-    NADK_UNLOCK(nadk_ble_mutex);
+  if (i != ESP_GATT_IF_NONE && i != naos_ble_gatts_profile.interface) {
+    NAOS_UNLOCK(naos_ble_mutex);
     return;
   }
 
@@ -212,18 +212,18 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
     // handle registration event (status has been handled above)
     case ESP_GATTS_REG_EVT: {
       // set device name
-      ESP_ERROR_CHECK(esp_ble_gap_set_device_name("nadk"));
+      ESP_ERROR_CHECK(esp_ble_gap_set_device_name("naos"));
 
       // set advertisement config
-      ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&nadk_ble_adv_data));
+      ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&naos_ble_adv_data));
 
       // prepare total with on handle for the service
       uint16_t total_handles = 1;
 
       // iterate through all characteristics
-      for (int j = 0; j < NADK_BLE_NUM_CHARS; j++) {
+      for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
         // get pointer of current characteristic
-        nadk_ble_gatts_char_t *c = nadk_ble_gatts_chars[j];
+        naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
 
         // add characteristic handles
         total_handles += 2;
@@ -235,7 +235,7 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
       }
 
       // create service
-      ESP_ERROR_CHECK(esp_ble_gatts_create_service(i, &nadk_ble_gatts_profile.service_id, total_handles));
+      ESP_ERROR_CHECK(esp_ble_gatts_create_service(i, &naos_ble_gatts_profile.service_id, total_handles));
 
       break;
     }
@@ -246,15 +246,15 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
       ESP_ERROR_CHECK(p->create.status);
 
       // save assigned handle
-      nadk_ble_gatts_profile.service_handle = p->create.service_handle;
+      naos_ble_gatts_profile.service_handle = p->create.service_handle;
 
       // start service
-      ESP_ERROR_CHECK(esp_ble_gatts_start_service(nadk_ble_gatts_profile.service_handle));
+      ESP_ERROR_CHECK(esp_ble_gatts_start_service(naos_ble_gatts_profile.service_handle));
 
       // iterate through all characteristics
-      for (int j = 0; j < NADK_BLE_NUM_CHARS; j++) {
+      for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
         // get pointer of current characteristic
-        nadk_ble_gatts_char_t *c = nadk_ble_gatts_chars[j];
+        naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
 
         // prepare control
         esp_attr_control_t control = {.auto_rsp = ESP_GATT_RSP_BY_APP};
@@ -264,7 +264,7 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
 
         // add characteristic
         ESP_ERROR_CHECK(
-            esp_ble_gatts_add_char(nadk_ble_gatts_profile.service_handle, &c->_uuid, perm, c->prop, NULL, &control));
+            esp_ble_gatts_add_char(naos_ble_gatts_profile.service_handle, &c->_uuid, perm, c->prop, NULL, &control));
 
         // continue if indicate is not supported
         if (!(c->prop & ESP_GATT_CHAR_PROP_BIT_INDICATE)) {
@@ -284,7 +284,7 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         esp_attr_control_t ccd_control = {.auto_rsp = ESP_GATT_AUTO_RSP};
 
         // add client config descriptor
-        ESP_ERROR_CHECK(esp_ble_gatts_add_char_descr(nadk_ble_gatts_profile.service_handle, &ccd_uuid, perm, &ccd_attr,
+        ESP_ERROR_CHECK(esp_ble_gatts_add_char_descr(naos_ble_gatts_profile.service_handle, &ccd_uuid, perm, &ccd_attr,
                                                      &ccd_control));
       }
 
@@ -297,9 +297,9 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
       ESP_ERROR_CHECK(p->add_char.status);
 
       // iterate through all characteristics
-      for (int j = 0; j < NADK_BLE_NUM_CHARS; j++) {
+      for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
         // get pointer of current characteristic
-        nadk_ble_gatts_char_t *c = nadk_ble_gatts_chars[j];
+        naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
 
         // move on if uuids do not match
         if (memcmp(p->add_char.char_uuid.uuid.uuid128, c->_uuid.uuid.uuid128, ESP_UUID_LEN_128) != 0) {
@@ -310,8 +310,8 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         c->handle = p->add_char.attr_handle;
 
         // set initialization bit if this is the last characteristic
-        if (j + 1 == NADK_BLE_NUM_CHARS) {
-          xEventGroupSetBits(nadk_ble_init_event_group, NADK_BLE_INITIALIZED_BIT);
+        if (j + 1 == NAOS_BLE_NUM_CHARS) {
+          xEventGroupSetBits(naos_ble_init_event_group, NAOS_BLE_INITIALIZED_BIT);
         }
 
         // exit loop
@@ -332,8 +332,8 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
     // handle client connect event
     case ESP_GATTS_CONNECT_EVT: {
       // save connection handle
-      nadk_ble_gatts_profile.client_connected = true;
-      nadk_ble_gatts_profile.client_handle = p->connect.conn_id;
+      naos_ble_gatts_profile.client_connected = true;
+      naos_ble_gatts_profile.client_handle = p->connect.conn_id;
 
       break;
     }
@@ -346,9 +346,9 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
       }
 
       // iterate through all characteristics
-      for (int j = 0; j < NADK_BLE_NUM_CHARS; j++) {
+      for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
         // get pointer of current characteristic
-        nadk_ble_gatts_char_t *c = nadk_ble_gatts_chars[j];
+        naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
 
         // move on if handles do not match
         if (p->read.handle != c->handle) {
@@ -402,9 +402,9 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
     // handle characteristic write event
     case ESP_GATTS_WRITE_EVT: {
       // iterate through all characteristics
-      for (int j = 0; j < NADK_BLE_NUM_CHARS; j++) {
+      for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
         // get pointer of current characteristic
-        nadk_ble_gatts_char_t *c = nadk_ble_gatts_chars[j];
+        naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
 
         // move on if handles do not match
         if (p->write.handle != c->handle) {
@@ -434,18 +434,18 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
 
         // save attribute to flash if key is present
         if (c->nvs_key != NULL) {
-          ESP_ERROR_CHECK(nvs_set_str(nadk_ble_nvs_handle, c->nvs_key, (char *)c->storage));
-          ESP_ERROR_CHECK(nvs_commit(nadk_ble_nvs_handle));
+          ESP_ERROR_CHECK(nvs_set_str(naos_ble_nvs_handle, c->nvs_key, (char *)c->storage));
+          ESP_ERROR_CHECK(nvs_commit(naos_ble_nvs_handle));
         }
 
         // send response
         ESP_ERROR_CHECK(esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, ESP_GATT_OK, NULL));
 
         // call callback if available
-        if (nadk_ble_callback != NULL) {
-          NADK_UNLOCK(nadk_ble_mutex);
-          nadk_ble_callback(c->id);
-          NADK_LOCK(nadk_ble_mutex);
+        if (naos_ble_callback != NULL) {
+          NAOS_UNLOCK(naos_ble_mutex);
+          naos_ble_callback(c->id);
+          NAOS_LOCK(naos_ble_mutex);
         }
 
         // exit loop
@@ -458,42 +458,42 @@ static void nadk_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
     // handle client disconnect event
     case ESP_GATTS_DISCONNECT_EVT: {
       // reset connection handle
-      nadk_ble_gatts_profile.client_connected = false;
-      nadk_ble_gatts_profile.client_handle = 0;
+      naos_ble_gatts_profile.client_connected = false;
+      naos_ble_gatts_profile.client_handle = 0;
 
       // restart advertisement
-      ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&nadk_ble_adv_params));
+      ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
 
       break;
     }
 
     // log unhandled events
     default: {
-      // ESP_LOGI(NADK_LOG_TAG, "Unhandled GATTS Event: %d", e);
+      // ESP_LOGI(NAOS_LOG_TAG, "Unhandled GATTS Event: %d", e);
     }
   }
 
   // release mutex
-  NADK_UNLOCK(nadk_ble_mutex);
+  NAOS_UNLOCK(naos_ble_mutex);
 }
 
-void nadk_ble_init(nadk_ble_attribute_callback_t cb, const char *device_type) {
+void naos_ble_init(naos_ble_attribute_callback_t cb, const char *device_type) {
   // create mutex
-  nadk_ble_mutex = xSemaphoreCreateMutex();
+  naos_ble_mutex = xSemaphoreCreateMutex();
 
   // set callback
-  nadk_ble_callback = cb;
+  naos_ble_callback = cb;
 
   // create even group
-  nadk_ble_init_event_group = xEventGroupCreate();
+  naos_ble_init_event_group = xEventGroupCreate();
 
   // open nvs namespace
-  ESP_ERROR_CHECK(nvs_open("nadk-ble", NVS_READWRITE, &nadk_ble_nvs_handle));
+  ESP_ERROR_CHECK(nvs_open("naos-ble", NVS_READWRITE, &naos_ble_nvs_handle));
 
   // iterate through all characteristics
-  for (int j = 0; j < NADK_BLE_NUM_CHARS; j++) {
+  for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
     // get pointer of current characteristic
-    nadk_ble_gatts_char_t *c = nadk_ble_gatts_chars[j];
+    naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
 
     // setup uuid
     c->_uuid.len = ESP_UUID_LEN_128;
@@ -511,7 +511,7 @@ void nadk_ble_init(nadk_ble_attribute_callback_t cb, const char *device_type) {
     size_t length = c->max_length + 1;
 
     // read value
-    esp_err_t err = nvs_get_str(nadk_ble_nvs_handle, c->nvs_key, (char *)c->storage, &length);
+    esp_err_t err = nvs_get_str(naos_ble_nvs_handle, c->nvs_key, (char *)c->storage, &length);
     if (err != ESP_ERR_NVS_NOT_FOUND) {
       ESP_ERROR_CHECK(err);
     }
@@ -524,12 +524,12 @@ void nadk_ble_init(nadk_ble_attribute_callback_t cb, const char *device_type) {
   }
 
   // set device type
-  strcpy((char *)nadk_ble_char_device_type.storage, device_type);
-  nadk_ble_char_device_type.length = (uint8_t)strlen(device_type);
+  strcpy((char *)naos_ble_char_device_type.storage, device_type);
+  naos_ble_char_device_type.length = (uint8_t)strlen(device_type);
 
   // add primary service uuid to advertisement
-  nadk_ble_adv_data.service_uuid_len = ESP_UUID_LEN_128;
-  nadk_ble_adv_data.p_service_uuid = nadk_ble_gatts_profile.service_id.id.uuid.uuid.uuid128;
+  naos_ble_adv_data.service_uuid_len = ESP_UUID_LEN_128;
+  naos_ble_adv_data.p_service_uuid = naos_ble_gatts_profile.service_id.id.uuid.uuid.uuid128;
 
   // initialize controller
   esp_bt_controller_config_t cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -545,35 +545,35 @@ void nadk_ble_init(nadk_ble_attribute_callback_t cb, const char *device_type) {
   ESP_ERROR_CHECK(esp_bluedroid_enable());
 
   // register gatts callback
-  ESP_ERROR_CHECK(esp_ble_gatts_register_callback(nadk_ble_gatts_event_handler));
+  ESP_ERROR_CHECK(esp_ble_gatts_register_callback(naos_ble_gatts_event_handler));
 
   // register gap callback
-  ESP_ERROR_CHECK(esp_ble_gap_register_callback(nadk_ble_gap_event_handler));
+  ESP_ERROR_CHECK(esp_ble_gap_register_callback(naos_ble_gap_event_handler));
 
   // configure profile
-  nadk_ble_gatts_profile.interface = ESP_GATT_IF_NONE;
-  nadk_ble_gatts_profile.service_id.is_primary = true;
-  nadk_ble_gatts_profile.service_id.id.inst_id = 0;
+  naos_ble_gatts_profile.interface = ESP_GATT_IF_NONE;
+  naos_ble_gatts_profile.service_id.is_primary = true;
+  naos_ble_gatts_profile.service_id.id.inst_id = 0;
 
   // set uuid
-  nadk_ble_gatts_profile.service_id.id.uuid.len = ESP_UUID_LEN_128;
-  memcpy(nadk_ble_gatts_profile.service_id.id.uuid.uuid.uuid128, nadk_ble_gatts_profile.uuid, ESP_UUID_LEN_128);
+  naos_ble_gatts_profile.service_id.id.uuid.len = ESP_UUID_LEN_128;
+  memcpy(naos_ble_gatts_profile.service_id.id.uuid.uuid.uuid128, naos_ble_gatts_profile.uuid, ESP_UUID_LEN_128);
 
   // register application
   esp_ble_gatts_app_register(0x55);
 
   // wait for initialization to complete
-  xEventGroupWaitBits(nadk_ble_init_event_group, NADK_BLE_INITIALIZED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
+  xEventGroupWaitBits(naos_ble_init_event_group, NAOS_BLE_INITIALIZED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
 }
 
-char *nadk_ble_get_string(nadk_ble_id_t id) {
+char *naos_ble_get_string(naos_ble_id_t id) {
   // acquire mutex
-  NADK_LOCK(nadk_ble_mutex);
+  NAOS_LOCK(naos_ble_mutex);
 
   // iterate through all characteristics
-  for (int j = 0; j < NADK_BLE_NUM_CHARS; j++) {
+  for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
     // get pointer of current characteristic
-    nadk_ble_gatts_char_t *c = nadk_ble_gatts_chars[j];
+    naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
 
     // check if ids match
     if (c->id == id) {
@@ -581,29 +581,29 @@ char *nadk_ble_get_string(nadk_ble_id_t id) {
       char *str = strdup((const char *)c->storage);
 
       // release mutex
-      NADK_UNLOCK(nadk_ble_mutex);
+      NAOS_UNLOCK(naos_ble_mutex);
 
       return str;
     }
   }
 
   // release mutex
-  NADK_UNLOCK(nadk_ble_mutex);
+  NAOS_UNLOCK(naos_ble_mutex);
 
   return strdup("");
 }
 
-void nadk_ble_set_string(nadk_ble_id_t id, const char *str) {
+void naos_ble_set_string(naos_ble_id_t id, const char *str) {
   // acquire mutex
-  NADK_LOCK(nadk_ble_mutex);
+  NAOS_LOCK(naos_ble_mutex);
 
   // calculate length
   size_t len = strlen(str);
 
   // iterate through all characteristics
-  for (int j = 0; j < NADK_BLE_NUM_CHARS; j++) {
+  for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
     // get pointer of current characteristic
-    nadk_ble_gatts_char_t *c = nadk_ble_gatts_chars[j];
+    naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
 
     // check if id matches and size is below the defined max length
     if (c->id == id && len <= c->max_length) {
@@ -614,9 +614,9 @@ void nadk_ble_set_string(nadk_ble_id_t id, const char *str) {
       c->length = (uint8_t)len;
 
       // send indicate if indicate is supported and client is connected
-      if (c->prop & ESP_GATT_CHAR_PROP_BIT_INDICATE && nadk_ble_gatts_profile.client_connected) {
-        ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(nadk_ble_gatts_profile.interface,
-                                                    nadk_ble_gatts_profile.client_handle, c->handle, c->length,
+      if (c->prop & ESP_GATT_CHAR_PROP_BIT_INDICATE && naos_ble_gatts_profile.client_connected) {
+        ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface,
+                                                    naos_ble_gatts_profile.client_handle, c->handle, c->length,
                                                     c->storage, false));
       }
 
@@ -626,5 +626,5 @@ void nadk_ble_set_string(nadk_ble_id_t id, const char *str) {
   }
 
   // release mutex
-  NADK_UNLOCK(nadk_ble_mutex);
+  NAOS_UNLOCK(naos_ble_mutex);
 }

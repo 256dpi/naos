@@ -1,55 +1,55 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <nadk.h>
+#include <naos.h>
 
 static char *message = NULL;
 
 static void online() {
   // log info
-  nadk_log("online callback called");
+  naos_log("online callback called");
 
   // subscribe to topic
-  nadk_subscribe("hello", 0, NADK_LOCAL);
+  naos_subscribe("hello", 0, NAOS_LOCAL);
 
   // clear and update message
   if (message != NULL) free(message);
-  message = strdup(nadk_get("message"));
+  message = strdup(naos_get("message"));
 }
 
 static void update(const char *param, const char *value) {
   // log param change
-  nadk_log("param %s updated to %s", param, value);
+  naos_log("param %s updated to %s", param, value);
 
   // clear and update message
   if (message != NULL) free(message);
   message = strdup(value);
 }
 
-static void handle(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope) {
+static void handle(const char *topic, const char *payload, unsigned int len, naos_scope_t scope) {
   // log incoming message
-  nadk_log("%s message %s with payload %s received", nadk_scope_str(scope), topic, payload);
+  naos_log("%s message %s with payload %s received", naos_scope_str(scope), topic, payload);
 }
 
 static void loop() {
   // log info
-  nadk_log("loop callback called");
+  naos_log("loop callback called");
 
   // publish message
-  nadk_publish_str("hello", message, 0, false, NADK_LOCAL);
+  naos_publish_str("hello", message, 0, false, NAOS_LOCAL);
 }
 
 static void offline() {
   // log info
-  nadk_log("offline callback called");
+  naos_log("offline callback called");
 }
 
-static void status(nadk_status_t status) {
+static void status(naos_status_t status) {
   // log new status
-  nadk_log("status changed to %s", nadk_status_str(status));
+  naos_log("status changed to %s", naos_status_str(status));
 }
 
-static nadk_config_t config = {.device_type = "nadk-test",
+static naos_config_t config = {.device_type = "naos-test",
                                .firmware_version = "0.0.1",
                                .online_callback = online,
                                .message_callback = handle,
@@ -60,6 +60,6 @@ static nadk_config_t config = {.device_type = "nadk-test",
                                .status_callback = status};
 
 void app_main() {
-  // initialize nadk
-  nadk_init(&config);
+  // initialize naos
+  naos_init(&config);
 }

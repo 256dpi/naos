@@ -1,19 +1,19 @@
-#ifndef _NADK_GENERAL_H
-#define _NADK_GENERAL_H
+#ifndef _NAOS_GENERAL_H
+#define _NAOS_GENERAL_H
 
 #include <stdint.h>
 
 /**
  * The general log tag.
  */
-#define NADK_LOG_TAG "nadk"
+#define NAOS_LOG_TAG "naos"
 
 /**
  * Acquire the specified mutex.
  *
  * @param mutex - The mutex to be locked.
  */
-#define NADK_LOCK(mutex) \
+#define NAOS_LOCK(mutex) \
   do {                   \
   } while (xSemaphoreTake(mutex, portMAX_DELAY) != pdPASS)
 
@@ -22,14 +22,14 @@
  *
  * @param mutex - The mutex to be released.
  */
-#define NADK_UNLOCK(mutex) xSemaphoreGive(mutex)
+#define NAOS_UNLOCK(mutex) xSemaphoreGive(mutex)
 
 /**
  * Will sleep for the specified amount of milliseconds.
  *
  * @param millis
  */
-void nadk_delay(int millis);
+void naos_delay(int millis);
 
 /**
  * Will concatenate two strings and return a new one.
@@ -40,6 +40,6 @@ void nadk_delay(int millis);
  * @param str2 - The second string.
  * @return The concatenated string.
  */
-char *nadk_str_concat(const char *str1, const char *str2);
+char *naos_str_concat(const char *str1, const char *str2);
 
-#endif  // _NADK_GENERAL_H
+#endif  // _NAOS_GENERAL_H

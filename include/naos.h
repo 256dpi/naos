@@ -1,5 +1,5 @@
-#ifndef NADK_H
-#define NADK_H
+#ifndef NAOS_H
+#define NAOS_H
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -11,7 +11,7 @@
  * The 'local' scope denotes messages that are transferred under the configured base topic of the device while the
  * 'global' scope denotes messages that are transferred directly below the root.
  */
-typedef enum { NADK_LOCAL, NADK_GLOBAL } nadk_scope_t;
+typedef enum { NAOS_LOCAL, NAOS_GLOBAL } naos_scope_t;
 
 /**
  * Get the string representation of the specified scope.
@@ -19,12 +19,12 @@ typedef enum { NADK_LOCAL, NADK_GLOBAL } nadk_scope_t;
  * @param scope - The scope.
  * @return The string value.
  */
-const char *nadk_scope_str(nadk_scope_t scope);
+const char *naos_scope_str(naos_scope_t scope);
 
 /**
  * The system statuses.
  */
-typedef enum { NADK_DISCONNECTED, NADK_CONNECTED, NADK_NETWORKED } nadk_status_t;
+typedef enum { NAOS_DISCONNECTED, NAOS_CONNECTED, NAOS_NETWORKED } naos_status_t;
 
 /**
  * Get the string representation of the specified status.
@@ -32,7 +32,7 @@ typedef enum { NADK_DISCONNECTED, NADK_CONNECTED, NADK_NETWORKED } nadk_status_t
  * @param scope - The status.
  * @return The string value.
  */
-const char *nadk_status_str(nadk_status_t status);
+const char *naos_status_str(naos_status_t status);
 
 /**
  * The main configuration object.
@@ -71,7 +71,7 @@ typedef struct {
    * @param len
    * @param scope
    */
-  void (*message_callback)(const char *topic, const char *payload, unsigned int len, nadk_scope_t scope);
+  void (*message_callback)(const char *topic, const char *payload, unsigned int len, naos_scope_t scope);
 
   /**
    * The loop callback is called in over and over as long as the device is online.
@@ -91,23 +91,23 @@ typedef struct {
   /**
    * The callback is called once the device has changed its status.
    */
-  void (*status_callback)(nadk_status_t status);
+  void (*status_callback)(naos_status_t status);
 
   /**
    * If set, the device will randomly (up to 5s) delay startup to overcome WiFi and MQTT congestion issues if many
    * devices restart at the same time.
    */
   bool delay_startup;
-} nadk_config_t;
+} naos_config_t;
 
 /**
- * Initialize the NADK.
+ * Initialize the system.
  *
  * Note: Should only be called once on boot.
  *
  * @param config - The configuration object.
  */
-void nadk_init(nadk_config_t *config);
+void naos_init(naos_config_t *config);
 
 /**
  * Write a log message.
@@ -117,17 +117,17 @@ void nadk_init(nadk_config_t *config);
  * @param fmt - The message format.
  * @param ... - The used arguments.
  */
-void nadk_log(const char *fmt, ...);
+void naos_log(const char *fmt, ...);
 
 /**
  * Will return the value of the requested parameter.
  *
- * Note: The returned pointer is valid until the next call to nadk_get().
+ * Note: The returned pointer is valid until the next call to naos_get().
  *
  * @param param - The parameter.
  * @return Pointer to value.
  */
-char *nadk_get(const char *param);
+char *naos_get(const char *param);
 
 /**
  * Subscribe to specified topic.
@@ -138,7 +138,7 @@ char *nadk_get(const char *param);
  * @param scope
  * @return
  */
-bool nadk_subscribe(const char *topic, int qos, nadk_scope_t scope);
+bool naos_subscribe(const char *topic, int qos, naos_scope_t scope);
 
 /**
  * Unsubscribe from specified topic.
@@ -149,7 +149,7 @@ bool nadk_subscribe(const char *topic, int qos, nadk_scope_t scope);
  * @param scope
  * @return
  */
-bool nadk_unsubscribe(const char *topic, nadk_scope_t scope);
+bool naos_unsubscribe(const char *topic, naos_scope_t scope);
 
 /**
  * Publish bytes payload to specified topic.
@@ -164,7 +164,7 @@ bool nadk_unsubscribe(const char *topic, nadk_scope_t scope);
  * @param scope
  * @return
  */
-bool nadk_publish(const char *topic, void *payload, uint16_t len, int qos, bool retained, nadk_scope_t scope);
+bool naos_publish(const char *topic, void *payload, uint16_t len, int qos, bool retained, naos_scope_t scope);
 
 /**
  * Publish string to specified topic.
@@ -178,7 +178,7 @@ bool nadk_publish(const char *topic, void *payload, uint16_t len, int qos, bool 
  * @param scope
  * @return
  */
-bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained, nadk_scope_t scope);
+bool naos_publish_str(const char *topic, const char *str, int qos, bool retained, naos_scope_t scope);
 
 /**
  * Publish integer to specified topic.
@@ -192,6 +192,6 @@ bool nadk_publish_str(const char *topic, const char *str, int qos, bool retained
  * @param scope
  * @return
  */
-bool nadk_publish_int(const char *topic, int num, int qos, bool retained, nadk_scope_t scope);
+bool naos_publish_int(const char *topic, int num, int qos, bool retained, naos_scope_t scope);
 
-#endif  // NADK_H
+#endif  // NAOS_H

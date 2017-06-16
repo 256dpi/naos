@@ -1,15 +1,15 @@
-#ifndef _NADK_WIFI_H
-#define _NADK_WIFI_H
+#ifndef _NAOS_WIFI_H
+#define _NAOS_WIFI_H
 
 /**
  * The connection status emitted by the callback.
  */
-typedef enum { NADK_WIFI_STATUS_DISCONNECTED, NADK_WIFI_STATUS_CONNECTED } nadk_wifi_status_t;
+typedef enum { NAOS_WIFI_STATUS_DISCONNECTED, NAOS_WIFI_STATUS_CONNECTED } naos_wifi_status_t;
 
 /**
  * The status change callback.
  */
-typedef void (*nadk_wifi_status_callback_t)(nadk_wifi_status_t);
+typedef void (*naos_wifi_status_callback_t)(naos_wifi_status_t);
 
 /**
  * Initialize the WiFi subsystem.
@@ -18,7 +18,7 @@ typedef void (*nadk_wifi_status_callback_t)(nadk_wifi_status_t);
  *
  * @param callback - The status callback.
  */
-void nadk_wifi_init(nadk_wifi_status_callback_t callback);
+void naos_wifi_init(naos_wifi_status_callback_t callback);
 
 /**
  * Configure the WiFi connection.
@@ -28,6 +28,6 @@ void nadk_wifi_init(nadk_wifi_status_callback_t callback);
  * @param ssid - The WiFi AP SSID.
  * @param password - The WiFi AP password.
  */
-void nadk_wifi_configure(const char *ssid, const char *password);
+void naos_wifi_configure(const char *ssid, const char *password);
 
-#endif  // _NADK_WIFI_H
+#endif  // _NAOS_WIFI_H

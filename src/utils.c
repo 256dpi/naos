@@ -2,9 +2,9 @@
 #include <freertos/task.h>
 #include <string.h>
 
-uint32_t nadk_millis() { return xTaskGetTickCount() * portTICK_PERIOD_MS; }
+uint32_t naos_millis() { return xTaskGetTickCount() * portTICK_PERIOD_MS; }
 
-void nadk_delay(int millis) {
+void naos_delay(int millis) {
   if (millis >= portTICK_PERIOD_MS) {
     vTaskDelay(millis / portTICK_PERIOD_MS);
   } else {
@@ -12,7 +12,7 @@ void nadk_delay(int millis) {
   }
 }
 
-char *nadk_str_concat(const char *str1, const char *str2) {
+char *naos_str_concat(const char *str1, const char *str2) {
   // allocate new buffer
   char *str = malloc(strlen(str1) + strlen(str2) + 1);
 
