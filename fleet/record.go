@@ -66,7 +66,7 @@ func Record(url string, baseTopics []string, quit chan struct{}, cb func(*Log)) 
 	// add subscriptions
 	for _, baseTopic := range baseTopics {
 		subs = append(subs, packet.Subscription{
-			Topic: baseTopic + "/nadk/log",
+			Topic: baseTopic + "/naos/log",
 			QOS:   0,
 		})
 	}
@@ -86,7 +86,7 @@ func Record(url string, baseTopics []string, quit chan struct{}, cb func(*Log)) 
 	// enable message recording
 	for _, baseTopic := range baseTopics {
 		// publish config update
-		pf, err := cl.Publish(baseTopic+"/nadk/record/", []byte("on"), 0, false)
+		pf, err := cl.Publish(baseTopic+"/naos/record/", []byte("on"), 0, false)
 		if err != nil {
 			return err
 		}
@@ -109,7 +109,7 @@ func Record(url string, baseTopics []string, quit chan struct{}, cb func(*Log)) 
 	// disable message recording
 	for _, baseTopic := range baseTopics {
 		// publish config update
-		pf, err := cl.Publish(baseTopic+"/nadk/record/", []byte("off"), 0, false)
+		pf, err := cl.Publish(baseTopic+"/naos/record/", []byte("off"), 0, false)
 		if err != nil {
 			return err
 		}

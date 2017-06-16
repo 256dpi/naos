@@ -118,7 +118,7 @@ func Update(url, baseTopic string, firmware []byte, timeout time.Duration, progr
 	defer cl.Close()
 
 	// subscribe to next chunk request topic
-	sf, err := cl.Subscribe(baseTopic+"/nadk/update/request", 0)
+	sf, err := cl.Subscribe(baseTopic+"/naos/update/request", 0)
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func Update(url, baseTopic string, firmware []byte, timeout time.Duration, progr
 	}
 
 	// begin update process by sending the size of the firmware
-	pf, err := cl.Publish(baseTopic+"/nadk/update/begin", []byte(strconv.Itoa(len(firmware))), 0, false)
+	pf, err := cl.Publish(baseTopic+"/naos/update/begin", []byte(strconv.Itoa(len(firmware))), 0, false)
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func Update(url, baseTopic string, firmware []byte, timeout time.Duration, progr
 		// check if done
 		if remaining == 0 {
 			// send finish
-			pf, err := cl.Publish(baseTopic+"/nadk/update/finish", nil, 0, false)
+			pf, err := cl.Publish(baseTopic+"/naos/update/finish", nil, 0, false)
 			if err != nil {
 				return err
 			}
@@ -191,7 +191,7 @@ func Update(url, baseTopic string, firmware []byte, timeout time.Duration, progr
 		}
 
 		// write chunk
-		pf, err := cl.Publish(baseTopic+"/nadk/update/write", firmware[total:total+maxSize], 0, false)
+		pf, err := cl.Publish(baseTopic+"/naos/update/write", firmware[total:total+maxSize], 0, false)
 		if err != nil {
 			return err
 		}

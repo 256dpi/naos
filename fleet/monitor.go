@@ -82,7 +82,7 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heart
 	// add subscriptions
 	for _, baseTopic := range baseTopics {
 		subs = append(subs, packet.Subscription{
-			Topic: baseTopic + "/nadk/heartbeat",
+			Topic: baseTopic + "/naos/heartbeat",
 			QOS:   0,
 		})
 	}

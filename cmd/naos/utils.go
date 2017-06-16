@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/shiftr-io/nadm/fleet"
+	"github.com/shiftr-io/naos/fleet"
 )
 
 func exitIfSet(errs ...error) {

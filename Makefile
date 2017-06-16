@@ -3,18 +3,18 @@ all: fmt vet lint
 fmt:
 	go fmt .
 	go fmt ./fleet
-	go fmt ./cmd/nadm
+	go fmt ./cmd/naos
 
 vet:
 	go vet .
 	go vet ./fleet
-	go vet ./cmd/nadm
+	go vet ./cmd/naos
 
 lint:
 	golint .
 	golint ./fleet
-	golint ./cmd/nadm
+	golint ./cmd/naos
 
 install:
-	gp run "go install github.com/shiftr-io/nadm/cmd/nadm"
-	gp run "cp ./bin/nadm /usr/local/bin" -r
+	gp run "go install github.com/shiftr-io/naos/cmd/naos"
+	gp run "cp ./bin/naos /usr/local/bin" -r

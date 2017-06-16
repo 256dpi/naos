@@ -1,3 +1,3 @@
-# nadm
+# naos
 
-**the networked artifacts device manager**
+**the networked artifacts operating system**

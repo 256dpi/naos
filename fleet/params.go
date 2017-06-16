@@ -67,7 +67,7 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, timeo
 	// add subscriptions
 	for _, baseTopic := range baseTopics {
 		subs = append(subs, packet.Subscription{
-			Topic: baseTopic + "/nadk/value/+",
+			Topic: baseTopic + "/naos/value/+",
 			QOS:   0,
 		})
 	}
@@ -87,12 +87,12 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, timeo
 	// add subscriptions
 	for _, baseTopic := range baseTopics {
 		// init variables
-		topic := baseTopic + "/nadk/get/" + param
+		topic := baseTopic + "/naos/get/" + param
 		payload := ""
 
 		// override if set is set
 		if set {
-			topic = baseTopic + "/nadk/set/" + param
+			topic = baseTopic + "/naos/set/" + param
 			payload = value
 		}
 

@@ -7,20 +7,20 @@ import (
 	"github.com/docopt/docopt-go"
 )
 
-var usage = `nadm - the networked artifacts device manager
+var usage = `naos - the networked artifacts operating system
 
 Usage:
-  nadm create [--inventory=<file>]
-  nadm list [--inventory=<file>]
-  nadm collect [--clear --duration=<ms> --inventory=<file>]
-  nadm get <param> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
-  nadm set <param> <value> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
-  nadm monitor [--filter=<pattern> --timeout=<ms> --inventory=<file>]
-  nadm record [--filter=<pattern> --inventory=<file>]
-  nadm update <image> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
+  naos create [--inventory=<file>]
+  naos list [--inventory=<file>]
+  naos collect [--clear --duration=<ms> --inventory=<file>]
+  naos get <param> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
+  naos set <param> <value> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
+  naos monitor [--filter=<pattern> --timeout=<ms> --inventory=<file>]
+  naos record [--filter=<pattern> --inventory=<file>]
+  naos update <image> [--filter=<pattern> --timeout=<ms> --inventory=<file>]
 
 Options:
-  -i --inventory=<file>  The inventory file [default: ./nadm.json].
+  -i --inventory=<file>  The inventory file [default: ./naos.json].
   -d --duration=<ms>     The collection duration [default: 1s].
   -t --timeout=<ms>      The response timeout [default: 5s].
   -f --filter=<pattern>  The filter glob pattern [default: *].
@@ -57,8 +57,8 @@ func parseCommand() *command {
 	a, _ := docopt.Parse(usage, nil, true, "", false)
 
 	inv := getString(a["--inventory"])
-	if inv == "./nadm.json" {
-		i, err := filepath.Abs("nadm.json")
+	if inv == "./naos.json" {
+		i, err := filepath.Abs("naos.json")
 		exitIfSet(err)
 		inv = i
 	} else {
