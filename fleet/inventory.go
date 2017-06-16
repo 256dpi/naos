@@ -1,4 +1,4 @@
-package nadm
+package fleet
 
 import (
 	"encoding/json"
@@ -217,7 +217,7 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*D
 }
 
 func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device)) {
-	UpdateMany(i.Broker, i.baseTopics(pattern), firmware, timeout, func(baseTopic string, status *Status){
+	UpdateMany(i.Broker, i.baseTopics(pattern), firmware, timeout, func(baseTopic string, status *Status) {
 		// get device
 		device := i.byBaseTopic(baseTopic)
 		if device == nil {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/shiftr-io/nadm"
+	"github.com/shiftr-io/nadm/fleet"
 )
 
 func exitIfSet(errs ...error) {
@@ -20,8 +20,8 @@ func exitWithError(str string) {
 	os.Exit(1)
 }
 
-func getInventory(cmd *command) *nadm.Inventory {
-	inv, err := nadm.ReadInventory(cmd.oInventory)
+func getInventory(cmd *command) *fleet.Inventory {
+	inv, err := fleet.ReadInventory(cmd.oInventory)
 	exitIfSet(err)
 	return inv
 }

@@ -1,4 +1,4 @@
-package nadm
+package fleet
 
 import (
 	"strings"

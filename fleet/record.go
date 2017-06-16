@@ -1,4 +1,4 @@
-package nadm
+package fleet
 
 import (
 	"strings"
@@ -10,7 +10,7 @@ import (
 
 // A single log emitted by Record.
 type Log struct {
-	Message string
+	Message   string
 	BaseTopic string
 }
 
@@ -32,7 +32,7 @@ func Record(url string, baseTopics []string, quit chan struct{}, cb func(*Log)) 
 		}
 
 		// prepare log
-		log := &Log{ Message: string(msg.Payload) }
+		log := &Log{Message: string(msg.Payload)}
 
 		// set base topic
 		for _, baseTopic := range baseTopics {
@@ -86,7 +86,7 @@ func Record(url string, baseTopics []string, quit chan struct{}, cb func(*Log)) 
 	// enable message recording
 	for _, baseTopic := range baseTopics {
 		// publish config update
-		pf, err := cl.Publish(baseTopic + "/nadk/record/", []byte("on"), 0, false)
+		pf, err := cl.Publish(baseTopic+"/nadk/record/", []byte("on"), 0, false)
 		if err != nil {
 			return err
 		}
@@ -109,7 +109,7 @@ func Record(url string, baseTopics []string, quit chan struct{}, cb func(*Log)) 
 	// disable message recording
 	for _, baseTopic := range baseTopics {
 		// publish config update
-		pf, err := cl.Publish(baseTopic + "/nadk/record/", []byte("off"), 0, false)
+		pf, err := cl.Publish(baseTopic+"/nadk/record/", []byte("off"), 0, false)
 		if err != nil {
 			return err
 		}

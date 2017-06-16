@@ -1,10 +1,10 @@
-package nadm
+package fleet
 
 import (
 	"fmt"
 	"strconv"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/gomqtt/client"
 	"github.com/gomqtt/packet"
@@ -12,7 +12,7 @@ import (
 
 type Status struct {
 	Progress int
-	Error error
+	Error    error
 }
 
 func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.Duration, callback func(string, *Status)) {
@@ -33,9 +33,9 @@ func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.D
 		wg.Add(1)
 
 		// run a single update in background
-		go func(bt string){
+		go func(bt string) {
 			// begin update
-			err := Update(url, bt, firmware, timeout, func(progress int){
+			err := Update(url, bt, firmware, timeout, func(progress int) {
 				// lock mutex
 				cbmtx.Lock()
 				defer cbmtx.Unlock()
@@ -44,7 +44,7 @@ func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.D
 				table[bt].Progress = progress
 
 				// call callback
-				callback(bt, table[baseTopic])
+				callback(bt, table[bt])
 			})
 			if err != nil {
 				// lock mutex

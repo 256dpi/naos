@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"code.cloudfoundry.org/bytefmt"
-	"github.com/shiftr-io/nadm"
+	"github.com/shiftr-io/nadm/fleet"
 )
 
 func main() {
@@ -35,7 +35,7 @@ func main() {
 }
 
 func create(cmd *command) {
-	inv := nadm.NewInventory("mqtts://key:secret@broker.shiftr.io")
+	inv := fleet.NewInventory("mqtts://key:secret@broker.shiftr.io")
 
 	fmt.Printf("Created a new inventory at '%s'.\n", cmd.oInventory)
 
@@ -44,7 +44,7 @@ func create(cmd *command) {
 	save(cmd, inv)
 }
 
-func list(cmd *command, inv *nadm.Inventory) {
+func list(cmd *command, inv *fleet.Inventory) {
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "BASE TOPIC")
 
 	for _, d := range inv.Devices {
@@ -54,9 +54,9 @@ func list(cmd *command, inv *nadm.Inventory) {
 	tbl.print()
 }
 
-func collect(cmd *command, inv *nadm.Inventory) {
+func collect(cmd *command, inv *fleet.Inventory) {
 	if cmd.oClear {
-		inv.Devices = make(map[string]*nadm.Device)
+		inv.Devices = make(map[string]*fleet.Device)
 	}
 
 	list, err := inv.Collect(cmd.oDuration)
@@ -73,7 +73,7 @@ func collect(cmd *command, inv *nadm.Inventory) {
 	save(cmd, inv)
 }
 
-func set(cmd *command, inv *nadm.Inventory) {
+func set(cmd *command, inv *fleet.Inventory) {
 	list, err := inv.Set(cmd.oFilter, cmd.aParam, cmd.aValue, cmd.oTimeout)
 	exitIfSet(err)
 
@@ -88,7 +88,7 @@ func set(cmd *command, inv *nadm.Inventory) {
 	save(cmd, inv)
 }
 
-func get(cmd *command, inv *nadm.Inventory) {
+func get(cmd *command, inv *fleet.Inventory) {
 	list, err := inv.Get(cmd.oFilter, cmd.aParam, cmd.oTimeout)
 	exitIfSet(err)
 
@@ -103,7 +103,7 @@ func get(cmd *command, inv *nadm.Inventory) {
 	save(cmd, inv)
 }
 
-func monitor(cmd *command, inv *nadm.Inventory) {
+func monitor(cmd *command, inv *fleet.Inventory) {
 	quit := make(chan struct{})
 
 	go func() {
@@ -115,7 +115,7 @@ func monitor(cmd *command, inv *nadm.Inventory) {
 
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION")
 
-	err := inv.Monitor(cmd.oFilter, quit, func(d *nadm.Device) {
+	err := inv.Monitor(cmd.oFilter, quit, func(d *fleet.Device) {
 		tbl.clear()
 
 		for _, device := range inv.Devices {
@@ -129,7 +129,7 @@ func monitor(cmd *command, inv *nadm.Inventory) {
 	exitIfSet(err)
 }
 
-func record(cmd *command, inv *nadm.Inventory) {
+func record(cmd *command, inv *fleet.Inventory) {
 	quit := make(chan struct{})
 
 	go func() {
@@ -139,13 +139,13 @@ func record(cmd *command, inv *nadm.Inventory) {
 		close(quit)
 	}()
 
-	err := inv.Record(cmd.oFilter, quit, func(d *nadm.Device, msg string) {
+	err := inv.Record(cmd.oFilter, quit, func(d *fleet.Device, msg string) {
 		fmt.Printf("[%s] %s\n", d.Name, msg)
 	})
 	exitIfSet(err)
 }
 
-func update(cmd *command, inv *nadm.Inventory) {
+func update(cmd *command, inv *fleet.Inventory) {
 	file, err := filepath.Abs(cmd.aImage)
 	exitIfSet(err)
 
@@ -154,7 +154,7 @@ func update(cmd *command, inv *nadm.Inventory) {
 
 	tbl := newTable("DEVICE NAME", "PROGRESS", "ERROR")
 
-	inv.Update(cmd.oFilter, bytes, cmd.oTimeout, func(_ *nadm.Device){
+	inv.Update(cmd.oFilter, bytes, cmd.oTimeout, func(_ *fleet.Device) {
 		tbl.clear()
 
 		for _, device := range inv.Devices {
@@ -166,7 +166,7 @@ func update(cmd *command, inv *nadm.Inventory) {
 
 				progress := 100.0 / float64(len(bytes)) * float64(device.UpdateStatus.Progress)
 
-				tbl.add(device.Name, strconv.Itoa(int(progress)) + "%", errStr)
+				tbl.add(device.Name, strconv.Itoa(int(progress))+"%", errStr)
 			}
 		}
 
@@ -176,6 +176,6 @@ func update(cmd *command, inv *nadm.Inventory) {
 	save(cmd, inv)
 }
 
-func save(cmd *command, inv *nadm.Inventory) {
+func save(cmd *command, inv *fleet.Inventory) {
 	inv.Save(cmd.oInventory)
 }
