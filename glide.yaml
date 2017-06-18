@@ -7,3 +7,5 @@ import:
 - package: code.cloudfoundry.org/bytefmt
 - package: github.com/ryanuber/go-glob
   version: master
+- package: github.com/mholt/archiver
+  version: master

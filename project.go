@@ -1,12 +1,20 @@
 package naos
 
 import (
+	"errors"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
+
+	"github.com/mholt/archiver"
 )
 
 // InventoryFileName specifies the inventory file name.
 const InventoryFileName = "naos.json"
+
+// HiddenDirectory specifies the hidden directory name.
+const HiddenDirectory = ".naos"
 
 // A Project is a project available on disk.
 type Project struct {
@@ -65,4 +73,69 @@ func (p *Project) SaveInventory() error {
 	}
 
 	return nil
+}
+
+// InstallToolchain will install the compilation toolchain.
+func (p *Project) InstallToolchain(force bool) error {
+	// get toolchain url and version
+	url, ver, err := getToolchainURLAndVersion()
+	if err != nil {
+		return err
+	}
+
+	// prepare toolchain directory
+	dir := filepath.Join(p.Location, HiddenDirectory, "toolchain", ver)
+
+	// check if already exists
+	ok, err := exists(dir)
+	if err != nil {
+		return err
+	}
+
+	// return immediately if already exists and no force install is requested
+	if ok && !force {
+		return nil
+	}
+
+	// remove existing directory if existing
+	if ok {
+		err = os.RemoveAll(dir)
+		if err != nil {
+			return err
+		}
+	}
+
+	// get a temporary file
+	tmp, err := ioutil.TempFile("", "naos")
+	if err != nil {
+		return err
+	}
+
+	// make sure temporary file gets closed
+	defer tmp.Close()
+
+	// download toolchain
+	err = download(tmp.Name(), url)
+	if err != nil {
+		return err
+	}
+
+	// unpack toolchain
+	err = archiver.TarGz.Open(tmp.Name(), dir)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getToolchainURLAndVersion() (string, string, error) {
+	switch runtime.GOOS {
+	case "darwin":
+		return "https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz", "1.22.0-61-gab8375a-5.2.0", nil
+	case "linux":
+		return "https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz", "1.22.0-61-gab8375a-5.2.0", nil
+	}
+
+	return "", "", errors.New("unsupported os")
 }

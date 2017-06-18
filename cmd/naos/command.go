@@ -10,7 +10,7 @@ var usage = `naos - the networked artifacts operating system
 
 Usage:
   naos create
-  naos install
+  naos install [--force]
   naos build
   naos flash [--erase]
   naos attach
@@ -23,6 +23,7 @@ Usage:
   naos update <image> [--filter=<pattern> --timeout=<ms>]
 
 Options:
+  -x --force             Force installation of components when they exist.
   -e --erase             Erase completely before flashing new image.
   -d --duration=<ms>     The collection duration [default: 1s].
   -t --timeout=<ms>      The response timeout [default: 5s].
@@ -53,6 +54,7 @@ type command struct {
 	aImage string
 
 	// options
+	oForce    bool
 	oErase    bool
 	oDuration time.Duration
 	oTimeout  time.Duration
@@ -81,11 +83,11 @@ func parseCommand() *command {
 		// arguments
 		aName:  getString(a["<name>"]),
 		aImage: getString(a["<image>"]),
-
 		aParam: getString(a["<param>"]),
 		aValue: getString(a["<value>"]),
 
 		// options
+		oForce:    getBool(a["--force"]),
 		oErase:    getBool(a["--erase"]),
 		oDuration: getDuration(a["--duration"]),
 		oTimeout:  getDuration(a["--timeout"]),
