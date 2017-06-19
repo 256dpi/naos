@@ -79,9 +79,6 @@ func build(cmd *command, p *naos.Project) {
 	// build project
 	err := p.Build(getOutput(cmd))
 	exitIfSet(err)
-
-	// TODO: Copy sources files "./.naos"
-	// TODO: Build using the esp-idf tools.
 }
 
 func flash(cmd *command, p *naos.Project) {
