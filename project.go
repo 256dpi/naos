@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/mholt/archiver"
 )
@@ -159,7 +160,7 @@ func (p *Project) SetupToolchain(force bool, out io.Writer) error {
 }
 
 // ToolchainLocation returns the location of the toolchain if it exists or an
-// empty string if it does not exist.
+// error if it does not exist.
 func (p *Project) ToolchainLocation() (string, error) {
 	// calculate directory
 	dir := filepath.Join(p.HiddenDirectory(), "xtensa-esp32-elf")
@@ -168,11 +169,8 @@ func (p *Project) ToolchainLocation() (string, error) {
 	ok, err := exists(dir)
 	if err != nil {
 		return "", err
-	}
-
-	// return empty string if not existing
-	if !ok {
-		return "", nil
+	} else if !ok {
+		return "", errors.New("toolchain not found")
 	}
 
 	return dir, nil
@@ -206,17 +204,8 @@ func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 		}
 	}
 
-	// construct git clone command
-	cmd := exec.Command("git", "clone", "--recursive", "--depth", "1", "https://github.com/espressif/esp-idf.git", frameworkDir)
-
-	// connect output if provided
-	if out != nil {
-		cmd.Stdout = out
-		cmd.Stderr = out
-	}
-
-	// clone development kit
-	err = cmd.Run()
+	// clone development framework
+	err = clone("https://github.com/espressif/esp-idf.git", frameworkDir, ESPIDFVersion, out)
 	if err != nil {
 		return err
 	}
@@ -225,7 +214,7 @@ func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 }
 
 // DevelopmentFrameworkLocation returns the location of the development
-// framework if it exists or an empty string if it does not exist.
+// framework if it exists or an error if it does not exist.
 func (p *Project) DevelopmentFrameworkLocation() (string, error) {
 	// calculate directory
 	dir := filepath.Join(p.HiddenDirectory(), "esp-idf")
@@ -234,11 +223,8 @@ func (p *Project) DevelopmentFrameworkLocation() (string, error) {
 	ok, err := exists(dir)
 	if err != nil {
 		return "", err
-	}
-
-	// return empty string if not existing
-	if !ok {
-		return "", nil
+	} else if !ok {
+		return "", errors.New("development framework not found")
 	}
 
 	return dir, nil
@@ -310,17 +296,8 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	// construct esp-mqtt component dir
 	espMQTTDir := filepath.Join(buildTreeDir, "components", "esp-mqtt")
 
-	// construct git clone command
-	cmd := exec.Command("git", "clone", "--recursive", "--depth", "1", "https://github.com/256dpi/esp-mqtt.git", espMQTTDir)
-
-	// connect output if provided
-	if out != nil {
-		cmd.Stdout = out
-		cmd.Stderr = out
-	}
-
 	// clone component
-	err = cmd.Run()
+	err = clone("https://github.com/256dpi/esp-mqtt.git", espMQTTDir, ESPMQTTVersion, out)
 	if err != nil {
 		return err
 	}
@@ -328,22 +305,68 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	return nil
 }
 
-// BuildTreeLocation returns the location of the build tree if it  exists or an
-// empty string if it does not exist.
+// BuildTreeLocation returns the location of the build tree if it exists or an
+// error if it does not exist.
 func (p *Project) BuildTreeLocation() (string, error) {
 	// calculate directory
-	dir := filepath.Join(p.HiddenDirectory(), "project")
+	dir := filepath.Join(p.HiddenDirectory(), "tree")
 
 	// check if build tree directory exists
 	ok, err := exists(dir)
 	if err != nil {
 		return "", err
-	}
-
-	// return empty string if not existing
-	if !ok {
+	} else if !ok {
 		return "", nil
 	}
 
 	return dir, nil
+}
+
+// Build will build the project.
+func (p *Project) Build(out io.Writer) error {
+	// get toolchain location
+	toolchain, err := p.ToolchainLocation()
+	if err != nil {
+		return err
+	}
+
+	// get build tree location
+	buildTree, err := p.BuildTreeLocation()
+	if err != nil {
+		return err
+	}
+
+	// construct build command
+	cmd := exec.Command("make")
+
+	// set working directory
+	cmd.Dir = buildTree
+
+	// inherit current environment
+	cmd.Env = os.Environ()
+
+	// go through all env variables
+	for i, str := range cmd.Env {
+		if strings.HasPrefix(str, "PATH=") {
+			// prepend toolchain bin directory
+			cmd.Env[i] = "PATH=" + filepath.Join(toolchain, "bin") + ":" + os.Getenv("PATH")
+		} else if strings.HasPrefix(str, "PWD=") {
+			// override shell working directory
+			cmd.Env[i] = "PWD=" + buildTree
+		}
+	}
+
+	// connect output if provided
+	if out != nil {
+		cmd.Stdout = out
+		cmd.Stderr = out
+	}
+
+	// build project
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 )
 
 func exists(path string) (bool, error) {
@@ -49,6 +50,45 @@ func download(path, url string) error {
 
 	// properly close file
 	err = file.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func clone(repo, path, commit string, out io.Writer) error {
+	// construct clone command
+	cmd := exec.Command("git", "clone", "--recursive", repo, path)
+	cmd.Stdout = out
+	cmd.Stderr = out
+
+	// clone repo
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	// construct reset command
+	cmd = exec.Command("git", "reset", "--hard", commit)
+	cmd.Stderr = out
+	cmd.Stdout = out
+	cmd.Dir = path
+
+	// reset repo to specific version
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	// construct update command
+	cmd = exec.Command("git", "submodule", "update", "--recursive")
+	cmd.Stderr = out
+	cmd.Stdout = out
+	cmd.Dir = path
+
+	// set submodules to proper version
+	err = cmd.Run()
 	if err != nil {
 		return err
 	}

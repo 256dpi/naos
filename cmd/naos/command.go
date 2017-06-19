@@ -11,7 +11,7 @@ var usage = `naos - the networked artifacts operating system
 Usage:
   naos create
   naos setup [--force --verbose]
-  naos build
+  naos build [--verbose]
   naos flash [--erase]
   naos attach
   naos list

@@ -1,5 +1,11 @@
 package naos
 
+// ESPIDFVersion defines the used esp-idf version.
+const ESPIDFVersion = "cc93e14770e7b3681ebc80b30336e498cc96e961"
+
+// ESPMQTTVersion defines the used esp-mqtt version.
+const ESPMQTTVersion = "cc87172126aa7aacc3b982f7be7489950429b733"
+
 // SdkconfigContent holds the default content of the 'sdkconfig' file.
 const SdkconfigContent = `#
 # Automatically generated file; DO NOT EDIT.
@@ -99,10 +105,11 @@ CONFIG_BTC_TASK_STACK_SIZE=3072
 # CONFIG_BT_DRAM_RELEASE is not set
 CONFIG_GATTS_ENABLE=y
 CONFIG_GATTC_ENABLE=y
-CONFIG_SMP_ENABLE=y
+CONFIG_BLE_SMP_ENABLE=y
 # CONFIG_BT_STACK_NO_LOG is not set
 CONFIG_BT_ACL_CONNECTIONS=4
 CONFIG_BTDM_CONTROLLER_RUN_CPU=0
+CONFIG_SMP_ENABLE=y
 CONFIG_BT_RESERVE_DRAM=0x10000
 
 #
