@@ -296,6 +296,13 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 		return err
 	}
 
+	// linking src
+	log(out, fmt.Sprintln("Linking 'src' directory"))
+	err = os.Symlink(filepath.Join(p.Location, "src"), filepath.Join(buildTreeDir, "main", "src"))
+	if err != nil {
+		return err
+	}
+
 	// adding components directory
 	log(out, fmt.Sprintf("Adding 'components' directory to '%s'\n", buildTreeDir))
 	err = os.MkdirAll(filepath.Join(buildTreeDir, "components"), 0777)
