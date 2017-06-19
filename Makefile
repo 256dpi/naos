@@ -42,3 +42,9 @@ update:
 	cd test/esp-idf/; git submodule update --recursive
 	cd test/components/esp-mqtt/; git pull; git checkout master
 	cd test/components/esp-mqtt/; git submodule update --recursive
+
+version:
+	@echo esp-idf:
+	@cd test/esp-idf/; git rev-parse HEAD
+	@echo esp-mqtt:
+	@cd test/components/esp-mqtt/; git rev-parse HEAD
