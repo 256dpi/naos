@@ -286,6 +286,13 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 		return err
 	}
 
+	// adding component.mk
+	log(out, fmt.Sprintf("Adding 'main/component.mk' to '%s'\n", buildTreeDir))
+	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "main", "component.mk"), []byte(MainComponentMkContent), 0644)
+	if err != nil {
+		return err
+	}
+
 	// adding components directory
 	log(out, fmt.Sprintf("Adding 'components' directory to '%s'\n", buildTreeDir))
 	err = os.MkdirAll(filepath.Join(buildTreeDir, "components"), 0777)

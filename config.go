@@ -328,3 +328,7 @@ const MakefileContent = `PROJECT_NAME := naos-project
 export IDF_PATH := ../esp-idf
 include $(IDF_PATH)/make/project.mk
 `
+
+// MainComponentMkContent holds the default content of the 'main/component.mk' file.
+const MainComponentMkContent = `COMPONENT_SRCDIRS := ../../../src
+`
