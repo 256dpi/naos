@@ -58,13 +58,23 @@ func create(cmd *command) {
 }
 
 func install(cmd *command, p *naos.Project) {
-	// install toolchain
+	// TODO: Add verbose output.
+
+	// ensure toolchain
 	err := p.InstallToolchain(cmd.oForce)
 	exitIfSet(err)
 
-	// install idf
+	// ensure IDF
 	err = p.InstallIDF(cmd.oForce)
 	exitIfSet(err)
+
+	// TODO: Ensure IDF components.
+	// - esp-mqtt
+
+	// TODO: Ensure IDF files.
+	// - main directory
+	// - sdkconfig
+	// - Makefile
 }
 
 func build(cmd *command, p *naos.Project) {
