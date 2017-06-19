@@ -77,10 +77,15 @@ func (p *Project) SaveInventory() error {
 
 // InstallToolchain will install the compilation toolchain.
 func (p *Project) InstallToolchain(force bool) error {
-	// get toolchain url and version
-	url, err := getToolchainURL()
-	if err != nil {
-		return err
+	// get toolchain url
+	var url string
+	switch runtime.GOOS {
+	case "darwin":
+		url = "https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz"
+	case "linux":
+		url = "https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz"
+	default:
+		return errors.New("unsupported os")
 	}
 
 	// prepare toolchain directory
@@ -148,15 +153,4 @@ func (p *Project) ToolchainLocation() (string, error) {
 	}
 
 	return dir, nil
-}
-
-func getToolchainURL() (string, error) {
-	switch runtime.GOOS {
-	case "darwin":
-		return "https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz", nil
-	case "linux":
-		return "https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz", nil
-	}
-
-	return "", errors.New("unsupported os")
 }
