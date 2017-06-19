@@ -6,6 +6,9 @@ const ESPIDFVersion = "cc93e14770e7b3681ebc80b30336e498cc96e961"
 // ESPMQTTVersion defines the used esp-mqtt version.
 const ESPMQTTVersion = "cc87172126aa7aacc3b982f7be7489950429b733"
 
+// NAOSESPVersion defines the used naos-esp version.
+const NAOSESPVersion = "4bcc858f77671f0f3846fe9c704cb95fea34ea1f"
+
 // SdkconfigContent holds the default content of the 'sdkconfig' file.
 const SdkconfigContent = `#
 # Automatically generated file; DO NOT EDIT.

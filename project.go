@@ -293,11 +293,14 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 		return err
 	}
 
-	// construct esp-mqtt component dir
-	espMQTTDir := filepath.Join(buildTreeDir, "components", "esp-mqtt")
+	// clone component
+	err = clone("https://github.com/256dpi/esp-mqtt.git", filepath.Join(buildTreeDir, "components", "esp-mqtt"), ESPMQTTVersion, out)
+	if err != nil {
+		return err
+	}
 
 	// clone component
-	err = clone("https://github.com/256dpi/esp-mqtt.git", espMQTTDir, ESPMQTTVersion, out)
+	err = clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(buildTreeDir, "components", "naos-esp"), NAOSESPVersion, out)
 	if err != nil {
 		return err
 	}
