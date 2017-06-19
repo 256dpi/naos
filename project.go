@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 
@@ -75,6 +76,12 @@ func (p *Project) SaveInventory() error {
 	return nil
 }
 
+// HiddenDirectory returns the hidden used to install and store the toolchain,
+// development framework etc.
+func (p *Project) HiddenDirectory() string {
+	return filepath.Join(p.Location, HiddenDirectory)
+}
+
 // InstallToolchain will install the compilation toolchain.
 func (p *Project) InstallToolchain(force bool) error {
 	// get toolchain url
@@ -89,8 +96,7 @@ func (p *Project) InstallToolchain(force bool) error {
 	}
 
 	// prepare toolchain directory
-	parentDir := filepath.Join(p.Location, HiddenDirectory)
-	toolchainDir := filepath.Join(parentDir, "xtensa-esp32-elf")
+	toolchainDir := filepath.Join(p.HiddenDirectory(), "xtensa-esp32-elf")
 
 	// check if already exists
 	ok, err := exists(toolchainDir)
@@ -127,10 +133,12 @@ func (p *Project) InstallToolchain(force bool) error {
 	}
 
 	// unpack toolchain
-	err = archiver.TarGz.Open(tmp.Name(), parentDir)
+	err = archiver.TarGz.Open(tmp.Name(), p.HiddenDirectory())
 	if err != nil {
 		return err
 	}
+
+	// TODO: Remove tmp file.
 
 	return nil
 }
@@ -139,7 +147,63 @@ func (p *Project) InstallToolchain(force bool) error {
 // empty string if it does not exist.
 func (p *Project) ToolchainLocation() (string, error) {
 	// calculate directory
-	dir := filepath.Join(p.Location, HiddenDirectory, "xtensa-esp32-elf")
+	dir := filepath.Join(p.HiddenDirectory(), "xtensa-esp32-elf")
+
+	// check if toolchain directory exists
+	ok, err := exists(dir)
+	if err != nil {
+		return "", err
+	}
+
+	// return empty string if not existing
+	if !ok {
+		return "", nil
+	}
+
+	return dir, nil
+}
+
+// InstallIDF will install the ESP32 development framework.
+func (p *Project) InstallIDF(force bool) error {
+	// prepare toolchain directory
+	idfDir := filepath.Join(p.HiddenDirectory(), "esp-idf")
+
+	// check if already exists
+	ok, err := exists(idfDir)
+	if err != nil {
+		return err
+	}
+
+	// return immediately if already exists and no force install is requested
+	if ok && !force {
+		return nil
+	}
+
+	// remove existing directory if existing
+	if ok {
+		err = os.RemoveAll(idfDir)
+		if err != nil {
+			return err
+		}
+	}
+
+	// construct git clone command
+	cmd := exec.Command("git", "clone", "--recursive", "--depth", "1", "https://github.com/espressif/esp-idf.git", idfDir)
+
+	// install development kit
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// IDFLocation returns the location of the ESP32 development framework if it
+// exists or an empty string if it does not exist.
+func (p *Project) IDFLocation() (string, error) {
+	// calculate directory
+	dir := filepath.Join(p.HiddenDirectory(), "esp-idf")
 
 	// check if toolchain directory exists
 	ok, err := exists(dir)

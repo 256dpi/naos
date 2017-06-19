@@ -62,8 +62,9 @@ func install(cmd *command, p *naos.Project) {
 	err := p.InstallToolchain(cmd.oForce)
 	exitIfSet(err)
 
-	// TODO: Install toolchain to "~/.naos".
-	// TODO: Install esp-idf to "./.naos".
+	// install idf
+	err = p.InstallIDF(cmd.oForce)
+	exitIfSet(err)
 }
 
 func build(cmd *command, p *naos.Project) {
