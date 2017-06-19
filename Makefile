@@ -48,3 +48,5 @@ version:
 	@cd test/esp-idf/; git rev-parse HEAD
 	@echo esp-mqtt:
 	@cd test/components/esp-mqtt/; git rev-parse HEAD
+	@echo naos-esp:
+	@git rev-parse HEAD
