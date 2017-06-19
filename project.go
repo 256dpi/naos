@@ -46,6 +46,9 @@ func CreateProject(path string) (*Project, error) {
 		return nil, err
 	}
 
+	// TODO: Ensure ./src directory.
+	// TODO: Add basic ./src/main.c file.
+
 	return p, nil
 }
 
