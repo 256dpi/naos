@@ -78,16 +78,16 @@ func (p *Project) SaveInventory() error {
 	return nil
 }
 
-// HiddenDirectory returns the hidden used to install and store the toolchain,
-// development framework etc.
+// HiddenDirectory returns the hidden used to store the toolchain, development
+// framework and other necessary files.
 func (p *Project) HiddenDirectory() string {
 	return filepath.Join(p.Location, HiddenDirectory)
 }
 
-// InstallToolchain will install the compilation toolchain. Any previous
-// installation will be removed if force is set to true. If out is not nil, it
-// will be used to log information about the process.
-func (p *Project) InstallToolchain(force bool, out io.Writer) error {
+// SetupToolchain will setup the compilation toolchain. An existing toolchain
+// will be removed if force is set to true. If out is not nil, it will be used
+// to log information about the process.
+func (p *Project) SetupToolchain(force bool, out io.Writer) error {
 	// get toolchain url
 	var url string
 	switch runtime.GOOS {
@@ -108,15 +108,15 @@ func (p *Project) InstallToolchain(force bool, out io.Writer) error {
 		return err
 	}
 
-	// return immediately if already exists and no force install is requested
+	// return immediately if already exists and not forced
 	if ok && !force {
-		log(out, fmt.Sprintln("Skipping toolchain installation as it already exists"))
+		log(out, fmt.Sprintln("Skipping toolchain as it already exists"))
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
-		log(out, fmt.Sprintln("Removing existing toolchain installation (force=true)"))
+		log(out, fmt.Sprintln("Removing existing toolchain (force=true)"))
 		err = os.RemoveAll(toolchainDir)
 		if err != nil {
 			return err
@@ -178,36 +178,36 @@ func (p *Project) ToolchainLocation() (string, error) {
 	return dir, nil
 }
 
-// InstallIDF will install the ESP32 development framework. Any previous
-// installation will be removed if force is set to true. If out is not nil, it
-// will be used to log information about the process.
-func (p *Project) InstallIDF(force bool, out io.Writer) error {
+// SetupDevelopmentFramework will setup the development framework. An existing
+// development framework will be removed if force is set to true. If out is not
+// nil, it will be used to log information about the process.
+func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 	// prepare toolchain directory
-	idfDir := filepath.Join(p.HiddenDirectory(), "esp-idf")
+	frameworkDir := filepath.Join(p.HiddenDirectory(), "esp-idf")
 
 	// check if already exists
-	ok, err := exists(idfDir)
+	ok, err := exists(frameworkDir)
 	if err != nil {
 		return err
 	}
 
-	// return immediately if already exists and no force install is requested
+	// return immediately if already exists and not forced
 	if ok && !force {
-		log(out, fmt.Sprintln("Skipping IDF installation as it already exists"))
+		log(out, fmt.Sprintln("Skipping development framework as it already exists"))
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
-		log(out, fmt.Sprintln("Removing existing IDF installation (force=true)"))
-		err = os.RemoveAll(idfDir)
+		log(out, fmt.Sprintln("Removing existing development framework (force=true)"))
+		err = os.RemoveAll(frameworkDir)
 		if err != nil {
 			return err
 		}
 	}
 
 	// construct git clone command
-	cmd := exec.Command("git", "clone", "--recursive", "--depth", "1", "https://github.com/espressif/esp-idf.git", idfDir)
+	cmd := exec.Command("git", "clone", "--recursive", "--depth", "1", "https://github.com/espressif/esp-idf.git", frameworkDir)
 
 	// connect output if provided
 	if out != nil {
@@ -215,7 +215,7 @@ func (p *Project) InstallIDF(force bool, out io.Writer) error {
 		cmd.Stderr = out
 	}
 
-	// install development kit
+	// clone development kit
 	err = cmd.Run()
 	if err != nil {
 		return err
@@ -224,9 +224,9 @@ func (p *Project) InstallIDF(force bool, out io.Writer) error {
 	return nil
 }
 
-// IDFLocation returns the location of the ESP32 development framework if it
-// exists or an empty string if it does not exist.
-func (p *Project) IDFLocation() (string, error) {
+// DevelopmentFrameworkLocation returns the location of the development
+// framework if it exists or an empty string if it does not exist.
+func (p *Project) DevelopmentFrameworkLocation() (string, error) {
 	// calculate directory
 	dir := filepath.Join(p.HiddenDirectory(), "esp-idf")
 
@@ -244,10 +244,10 @@ func (p *Project) IDFLocation() (string, error) {
 	return dir, nil
 }
 
-// InstallBuildTree will install the necessary build tree files. Any previous
-// installation will be removed if force is set to true. If out is not nil, it
-// will be used to log information about the process.
-func (p *Project) InstallBuildTree(force bool, out io.Writer) error {
+// SetupBuildTree will setup the build tree. An existing build tree will be
+// removed if force is set to true. If out is not nil, it will be used to log
+// information about the process.
+func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	// prepare build tree directory
 	buildTreeDir := filepath.Join(p.HiddenDirectory(), "tree")
 
@@ -257,15 +257,15 @@ func (p *Project) InstallBuildTree(force bool, out io.Writer) error {
 		return err
 	}
 
-	// return immediately if already exists and no force install is requested
+	// return immediately if already exists and no forced
 	if ok && !force {
-		log(out, fmt.Sprintln("Skipping build tree installation as it already exists"))
+		log(out, fmt.Sprintln("Skipping build tree as it already exists"))
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
-		log(out, fmt.Sprintln("Removing existing build tree installation (force=true)"))
+		log(out, fmt.Sprintln("Removing existing build tree (force=true)"))
 		err = os.RemoveAll(buildTreeDir)
 		if err != nil {
 			return err
@@ -319,7 +319,7 @@ func (p *Project) InstallBuildTree(force bool, out io.Writer) error {
 		cmd.Stderr = out
 	}
 
-	// install component kit
+	// clone component
 	err = cmd.Run()
 	if err != nil {
 		return err

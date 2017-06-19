@@ -21,8 +21,8 @@ func main() {
 
 	if cmd.cCreate {
 		create(cmd)
-	} else if cmd.cInstall {
-		install(cmd, getProject(cmd))
+	} else if cmd.cSetup {
+		setup(cmd, getProject(cmd))
 	} else if cmd.cBuild {
 		build(cmd, getProject(cmd))
 	} else if cmd.cFlash {
@@ -61,17 +61,17 @@ func create(cmd *command) {
 	save(cmd, p)
 }
 
-func install(cmd *command, p *naos.Project) {
-	// ensure toolchain
-	err := p.InstallToolchain(cmd.oForce, getOutput(cmd))
+func setup(cmd *command, p *naos.Project) {
+	// setup toolchain
+	err := p.SetupToolchain(cmd.oForce, getOutput(cmd))
 	exitIfSet(err)
 
-	// ensure IDF
-	err = p.InstallIDF(cmd.oForce, getOutput(cmd))
+	// setup development framework
+	err = p.SetupDevelopmentFramework(cmd.oForce, getOutput(cmd))
 	exitIfSet(err)
 
-	// ensure build tree
-	err = p.InstallBuildTree(cmd.oForce, getOutput(cmd))
+	// setup build tree
+	err = p.SetupBuildTree(cmd.oForce, getOutput(cmd))
 	exitIfSet(err)
 }
 

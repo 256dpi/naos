@@ -10,7 +10,7 @@ var usage = `naos - the networked artifacts operating system
 
 Usage:
   naos create
-  naos install [--force --verbose]
+  naos setup [--force --verbose]
   naos build
   naos flash [--erase]
   naos attach
@@ -23,7 +23,7 @@ Usage:
   naos update <image> [<pattern>] [--timeout=<ms>]
 
 Options:
-  -f --force          Force installation of components when they exist.
+  -f --force          Force a re-installation of components when they exist.
   -e --erase          Erase completely before flashing new image.
   -d --duration=<ms>  The collection duration [default: 1s].
   -t --timeout=<ms>   The response timeout [default: 5s].
@@ -35,7 +35,7 @@ Options:
 type command struct {
 	// commands
 	cCreate  bool
-	cInstall bool
+	cSetup   bool
 	cBuild   bool
 	cFlash   bool
 	cAttach  bool
@@ -70,7 +70,7 @@ func parseCommand() *command {
 	return &command{
 		// commands
 		cCreate:  getBool(a["create"]),
-		cInstall: getBool(a["install"]),
+		cSetup:   getBool(a["setup"]),
 		cBuild:   getBool(a["build"]),
 		cFlash:   getBool(a["flash"]),
 		cAttach:  getBool(a["attach"]),
