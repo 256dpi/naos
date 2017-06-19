@@ -16,21 +16,20 @@ Usage:
   naos attach
   naos list
   naos collect [--clear --duration=<ms>]
-  naos get <param> [--filter=<pattern> --timeout=<ms>]
-  naos set <param> <value> [--filter=<pattern> --timeout=<ms>]
-  naos monitor [--filter=<pattern> --timeout=<ms>]
-  naos record [--filter=<pattern>]
-  naos update <image> [--filter=<pattern> --timeout=<ms>]
+  naos get <param> [<pattern>] [--timeout=<ms>]
+  naos set <param> <value> [<pattern>] [--timeout=<ms>]
+  naos monitor [<pattern>] [--timeout=<ms>]
+  naos record [<pattern>]
+  naos update <image> [<pattern>] [--timeout=<ms>]
 
 Options:
-  -x --force             Force installation of components when they exist.
-  -e --erase             Erase completely before flashing new image.
-  -d --duration=<ms>     The collection duration [default: 1s].
-  -t --timeout=<ms>      The response timeout [default: 5s].
-  -f --filter=<pattern>  The filter glob pattern [default: *].
-  -c --clear             Remove not available devices from inventory.
-  -v --verbose           Be verbose about whats going on.
-  -h --help              Show this screen.
+  -f --force          Force installation of components when they exist.
+  -e --erase          Erase completely before flashing new image.
+  -d --duration=<ms>  The collection duration [default: 1s].
+  -t --timeout=<ms>   The response timeout [default: 5s].
+  -c --clear          Remove not available devices from inventory.
+  -v --verbose        Be verbose about whats going on.
+  -h --help           Show this screen.
 `
 
 type command struct {
@@ -49,23 +48,24 @@ type command struct {
 	cUpdate  bool
 
 	// arguments
-	aParam string
-	aValue string
-	aName  string
-	aImage string
+	aParam   string
+	aPattern string
+	aValue   string
+	aName    string
+	aImage   string
 
 	// options
 	oForce    bool
 	oErase    bool
 	oDuration time.Duration
 	oTimeout  time.Duration
-	oFilter   string
 	oClear    bool
 	oVerbose  bool
 }
 
 func parseCommand() *command {
-	a, _ := docopt.Parse(usage, nil, true, "", false)
+	a, err := docopt.Parse(usage, nil, true, "", false)
+	exitIfSet(err)
 
 	return &command{
 		// commands
@@ -83,17 +83,17 @@ func parseCommand() *command {
 		cUpdate:  getBool(a["update"]),
 
 		// arguments
-		aName:  getString(a["<name>"]),
-		aImage: getString(a["<image>"]),
-		aParam: getString(a["<param>"]),
-		aValue: getString(a["<value>"]),
+		aName:    getString(a["<name>"]),
+		aPattern: getString(a["<pattern>"]),
+		aImage:   getString(a["<image>"]),
+		aParam:   getString(a["<param>"]),
+		aValue:   getString(a["<value>"]),
 
 		// options
 		oForce:    getBool(a["--force"]),
 		oErase:    getBool(a["--erase"]),
 		oDuration: getDuration(a["--duration"]),
 		oTimeout:  getDuration(a["--timeout"]),
-		oFilter:   getString(a["--filter"]),
 		oClear:    getBool(a["--clear"]),
 		oVerbose:  getBool(a["--verbose"]),
 	}

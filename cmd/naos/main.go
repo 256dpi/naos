@@ -15,6 +15,10 @@ import (
 func main() {
 	cmd := parseCommand()
 
+	if cmd.aPattern == "" {
+		cmd.aPattern = "*"
+	}
+
 	if cmd.cCreate {
 		create(cmd)
 	} else if cmd.cInstall {
@@ -119,7 +123,7 @@ func collect(cmd *command, p *naos.Project) {
 }
 
 func set(cmd *command, p *naos.Project) {
-	list, err := p.Inventory.Set(cmd.oFilter, cmd.aParam, cmd.aValue, cmd.oTimeout)
+	list, err := p.Inventory.Set(cmd.aPattern, cmd.aParam, cmd.aValue, cmd.oTimeout)
 	exitIfSet(err)
 
 	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
@@ -134,7 +138,7 @@ func set(cmd *command, p *naos.Project) {
 }
 
 func get(cmd *command, p *naos.Project) {
-	list, err := p.Inventory.Get(cmd.oFilter, cmd.aParam, cmd.oTimeout)
+	list, err := p.Inventory.Get(cmd.aPattern, cmd.aParam, cmd.oTimeout)
 	exitIfSet(err)
 
 	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
@@ -160,7 +164,7 @@ func monitor(cmd *command, p *naos.Project) {
 
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION")
 
-	err := p.Inventory.Monitor(cmd.oFilter, quit, func(d *naos.Device) {
+	err := p.Inventory.Monitor(cmd.aPattern, quit, func(d *naos.Device) {
 		tbl.clear()
 
 		for _, device := range p.Inventory.Devices {
@@ -184,7 +188,7 @@ func record(cmd *command, p *naos.Project) {
 		close(quit)
 	}()
 
-	err := p.Inventory.Record(cmd.oFilter, quit, func(d *naos.Device, msg string) {
+	err := p.Inventory.Record(cmd.aPattern, quit, func(d *naos.Device, msg string) {
 		fmt.Printf("[%s] %s\n", d.Name, msg)
 	})
 	exitIfSet(err)
@@ -199,7 +203,7 @@ func update(cmd *command, p *naos.Project) {
 
 	tbl := newTable("DEVICE NAME", "PROGRESS", "ERROR")
 
-	p.Inventory.Update(cmd.oFilter, bytes, cmd.oTimeout, func(_ *naos.Device) {
+	p.Inventory.Update(cmd.aPattern, bytes, cmd.oTimeout, func(_ *naos.Device) {
 		tbl.clear()
 
 		for _, device := range p.Inventory.Devices {
