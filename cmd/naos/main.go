@@ -58,14 +58,12 @@ func create(cmd *command) {
 }
 
 func install(cmd *command, p *naos.Project) {
-	// TODO: Add verbose output.
-
 	// ensure toolchain
-	err := p.InstallToolchain(cmd.oForce)
+	err := p.InstallToolchain(cmd.oForce, getOutput(cmd))
 	exitIfSet(err)
 
 	// ensure IDF
-	err = p.InstallIDF(cmd.oForce)
+	err = p.InstallIDF(cmd.oForce, getOutput(cmd))
 	exitIfSet(err)
 
 	// TODO: Ensure IDF components.

@@ -2,6 +2,8 @@ package naos
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -82,8 +84,10 @@ func (p *Project) HiddenDirectory() string {
 	return filepath.Join(p.Location, HiddenDirectory)
 }
 
-// InstallToolchain will install the compilation toolchain.
-func (p *Project) InstallToolchain(force bool) error {
+// InstallToolchain will install the compilation toolchain. Any previous
+// installation will be removed if force is set to true. If out is not nil, it
+// will be used to log information about the process.
+func (p *Project) InstallToolchain(force bool, out io.Writer) error {
 	// get toolchain url
 	var url string
 	switch runtime.GOOS {
@@ -106,11 +110,19 @@ func (p *Project) InstallToolchain(force bool) error {
 
 	// return immediately if already exists and no force install is requested
 	if ok && !force {
+		if out != nil {
+			fmt.Fprintln(out, "Skipping toolchain installation as it already exists")
+		}
+
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
+		if out != nil {
+			fmt.Fprintln(out, "Removing existing toolchain installation (force=true)")
+		}
+
 		err = os.RemoveAll(toolchainDir)
 		if err != nil {
 			return err
@@ -126,10 +138,18 @@ func (p *Project) InstallToolchain(force bool) error {
 	// make sure temporary file gets closed
 	defer tmp.Close()
 
+	if out != nil {
+		fmt.Fprintf(out, "Downloading toolchain from '%s'...\n", url)
+	}
+
 	// download toolchain
 	err = download(tmp.Name(), url)
 	if err != nil {
 		return err
+	}
+
+	if out != nil {
+		fmt.Fprintf(out, "Unpacking toolchain to '%s'...\n", p.HiddenDirectory())
 	}
 
 	// unpack toolchain
@@ -138,7 +158,14 @@ func (p *Project) InstallToolchain(force bool) error {
 		return err
 	}
 
-	// TODO: Remove tmp file.
+	// close temporary file
+	tmp.Close()
+
+	// remove temporary file
+	err = os.Remove(tmp.Name())
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -163,8 +190,10 @@ func (p *Project) ToolchainLocation() (string, error) {
 	return dir, nil
 }
 
-// InstallIDF will install the ESP32 development framework.
-func (p *Project) InstallIDF(force bool) error {
+// InstallIDF will install the ESP32 development framework. Any previous
+// installation will be removed if force is set to true. If out is not nil, it
+// will be used to log information about the process.
+func (p *Project) InstallIDF(force bool, out io.Writer) error {
 	// prepare toolchain directory
 	idfDir := filepath.Join(p.HiddenDirectory(), "esp-idf")
 
@@ -176,11 +205,19 @@ func (p *Project) InstallIDF(force bool) error {
 
 	// return immediately if already exists and no force install is requested
 	if ok && !force {
+		if out != nil {
+			fmt.Fprintln(out, "Skipping IDF installation as it already exists")
+		}
+
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
+		if out != nil {
+			fmt.Fprintln(out, "Removing existing IDF installation (force=true)")
+		}
+
 		err = os.RemoveAll(idfDir)
 		if err != nil {
 			return err
@@ -189,6 +226,12 @@ func (p *Project) InstallIDF(force bool) error {
 
 	// construct git clone command
 	cmd := exec.Command("git", "clone", "--recursive", "--depth", "1", "https://github.com/espressif/esp-idf.git", idfDir)
+
+	// connect output if provided
+	if out != nil {
+		cmd.Stdout = out
+		cmd.Stderr = out
+	}
 
 	// install development kit
 	err = cmd.Run()

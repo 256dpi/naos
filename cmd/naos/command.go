@@ -10,7 +10,7 @@ var usage = `naos - the networked artifacts operating system
 
 Usage:
   naos create
-  naos install [--force]
+  naos install [--force --verbose]
   naos build
   naos flash [--erase]
   naos attach
@@ -29,6 +29,7 @@ Options:
   -t --timeout=<ms>      The response timeout [default: 5s].
   -f --filter=<pattern>  The filter glob pattern [default: *].
   -c --clear             Remove not available devices from inventory.
+  -v --verbose           Be verbose about whats going on.
   -h --help              Show this screen.
 `
 
@@ -60,6 +61,7 @@ type command struct {
 	oTimeout  time.Duration
 	oFilter   string
 	oClear    bool
+	oVerbose  bool
 }
 
 func parseCommand() *command {
@@ -93,6 +95,7 @@ func parseCommand() *command {
 		oTimeout:  getDuration(a["--timeout"]),
 		oFilter:   getString(a["--filter"]),
 		oClear:    getBool(a["--clear"]),
+		oVerbose:  getBool(a["--verbose"]),
 	}
 }
 
