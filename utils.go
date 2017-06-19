@@ -1,6 +1,7 @@
 package naos
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -53,4 +54,10 @@ func download(path, url string) error {
 	}
 
 	return nil
+}
+
+func log(out io.Writer, msg string) {
+	if out != nil {
+		fmt.Fprint(out, msg)
+	}
 }

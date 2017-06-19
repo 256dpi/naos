@@ -110,19 +110,13 @@ func (p *Project) InstallToolchain(force bool, out io.Writer) error {
 
 	// return immediately if already exists and no force install is requested
 	if ok && !force {
-		if out != nil {
-			fmt.Fprintln(out, "Skipping toolchain installation as it already exists")
-		}
-
+		log(out, fmt.Sprintln("Skipping toolchain installation as it already exists"))
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
-		if out != nil {
-			fmt.Fprintln(out, "Removing existing toolchain installation (force=true)")
-		}
-
+		log(out, fmt.Sprintln("Removing existing toolchain installation (force=true)"))
 		err = os.RemoveAll(toolchainDir)
 		if err != nil {
 			return err
@@ -138,21 +132,15 @@ func (p *Project) InstallToolchain(force bool, out io.Writer) error {
 	// make sure temporary file gets closed
 	defer tmp.Close()
 
-	if out != nil {
-		fmt.Fprintf(out, "Downloading toolchain from '%s'...\n", url)
-	}
-
 	// download toolchain
+	log(out, fmt.Sprintf("Downloading toolchain from '%s'...\n", url))
 	err = download(tmp.Name(), url)
 	if err != nil {
 		return err
 	}
 
-	if out != nil {
-		fmt.Fprintf(out, "Unpacking toolchain to '%s'...\n", p.HiddenDirectory())
-	}
-
 	// unpack toolchain
+	log(out, fmt.Sprintf("Unpacking toolchain to '%s'...\n", p.HiddenDirectory()))
 	err = archiver.TarGz.Open(tmp.Name(), p.HiddenDirectory())
 	if err != nil {
 		return err
@@ -205,19 +193,13 @@ func (p *Project) InstallIDF(force bool, out io.Writer) error {
 
 	// return immediately if already exists and no force install is requested
 	if ok && !force {
-		if out != nil {
-			fmt.Fprintln(out, "Skipping IDF installation as it already exists")
-		}
-
+		log(out, fmt.Sprintln("Skipping IDF installation as it already exists"))
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
-		if out != nil {
-			fmt.Fprintln(out, "Removing existing IDF installation (force=true)")
-		}
-
+		log(out, fmt.Sprintln("Removing existing IDF installation (force=true)"))
 		err = os.RemoveAll(idfDir)
 		if err != nil {
 			return err
