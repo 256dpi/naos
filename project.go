@@ -78,16 +78,17 @@ func (p *Project) SaveInventory() error {
 // InstallToolchain will install the compilation toolchain.
 func (p *Project) InstallToolchain(force bool) error {
 	// get toolchain url and version
-	url, ver, err := getToolchainURLAndVersion()
+	url, err := getToolchainURL()
 	if err != nil {
 		return err
 	}
 
 	// prepare toolchain directory
-	dir := filepath.Join(p.Location, HiddenDirectory, "toolchain", ver)
+	parentDir := filepath.Join(p.Location, HiddenDirectory)
+	toolchainDir := filepath.Join(parentDir, "xtensa-esp32-elf")
 
 	// check if already exists
-	ok, err := exists(dir)
+	ok, err := exists(toolchainDir)
 	if err != nil {
 		return err
 	}
@@ -99,7 +100,7 @@ func (p *Project) InstallToolchain(force bool) error {
 
 	// remove existing directory if existing
 	if ok {
-		err = os.RemoveAll(dir)
+		err = os.RemoveAll(toolchainDir)
 		if err != nil {
 			return err
 		}
@@ -121,7 +122,7 @@ func (p *Project) InstallToolchain(force bool) error {
 	}
 
 	// unpack toolchain
-	err = archiver.TarGz.Open(tmp.Name(), dir)
+	err = archiver.TarGz.Open(tmp.Name(), parentDir)
 	if err != nil {
 		return err
 	}
@@ -129,13 +130,13 @@ func (p *Project) InstallToolchain(force bool) error {
 	return nil
 }
 
-func getToolchainURLAndVersion() (string, string, error) {
+func getToolchainURL() (string, error) {
 	switch runtime.GOOS {
 	case "darwin":
-		return "https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz", "1.22.0-61-gab8375a-5.2.0", nil
+		return "https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz", nil
 	case "linux":
-		return "https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz", "1.22.0-61-gab8375a-5.2.0", nil
+		return "https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz", nil
 	}
 
-	return "", "", errors.New("unsupported os")
+	return "", errors.New("unsupported os")
 }
