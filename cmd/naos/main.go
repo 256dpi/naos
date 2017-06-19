@@ -70,13 +70,9 @@ func install(cmd *command, p *naos.Project) {
 	err = p.InstallIDF(cmd.oForce, getOutput(cmd))
 	exitIfSet(err)
 
-	// TODO: Ensure IDF components.
-	// - esp-mqtt
-
-	// TODO: Ensure IDF files.
-	// - main directory
-	// - sdkconfig
-	// - Makefile
+	// ensure build tree
+	err = p.InstallBuildTree(cmd.oForce, getOutput(cmd))
+	exitIfSet(err)
 }
 
 func build(cmd *command, p *naos.Project) {
