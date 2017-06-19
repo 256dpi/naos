@@ -130,6 +130,26 @@ func (p *Project) InstallToolchain(force bool) error {
 	return nil
 }
 
+// ToolchainLocation returns the location of the toolchain if it exists or an
+// empty string if it does not exist.
+func (p *Project) ToolchainLocation() (string, error) {
+	// calculate directory
+	dir := filepath.Join(p.Location, HiddenDirectory, "xtensa-esp32-elf")
+
+	// check if toolchain directory exists
+	ok, err := exists(dir)
+	if err != nil {
+		return "", err
+	}
+
+	// return empty string if not existing
+	if !ok {
+		return "", nil
+	}
+
+	return dir, nil
+}
+
 func getToolchainURL() (string, error) {
 	switch runtime.GOOS {
 	case "darwin":
