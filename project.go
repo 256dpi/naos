@@ -133,13 +133,13 @@ func (p *Project) SetupToolchain(force bool, out io.Writer) error {
 
 	// return immediately if already exists and not forced
 	if ok && !force {
-		log(out, fmt.Sprintln("Skipping toolchain as it already exists"))
+		log(out, "Skipping toolchain as it already exists.")
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
-		log(out, fmt.Sprintln("Removing existing toolchain (force=true)"))
+		log(out, "Removing existing toolchain (force=true).")
 		err = os.RemoveAll(toolchainDir)
 		if err != nil {
 			return err
@@ -156,14 +156,14 @@ func (p *Project) SetupToolchain(force bool, out io.Writer) error {
 	defer tmp.Close()
 
 	// download toolchain
-	log(out, fmt.Sprintf("Downloading toolchain from '%s'...\n", url))
+	log(out, fmt.Sprintf("Downloading toolchain from '%s'...", url))
 	err = download(tmp.Name(), url)
 	if err != nil {
 		return err
 	}
 
 	// unpack toolchain
-	log(out, fmt.Sprintf("Unpacking toolchain to '%s'...\n", p.HiddenDirectory()))
+	log(out, fmt.Sprintf("Unpacking toolchain to '%s'...", p.HiddenDirectory()))
 	err = archiver.TarGz.Open(tmp.Name(), p.HiddenDirectory())
 	if err != nil {
 		return err
@@ -213,13 +213,13 @@ func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 
 	// return immediately if already exists and not forced
 	if ok && !force {
-		log(out, fmt.Sprintln("Skipping development framework as it already exists"))
+		log(out, "Skipping development framework as it already exists.")
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
-		log(out, fmt.Sprintln("Removing existing development framework (force=true)"))
+		log(out, "Removing existing development framework (force=true).")
 		err = os.RemoveAll(frameworkDir)
 		if err != nil {
 			return err
@@ -267,13 +267,13 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 
 	// return immediately if already exists and no forced
 	if ok && !force {
-		log(out, fmt.Sprintln("Skipping build tree as it already exists"))
+		log(out, "Skipping build tree as it already exists.")
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
-		log(out, fmt.Sprintln("Removing existing build tree (force=true)"))
+		log(out, "Removing existing build tree (force=true).")
 		err = os.RemoveAll(buildTreeDir)
 		if err != nil {
 			return err
@@ -281,49 +281,49 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	}
 
 	// adding directory
-	log(out, fmt.Sprintf("Adding build tree directory to '%s'\n", buildTreeDir))
+	log(out, fmt.Sprintf("Adding build tree directory to '%s'.", buildTreeDir))
 	err = os.MkdirAll(buildTreeDir, 0777)
 	if err != nil {
 		return err
 	}
 
 	// adding sdk config file
-	log(out, fmt.Sprintf("Adding 'sdkconfig' to '%s'\n", buildTreeDir))
+	log(out, fmt.Sprintf("Adding 'sdkconfig' to '%s'.", buildTreeDir))
 	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "sdkconfig"), []byte(sdkconfigFile), 0644)
 	if err != nil {
 		return err
 	}
 
 	// adding makefile
-	log(out, fmt.Sprintf("Adding 'Makefile' to '%s'\n", buildTreeDir))
+	log(out, fmt.Sprintf("Adding 'Makefile' to '%s'.", buildTreeDir))
 	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "Makefile"), []byte(makeFile), 0644)
 	if err != nil {
 		return err
 	}
 
 	// adding main directory
-	log(out, fmt.Sprintf("Adding 'main' directory to '%s'\n", buildTreeDir))
+	log(out, fmt.Sprintf("Adding 'main' directory to '%s'.", buildTreeDir))
 	err = os.MkdirAll(filepath.Join(buildTreeDir, "main"), 0777)
 	if err != nil {
 		return err
 	}
 
 	// adding component.mk
-	log(out, fmt.Sprintf("Adding 'main/component.mk' to '%s'\n", buildTreeDir))
+	log(out, fmt.Sprintf("Adding 'main/component.mk' to '%s'.", buildTreeDir))
 	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "main", "component.mk"), []byte(componentFile), 0644)
 	if err != nil {
 		return err
 	}
 
 	// linking src
-	log(out, fmt.Sprintln("Linking 'src' directory"))
+	log(out, "Linking 'src' directory.")
 	err = os.Symlink(filepath.Join(p.Location, "src"), filepath.Join(buildTreeDir, "main", "src"))
 	if err != nil {
 		return err
 	}
 
 	// adding components directory
-	log(out, fmt.Sprintf("Adding 'components' directory to '%s'\n", buildTreeDir))
+	log(out, fmt.Sprintf("Adding 'components' directory to '%s'.", buildTreeDir))
 	err = os.MkdirAll(filepath.Join(buildTreeDir, "components"), 0777)
 	if err != nil {
 		return err
@@ -449,6 +449,7 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 
 	// erase attached device if requested
 	if erase {
+		log(out, "Erasing flash...")
 		err := p.exec(out, nil, "python", eraseFlash...)
 		if err != nil {
 			return err
@@ -457,6 +458,7 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 
 	// flash attached device (app only)
 	if appOnly {
+		log(out, "Flashing device (app only)...")
 		err := p.exec(out, nil, "python", flashApp...)
 		if err != nil {
 			return err
@@ -466,6 +468,7 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 	}
 
 	// flash attached device
+	log(out, "Flashing device...")
 	err = p.exec(out, nil, "python", flashAll...)
 	if err != nil {
 		return err

@@ -98,6 +98,6 @@ func clone(repo, path, commit string, out io.Writer) error {
 
 func log(out io.Writer, msg string) {
 	if out != nil {
-		fmt.Fprint(out, msg)
+		fmt.Fprintf(out, "==> %s\n", msg)
 	}
 }
