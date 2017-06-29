@@ -6,6 +6,8 @@ import (
 	"github.com/docopt/docopt-go"
 )
 
+// TODO: Support specifying device file for flash and attach.
+
 var usage = `naos - the networked artifacts operating system
 
 Usage:
