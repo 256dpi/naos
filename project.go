@@ -61,7 +61,7 @@ func CreateProject(path string) (*Project, error) {
 
 	// create main source file if it not already exists
 	if !ok {
-		err = ioutil.WriteFile(mainSourcePath, []byte(MainSourceFileContent), 0644)
+		err = ioutil.WriteFile(mainSourcePath, []byte(mainSourceFile), 0644)
 		if err != nil {
 			return nil, err
 		}
@@ -288,14 +288,14 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 
 	// adding sdk config file
 	log(out, fmt.Sprintf("Adding 'sdkconfig' to '%s'\n", buildTreeDir))
-	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "sdkconfig"), []byte(SdkconfigContent), 0644)
+	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "sdkconfig"), []byte(sdkconfigFile), 0644)
 	if err != nil {
 		return err
 	}
 
 	// adding makefile
 	log(out, fmt.Sprintf("Adding 'Makefile' to '%s'\n", buildTreeDir))
-	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "Makefile"), []byte(MakefileContent), 0644)
+	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "Makefile"), []byte(makeFile), 0644)
 	if err != nil {
 		return err
 	}
@@ -309,7 +309,7 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 
 	// adding component.mk
 	log(out, fmt.Sprintf("Adding 'main/component.mk' to '%s'\n", buildTreeDir))
-	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "main", "component.mk"), []byte(MainComponentMkContent), 0644)
+	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "main", "component.mk"), []byte(componentFile), 0644)
 	if err != nil {
 		return err
 	}
@@ -335,7 +335,7 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	}
 
 	// clone component
-	err = clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(buildTreeDir, "components", "naos-esp"), NAOSESPVersion, out)
+	err = clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(buildTreeDir, "components", "naos-esp"), ESPLibVersion, out)
 	if err != nil {
 		return err
 	}
