@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/shiftr-io/naos"
@@ -27,9 +28,17 @@ func home() string {
 	return wd
 }
 
-func getProject(_ *command) *naos.Project {
+func getProject(cmd *command) *naos.Project {
 	p, err := naos.FindProject(home())
 	exitIfSet(err)
 
 	return p
+}
+
+func getOutput(cmd *command) io.Writer {
+	if cmd.oVerbose {
+		return os.Stdout
+	}
+
+	return nil
 }
