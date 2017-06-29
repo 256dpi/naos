@@ -77,13 +77,13 @@ func setup(cmd *command, p *naos.Project) {
 
 func build(cmd *command, p *naos.Project) {
 	// build project
-	err := p.Build(getOutput(cmd))
+	err := p.Build(cmd.oAppOnly, getOutput(cmd))
 	exitIfSet(err)
 }
 
 func flash(cmd *command, p *naos.Project) {
 	// flash project
-	err := p.Flash(cmd.oErase, getOutput(cmd))
+	err := p.Flash(cmd.oErase, cmd.oAppOnly, getOutput(cmd))
 	exitIfSet(err)
 }
 

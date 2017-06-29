@@ -11,8 +11,8 @@ var usage = `naos - the networked artifacts operating system
 Usage:
   naos create
   naos setup [--force --verbose]
-  naos build [--verbose]
-  naos flash [--erase --verbose]
+  naos build [--verbose --app-only]
+  naos flash [--erase --app-only --verbose]
   naos attach
   naos list
   naos collect [--clear --duration=<ms>]
@@ -25,6 +25,7 @@ Usage:
 Options:
   -f --force          Force a re-installation of components when they exist.
   -e --erase          Erase completely before flashing new image.
+  -a --app-only       If set only the app will be built or flashed.
   -d --duration=<ms>  The collection duration [default: 1s].
   -t --timeout=<ms>   The response timeout [default: 5s].
   -c --clear          Remove not available devices from inventory.
@@ -57,6 +58,7 @@ type command struct {
 	// options
 	oForce    bool
 	oErase    bool
+	oAppOnly  bool
 	oDuration time.Duration
 	oTimeout  time.Duration
 	oClear    bool
@@ -92,6 +94,7 @@ func parseCommand() *command {
 		// options
 		oForce:    getBool(a["--force"]),
 		oErase:    getBool(a["--erase"]),
+		oAppOnly:  getBool(a["--app-only"]),
 		oDuration: getDuration(a["--duration"]),
 		oTimeout:  getDuration(a["--timeout"]),
 		oClear:    getBool(a["--clear"]),

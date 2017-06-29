@@ -361,18 +361,44 @@ func (p *Project) BuildTreeLocation() (string, error) {
 }
 
 // Build will build the project.
-func (p *Project) Build(out io.Writer) error {
-	return p.exec(out, "make", "all")
-}
-
-// Flash will flash the project to the attached device.
-func (p *Project) Flash(erase bool, out io.Writer) error {
-	// erase attached device if requested
-	if erase {
-		err := p.exec(out, "make", "erase_flash")
+func (p *Project) Build(appOnly bool, out io.Writer) error {
+	// build project (app only)
+	if appOnly {
+		err := p.exec(out, "make", "app")
 		if err != nil {
 			return err
 		}
+
+		return nil
+	}
+
+	// build project
+	err := p.exec(out, "make", "all")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Flash will flash the project to the attached device.
+func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
+	// erase attached device if requested
+	if erase {
+		err := p.exec(out, "make", "app-flash")
+		if err != nil {
+			return err
+		}
+	}
+
+	// flash attached device (app only)
+	if appOnly {
+		err := p.exec(out, "make", "app-flash")
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	// flash attached device
