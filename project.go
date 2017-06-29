@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/kr/pty"
 	"github.com/mholt/archiver"
 )
 
@@ -364,7 +365,7 @@ func (p *Project) BuildTreeLocation() (string, error) {
 func (p *Project) Build(appOnly bool, out io.Writer) error {
 	// build project (app only)
 	if appOnly {
-		err := p.exec(out, "make", "app")
+		err := p.exec(out, nil, "make", "app")
 		if err != nil {
 			return err
 		}
@@ -373,7 +374,7 @@ func (p *Project) Build(appOnly bool, out io.Writer) error {
 	}
 
 	// build project
-	err := p.exec(out, "make", "all")
+	err := p.exec(out, nil, "make", "all")
 	if err != nil {
 		return err
 	}
@@ -385,7 +386,7 @@ func (p *Project) Build(appOnly bool, out io.Writer) error {
 func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 	// erase attached device if requested
 	if erase {
-		err := p.exec(out, "make", "app-flash")
+		err := p.exec(out, nil, "make", "app-flash")
 		if err != nil {
 			return err
 		}
@@ -393,7 +394,7 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 
 	// flash attached device (app only)
 	if appOnly {
-		err := p.exec(out, "make", "app-flash")
+		err := p.exec(out, nil, "make", "app-flash")
 		if err != nil {
 			return err
 		}
@@ -402,7 +403,7 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 	}
 
 	// flash attached device
-	err := p.exec(out, "make", "flash")
+	err := p.exec(out, nil, "make", "flash")
 	if err != nil {
 		return err
 	}
@@ -410,7 +411,60 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 	return nil
 }
 
-func (p *Project) exec(out io.Writer, name string, arg ...string) error {
+// Attach will attach to the attached device.
+func (p *Project) Attach(out io.Writer, in io.Reader) error {
+	// get toolchain location
+	toolchain, err := p.ToolchainLocation()
+	if err != nil {
+		return err
+	}
+
+	// get build tree location
+	buildTree, err := p.BuildTreeLocation()
+	if err != nil {
+		return err
+	}
+
+	// construct command
+	cmd := exec.Command("make", "simple_monitor")
+
+	// set working directory
+	cmd.Dir = buildTree
+
+	// connect output and inputs
+	cmd.Stdout = out
+	cmd.Stderr = out
+	cmd.Stdin = in
+
+	// inherit current environment
+	cmd.Env = os.Environ()
+
+	// go through all env variables
+	for i, str := range cmd.Env {
+		if strings.HasPrefix(str, "PATH=") {
+			// prepend toolchain bin directory
+			cmd.Env[i] = "PATH=" + filepath.Join(toolchain, "bin") + ":" + os.Getenv("PATH")
+		} else if strings.HasPrefix(str, "PWD=") {
+			// override shell working directory
+			cmd.Env[i] = "PWD=" + buildTree
+		}
+	}
+
+	// start process and get tty
+	tty, err := pty.Start(cmd)
+	if err != nil {
+		return err
+	}
+
+	// read and write data until EOF
+	go io.Copy(os.Stdin, tty)
+	io.Copy(os.Stdout, tty)
+	tty.Close()
+
+	return nil
+}
+
+func (p *Project) exec(out io.Writer, in io.Reader, name string, arg ...string) error {
 	// get toolchain location
 	toolchain, err := p.ToolchainLocation()
 	if err != nil {
@@ -429,6 +483,11 @@ func (p *Project) exec(out io.Writer, name string, arg ...string) error {
 	// set working directory
 	cmd.Dir = buildTree
 
+	// connect output and inputs
+	cmd.Stdout = out
+	cmd.Stderr = out
+	cmd.Stdin = in
+
 	// inherit current environment
 	cmd.Env = os.Environ()
 
@@ -443,13 +502,7 @@ func (p *Project) exec(out io.Writer, name string, arg ...string) error {
 		}
 	}
 
-	// connect output if provided
-	if out != nil {
-		cmd.Stdout = out
-		cmd.Stderr = out
-	}
-
-	// build project
+	// run command
 	err = cmd.Run()
 	if err != nil {
 		return err

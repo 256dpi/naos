@@ -1,12 +1,8 @@
-hash: 919b7c29fa5fc06bd632ad29dca128043a72dfd3e45e7f7a9beb5c7694571206
-updated: 2017-06-18T02:56:02.055473335+02:00
+hash: 2d46836e9f8d9d336423583dd3ab73ffdf614fe4cf4b5e3ac18690bf4663d682
+updated: 2017-06-29T15:16:58.101373799+02:00
 imports:
 - name: code.cloudfoundry.org/bytefmt
   version: f4415fafc5619dd75599a54a7c91fb3948ad58bd
-- name: github.com/davecgh/go-spew
-  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
-  subpackages:
-  - spew
 - name: github.com/docopt/docopt-go
   version: 784ddc588536785e7299f7272f39101f7faccc3f
 - name: github.com/dsnet/compress
@@ -24,15 +20,17 @@ imports:
 - name: github.com/gomqtt/packet
   version: 8dfc4ffe91f1d702227e7ecde40aba55d654aefe
 - name: github.com/gomqtt/tools
-  version: 7e24ab8320def0d7e73acd3745a4a8f430399c9a
+  version: 682e794cd4d0f7213bc7825d57e9a930f64b5426
 - name: github.com/gomqtt/transport
   version: 3d19f772517f2f4148332238c11db03ad2d93ad7
 - name: github.com/gorilla/websocket
   version: 3ab3a8b8831546bd18fd182c20687ca853b2bb13
 - name: github.com/jpillora/backoff
   version: 06c7a16c845dc8e0bf575fafeeca0f5462f5eb4d
+- name: github.com/kr/pty
+  version: 2c10821df3c3cf905230d078702dfbe9404c9b23
 - name: github.com/mholt/archiver
-  version: 8056d511471250e54a2aac38f21de091e1a8dc32
+  version: 3c9755ff45e1df13e5331d936c3ffab88233dccd
 - name: github.com/nwaples/rardecode
   version: f22b7ef81a0afac9ce1447d37e5ab8e99fbd2f73
 - name: github.com/pierrec/lz4
@@ -41,16 +39,8 @@ imports:
   version: 5a004441f897722c627870a981d02b29924215fa
   subpackages:
   - xxHash32
-- name: github.com/pmezard/go-difflib
-  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
-  subpackages:
-  - difflib
 - name: github.com/ryanuber/go-glob
   version: 256dc444b735e061061cf46c809487313d5b0065
-- name: github.com/stretchr/testify
-  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
-  subpackages:
-  - assert
 - name: github.com/ulikunitz/xz
   version: 0c6b41e72360850ca4f98dc341fd999726ea007f
   subpackages:

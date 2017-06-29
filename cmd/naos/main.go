@@ -87,11 +87,13 @@ func flash(cmd *command, p *naos.Project) {
 	exitIfSet(err)
 }
 
-func attach(cmd *command, p *naos.Project) {
-	// TODO: Run serial tool from esp tools.
+func attach(_ *command, p *naos.Project) {
+	// attach to device
+	err := p.Attach(os.Stdout, os.Stdin)
+	exitIfSet(err)
 }
 
-func list(cmd *command, p *naos.Project) {
+func list(_ *command, p *naos.Project) {
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "BASE TOPIC")
 
 	for _, d := range p.Inventory.Devices {
@@ -223,7 +225,7 @@ func update(cmd *command, p *naos.Project) {
 	save(cmd, p)
 }
 
-func save(cmd *command, p *naos.Project) {
+func save(_ *command, p *naos.Project) {
 	err := p.SaveInventory()
 	exitIfSet(err)
 }
