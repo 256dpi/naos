@@ -82,7 +82,6 @@ func build(cmd *command, p *naos.Project) {
 }
 
 func flash(cmd *command, p *naos.Project) {
-	// TODO: Run build.
 	// TODO: Upload using the esp-idf tools.
 }
 
