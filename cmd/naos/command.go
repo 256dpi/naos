@@ -12,7 +12,7 @@ Usage:
   naos create
   naos setup [--force --verbose]
   naos build [--verbose]
-  naos flash [--erase]
+  naos flash [--erase --verbose]
   naos attach
   naos list
   naos collect [--clear --duration=<ms>]

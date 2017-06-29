@@ -82,7 +82,9 @@ func build(cmd *command, p *naos.Project) {
 }
 
 func flash(cmd *command, p *naos.Project) {
-	// TODO: Upload using the esp-idf tools.
+	// flash project
+	err := p.Flash(cmd.oErase, getOutput(cmd))
+	exitIfSet(err)
 }
 
 func attach(cmd *command, p *naos.Project) {

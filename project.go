@@ -362,6 +362,29 @@ func (p *Project) BuildTreeLocation() (string, error) {
 
 // Build will build the project.
 func (p *Project) Build(out io.Writer) error {
+	return p.exec(out, "make", "all")
+}
+
+// Flash will flash the project to the attached device.
+func (p *Project) Flash(erase bool, out io.Writer) error {
+	// erase attached device if requested
+	if erase {
+		err := p.exec(out, "make", "erase_flash")
+		if err != nil {
+			return err
+		}
+	}
+
+	// flash attached device
+	err := p.exec(out, "make", "flash")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Project) exec(out io.Writer, name string, arg ...string) error {
 	// get toolchain location
 	toolchain, err := p.ToolchainLocation()
 	if err != nil {
@@ -374,8 +397,8 @@ func (p *Project) Build(out io.Writer) error {
 		return err
 	}
 
-	// construct build command
-	cmd := exec.Command("make")
+	// construct command
+	cmd := exec.Command(name, arg...)
 
 	// set working directory
 	cmd.Dir = buildTree
