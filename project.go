@@ -402,6 +402,17 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 	projectBinary := filepath.Join(buildTree, "build", "naos-project.bin")
 	partitionsBinary := filepath.Join(buildTree, "build", "partitions_two_ota.bin")
 
+	// prepare erase flash command
+	eraseFlash := []string{
+		espTool,
+		"--chip", "esp32",
+		"--port", "/dev/cu.SLAB_USBtoUART",
+		"--baud", "921600",
+		"--before", "default_reset",
+		"--after", "hard_reset",
+		"erase_flash",
+	}
+
 	// prepare flash all command
 	flashAll := []string{
 		espTool,
@@ -438,7 +449,7 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 
 	// erase attached device if requested
 	if erase {
-		err := p.exec(out, nil, "make", "erase_flash")
+		err := p.exec(out, nil, "python", eraseFlash...)
 		if err != nil {
 			return err
 		}
