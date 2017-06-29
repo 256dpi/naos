@@ -31,6 +31,7 @@ type Inventory struct {
 // NewInventory creates a new Inventory.
 func NewInventory() *Inventory {
 	return &Inventory{
+		Broker:  "mqtts://key:secret@broker.shiftr.io",
 		Devices: make(map[string]*Device),
 	}
 }

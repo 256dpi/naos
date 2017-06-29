@@ -2,7 +2,6 @@ package naos
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -27,8 +26,9 @@ type Project struct {
 	Inventory *Inventory
 }
 
-// CreateProject will initialize a project in the specified directory.
-func CreateProject(path string) (*Project, error) {
+// CreateProject will initialize a project in the specified directory. If out is
+// not nil, it will be used to log information about the process.
+func CreateProject(path string, out io.Writer) (*Project, error) {
 	// ensure project directory
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
@@ -47,7 +47,12 @@ func CreateProject(path string) (*Project, error) {
 		return nil, err
 	}
 
+	// print info
+	log(out, "Created new empty inventory.")
+	log(out, "Please update the settings to suit your needs.")
+
 	// ensure source directory
+	log(out, "Preparing 'src' directory.")
 	err = os.MkdirAll(filepath.Join(path, "src"), 0755)
 	if err != nil {
 		return nil, err
@@ -62,6 +67,7 @@ func CreateProject(path string) (*Project, error) {
 
 	// create main source file if it not already exists
 	if !ok {
+		log(out, "Creating default 'src/main.c' source file.")
 		err = ioutil.WriteFile(mainSourcePath, []byte(mainSourceFile), 0644)
 		if err != nil {
 			return nil, err
@@ -156,14 +162,14 @@ func (p *Project) SetupToolchain(force bool, out io.Writer) error {
 	defer tmp.Close()
 
 	// download toolchain
-	log(out, fmt.Sprintf("Downloading toolchain from '%s'...", url))
+	log(out, "Downloading toolchain...")
 	err = download(tmp.Name(), url)
 	if err != nil {
 		return err
 	}
 
 	// unpack toolchain
-	log(out, fmt.Sprintf("Unpacking toolchain to '%s'...", p.HiddenDirectory()))
+	log(out, "Unpacking toolchain...")
 	err = archiver.TarGz.Open(tmp.Name(), p.HiddenDirectory())
 	if err != nil {
 		return err
@@ -227,6 +233,7 @@ func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 	}
 
 	// clone development framework
+	log(out, "Installing development framework...")
 	err = clone("https://github.com/espressif/esp-idf.git", frameworkDir, ESPIDFVersion, out)
 	if err != nil {
 		return err
@@ -281,35 +288,35 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	}
 
 	// adding directory
-	log(out, fmt.Sprintf("Adding build tree directory to '%s'.", buildTreeDir))
+	log(out, "Adding build tree directory.")
 	err = os.MkdirAll(buildTreeDir, 0777)
 	if err != nil {
 		return err
 	}
 
 	// adding sdk config file
-	log(out, fmt.Sprintf("Adding 'sdkconfig' to '%s'.", buildTreeDir))
+	log(out, "Adding 'sdkconfig'.")
 	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "sdkconfig"), []byte(sdkconfigFile), 0644)
 	if err != nil {
 		return err
 	}
 
 	// adding makefile
-	log(out, fmt.Sprintf("Adding 'Makefile' to '%s'.", buildTreeDir))
+	log(out, "Adding 'Makefile'.")
 	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "Makefile"), []byte(makeFile), 0644)
 	if err != nil {
 		return err
 	}
 
 	// adding main directory
-	log(out, fmt.Sprintf("Adding 'main' directory to '%s'.", buildTreeDir))
+	log(out, "Adding 'main' directory.")
 	err = os.MkdirAll(filepath.Join(buildTreeDir, "main"), 0777)
 	if err != nil {
 		return err
 	}
 
 	// adding component.mk
-	log(out, fmt.Sprintf("Adding 'main/component.mk' to '%s'.", buildTreeDir))
+	log(out, "Adding 'main/component.mk'.")
 	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "main", "component.mk"), []byte(componentFile), 0644)
 	if err != nil {
 		return err
@@ -323,19 +330,21 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	}
 
 	// adding components directory
-	log(out, fmt.Sprintf("Adding 'components' directory to '%s'.", buildTreeDir))
+	log(out, "Adding 'components' directory.")
 	err = os.MkdirAll(filepath.Join(buildTreeDir, "components"), 0777)
 	if err != nil {
 		return err
 	}
 
 	// clone component
+	log(out, "Installing 'esp-mqtt' component...")
 	err = clone("https://github.com/256dpi/esp-mqtt.git", filepath.Join(buildTreeDir, "components", "esp-mqtt"), ESPMQTTVersion, out)
 	if err != nil {
 		return err
 	}
 
 	// clone component
+	log(out, "Installing 'naos-esp' component...")
 	err = clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(buildTreeDir, "components", "naos-esp"), ESPLibVersion, out)
 	if err != nil {
 		return err
@@ -365,6 +374,7 @@ func (p *Project) BuildTreeLocation() (string, error) {
 func (p *Project) Build(appOnly bool, out io.Writer) error {
 	// build project (app only)
 	if appOnly {
+		log(out, "Building project (app only)...")
 		err := p.exec(out, nil, "make", "app")
 		if err != nil {
 			return err
@@ -374,6 +384,7 @@ func (p *Project) Build(appOnly bool, out io.Writer) error {
 	}
 
 	// build project
+	log(out, "Building project...")
 	err := p.exec(out, nil, "make", "all")
 	if err != nil {
 		return err

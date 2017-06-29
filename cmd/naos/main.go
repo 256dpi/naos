@@ -48,16 +48,10 @@ func main() {
 
 func create(cmd *command) {
 	// create project
-	p, err := naos.CreateProject(home())
+	p, err := naos.CreateProject(home(), getOutput(cmd))
 	exitIfSet(err)
 
-	// set broker url
-	p.Inventory.Broker = "mqtts://key:secret@broker.shiftr.io"
-
-	fmt.Printf("Created a new project at '%s'.\n", p.Location)
-
-	fmt.Println("Please add your MQTT broker credentials to proceed.")
-
+	// save inventory
 	save(cmd, p)
 }
 
@@ -119,6 +113,7 @@ func collect(cmd *command, p *naos.Project) {
 
 	tbl.print()
 
+	// save inventory
 	save(cmd, p)
 }
 
@@ -134,6 +129,7 @@ func set(cmd *command, p *naos.Project) {
 
 	tbl.print()
 
+	// save inventory
 	save(cmd, p)
 }
 
@@ -149,6 +145,7 @@ func get(cmd *command, p *naos.Project) {
 
 	tbl.print()
 
+	// save inventory
 	save(cmd, p)
 }
 
@@ -222,6 +219,7 @@ func update(cmd *command, p *naos.Project) {
 		tbl.print()
 	})
 
+	// save inventory
 	save(cmd, p)
 }
 
