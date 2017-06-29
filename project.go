@@ -28,13 +28,13 @@ type Project struct {
 
 // CreateProject will initialize a project in the specified directory.
 func CreateProject(path string) (*Project, error) {
-	// ensure p directory
+	// ensure project directory
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
 		return nil, err
 	}
 
-	// create p
+	// create project
 	p := &Project{
 		Location:  path,
 		Inventory: NewInventory(),
@@ -46,7 +46,12 @@ func CreateProject(path string) (*Project, error) {
 		return nil, err
 	}
 
-	// TODO: Ensure ./src directory.
+	// ensure source directory
+	err = os.MkdirAll(filepath.Join(path, "src"), 0755)
+	if err != nil {
+		return nil, err
+	}
+
 	// TODO: Add basic ./src/main.c file.
 
 	return p, nil
