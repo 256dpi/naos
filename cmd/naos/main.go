@@ -94,7 +94,7 @@ func list(_ *command, p *naos.Project) {
 	}
 
 	// show table
-	tbl.show()
+	tbl.show(0)
 }
 
 func collect(cmd *command, p *naos.Project) {
@@ -116,7 +116,7 @@ func collect(cmd *command, p *naos.Project) {
 	}
 
 	// show table
-	tbl.show()
+	tbl.show(0)
 
 	// save inventory
 	save(cmd, p)
@@ -136,7 +136,7 @@ func set(cmd *command, p *naos.Project) {
 	}
 
 	// show table
-	tbl.show()
+	tbl.show(0)
 
 	// save inventory
 	save(cmd, p)
@@ -156,7 +156,7 @@ func get(cmd *command, p *naos.Project) {
 	}
 
 	// show table
-	tbl.show()
+	tbl.show(0)
 
 	// save inventory
 	save(cmd, p)
@@ -190,7 +190,7 @@ func monitor(cmd *command, p *naos.Project) {
 		}
 
 		// show table
-		tbl.show()
+		tbl.show(0)
 	}))
 }
 
@@ -245,7 +245,7 @@ func update(cmd *command, p *naos.Project) {
 		}
 
 		// show table
-		tbl.show()
+		tbl.show(0)
 	})
 
 	// save inventory

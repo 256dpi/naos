@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"sort"
+	"strings"
 )
 
 type table struct {
@@ -50,9 +52,14 @@ func (t *table) string() string {
 	return buf.String()
 }
 
-// TODO: Sort table.
+func (t *table) show(sortColumn int) {
+	// sort table using a column if gte zero
+	if sortColumn >= 0 {
+		sort.Slice(t.data, func(i, j int) bool {
+			return t.data[i][sortColumn] < t.data[j][sortColumn]
+		})
+	}
 
-func (t *table) show() {
 	// show table
 	fmt.Print(t.string())
 
