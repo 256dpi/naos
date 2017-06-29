@@ -332,3 +332,15 @@ include $(IDF_PATH)/make/project.mk
 // MainComponentMkContent holds the default content of the 'main/component.mk' file.
 const MainComponentMkContent = `COMPONENT_SRCDIRS := ./src
 `
+
+// MainSourceFileContent holds the content of the `src/main.c' file.
+const MainSourceFileContent = `#include <naos.h>
+
+static naos_config_t config = {.device_type = "my-device",
+                               .firmware_version = "0.0.1"};
+
+void app_main() {
+  // initialize naos
+  naos_init(&config);
+}
+`

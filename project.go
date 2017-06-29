@@ -52,7 +52,20 @@ func CreateProject(path string) (*Project, error) {
 		return nil, err
 	}
 
-	// TODO: Add basic ./src/main.c file.
+	// prepare main source path and check if it already exists
+	mainSourcePath := filepath.Join(path, "src", "main.c")
+	ok, err := exists(mainSourcePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// create main source file if it not already exists
+	if !ok {
+		err = ioutil.WriteFile(mainSourcePath, []byte(MainSourceFileContent), 0644)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return p, nil
 }
