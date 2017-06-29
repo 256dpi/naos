@@ -384,9 +384,61 @@ func (p *Project) Build(appOnly bool, out io.Writer) error {
 
 // Flash will flash the project to the attached device.
 func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
+	// get hidden directory
+	developmentFramework, err := p.DevelopmentFrameworkLocation()
+	if err != nil {
+		return err
+	}
+
+	// get build tree location
+	buildTree, err := p.BuildTreeLocation()
+	if err != nil {
+		return err
+	}
+
+	// calculate paths
+	espTool := filepath.Join(developmentFramework, "components", "esptool_py", "esptool", "esptool.py")
+	bootLoaderBinary := filepath.Join(buildTree, "build", "bootloader", "bootloader.bin")
+	projectBinary := filepath.Join(buildTree, "build", "naos-project.bin")
+	partitionsBinary := filepath.Join(buildTree, "build", "partitions_two_ota.bin")
+
+	// prepare flash all command
+	flashAll := []string{
+		espTool,
+		"--chip", "esp32",
+		"--port", "/dev/cu.SLAB_USBtoUART",
+		"--baud", "921600",
+		"--before", "default_reset",
+		"--after", "hard_reset",
+		"write_flash",
+		"-z",
+		"--flash_mode", "dio",
+		"--flash_freq", "40m",
+		"--flash_size", "detect",
+		"0x1000", bootLoaderBinary,
+		"0x10000", projectBinary,
+		"0x8000", partitionsBinary,
+	}
+
+	// prepare flash app command
+	flashApp := []string{
+		espTool,
+		"--chip", "esp32",
+		"--port", "/dev/cu.SLAB_USBtoUART",
+		"--baud", "921600",
+		"--before", "default_reset",
+		"--after", "hard_reset",
+		"write_flash",
+		"-z",
+		"--flash_mode", "dio",
+		"--flash_freq", "40m",
+		"--flash_size", "detect",
+		"0x10000", projectBinary,
+	}
+
 	// erase attached device if requested
 	if erase {
-		err := p.exec(out, nil, "make", "app-flash")
+		err := p.exec(out, nil, "make", "erase_flash")
 		if err != nil {
 			return err
 		}
@@ -394,7 +446,7 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 
 	// flash attached device (app only)
 	if appOnly {
-		err := p.exec(out, nil, "make", "app-flash")
+		err := p.exec(out, nil, "python", flashApp...)
 		if err != nil {
 			return err
 		}
@@ -403,7 +455,7 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 	}
 
 	// flash attached device
-	err := p.exec(out, nil, "make", "flash")
+	err = p.exec(out, nil, "python", flashAll...)
 	if err != nil {
 		return err
 	}
