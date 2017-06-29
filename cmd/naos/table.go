@@ -50,8 +50,10 @@ func (t *table) string() string {
 	return buf.String()
 }
 
-func (t *table) print() {
-	// print table
+// TODO: Sort table.
+
+func (t *table) show() {
+	// show table
 	fmt.Print(t.string())
 
 	// save written lines
