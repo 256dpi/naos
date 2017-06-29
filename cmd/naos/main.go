@@ -12,6 +12,8 @@ import (
 	"github.com/shiftr-io/naos"
 )
 
+// TODO: Buffer output if not verbose and print on error.
+
 func main() {
 	// parse command
 	cmd := parseCommand()
