@@ -152,7 +152,7 @@ func (p *Project) SetupToolchain(force bool, out io.Writer) error {
 
 	// remove existing directory if existing
 	if ok {
-		log(out, "Removing existing toolchain (force=true).")
+		log(out, "Removing existing toolchain (forced).")
 		err = os.RemoveAll(toolchainDir)
 		if err != nil {
 			return err
@@ -215,7 +215,7 @@ func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 
 	// remove existing directory if existing
 	if ok {
-		log(out, "Removing existing development framework (force=true).")
+		log(out, "Removing existing development framework (forced).")
 		err = os.RemoveAll(frameworkDir)
 		if err != nil {
 			return err
@@ -253,7 +253,7 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 
 	// remove existing directory if existing
 	if ok {
-		log(out, "Removing existing build tree (force=true).")
+		log(out, "Removing existing build tree (forced).")
 		err = os.RemoveAll(buildTreeDir)
 		if err != nil {
 			return err
