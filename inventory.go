@@ -15,10 +15,7 @@ type Device struct {
 	FirmwareVersion string            `json:"firmware_version"`
 	BaseTopic       string            `json:"base_topic"`
 	Parameters      map[string]string `json:"parameters"`
-	UpdateStatus    *UpdateStatus     `json:"-"`
 }
-
-// TODO: Remove UpdateStatus reference?
 
 // A Inventory represents the contents of the inventory file.
 type Inventory struct {
@@ -219,7 +216,7 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*D
 // Update will update the devices that match the supplied glob pattern to the
 // specified image. The specified callback is called for every change in state
 // or progress.
-func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device)) {
+func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device, *UpdateStatus)) {
 	Update(i.Broker, i.deviceBaseTopics(pattern), firmware, timeout, func(baseTopic string, status *UpdateStatus) {
 		// get device
 		device := i.deviceByBaseTopic(baseTopic)
@@ -227,11 +224,8 @@ func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duratio
 			return
 		}
 
-		// set status
-		device.UpdateStatus = status
-
 		// call callback
-		callback(device)
+		callback(device, status)
 	})
 }
 

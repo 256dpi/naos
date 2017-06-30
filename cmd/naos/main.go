@@ -250,23 +250,30 @@ func update(cmd *command, p *naos.Project) {
 	// prepare table
 	tbl := newTable("DEVICE NAME", "PROGRESS", "ERROR")
 
+	// prepare list
+	list := make(map[*naos.Device]*naos.UpdateStatus)
+
 	// update devices
-	p.Inventory.Update(cmd.aPattern, bytes, cmd.oTimeout, func(_ *naos.Device) {
+	p.Inventory.Update(cmd.aPattern, bytes, cmd.oTimeout, func(d *naos.Device, us *naos.UpdateStatus) {
+		// save status
+		list[d] = us
+
 		// clear previously printed table
 		tbl.clear()
 
 		// add rows
-		for _, device := range p.Inventory.Devices {
-			if device.UpdateStatus != nil {
-				errStr := ""
-				if device.UpdateStatus.Error != nil {
-					errStr = device.UpdateStatus.Error.Error()
-				}
-
-				progress := 100.0 / float64(len(bytes)) * float64(device.UpdateStatus.Progress)
-
-				tbl.add(device.Name, strconv.Itoa(int(progress))+"%", errStr)
+		for device, status := range list {
+			// get error string if set
+			errStr := ""
+			if status.Error != nil {
+				errStr = status.Error.Error()
 			}
+
+			// calculate progress
+			progress := 100.0 / float64(len(bytes)) * float64(status.Progress)
+
+			// add row
+			tbl.add(device.Name, strconv.Itoa(int(progress))+"%", errStr)
 		}
 
 		// show table
