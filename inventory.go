@@ -77,7 +77,7 @@ func (i *Inventory) Save(path string) error {
 	}
 
 	// write config
-	err = ioutil.WriteFile(path, data, 0644)
+	err = ioutil.WriteFile(path, append(data, '\n'), 0644)
 	if err != nil {
 		return err
 	}
