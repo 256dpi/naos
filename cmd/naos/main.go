@@ -191,16 +191,20 @@ func monitor(cmd *command, p *naos.Project) {
 	// prepare table
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION")
 
+	// prepare list
+	list := make(map[*naos.Device]*naos.Heartbeat)
+
 	// monitor devices
-	exitIfSet(p.Inventory.Monitor(cmd.aPattern, quit, func(d *naos.Device) {
+	exitIfSet(p.Inventory.Monitor(cmd.aPattern, quit, func(d *naos.Device, hb *naos.Heartbeat) {
+		// set latest heartbeat for device
+		list[d] = hb
+
 		// clear previously printed table
 		tbl.clear()
 
 		// add rows
-		for _, device := range p.Inventory.Devices {
-			if device.LastHeartbeat != nil {
-				tbl.add(device.Name, device.Type, device.FirmwareVersion, bytefmt.ByteSize(uint64(device.LastHeartbeat.FreeHeapSize)), device.LastHeartbeat.UpTime.String(), device.LastHeartbeat.StartPartition)
-			}
+		for device, heartbeat := range list {
+			tbl.add(device.Name, device.Type, device.FirmwareVersion, bytefmt.ByteSize(uint64(heartbeat.FreeHeapSize)), heartbeat.UpTime.String(), heartbeat.StartPartition)
 		}
 
 		// show table

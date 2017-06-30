@@ -15,11 +15,10 @@ type Device struct {
 	FirmwareVersion string            `json:"firmware_version"`
 	BaseTopic       string            `json:"base_topic"`
 	Parameters      map[string]string `json:"parameters"`
-	LastHeartbeat   *Heartbeat        `json:"-"`
 	UpdateStatus    *UpdateStatus     `json:"-"`
 }
 
-// TODO: Remove LastHeartbeat and UpdateStatus references?
+// TODO: Remove UpdateStatus reference?
 
 // A Inventory represents the contents of the inventory file.
 type Inventory struct {
@@ -198,7 +197,7 @@ func (i *Inventory) Record(pattern string, quit chan struct{}, callback func(*De
 // update the inventory accordingly. The specified callback is called for every
 // heartbeat with the update device and the heartbeat available at
 // device.LastHeartbeat.
-func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*Device)) error {
+func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*Device, *Heartbeat)) error {
 	return Monitor(i.Broker, i.deviceBaseTopics(pattern), quit, func(heartbeat *Heartbeat) {
 		// get device
 		device, ok := i.Devices[heartbeat.DeviceName]
@@ -209,11 +208,10 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*D
 		// update fields
 		device.Type = heartbeat.DeviceType
 		device.FirmwareVersion = heartbeat.FirmwareVersion
-		device.LastHeartbeat = heartbeat
 
 		// call user callback
 		if callback != nil {
-			callback(device)
+			callback(device, heartbeat)
 		}
 	})
 }
