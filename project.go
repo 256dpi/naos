@@ -541,6 +541,31 @@ func (p *Project) Attach(out io.Writer, in io.Reader) error {
 	return nil
 }
 
+// Format will format all source files in the project if 'clang-format' is
+// available.
+func (p *Project) Format(out io.Writer) error {
+	// TODO: Print message if binary is missing.
+
+	// get source and header files
+	sourceFiles, headerFiles, err := p.sourceAndHeaderFiles()
+	if err != nil {
+		return err
+	}
+
+	// prepare arguments
+	arguments := []string{"-style", "{BasedOnStyle: Google, ColumnLimit: 120}", "-i"}
+	arguments = append(arguments, sourceFiles...)
+	arguments = append(arguments, headerFiles...)
+
+	// format source files
+	err = p.exec(out, nil, "clang-format", arguments...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (p *Project) exec(out io.Writer, in io.Reader, name string, arg ...string) error {
 	// get toolchain location
 	toolchain, err := p.ToolchainLocation()
@@ -586,4 +611,32 @@ func (p *Project) exec(out io.Writer, in io.Reader, name string, arg ...string) 
 	}
 
 	return nil
+}
+
+func (p *Project) sourceAndHeaderFiles() ([]string, []string, error) {
+	// prepare list
+	sourceFiles := make([]string, 0)
+	headerFiles := make([]string, 0)
+
+	// scan directory
+	err := filepath.Walk(filepath.Join(p.Location, "src"), func(path string, f os.FileInfo, err error) error {
+		// directly return errors
+		if err != nil {
+			return err
+		}
+
+		// add files with matching extension
+		if filepath.Ext(path) == ".c" {
+			sourceFiles = append(sourceFiles, path)
+		} else if filepath.Ext(path) == ".h" {
+			headerFiles = append(headerFiles, path)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return sourceFiles, headerFiles, nil
 }

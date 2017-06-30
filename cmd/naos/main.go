@@ -34,6 +34,8 @@ func main() {
 		flash(cmd, getProject(cmd))
 	} else if cmd.cAttach {
 		attach(cmd, getProject(cmd))
+	} else if cmd.cFormat {
+		format(cmd, getProject(cmd))
 	} else if cmd.cList {
 		list(cmd, getProject(cmd))
 	} else if cmd.cCollect {
@@ -84,6 +86,11 @@ func flash(cmd *command, p *naos.Project) {
 func attach(_ *command, p *naos.Project) {
 	// attach to device
 	exitIfSet(p.Attach(os.Stdout, os.Stdin))
+}
+
+func format(cmd *command, p *naos.Project) {
+	// format project
+	exitIfSet(p.Format(getOutput(cmd)))
 }
 
 func list(_ *command, p *naos.Project) {

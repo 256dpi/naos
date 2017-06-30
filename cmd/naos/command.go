@@ -16,6 +16,7 @@ Usage:
   naos build [--verbose --app-only]
   naos flash [--erase --app-only --verbose]
   naos attach
+  naos fmt [--verbose]
   naos list
   naos collect [--clear --duration=<ms>]
   naos get <param> [<pattern>] [--timeout=<ms>]
@@ -42,6 +43,7 @@ type command struct {
 	cBuild   bool
 	cFlash   bool
 	cAttach  bool
+	cFormat  bool
 	cList    bool
 	cCollect bool
 	cGet     bool
@@ -78,6 +80,7 @@ func parseCommand() *command {
 		cBuild:   getBool(a["build"]),
 		cFlash:   getBool(a["flash"]),
 		cAttach:  getBool(a["attach"]),
+		cFormat:  getBool(a["fmt"]),
 		cList:    getBool(a["list"]),
 		cCollect: getBool(a["collect"]),
 		cSet:     getBool(a["set"]),
