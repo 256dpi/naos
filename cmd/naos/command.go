@@ -12,7 +12,7 @@ var usage = `naos - the networked artifacts operating system
 
 Usage:
   naos create [-v]
-  naos setup [--force -v]
+  naos setup [--force --cmake -v]
   naos build [--app-only -v]
   naos flash [--erase --app-only -v]
   naos attach
@@ -27,6 +27,7 @@ Usage:
 
 Options:
   -f --force          Force a re-installation of components when they exist.
+  -m --cmake          Will create required CMake files for IDEs like CLion.
   -e --erase          Erase completely before flashing new image.
   -a --app-only       If set only the app will be built or flashed.
   -d --duration=<ms>  The collection duration [default: 1s].
@@ -61,6 +62,7 @@ type command struct {
 
 	// options
 	oForce    bool
+	oCMake    bool
 	oErase    bool
 	oAppOnly  bool
 	oDuration time.Duration
@@ -98,6 +100,7 @@ func parseCommand() *command {
 
 		// options
 		oForce:    getBool(a["--force"]),
+		oCMake:    getBool(a["--cmake"]),
 		oErase:    getBool(a["--erase"]),
 		oAppOnly:  getBool(a["--app-only"]),
 		oDuration: getDuration(a["--duration"]),

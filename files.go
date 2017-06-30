@@ -331,3 +331,57 @@ void app_main() {
   naos_init(&config);
 }
 `
+
+const internalCMakeListsFile = `target_include_directories(naos-project PUBLIC
+        xtensa-esp32-elf/xtensa-esp32-elf/include
+        esp-idf/components/app_update/include
+        esp-idf/components/aws_iot/include
+        esp-idf/components/bootloader_support/include
+        esp-idf/components/bt/bluedroid/include
+        esp-idf/components/bt/bluedroid/api/include
+        esp-idf/components/bt/bluedroid/bta/include
+        esp-idf/components/bt/bluedroid/btc/include
+        esp-idf/components/bt/bluedroid/btcore/include
+        esp-idf/components/bt/include
+        esp-idf/components/coap/libcoap/include
+        esp-idf/components/driver/include
+        esp-idf/components/esp32/include
+        esp-idf/components/ethernet/include
+        esp-idf/components/expat/include
+        esp-idf/components/freertos/include
+        esp-idf/components/jsmn/include
+        esp-idf/components/json/include
+        esp-idf/components/log/include
+        esp-idf/components/lwip/include/lwip/port
+        esp-idf/components/lwip/include/lwip
+        esp-idf/components/mbedtls/include
+        esp-idf/components/mdns/include
+        esp-idf/components/newlib/include
+        esp-idf/components/nghttp/port/include
+        esp-idf/components/nvs_flash/include
+        esp-idf/components/openssl/include
+        esp-idf/components/sdmmc/include
+        esp-idf/components/soc/esp32/include
+        esp-idf/components/spi_flash/include
+        esp-idf/components/tcpip_adapter/include
+        esp-idf/components/ulp/include
+        esp-idf/components/vfs/include
+        esp-idf/components/wear_levelling/include
+        esp-idf/components/wpa_supplicant/include
+        esp-idf/components/xtensa-debug-module/include
+        tree/build/include
+        tree/components/esp-mqtt
+        tree/components/naos-esp/include)
+`
+
+const projectCMakeListsFile = `cmake_minimum_required(VERSION 3.7)
+project(naos-project)
+
+set(CMAKE_C_STANDARD 99)
+
+set(SOURCE_FILES src/main.c)
+
+add_library(naos-project ${SOURCE_FILES})
+
+add_subdirectory(.naos)
+`

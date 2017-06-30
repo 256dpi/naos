@@ -322,6 +322,33 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	return nil
 }
 
+// SetupCMake will create required CMake files for IDEs like CLion.
+func (p *Project) SetupCMake(force bool, out io.Writer) error {
+	// write internal cmake file
+	log(out, "Creating internal CMake file.")
+	err := ioutil.WriteFile(filepath.Join(p.HiddenDirectory(), "CMakeLists.txt"), []byte(internalCMakeListsFile), 0644)
+	if err != nil {
+		return err
+	}
+
+	// get project path
+	projectPath := filepath.Join(p.Location, "CMakeLists.txt")
+	ok, err := exists(projectPath)
+	if err != nil {
+		return err
+	}
+
+	if !ok || force {
+		log(out, "Creating project CMake file.")
+		err = ioutil.WriteFile(projectPath, []byte(projectCMakeListsFile), 0644)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ToolchainLocation returns the location of the toolchain if it exists or an
 // error if it does not exist.
 func (p *Project) ToolchainLocation() (string, error) {

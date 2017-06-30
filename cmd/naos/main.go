@@ -72,7 +72,10 @@ func setup(cmd *command, p *naos.Project) {
 	// setup build tree
 	exitIfSet(p.SetupBuildTree(cmd.oForce, getOutput(cmd)))
 
-	// TODO: Generate internal and project CMakeLists.txt.
+	// setup cmake if required
+	if cmd.oCMake {
+		exitIfSet(p.SetupCMake(cmd.oForce, getOutput(cmd)))
+	}
 }
 
 func build(cmd *command, p *naos.Project) {
