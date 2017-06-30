@@ -332,7 +332,7 @@ void app_main() {
 }
 `
 
-const internalCMakeListsFile = `target_include_directories(naos-project PUBLIC
+const internalCMakeListsFile = `target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
         xtensa-esp32-elf/xtensa-esp32-elf/include
         esp-idf/components/app_update/include
         esp-idf/components/aws_iot/include
@@ -374,14 +374,21 @@ const internalCMakeListsFile = `target_include_directories(naos-project PUBLIC
         tree/components/naos-esp/include)
 `
 
-const projectCMakeListsFile = `cmake_minimum_required(VERSION 3.7)
+const projectCMakeListsFile = `# minimal required cmake version
+cmake_minimum_required(VERSION 3.7)
+
+# you can set your own project name
 project(naos-project)
 
+# this should not be changed
 set(CMAKE_C_STANDARD 99)
 
+# add your source files
 set(SOURCE_FILES src/main.c)
 
-add_library(naos-project ${SOURCE_FILES})
+# create a fake library target
+add_library(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
 
+# include naos include paths
 add_subdirectory(.naos)
 `
