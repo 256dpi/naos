@@ -23,7 +23,7 @@ Usage:
   naos set <param> <value> [<pattern>] [--timeout=<ms>]
   naos monitor [<pattern>] [--timeout=<ms>]
   naos record [<pattern>]
-  naos update <image> [<pattern>] [--timeout=<ms>]
+  naos update [<pattern>] [--image=<path> --timeout=<ms>]
 
 Options:
   -f --force          Force a re-installation of components when they exist.
@@ -32,6 +32,7 @@ Options:
   -a --app-only       If set only the app will be built or flashed.
   -d --duration=<ms>  The collection duration [default: 1s].
   -t --timeout=<ms>   The response timeout [default: 5s].
+  -i --image=<path>   Path to the binary app image.
   -c --clear          Remove not available devices from inventory.
   -v --verbose        Be verbose about whats going on.
   -h --help           Show this screen.
@@ -58,16 +59,16 @@ type command struct {
 	aPattern string
 	aValue   string
 	aName    string
-	aImage   string
 
 	// options
 	oForce    bool
 	oCMake    bool
 	oErase    bool
+	oClear    bool
 	oAppOnly  bool
 	oDuration time.Duration
 	oTimeout  time.Duration
-	oClear    bool
+	oImage    string
 	oVerbose  bool
 }
 
@@ -94,7 +95,6 @@ func parseCommand() *command {
 		// arguments
 		aName:    getString(a["<name>"]),
 		aPattern: getString(a["<pattern>"]),
-		aImage:   getString(a["<image>"]),
 		aParam:   getString(a["<param>"]),
 		aValue:   getString(a["<value>"]),
 
@@ -102,10 +102,11 @@ func parseCommand() *command {
 		oForce:    getBool(a["--force"]),
 		oCMake:    getBool(a["--cmake"]),
 		oErase:    getBool(a["--erase"]),
+		oClear:    getBool(a["--clear"]),
 		oAppOnly:  getBool(a["--app-only"]),
 		oDuration: getDuration(a["--duration"]),
 		oTimeout:  getDuration(a["--timeout"]),
-		oClear:    getBool(a["--clear"]),
+		oImage:    getString(a["--image"]),
 		oVerbose:  getBool(a["--verbose"]),
 	}
 }

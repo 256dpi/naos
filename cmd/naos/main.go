@@ -228,8 +228,15 @@ func record(cmd *command, p *naos.Project) {
 }
 
 func update(cmd *command, p *naos.Project) {
+	// TODO: Move image reading stuff to lib?
+
+	// set default image path
+	if cmd.oImage == "" {
+		cmd.oImage = filepath.Join(p.Location, ".naos", "tree", "build", "naos-project.bin")
+	}
+
 	// get absolute image path
-	file, err := filepath.Abs(cmd.aImage)
+	file, err := filepath.Abs(cmd.oImage)
 	exitIfSet(err)
 
 	// read image
