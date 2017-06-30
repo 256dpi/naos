@@ -14,11 +14,18 @@ import (
 	"github.com/mholt/archiver"
 )
 
+// TODO: Make inventory file configurable?
+
 // InventoryFileName specifies the inventory file name.
 const InventoryFileName = "naos.json"
 
 // HiddenDirectory specifies the hidden directory name.
 const HiddenDirectory = ".naos"
+
+// TODO: Make source directory configurable?
+
+// SourceDirectory specifies the project's source directory name.
+const SourceDirectory = "src"
 
 // A Project is a project available on disk.
 type Project struct {
@@ -52,14 +59,14 @@ func CreateProject(path string, out io.Writer) (*Project, error) {
 	log(out, "Please update the settings to suit your needs.")
 
 	// ensure source directory
-	log(out, "Preparing 'src' directory.")
-	err = os.MkdirAll(filepath.Join(path, "src"), 0755)
+	log(out, "Preparing source directory.")
+	err = os.MkdirAll(filepath.Join(path, SourceDirectory), 0755)
 	if err != nil {
 		return nil, err
 	}
 
 	// prepare main source path and check if it already exists
-	mainSourcePath := filepath.Join(path, "src", "main.c")
+	mainSourcePath := filepath.Join(path, SourceDirectory, "main.c")
 	ok, err := exists(mainSourcePath)
 	if err != nil {
 		return nil, err
@@ -67,7 +74,7 @@ func CreateProject(path string, out io.Writer) (*Project, error) {
 
 	// create main source file if it not already exists
 	if !ok {
-		log(out, "Creating default 'src/main.c' source file.")
+		log(out, "Creating default 'main.c' source file.")
 		err = ioutil.WriteFile(mainSourcePath, []byte(mainSourceFile), 0644)
 		if err != nil {
 			return nil, err
@@ -287,64 +294,60 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 		}
 	}
 
+	// print log
+	log(out, "Creating build tree directory structure...")
+
 	// adding directory
-	log(out, "Adding build tree directory.")
 	err = os.MkdirAll(buildTreeDir, 0777)
 	if err != nil {
 		return err
 	}
 
 	// adding sdk config file
-	log(out, "Adding 'sdkconfig'.")
 	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "sdkconfig"), []byte(sdkconfigFile), 0644)
 	if err != nil {
 		return err
 	}
 
 	// adding makefile
-	log(out, "Adding 'Makefile'.")
 	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "Makefile"), []byte(makeFile), 0644)
 	if err != nil {
 		return err
 	}
 
 	// adding main directory
-	log(out, "Adding 'main' directory.")
 	err = os.MkdirAll(filepath.Join(buildTreeDir, "main"), 0777)
 	if err != nil {
 		return err
 	}
 
 	// adding component.mk
-	log(out, "Adding 'main/component.mk'.")
 	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "main", "component.mk"), []byte(componentFile), 0644)
 	if err != nil {
 		return err
 	}
 
 	// linking src
-	log(out, "Linking 'src' directory.")
-	err = os.Symlink(filepath.Join(p.Location, "src"), filepath.Join(buildTreeDir, "main", "src"))
+	err = os.Symlink(filepath.Join(p.Location, SourceDirectory), filepath.Join(buildTreeDir, "main", "src"))
 	if err != nil {
 		return err
 	}
 
 	// adding components directory
-	log(out, "Adding 'components' directory.")
 	err = os.MkdirAll(filepath.Join(buildTreeDir, "components"), 0777)
 	if err != nil {
 		return err
 	}
 
 	// clone component
-	log(out, "Installing 'esp-mqtt' component...")
+	log(out, "Installing MQTT component...")
 	err = clone("https://github.com/256dpi/esp-mqtt.git", filepath.Join(buildTreeDir, "components", "esp-mqtt"), ESPMQTTVersion, out)
 	if err != nil {
 		return err
 	}
 
 	// clone component
-	log(out, "Installing 'naos-esp' component...")
+	log(out, "Installing NAOS component...")
 	err = clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(buildTreeDir, "components", "naos-esp"), ESPLibVersion, out)
 	if err != nil {
 		return err
@@ -619,7 +622,7 @@ func (p *Project) sourceAndHeaderFiles() ([]string, []string, error) {
 	headerFiles := make([]string, 0)
 
 	// scan directory
-	err := filepath.Walk(filepath.Join(p.Location, "src"), func(path string, f os.FileInfo, err error) error {
+	err := filepath.Walk(filepath.Join(p.Location, SourceDirectory), func(path string, f os.FileInfo, err error) error {
 		// directly return errors
 		if err != nil {
 			return err
