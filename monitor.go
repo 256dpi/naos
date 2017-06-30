@@ -9,6 +9,8 @@ import (
 	"github.com/gomqtt/packet"
 )
 
+// TODO: Add base topic to heartbeat.
+
 // A Heartbeat is emitted by Monitor.
 type Heartbeat struct {
 	ReceivedAt      time.Time

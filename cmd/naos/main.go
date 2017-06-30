@@ -138,7 +138,7 @@ func collect(cmd *command, p *naos.Project) {
 
 func set(cmd *command, p *naos.Project) {
 	// set parameter
-	list, err := p.Inventory.Set(cmd.aPattern, cmd.aParam, cmd.aValue, cmd.oTimeout)
+	list, err := p.Inventory.SetParams(cmd.aPattern, cmd.aParam, cmd.aValue, cmd.oTimeout)
 	exitIfSet(err)
 
 	// prepare table
@@ -158,7 +158,7 @@ func set(cmd *command, p *naos.Project) {
 
 func get(cmd *command, p *naos.Project) {
 	// get parameter
-	list, err := p.Inventory.Get(cmd.aPattern, cmd.aParam, cmd.oTimeout)
+	list, err := p.Inventory.GetParams(cmd.aPattern, cmd.aParam, cmd.oTimeout)
 	exitIfSet(err)
 
 	// prepare table

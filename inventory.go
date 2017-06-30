@@ -16,7 +16,7 @@ type Device struct {
 	BaseTopic       string            `json:"base_topic"`
 	Parameters      map[string]string `json:"parameters"`
 	LastHeartbeat   *Heartbeat        `json:"-"`
-	UpdateStatus    *Status           `json:"-"`
+	UpdateStatus    *UpdateStatus     `json:"-"`
 }
 
 // TODO: Remove LastHeartbeat and UpdateStatus references?
@@ -133,12 +133,12 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 	return newDevices, nil
 }
 
-// Get will request specified parameter from all devices matching the supplied
+// GetParams will request specified parameter from all devices matching the supplied
 // glob pattern. The inventory is updated with the reported value and a list of
 // answering devices is returned.
-func (i *Inventory) Get(pattern, param string, timeout time.Duration) ([]*Device, error) {
+func (i *Inventory) GetParams(pattern, param string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	table, err := Get(i.Broker, param, i.deviceBaseTopics(pattern), timeout)
+	table, err := GetParams(i.Broker, param, i.deviceBaseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -158,12 +158,12 @@ func (i *Inventory) Get(pattern, param string, timeout time.Duration) ([]*Device
 	return answering, nil
 }
 
-// Set will set the specified parameter on all devices matching the supplied
+// SetParams will set the specified parameter on all devices matching the supplied
 // glob pattern. The inventory is updated with the saved value and a list of
 // updated devices is returned.
-func (i *Inventory) Set(pattern, param, value string, timeout time.Duration) ([]*Device, error) {
+func (i *Inventory) SetParams(pattern, param, value string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	table, err := Set(i.Broker, param, value, i.deviceBaseTopics(pattern), timeout)
+	table, err := SetParams(i.Broker, param, value, i.deviceBaseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -186,10 +186,10 @@ func (i *Inventory) Set(pattern, param, value string, timeout time.Duration) ([]
 // Record will enable log recording mode and yield the received log messages
 // until the provided channel has been closed.
 func (i *Inventory) Record(pattern string, quit chan struct{}, callback func(*Device, string)) error {
-	return Record(i.Broker, i.deviceBaseTopics(pattern), quit, func(log *Log) {
+	return Record(i.Broker, i.deviceBaseTopics(pattern), quit, func(log *LogMessage) {
 		// call user callback
 		if callback != nil {
-			callback(i.deviceByBaseTopic(log.BaseTopic), log.Message)
+			callback(i.deviceByBaseTopic(log.BaseTopic), log.Content)
 		}
 	})
 }
@@ -222,7 +222,7 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*D
 // specified image. The specified callback is called for every change in state
 // or progress.
 func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device)) {
-	UpdateMany(i.Broker, i.deviceBaseTopics(pattern), firmware, timeout, func(baseTopic string, status *Status) {
+	Update(i.Broker, i.deviceBaseTopics(pattern), firmware, timeout, func(baseTopic string, status *UpdateStatus) {
 		// get device
 		device := i.deviceByBaseTopic(baseTopic)
 		if device == nil {

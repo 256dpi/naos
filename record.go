@@ -8,15 +8,15 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// Log is a log message emitted by Record.
-type Log struct {
-	Message   string
+// LogMessage is emitted by Record.
+type LogMessage struct {
+	Content   string
 	BaseTopic string
 }
 
 // Record will enable log recording mode and yield the received log messages
 // until the provided channel has been closed.
-func Record(url string, baseTopics []string, quit chan struct{}, cb func(*Log)) error {
+func Record(url string, baseTopics []string, quit chan struct{}, cb func(*LogMessage)) error {
 	// prepare channels
 	errs := make(chan error)
 
@@ -31,8 +31,8 @@ func Record(url string, baseTopics []string, quit chan struct{}, cb func(*Log)) 
 			return
 		}
 
-		// prepare log
-		log := &Log{Message: string(msg.Payload)}
+		// prepare log message
+		log := &LogMessage{Content: string(msg.Payload)}
 
 		// set base topic
 		for _, baseTopic := range baseTopics {

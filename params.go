@@ -8,13 +8,15 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// Get will publish the provided parameter for all specified base topics.
-func Get(url, param string, baseTopics []string, timeout time.Duration) (map[string]string, error) {
+// GetParams will connect to the specified MQTT broker and publish the 'get'
+// command to receive the provided parameter for all specified base topics.
+func GetParams(url, param string, baseTopics []string, timeout time.Duration) (map[string]string, error) {
 	return commonGetSet(url, param, "", false, baseTopics, timeout)
 }
 
-// Set will publish the provided parameter for all specified base topics.
-func Set(url, param, value string, baseTopics []string, timeout time.Duration) (map[string]string, error) {
+// SetParams will connect to the specified MQTT broker and publish the 'set'
+// command to receive the provided updated parameter for all specified base topics.
+func SetParams(url, param, value string, baseTopics []string, timeout time.Duration) (map[string]string, error) {
 	return commonGetSet(url, param, value, true, baseTopics, timeout)
 }
 

@@ -10,16 +10,18 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// Status represents the ongoing update status of a device.
-type Status struct {
+// UpdateStatus is emitted by updateOne and Update.
+type UpdateStatus struct {
 	Progress int
 	Error    error
 }
 
-// UpdateMany will concurrently update multiple devices.
-func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.Duration, callback func(string, *Status)) {
+// Update will concurrently perform a firmware update and block until all devices
+// have updated or returned errors. If a callback is provided it will be called
+// with the current status of the update.
+func Update(url string, baseTopics []string, firmware []byte, timeout time.Duration, callback func(string, *UpdateStatus)) {
 	// prepare table
-	table := make(map[string]*Status)
+	table := make(map[string]*UpdateStatus)
 
 	// prepare wait group
 	var wg = sync.WaitGroup{}
@@ -29,7 +31,7 @@ func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.D
 
 	for _, baseTopic := range baseTopics {
 		// create status
-		table[baseTopic] = &Status{}
+		table[baseTopic] = &UpdateStatus{}
 
 		// add process
 		wg.Add(1)
@@ -37,7 +39,7 @@ func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.D
 		// run a single update in background
 		go func(bt string) {
 			// begin update
-			err := Update(url, bt, firmware, timeout, func(progress int) {
+			err := updateOne(url, bt, firmware, timeout, func(progress int) {
 				// lock mutex
 				mutex.Lock()
 				defer mutex.Unlock()
@@ -68,10 +70,7 @@ func UpdateMany(url string, baseTopics []string, firmware []byte, timeout time.D
 	wg.Wait()
 }
 
-// Update will perform a firmware update and block until it is done or an error
-// has occurred. If progress is provided it will be called with the bytes sent
-// to the device.
-func Update(url, baseTopic string, firmware []byte, timeout time.Duration, progress func(int)) error {
+func updateOne(url, baseTopic string, firmware []byte, timeout time.Duration, progress func(int)) error {
 	// prepare channels
 	requests := make(chan int)
 	errs := make(chan error)
