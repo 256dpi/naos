@@ -59,7 +59,7 @@ func CreateProject(path string, out io.Writer) (*Project, error) {
 	log(out, "Please update the settings to suit your needs.")
 
 	// ensure source directory
-	log(out, "Preparing source directory.")
+	log(out, "Ensuring source directory.")
 	err = os.MkdirAll(filepath.Join(path, SourceDirectory), 0755)
 	if err != nil {
 		return nil, err

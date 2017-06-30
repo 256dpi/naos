@@ -11,12 +11,12 @@ import (
 var usage = `naos - the networked artifacts operating system
 
 Usage:
-  naos create
-  naos setup [--force --verbose]
-  naos build [--verbose --app-only]
-  naos flash [--erase --app-only --verbose]
+  naos create [-v]
+  naos setup [--force -v]
+  naos build [--app-only -v]
+  naos flash [--erase --app-only -v]
   naos attach
-  naos fmt [--verbose]
+  naos fmt [-v]
   naos list
   naos collect [--clear --duration=<ms>]
   naos get <param> [<pattern>] [--timeout=<ms>]
