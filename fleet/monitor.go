@@ -11,6 +11,7 @@ import (
 
 // A Heartbeat is a single heartbeat emitted by Monitor.
 type Heartbeat struct {
+	ReceivedAt      time.Time
 	DeviceName      string
 	DeviceType      string
 	FirmwareVersion string
@@ -52,6 +53,7 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heart
 
 		// call callback
 		cb(&Heartbeat{
+			ReceivedAt:      time.Now(),
 			DeviceType:      data[0],
 			FirmwareVersion: data[1],
 			DeviceName:      data[2],
