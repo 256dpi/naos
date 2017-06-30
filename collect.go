@@ -10,13 +10,15 @@ import (
 
 // An Announcement is returned by Collect.
 type Announcement struct {
+	ReceivedAt      time.Time
 	DeviceName      string
 	DeviceType      string
 	FirmwareVersion string
 	BaseTopic       string
 }
 
-// Collect will collect Announcements.
+// Collect will collect Announcements from devices by connecting to the provided
+// MQTT broker and sending the 'collect' command.
 //
 // Note: Not correctly formatted announcements are ignored.
 func Collect(url string, duration time.Duration) ([]*Announcement, error) {
@@ -45,6 +47,7 @@ func Collect(url string, duration time.Duration) ([]*Announcement, error) {
 
 		// add announcement
 		anns <- &Announcement{
+			ReceivedAt:      time.Now(),
 			DeviceType:      data[0],
 			FirmwareVersion: data[1],
 			DeviceName:      data[2],
