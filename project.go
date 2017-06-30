@@ -194,23 +194,6 @@ func (p *Project) SetupToolchain(force bool, out io.Writer) error {
 	return nil
 }
 
-// ToolchainLocation returns the location of the toolchain if it exists or an
-// error if it does not exist.
-func (p *Project) ToolchainLocation() (string, error) {
-	// calculate directory
-	dir := filepath.Join(p.HiddenDirectory(), "xtensa-esp32-elf")
-
-	// check if toolchain directory exists
-	ok, err := exists(dir)
-	if err != nil {
-		return "", err
-	} else if !ok {
-		return "", errors.New("toolchain not found")
-	}
-
-	return dir, nil
-}
-
 // SetupDevelopmentFramework will setup the development framework. An existing
 // development framework will be removed if force is set to true. If out is not
 // nil, it will be used to log information about the process.
@@ -247,23 +230,6 @@ func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 	}
 
 	return nil
-}
-
-// DevelopmentFrameworkLocation returns the location of the development
-// framework if it exists or an error if it does not exist.
-func (p *Project) DevelopmentFrameworkLocation() (string, error) {
-	// calculate directory
-	dir := filepath.Join(p.HiddenDirectory(), "esp-idf")
-
-	// check if toolchain directory exists
-	ok, err := exists(dir)
-	if err != nil {
-		return "", err
-	} else if !ok {
-		return "", errors.New("development framework not found")
-	}
-
-	return dir, nil
 }
 
 // SetupBuildTree will setup the build tree. An existing build tree will be
@@ -354,6 +320,40 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	}
 
 	return nil
+}
+
+// ToolchainLocation returns the location of the toolchain if it exists or an
+// error if it does not exist.
+func (p *Project) ToolchainLocation() (string, error) {
+	// calculate directory
+	dir := filepath.Join(p.HiddenDirectory(), "xtensa-esp32-elf")
+
+	// check if toolchain directory exists
+	ok, err := exists(dir)
+	if err != nil {
+		return "", err
+	} else if !ok {
+		return "", errors.New("toolchain not found")
+	}
+
+	return dir, nil
+}
+
+// DevelopmentFrameworkLocation returns the location of the development
+// framework if it exists or an error if it does not exist.
+func (p *Project) DevelopmentFrameworkLocation() (string, error) {
+	// calculate directory
+	dir := filepath.Join(p.HiddenDirectory(), "esp-idf")
+
+	// check if toolchain directory exists
+	ok, err := exists(dir)
+	if err != nil {
+		return "", err
+	} else if !ok {
+		return "", errors.New("development framework not found")
+	}
+
+	return dir, nil
 }
 
 // BuildTreeLocation returns the location of the build tree if it exists or an
