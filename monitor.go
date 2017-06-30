@@ -9,7 +9,7 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// A Heartbeat is a single heartbeat emitted by Monitor.
+// A Heartbeat is emitted by Monitor.
 type Heartbeat struct {
 	ReceivedAt      time.Time
 	DeviceName      string
@@ -20,8 +20,9 @@ type Heartbeat struct {
 	StartPartition  string
 }
 
-// Monitor will listen to the passed base topics for heartbeats and call the
-// supplied callback until the specified quit channel is closed.
+// Monitor will connect to the specified MQTT broker and listen on the passed
+// base topics for heartbeats and call the supplied callback until the specified
+// quit channel is closed.
 //
 // Note: Not correctly formatted heartbeats are ignored.
 func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heartbeat)) error {
