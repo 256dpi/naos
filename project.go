@@ -16,16 +16,13 @@ import (
 
 // TODO: Make inventory file configurable?
 
-// InventoryFileName specifies the inventory file name.
-const InventoryFileName = "naos.json"
+const inventoryFileName = "naos.json"
 
-// HiddenDirectory specifies the hidden directory name.
-const HiddenDirectory = ".naos"
+const hiddenDirectory = ".naos"
 
 // TODO: Make source directory configurable?
 
-// SourceDirectory specifies the project's source directory name.
-const SourceDirectory = "src"
+const sourceDirectory = "src"
 
 // A Project is a project available on disk.
 type Project struct {
@@ -60,13 +57,13 @@ func CreateProject(path string, out io.Writer) (*Project, error) {
 
 	// ensure source directory
 	log(out, "Ensuring source directory.")
-	err = os.MkdirAll(filepath.Join(path, SourceDirectory), 0755)
+	err = os.MkdirAll(filepath.Join(path, sourceDirectory), 0755)
 	if err != nil {
 		return nil, err
 	}
 
 	// prepare main source path and check if it already exists
-	mainSourcePath := filepath.Join(path, SourceDirectory, "main.c")
+	mainSourcePath := filepath.Join(path, sourceDirectory, "main.c")
 	ok, err := exists(mainSourcePath)
 	if err != nil {
 		return nil, err
@@ -87,7 +84,7 @@ func CreateProject(path string, out io.Writer) (*Project, error) {
 // FindProject will look for project in the specified path.
 func FindProject(path string) (*Project, error) {
 	// attempt to read inventory
-	inv, err := ReadInventory(filepath.Join(path, InventoryFileName))
+	inv, err := ReadInventory(filepath.Join(path, inventoryFileName))
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +103,7 @@ func FindProject(path string) (*Project, error) {
 // SaveInventory will save the associated inventory to disk.
 func (p *Project) SaveInventory() error {
 	// save inventory
-	err := p.Inventory.Save(filepath.Join(p.Location, InventoryFileName))
+	err := p.Inventory.Save(filepath.Join(p.Location, inventoryFileName))
 	if err != nil {
 		return err
 	}
@@ -117,7 +114,7 @@ func (p *Project) SaveInventory() error {
 // HiddenDirectory returns the hidden used to store the toolchain, development
 // framework and other necessary files.
 func (p *Project) HiddenDirectory() string {
-	return filepath.Join(p.Location, HiddenDirectory)
+	return filepath.Join(p.Location, hiddenDirectory)
 }
 
 // SetupToolchain will setup the compilation toolchain. An existing toolchain
@@ -224,7 +221,7 @@ func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 
 	// clone development framework
 	log(out, "Installing development framework...")
-	err = clone("https://github.com/espressif/esp-idf.git", frameworkDir, ESPIDFVersion, out)
+	err = clone("https://github.com/espressif/esp-idf.git", frameworkDir, espIDFVersion, out)
 	if err != nil {
 		return err
 	}
@@ -294,7 +291,7 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	}
 
 	// linking src
-	err = os.Symlink(filepath.Join(p.Location, SourceDirectory), filepath.Join(buildTreeDir, "main", "src"))
+	err = os.Symlink(filepath.Join(p.Location, sourceDirectory), filepath.Join(buildTreeDir, "main", "src"))
 	if err != nil {
 		return err
 	}
@@ -307,14 +304,14 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 
 	// clone component
 	log(out, "Installing MQTT component...")
-	err = clone("https://github.com/256dpi/esp-mqtt.git", filepath.Join(buildTreeDir, "components", "esp-mqtt"), ESPMQTTVersion, out)
+	err = clone("https://github.com/256dpi/esp-mqtt.git", filepath.Join(buildTreeDir, "components", "esp-mqtt"), espMQTTVersion, out)
 	if err != nil {
 		return err
 	}
 
 	// clone component
 	log(out, "Installing NAOS component...")
-	err = clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(buildTreeDir, "components", "naos-esp"), ESPLibVersion, out)
+	err = clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(buildTreeDir, "components", "naos-esp"), espLibVersion, out)
 	if err != nil {
 		return err
 	}
@@ -649,7 +646,7 @@ func (p *Project) sourceAndHeaderFiles() ([]string, []string, error) {
 	headerFiles := make([]string, 0)
 
 	// scan directory
-	err := filepath.Walk(filepath.Join(p.Location, SourceDirectory), func(path string, f os.FileInfo, err error) error {
+	err := filepath.Walk(filepath.Join(p.Location, sourceDirectory), func(path string, f os.FileInfo, err error) error {
 		// directly return errors
 		if err != nil {
 			return err
