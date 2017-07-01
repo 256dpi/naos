@@ -10,10 +10,10 @@ import (
 
 // A Device represents a single device in an Inventory.
 type Device struct {
+	BaseTopic       string            `json:"base_topic"`
 	Name            string            `json:"name"`
 	Type            string            `json:"type"`
 	FirmwareVersion string            `json:"firmware_version"`
-	BaseTopic       string            `json:"base_topic"`
 	Parameters      map[string]string `json:"parameters"`
 }
 
@@ -121,9 +121,9 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 		}
 
 		// update fields
+		d.BaseTopic = a.BaseTopic
 		d.Type = a.DeviceType
 		d.FirmwareVersion = a.FirmwareVersion
-		d.BaseTopic = a.BaseTopic
 	}
 
 	return newDevices, nil

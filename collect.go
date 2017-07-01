@@ -11,10 +11,10 @@ import (
 // An Announcement is returned by Collect.
 type Announcement struct {
 	ReceivedAt      time.Time
+	BaseTopic       string
 	DeviceName      string
 	DeviceType      string
 	FirmwareVersion string
-	BaseTopic       string
 }
 
 // Collect will collect Announcements from devices by connecting to the provided
@@ -48,10 +48,10 @@ func Collect(url string, duration time.Duration) ([]*Announcement, error) {
 		// add announcement
 		anns <- &Announcement{
 			ReceivedAt:      time.Now(),
+			BaseTopic:       data[3],
 			DeviceType:      data[0],
 			FirmwareVersion: data[1],
 			DeviceName:      data[2],
-			BaseTopic:       data[3],
 		}
 	}
 

@@ -9,11 +9,10 @@ import (
 	"github.com/gomqtt/packet"
 )
 
-// TODO: Add base topic to heartbeat.
-
 // A Heartbeat is emitted by Monitor.
 type Heartbeat struct {
 	ReceivedAt      time.Time
+	BaseTopic       string
 	DeviceName      string
 	DeviceType      string
 	FirmwareVersion string
@@ -54,8 +53,8 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heart
 		freeHeapSize, _ := strconv.Atoi(data[3])
 		upTime, _ := strconv.Atoi(data[4])
 
-		// call callback
-		cb(&Heartbeat{
+		// create heartbeat
+		hb := &Heartbeat{
 			ReceivedAt:      time.Now(),
 			DeviceType:      data[0],
 			FirmwareVersion: data[1],
@@ -63,7 +62,17 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heart
 			FreeHeapSize:    freeHeapSize,
 			UpTime:          time.Duration(upTime) * time.Millisecond,
 			StartPartition:  data[5],
-		})
+		}
+
+		// set base topic
+		for _, baseTopic := range baseTopics {
+			if strings.HasPrefix(msg.Topic, baseTopic) {
+				hb.BaseTopic = baseTopic
+			}
+		}
+
+		// call callback
+		cb(hb)
 	}
 
 	// connect to the broker using the provided url

@@ -10,8 +10,8 @@ import (
 
 // LogMessage is emitted by Record.
 type LogMessage struct {
-	Content   string
 	BaseTopic string
+	Content   string
 }
 
 // Record will enable log recording mode and yield the received log messages
