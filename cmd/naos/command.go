@@ -9,12 +9,12 @@ import (
 var usage = `Networked Artifacts Operating System by shiftr.io
 
 Project Management:
-  create  Will create a new naos project in the current directory.
-  setup   Will download required dependencies to the 'naos' subdirectory.
-  build   Will build all source files.
-  flash   Will flash the previously built binary to an attached device.
-  attach  Will open a serial communication with an attached device.
-  format  Will format all source files in the 'src' subdirectory.
+  create   Will create a new naos project in the current directory.
+  setup    Will download required dependencies to the 'naos' subdirectory.
+  build    Will build all source files.
+  flash    Will flash the previously built binary to an attached device.
+  attach   Will open a serial communication with an attached device.
+  format   Will format all source files in the 'src' subdirectory.
 
 Fleet Management:
   list     Will list all devices listed in the inventory.
