@@ -7,4 +7,4 @@ set(SOURCE_FILES src/main.c)
 
 add_library(naos-project ${SOURCE_FILES})
 
-add_subdirectory(.naos)
+add_subdirectory(naos)

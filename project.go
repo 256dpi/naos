@@ -15,20 +15,8 @@ import (
 )
 
 const espIDFVersion = "cc93e14770e7b3681ebc80b30336e498cc96e961"
-
 const espMQTTVersion = "cc87172126aa7aacc3b982f7be7489950429b733"
-
 const espLibVersion = "8c9e924556b21f329da12151b18570b62517d3f5"
-
-// TODO: Make inventory file configurable?
-
-const inventoryFileName = "naos.json"
-
-const hiddenDirectory = ".naos"
-
-// TODO: Make source directory configurable?
-
-const sourceDirectory = "src"
 
 // A Project is a project available on disk.
 type Project struct {
@@ -63,13 +51,13 @@ func CreateProject(path string, out io.Writer) (*Project, error) {
 
 	// ensure source directory
 	log(out, "Ensuring source directory.")
-	err = os.MkdirAll(filepath.Join(path, sourceDirectory), 0755)
+	err = os.MkdirAll(filepath.Join(path, "src"), 0755)
 	if err != nil {
 		return nil, err
 	}
 
 	// prepare main source path and check if it already exists
-	mainSourcePath := filepath.Join(path, sourceDirectory, "main.c")
+	mainSourcePath := filepath.Join(path, "src", "main.c")
 	ok, err := exists(mainSourcePath)
 	if err != nil {
 		return nil, err
@@ -87,15 +75,13 @@ func CreateProject(path string, out io.Writer) (*Project, error) {
 	return p, nil
 }
 
-// FindProject will look for project in the specified path.
-func FindProject(path string) (*Project, error) {
+// OpenProject will open the project in the specified path.
+func OpenProject(path string) (*Project, error) {
 	// attempt to read inventory
-	inv, err := ReadInventory(filepath.Join(path, inventoryFileName))
+	inv, err := ReadInventory(filepath.Join(path, "naos.json"))
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO: Walk up the tree and try parent directories.
 
 	// prepare project
 	project := &Project{
@@ -109,7 +95,7 @@ func FindProject(path string) (*Project, error) {
 // SaveInventory will save the associated inventory to disk.
 func (p *Project) SaveInventory() error {
 	// save inventory
-	err := p.Inventory.Save(filepath.Join(p.Location, inventoryFileName))
+	err := p.Inventory.Save(filepath.Join(p.Location, "naos.json"))
 	if err != nil {
 		return err
 	}
@@ -117,10 +103,10 @@ func (p *Project) SaveInventory() error {
 	return nil
 }
 
-// HiddenDirectory returns the hidden used to store the toolchain, development
+// InternalDirectory returns the hidden used to store the toolchain, development
 // framework and other necessary files.
-func (p *Project) HiddenDirectory() string {
-	return filepath.Join(p.Location, hiddenDirectory)
+func (p *Project) InternalDirectory() string {
+	return filepath.Join(p.Location, "naos")
 }
 
 // SetupToolchain will setup the compilation toolchain. An existing toolchain
@@ -139,7 +125,7 @@ func (p *Project) SetupToolchain(force bool, out io.Writer) error {
 	}
 
 	// prepare toolchain directory
-	toolchainDir := filepath.Join(p.HiddenDirectory(), "xtensa-esp32-elf")
+	toolchainDir := filepath.Join(p.InternalDirectory(), "xtensa-esp32-elf")
 
 	// check if already exists
 	ok, err := exists(toolchainDir)
@@ -180,7 +166,7 @@ func (p *Project) SetupToolchain(force bool, out io.Writer) error {
 
 	// unpack toolchain
 	log(out, "Unpacking toolchain...")
-	err = archiver.TarGz.Open(tmp.Name(), p.HiddenDirectory())
+	err = archiver.TarGz.Open(tmp.Name(), p.InternalDirectory())
 	if err != nil {
 		return err
 	}
@@ -202,7 +188,7 @@ func (p *Project) SetupToolchain(force bool, out io.Writer) error {
 // nil, it will be used to log information about the process.
 func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 	// prepare toolchain directory
-	frameworkDir := filepath.Join(p.HiddenDirectory(), "esp-idf")
+	frameworkDir := filepath.Join(p.InternalDirectory(), "esp-idf")
 
 	// check if already exists
 	ok, err := exists(frameworkDir)
@@ -240,7 +226,7 @@ func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 // information about the process.
 func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	// prepare build tree directory
-	buildTreeDir := filepath.Join(p.HiddenDirectory(), "tree")
+	buildTreeDir := filepath.Join(p.InternalDirectory(), "tree")
 
 	// check if already exists
 	ok, err := exists(buildTreeDir)
@@ -297,7 +283,7 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	}
 
 	// linking src
-	err = os.Symlink(filepath.Join(p.Location, sourceDirectory), filepath.Join(buildTreeDir, "main", "src"))
+	err = os.Symlink(filepath.Join(p.Location, "src"), filepath.Join(buildTreeDir, "main", "src"))
 	if err != nil {
 		return err
 	}
@@ -329,7 +315,7 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 func (p *Project) SetupCMake(force bool, out io.Writer) error {
 	// write internal cmake file
 	log(out, "Creating internal CMake file.")
-	err := ioutil.WriteFile(filepath.Join(p.HiddenDirectory(), "CMakeLists.txt"), []byte(internalCMakeListsFile), 0644)
+	err := ioutil.WriteFile(filepath.Join(p.InternalDirectory(), "CMakeLists.txt"), []byte(internalCMakeListsFile), 0644)
 	if err != nil {
 		return err
 	}
@@ -356,7 +342,7 @@ func (p *Project) SetupCMake(force bool, out io.Writer) error {
 // error if it does not exist.
 func (p *Project) ToolchainLocation() (string, error) {
 	// calculate directory
-	dir := filepath.Join(p.HiddenDirectory(), "xtensa-esp32-elf")
+	dir := filepath.Join(p.InternalDirectory(), "xtensa-esp32-elf")
 
 	// check if toolchain directory exists
 	ok, err := exists(dir)
@@ -373,7 +359,7 @@ func (p *Project) ToolchainLocation() (string, error) {
 // framework if it exists or an error if it does not exist.
 func (p *Project) DevelopmentFrameworkLocation() (string, error) {
 	// calculate directory
-	dir := filepath.Join(p.HiddenDirectory(), "esp-idf")
+	dir := filepath.Join(p.InternalDirectory(), "esp-idf")
 
 	// check if toolchain directory exists
 	ok, err := exists(dir)
@@ -390,7 +376,7 @@ func (p *Project) DevelopmentFrameworkLocation() (string, error) {
 // error if it does not exist.
 func (p *Project) BuildTreeLocation() (string, error) {
 	// calculate directory
-	dir := filepath.Join(p.HiddenDirectory(), "tree")
+	dir := filepath.Join(p.InternalDirectory(), "tree")
 
 	// check if build tree directory exists
 	ok, err := exists(dir)
@@ -586,8 +572,6 @@ func (p *Project) Attach(out io.Writer, in io.Reader) error {
 // Format will format all source files in the project if 'clang-format' is
 // available.
 func (p *Project) Format(out io.Writer) error {
-	// TODO: Print message if binary is missing.
-
 	// get source and header files
 	sourceFiles, headerFiles, err := p.sourceAndHeaderFiles()
 	if err != nil {
@@ -661,7 +645,7 @@ func (p *Project) sourceAndHeaderFiles() ([]string, []string, error) {
 	headerFiles := make([]string, 0)
 
 	// scan directory
-	err := filepath.Walk(filepath.Join(p.Location, sourceDirectory), func(path string, f os.FileInfo, err error) error {
+	err := filepath.Walk(filepath.Join(p.Location, "src"), func(path string, f os.FileInfo, err error) error {
 		// directly return errors
 		if err != nil {
 			return err

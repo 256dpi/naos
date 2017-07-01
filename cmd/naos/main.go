@@ -236,7 +236,7 @@ func update(cmd *command, p *naos.Project) {
 
 	// set default image path
 	if cmd.oImage == "" {
-		cmd.oImage = filepath.Join(p.Location, ".naos", "tree", "build", "naos-project.bin")
+		cmd.oImage = filepath.Join(p.InternalDirectory(), "tree", "build", "naos-project.bin")
 	}
 
 	// get absolute image path

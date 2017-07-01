@@ -12,7 +12,7 @@ var usage = `Networked Artifacts Operating System by shiftr.io
 
 Project Management:
   create  Will create a new naos project in the current directory.
-  setup   Will download required dependencies to the '.naos' subdirectory.
+  setup   Will download required dependencies to the 'naos' subdirectory.
   build   Will build all source files.
   flash   Will flash the previously built binary to an attached device.
   attach  Will open a serial communication with an attached device.

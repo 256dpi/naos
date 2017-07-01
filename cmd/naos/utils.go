@@ -28,7 +28,7 @@ func home() string {
 }
 
 func getProject(cmd *command) *naos.Project {
-	p, err := naos.FindProject(home())
+	p, err := naos.OpenProject(home())
 	exitIfSet(err)
 
 	return p
