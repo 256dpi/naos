@@ -12,7 +12,7 @@ import (
 
 // UpdateStatus is emitted by updateOne and Update.
 type UpdateStatus struct {
-	Progress int
+	Progress float64
 	Error    error
 }
 
@@ -39,7 +39,7 @@ func Update(url string, baseTopics []string, firmware []byte, timeout time.Durat
 		// run a single update in background
 		go func(bt string) {
 			// begin update
-			err := updateOne(url, bt, firmware, timeout, func(progress int) {
+			err := updateOne(url, bt, firmware, timeout, func(progress float64) {
 				// lock mutex
 				mutex.Lock()
 				defer mutex.Unlock()
@@ -70,7 +70,7 @@ func Update(url string, baseTopics []string, firmware []byte, timeout time.Durat
 	wg.Wait()
 }
 
-func updateOne(url, baseTopic string, firmware []byte, timeout time.Duration, progress func(int)) error {
+func updateOne(url, baseTopic string, firmware []byte, timeout time.Duration, progress func(float64)) error {
 	// prepare channels
 	requests := make(chan int)
 	errs := make(chan error)
@@ -208,7 +208,7 @@ func updateOne(url, baseTopic string, firmware []byte, timeout time.Duration, pr
 
 		// update progress if available
 		if progress != nil {
-			progress(total)
+			progress(1.0 / float64(len(firmware)) * float64(total))
 		}
 	}
 }

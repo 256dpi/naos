@@ -40,7 +40,7 @@ Usage:
   naos set <param> <value> [<pattern>] [--timeout=<ms>]
   naos monitor [<pattern>] [--timeout=<ms>]
   naos record [<pattern>]
-  naos update [<pattern>] [--image=<path> --timeout=<ms>]
+  naos update [<pattern>] [--timeout=<ms>]
   naos help
 
 Options:
@@ -52,7 +52,6 @@ Options:
   --clear          Remove not available devices from inventory.
   --duration=<ms>  Collection duration [default: 1s].
   --timeout=<ms>   Response timeout [default: 5s].
-  --image=<path>   Alternative path to the binary app image.
 `
 
 type command struct {
@@ -87,7 +86,6 @@ type command struct {
 	oAppOnly  bool
 	oDuration time.Duration
 	oTimeout  time.Duration
-	oImage    string
 }
 
 func parseCommand() *command {
@@ -126,7 +124,6 @@ func parseCommand() *command {
 		oAppOnly:  getBool(a["--app-only"]),
 		oDuration: getDuration(a["--duration"]),
 		oTimeout:  getDuration(a["--timeout"]),
-		oImage:    getString(a["--image"]),
 	}
 }
 

@@ -2,11 +2,8 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"strconv"
 
 	"code.cloudfoundry.org/bytefmt"
 	"github.com/shiftr-io/naos"
@@ -232,21 +229,6 @@ func record(cmd *command, p *naos.Project) {
 }
 
 func update(cmd *command, p *naos.Project) {
-	// TODO: Move image reading stuff to lib?
-
-	// set default image path
-	if cmd.oImage == "" {
-		cmd.oImage = filepath.Join(p.InternalDirectory(), "tree", "build", "naos-project.bin")
-	}
-
-	// get absolute image path
-	file, err := filepath.Abs(cmd.oImage)
-	exitIfSet(err)
-
-	// read image
-	bytes, err := ioutil.ReadFile(file)
-	exitIfSet(err)
-
 	// prepare table
 	tbl := newTable("DEVICE NAME", "PROGRESS", "ERROR")
 
@@ -254,7 +236,7 @@ func update(cmd *command, p *naos.Project) {
 	list := make(map[*naos.Device]*naos.UpdateStatus)
 
 	// update devices
-	p.Inventory.Update(cmd.aPattern, bytes, cmd.oTimeout, func(d *naos.Device, us *naos.UpdateStatus) {
+	p.Update(cmd.aPattern, cmd.oTimeout, func(d *naos.Device, us *naos.UpdateStatus) {
 		// save status
 		list[d] = us
 
@@ -269,11 +251,8 @@ func update(cmd *command, p *naos.Project) {
 				errStr = status.Error.Error()
 			}
 
-			// calculate progress
-			progress := 100.0 / float64(len(bytes)) * float64(status.Progress)
-
 			// add row
-			tbl.add(device.Name, strconv.Itoa(int(progress))+"%", errStr)
+			tbl.add(device.Name, fmt.Sprintf("%.2f%%", status.Progress*100), errStr)
 		}
 
 		// show table

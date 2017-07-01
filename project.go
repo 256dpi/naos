@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/kr/pty"
 	"github.com/mholt/archiver"
@@ -588,6 +589,25 @@ func (p *Project) Format(out io.Writer) error {
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+// Update will update the devices that match the supplied glob pattern with the
+// previously built image. The specified callback is called for every change in
+// state or progress.
+func (p *Project) Update(pattern string, timeout time.Duration, callback func(*Device, *UpdateStatus)) error {
+	// get image path
+	image := filepath.Join(p.InternalDirectory(), "tree", "build", "naos-project.bin")
+
+	// read image
+	bytes, err := ioutil.ReadFile(image)
+	if err != nil {
+		return err
+	}
+
+	// run update
+	p.Inventory.Update(pattern, bytes, timeout, callback)
 
 	return nil
 }
