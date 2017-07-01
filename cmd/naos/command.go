@@ -24,6 +24,7 @@ Usage:
   naos monitor [<pattern>] [--timeout=<ms>]
   naos record [<pattern>]
   naos update [<pattern>] [--image=<path> --timeout=<ms>]
+  naos --help
 
 Options:
   -f --force          Force a re-installation of components when they exist.
