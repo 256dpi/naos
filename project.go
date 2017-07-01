@@ -423,7 +423,7 @@ func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
 }
 
 // Flash will flash the project to the attached device.
-func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
+func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) error {
 	// get hidden directory
 	developmentFramework, err := p.DevelopmentFrameworkLocation()
 	if err != nil {
@@ -446,7 +446,7 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 	eraseFlash := []string{
 		espTool,
 		"--chip", "esp32",
-		"--port", "/dev/cu.SLAB_USBtoUART",
+		"--port", device,
 		"--baud", "921600",
 		"--before", "default_reset",
 		"--after", "hard_reset",
@@ -457,7 +457,7 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 	flashAll := []string{
 		espTool,
 		"--chip", "esp32",
-		"--port", "/dev/cu.SLAB_USBtoUART",
+		"--port", device,
 		"--baud", "921600",
 		"--before", "default_reset",
 		"--after", "hard_reset",
@@ -475,7 +475,7 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 	flashApp := []string{
 		espTool,
 		"--chip", "esp32",
-		"--port", "/dev/cu.SLAB_USBtoUART",
+		"--port", device,
 		"--baud", "921600",
 		"--before", "default_reset",
 		"--after", "hard_reset",
@@ -518,7 +518,7 @@ func (p *Project) Flash(erase bool, appOnly bool, out io.Writer) error {
 }
 
 // Attach will attach to the attached device.
-func (p *Project) Attach(out io.Writer, in io.Reader) error {
+func (p *Project) Attach(device string, out io.Writer, in io.Reader) error {
 	// get toolchain location
 	toolchain, err := p.ToolchainLocation()
 	if err != nil {
@@ -531,16 +531,13 @@ func (p *Project) Attach(out io.Writer, in io.Reader) error {
 		return err
 	}
 
+	// TODO: Use idf-monitor.
+
 	// construct command
-	cmd := exec.Command("make", "simple_monitor")
+	cmd := exec.Command("miniterm.py","--rts", "0", "--dtr", "0", "--raw", "--exit-char", "99", device, "115200")
 
 	// set working directory
 	cmd.Dir = buildTree
-
-	// connect output and inputs
-	cmd.Stdout = out
-	cmd.Stderr = out
-	cmd.Stdin = in
 
 	// inherit current environment
 	cmd.Env = os.Environ()
@@ -557,15 +554,32 @@ func (p *Project) Attach(out io.Writer, in io.Reader) error {
 	}
 
 	// start process and get tty
+	log(out, "Attaching to device (press Ctrl+C to exit)...")
 	tty, err := pty.Start(cmd)
 	if err != nil {
 		return err
 	}
 
-	// read and write data until EOF
-	go io.Copy(os.Stdin, tty)
-	io.Copy(os.Stdout, tty)
-	tty.Close()
+	// make sure tty gets closed
+	defer tty.Close()
+
+	// prepare channel
+	quit := make(chan struct{})
+
+	// read data until EOF
+	go func(){
+		io.Copy(out, tty)
+		close(quit)
+	}()
+
+	// write data until EOF
+	go func(){
+		io.Copy(tty, in)
+		close(quit)
+	}()
+
+	// wait for quit
+	<-quit
 
 	return nil
 }

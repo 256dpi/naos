@@ -6,8 +6,6 @@ import (
 	"github.com/docopt/docopt-go"
 )
 
-// TODO: Support specifying device file for flash and attach.
-
 var usage = `Networked Artifacts Operating System by shiftr.io
 
 Project Management:
@@ -31,8 +29,8 @@ Usage:
   naos create
   naos setup [--force --cmake]
   naos build [--clean --app-only]
-  naos flash [--erase --app-only]
-  naos attach
+  naos flash [<device>] [--erase --app-only]
+  naos attach [<device>]
   naos format
   naos list
   naos collect [--clear --duration=<ms>]
@@ -72,6 +70,7 @@ type command struct {
 	cHelp    bool
 
 	// arguments
+	aDevice  string
 	aParam   string
 	aPattern string
 	aValue   string
@@ -110,6 +109,7 @@ func parseCommand() *command {
 		cHelp:    getBool(a["help"]),
 
 		// arguments
+		aDevice:  getString(a["<device>"]),
 		aName:    getString(a["<name>"]),
 		aPattern: getString(a["<pattern>"]),
 		aParam:   getString(a["<param>"]),

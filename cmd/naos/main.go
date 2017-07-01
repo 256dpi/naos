@@ -18,6 +18,11 @@ func main() {
 		cmd.aPattern = "*"
 	}
 
+	// set default device
+	if cmd.aDevice == "" {
+		cmd.aDevice = "/dev/cu.SLAB_USBtoUART"
+	}
+
 	// run desired command
 	if cmd.cCreate {
 		create(cmd)
@@ -82,15 +87,15 @@ func build(cmd *command, p *naos.Project) {
 
 func flash(cmd *command, p *naos.Project) {
 	// flash project
-	exitIfSet(p.Flash(cmd.oErase, cmd.oAppOnly, os.Stdout))
+	exitIfSet(p.Flash(cmd.aDevice, cmd.oErase, cmd.oAppOnly, os.Stdout))
 }
 
-func attach(_ *command, p *naos.Project) {
+func attach(cmd *command, p *naos.Project) {
 	// attach to device
-	exitIfSet(p.Attach(os.Stdout, os.Stdin))
+	exitIfSet(p.Attach(cmd.aDevice, os.Stdout, os.Stdin))
 }
 
-func format(cmd *command, p *naos.Project) {
+func format(_ *command, p *naos.Project) {
 	// format project
 	exitIfSet(p.Format(os.Stdout))
 }
