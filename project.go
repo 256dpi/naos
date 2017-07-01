@@ -15,9 +15,9 @@ import (
 	"github.com/mholt/archiver"
 )
 
-const espIDFVersion = "9b955f4c9f1b32652ea165d3e4cdaad01bba170e"
-const espMQTTVersion = "cc87172126aa7aacc3b982f7be7489950429b733"
-const espLibVersion = "8c9e924556b21f329da12151b18570b62517d3f5"
+const idfVersion = "9b955f4c9f1b32652ea165d3e4cdaad01bba170e"
+const mqttVersion = "cc87172126aa7aacc3b982f7be7489950429b733"
+const comVersion = "b9ebf97c370e0ee1261fb650f30192ecc78c5229"
 
 // A Project is a project available on disk.
 type Project struct {
@@ -214,7 +214,7 @@ func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 
 	// clone development framework
 	log(out, "Installing development framework...")
-	err = clone("https://github.com/espressif/esp-idf.git", frameworkDir, espIDFVersion, out)
+	err = clone("https://github.com/espressif/esp-idf.git", frameworkDir, idfVersion, out)
 	if err != nil {
 		return err
 	}
@@ -297,14 +297,14 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 
 	// clone component
 	log(out, "Installing MQTT component...")
-	err = clone("https://github.com/256dpi/esp-mqtt.git", filepath.Join(buildTreeDir, "components", "esp-mqtt"), espMQTTVersion, out)
+	err = clone("https://github.com/256dpi/esp-mqtt.git", filepath.Join(buildTreeDir, "components", "esp-mqtt"), mqttVersion, out)
 	if err != nil {
 		return err
 	}
 
 	// clone component
 	log(out, "Installing NAOS component...")
-	err = clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(buildTreeDir, "components", "naos-esp"), espLibVersion, out)
+	err = clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(buildTreeDir, "components", "naos-esp"), comVersion, out)
 	if err != nil {
 		return err
 	}
