@@ -179,6 +179,28 @@ func (i *Inventory) SetParams(pattern, param, value string, timeout time.Duratio
 	return updated, nil
 }
 
+// UnsetParams will unset the specified parameter on all devices matching the
+// supplied glob pattern. The inventory is updated with the removed value and a
+// list of updated devices is returned.
+func (i *Inventory) UnsetParams(pattern, param string) ([]*Device, error) {
+	// set parameter
+	err := UnsetParams(i.Broker, param, i.deviceBaseTopics(pattern))
+	if err != nil {
+		return nil, err
+	}
+
+	// prepare list of updated devices
+	var updated []*Device
+
+	// update device
+	for _, device := range i.FilterDevices(pattern) {
+		delete(device.Parameters, param)
+		updated = append(updated, device)
+	}
+
+	return updated, nil
+}
+
 // Record will enable log recording mode and yield the received log messages
 // until the provided channel has been closed.
 func (i *Inventory) Record(pattern string, quit chan struct{}, callback func(*Device, string)) error {

@@ -20,6 +20,54 @@ func SetParams(url, param, value string, baseTopics []string, timeout time.Durat
 	return commonGetSet(url, param, value, true, baseTopics, timeout)
 }
 
+// UnsetParams will connect to the specified MQTT broker and publish the 'unset'
+// command to unset the provided parameter for all specified base topics.
+func UnsetParams(url, param string, baseTopics []string) error {
+	// create client
+	cl := client.New()
+
+	// connect to the broker using the provided url
+	cf, err := cl.Connect(client.NewConfig(url))
+	if err != nil {
+		return err
+	}
+
+	// wait for ack
+	err = cf.Wait(5 * time.Second)
+	if err != nil {
+		return err
+	}
+
+	// make sure client gets closed
+	defer cl.Close()
+
+	// send unset command
+	for _, baseTopic := range baseTopics {
+		// init variables
+		topic := baseTopic + "/naos/unset/" + param
+
+		// publish config update
+		pf, err := cl.Publish(topic, nil, 0, false)
+		if err != nil {
+			return err
+		}
+
+		// wait for ack
+		err = pf.Wait(5 * time.Second)
+		if err != nil {
+			return err
+		}
+	}
+
+	// disconnect client
+	err = cl.Disconnect()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func commonGetSet(url, param, value string, set bool, baseTopics []string, timeout time.Duration) (map[string]string, error) {
 	// prepare channels
 	errs := make(chan error)

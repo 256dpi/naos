@@ -40,10 +40,12 @@ func main() {
 		list(cmd, getProject(cmd))
 	} else if cmd.cCollect {
 		collect(cmd, getProject(cmd))
-	} else if cmd.cSet {
-		set(cmd, getProject(cmd))
 	} else if cmd.cGet {
 		get(cmd, getProject(cmd))
+	} else if cmd.cSet {
+		set(cmd, getProject(cmd))
+	} else if cmd.cUnset {
+		unset(cmd, getProject(cmd))
 	} else if cmd.cMonitor {
 		monitor(cmd, getProject(cmd))
 	} else if cmd.cRecord {
@@ -138,6 +140,26 @@ func collect(cmd *command, p *naos.Project) {
 	exitIfSet(p.SaveInventory())
 }
 
+func get(cmd *command, p *naos.Project) {
+	// get parameter
+	list, err := p.Inventory.GetParams(cmd.aPattern, cmd.aParam, cmd.oTimeout)
+	exitIfSet(err)
+
+	// prepare table
+	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
+
+	// add rows
+	for _, device := range list {
+		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
+	}
+
+	// show table
+	tbl.show(0)
+
+	// save inventory
+	exitIfSet(p.SaveInventory())
+}
+
 func set(cmd *command, p *naos.Project) {
 	// set parameter
 	list, err := p.Inventory.SetParams(cmd.aPattern, cmd.aParam, cmd.aValue, cmd.oTimeout)
@@ -158,21 +180,10 @@ func set(cmd *command, p *naos.Project) {
 	exitIfSet(p.SaveInventory())
 }
 
-func get(cmd *command, p *naos.Project) {
-	// get parameter
-	list, err := p.Inventory.GetParams(cmd.aPattern, cmd.aParam, cmd.oTimeout)
+func unset(cmd *command, p *naos.Project) {
+	// unset parameter
+	_, err := p.Inventory.UnsetParams(cmd.aPattern, cmd.aParam)
 	exitIfSet(err)
-
-	// prepare table
-	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
-
-	// add rows
-	for _, device := range list {
-		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
-	}
-
-	// show table
-	tbl.show(0)
 
 	// save inventory
 	exitIfSet(p.SaveInventory())

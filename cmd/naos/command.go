@@ -36,6 +36,7 @@ Usage:
   naos collect [--clear --duration=<ms>]
   naos get <param> [<pattern>] [--timeout=<ms>]
   naos set <param> <value> [<pattern>] [--timeout=<ms>]
+  naos unset <param> [<pattern>]
   naos monitor [<pattern>] [--timeout=<ms>]
   naos record [<pattern>]
   naos update [<pattern>] [--timeout=<ms>]
@@ -65,6 +66,7 @@ type command struct {
 	cCollect bool
 	cGet     bool
 	cSet     bool
+	cUnset   bool
 	cMonitor bool
 	cRecord  bool
 	cUpdate  bool
@@ -103,8 +105,9 @@ func parseCommand() *command {
 		cFormat:  getBool(a["format"]),
 		cList:    getBool(a["list"]),
 		cCollect: getBool(a["collect"]),
-		cSet:     getBool(a["set"]),
 		cGet:     getBool(a["get"]),
+		cSet:     getBool(a["set"]),
+		cUnset:   getBool(a["unset"]),
 		cMonitor: getBool(a["monitor"]),
 		cRecord:  getBool(a["record"]),
 		cUpdate:  getBool(a["update"]),
