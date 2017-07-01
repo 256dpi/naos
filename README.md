@@ -1,6 +1,6 @@
 # naos-esp
 
-**the networked artifacts operating system library for the esp platform**
+**The [Networked Artifacts Operating System](https://github.com/shiftr-io/naos) component for the ESP platform.**
 
 ## Requirements
 
