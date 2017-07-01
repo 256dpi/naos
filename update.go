@@ -19,7 +19,7 @@ type UpdateStatus struct {
 // Update will concurrently perform a firmware update and block until all devices
 // have updated or returned errors. If a callback is provided it will be called
 // with the current status of the update.
-func Update(url string, baseTopics []string, firmware []byte, timeout time.Duration, callback func(string, *UpdateStatus)) {
+func Update(url string, baseTopics []string, firmware []byte, timeout time.Duration, callback func(string, *UpdateStatus)) error {
 	// prepare table
 	table := make(map[string]*UpdateStatus)
 
@@ -47,8 +47,10 @@ func Update(url string, baseTopics []string, firmware []byte, timeout time.Durat
 				// update progress
 				table[bt].Progress = progress
 
-				// call callback
-				callback(bt, table[bt])
+				// call callback if provided
+				if callback != nil {
+					callback(bt, table[bt])
+				}
 			})
 			if err != nil {
 				// lock mutex
@@ -58,8 +60,10 @@ func Update(url string, baseTopics []string, firmware []byte, timeout time.Durat
 				// update error
 				table[bt].Error = err
 
-				// call callback
-				callback(bt, table[bt])
+				// call callback if provided
+				if callback != nil {
+					callback(bt, table[bt])
+				}
 			}
 
 			// remove from wait group
@@ -67,7 +71,17 @@ func Update(url string, baseTopics []string, firmware []byte, timeout time.Durat
 		}(baseTopic)
 	}
 
+	// wait for all updates to complete
 	wg.Wait()
+
+	// return first error
+	for _, us := range table {
+		if us.Error != nil {
+			return us.Error
+		}
+	}
+
+	return nil
 }
 
 func updateOne(url, baseTopic string, firmware []byte, timeout time.Duration, progress func(float64)) error {

@@ -607,7 +607,10 @@ func (p *Project) Update(pattern string, timeout time.Duration, callback func(*D
 	}
 
 	// run update
-	p.Inventory.Update(pattern, bytes, timeout, callback)
+	err = p.Inventory.Update(pattern, bytes, timeout, callback)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

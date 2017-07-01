@@ -216,8 +216,8 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*D
 // Update will update the devices that match the supplied glob pattern with the
 // specified image. The specified callback is called for every change in state
 // or progress.
-func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device, *UpdateStatus)) {
-	Update(i.Broker, i.deviceBaseTopics(pattern), firmware, timeout, func(baseTopic string, status *UpdateStatus) {
+func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device, *UpdateStatus)) error {
+	return Update(i.Broker, i.deviceBaseTopics(pattern), firmware, timeout, func(baseTopic string, status *UpdateStatus) {
 		// get device
 		device := i.deviceByBaseTopic(baseTopic)
 		if device == nil {

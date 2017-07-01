@@ -56,7 +56,7 @@ func create(cmd *command) {
 	exitIfSet(err)
 
 	// save inventory
-	save(cmd, p)
+	exitIfSet(p.SaveInventory())
 }
 
 func setup(cmd *command, p *naos.Project) {
@@ -130,7 +130,7 @@ func collect(cmd *command, p *naos.Project) {
 	tbl.show(0)
 
 	// save inventory
-	save(cmd, p)
+	exitIfSet(p.SaveInventory())
 }
 
 func set(cmd *command, p *naos.Project) {
@@ -150,7 +150,7 @@ func set(cmd *command, p *naos.Project) {
 	tbl.show(0)
 
 	// save inventory
-	save(cmd, p)
+	exitIfSet(p.SaveInventory())
 }
 
 func get(cmd *command, p *naos.Project) {
@@ -170,7 +170,7 @@ func get(cmd *command, p *naos.Project) {
 	tbl.show(0)
 
 	// save inventory
-	save(cmd, p)
+	exitIfSet(p.SaveInventory())
 }
 
 func monitor(cmd *command, p *naos.Project) {
@@ -236,7 +236,7 @@ func update(cmd *command, p *naos.Project) {
 	list := make(map[*naos.Device]*naos.UpdateStatus)
 
 	// update devices
-	p.Update(cmd.aPattern, cmd.oTimeout, func(d *naos.Device, us *naos.UpdateStatus) {
+	err := p.Update(cmd.aPattern, cmd.oTimeout, func(d *naos.Device, us *naos.UpdateStatus) {
 		// save status
 		list[d] = us
 
@@ -260,10 +260,8 @@ func update(cmd *command, p *naos.Project) {
 	})
 
 	// save inventory
-	save(cmd, p)
-}
-
-func save(_ *command, p *naos.Project) {
-	// save inventory
 	exitIfSet(p.SaveInventory())
+
+	// check error
+	exitIfSet(err)
 }
