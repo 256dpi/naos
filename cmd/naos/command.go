@@ -21,6 +21,7 @@ Fleet Management:
   collect  Will collect connected devices and add them to the inventory.
   get      Will read a parameter value from connected devices.
   set      Will set a parameter value on connected devices.
+  unset    Will unset a parameter on connected devices.
   monitor  Will monitor heartbeats from connected devices.
   record   Will record log messages from connected devices.
   update   Will send the previously built binary to connected devices.
