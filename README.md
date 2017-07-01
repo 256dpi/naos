@@ -1,3 +1,3 @@
 # naos
 
-**the networked artifacts operating system**
+**The Networked Artifacts Operating System**
