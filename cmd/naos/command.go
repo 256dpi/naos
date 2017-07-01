@@ -16,7 +16,7 @@ Project Management:
   build   Will build all source files.
   flash   Will flash the previously built binary to an attached device.
   attach  Will open a serial communication with an attached device.
-  fmt     Will format all source files in the 'src' subdirectory.
+  format  Will format all source files in the 'src' subdirectory.
 
 Fleet Management:
   list     Will list all devices listed in the inventory.
@@ -33,7 +33,7 @@ Usage:
   naos build [--clean --app-only]
   naos flash [--erase --app-only]
   naos attach
-  naos fmt
+  naos format
   naos list
   naos collect [--clear --duration=<ms>]
   naos get <param> [<pattern>] [--timeout=<ms>]
@@ -101,7 +101,7 @@ func parseCommand() *command {
 		cBuild:   getBool(a["build"]),
 		cFlash:   getBool(a["flash"]),
 		cAttach:  getBool(a["attach"]),
-		cFormat:  getBool(a["fmt"]),
+		cFormat:  getBool(a["format"]),
 		cList:    getBool(a["list"]),
 		cCollect: getBool(a["collect"]),
 		cSet:     getBool(a["set"]),
