@@ -30,7 +30,7 @@ Fleet Management:
 Usage:
   naos create
   naos setup [--force --cmake]
-  naos build [--app-only]
+  naos build [--clean --app-only]
   naos flash [--erase --app-only]
   naos attach
   naos fmt
@@ -46,6 +46,7 @@ Usage:
 Options:
   --force          Reinstall dependencies when they already exist.
   --cmake          Create required CMake files for IDEs like CLion.
+  --clean          Clean all build artifacts before building again.
   --erase          Erase completely before flashing new image.
   --app-only       Only build or flash the application.
   --clear          Remove not available devices from inventory.
@@ -80,6 +81,7 @@ type command struct {
 	// options
 	oForce    bool
 	oCMake    bool
+	oClean    bool
 	oErase    bool
 	oClear    bool
 	oAppOnly  bool
@@ -118,6 +120,7 @@ func parseCommand() *command {
 		// options
 		oForce:    getBool(a["--force"]),
 		oCMake:    getBool(a["--cmake"]),
+		oClean:    getBool(a["--clean"]),
 		oErase:    getBool(a["--erase"]),
 		oClear:    getBool(a["--clear"]),
 		oAppOnly:  getBool(a["--app-only"]),

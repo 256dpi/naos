@@ -404,7 +404,16 @@ func (p *Project) BuildTreeLocation() (string, error) {
 }
 
 // Build will build the project.
-func (p *Project) Build(appOnly bool, out io.Writer) error {
+func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
+	// clean project if requested
+	if clean {
+		log(out, "Cleaning project...")
+		err := p.exec(out, nil, "make", "clean")
+		if err != nil {
+			return err
+		}
+	}
+
 	// build project (app only)
 	if appOnly {
 		log(out, "Building project (app only)...")

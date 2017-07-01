@@ -80,7 +80,7 @@ func setup(cmd *command, p *naos.Project) {
 
 func build(cmd *command, p *naos.Project) {
 	// build project
-	exitIfSet(p.Build(cmd.oAppOnly, os.Stdout))
+	exitIfSet(p.Build(cmd.oClean, cmd.oAppOnly, os.Stdout))
 }
 
 func flash(cmd *command, p *naos.Project) {
