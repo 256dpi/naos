@@ -8,7 +8,24 @@ import (
 
 // TODO: Support specifying device file for flash and attach.
 
-var usage = `naos - the networked artifacts operating system
+var usage = `Networked Artifacts Operating System - © 2017 shiftr.io
+
+Project Management:
+  create  Will create a new naos project in the current directory.
+  setup   Will download required dependencies to the '.naos' subdirectory.
+  build   Will build all source files.
+  flash   Will flash the previously built binary to an attached device.
+  attach  Will open a serial communication with an attached device.
+  fmt     Will format all source files in the 'src' subdirectory.
+
+Fleet Management:
+  list     Will list all devices listed in the inventory.
+  collect  Will collect connected devices and add them to the inventory.
+  get      Will read a parameter value from connected devices.
+  set      Will set a parameter value on connected devices.
+  monitor  Will monitor heartbeats from connected devices.
+  record   Will record log messages from connected devices.
+  update   Will send the previously built binary to connected devices.
 
 Usage:
   naos create
