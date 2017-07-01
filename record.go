@@ -16,7 +16,7 @@ type LogMessage struct {
 
 // Record will enable log recording mode and yield the received log messages
 // until the provided channel has been closed.
-func Record(url string, baseTopics []string, quit chan struct{}, cb func(*LogMessage)) error {
+func Record(url string, baseTopics []string, quit chan struct{}, timeout time.Duration, cb func(*LogMessage)) error {
 	// prepare channels
 	errs := make(chan error)
 
@@ -52,7 +52,7 @@ func Record(url string, baseTopics []string, quit chan struct{}, cb func(*LogMes
 	}
 
 	// wait for ack
-	err = cf.Wait(5 * time.Second)
+	err = cf.Wait(timeout)
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func Record(url string, baseTopics []string, quit chan struct{}, cb func(*LogMes
 	}
 
 	// wait for ack
-	err = sf.Wait(5 * time.Second)
+	err = sf.Wait(timeout)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func Record(url string, baseTopics []string, quit chan struct{}, cb func(*LogMes
 		}
 
 		// wait for ack
-		err = pf.Wait(5 * time.Second)
+		err = pf.Wait(timeout)
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func Record(url string, baseTopics []string, quit chan struct{}, cb func(*LogMes
 		}
 
 		// wait for ack
-		err = pf.Wait(5 * time.Second)
+		err = pf.Wait(timeout)
 		if err != nil {
 			return err
 		}

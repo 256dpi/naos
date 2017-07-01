@@ -37,9 +37,9 @@ Usage:
   naos collect [--clear --duration=<ms>]
   naos get <param> [<pattern>] [--timeout=<ms>]
   naos set <param> <value> [<pattern>] [--timeout=<ms>]
-  naos unset <param> [<pattern>]
+  naos unset <param> [<pattern>] [--timeout=<ms>]
   naos monitor [<pattern>] [--timeout=<ms>]
-  naos record [<pattern>]
+  naos record [<pattern>] [--timeout=<ms>]
   naos update [<pattern>] [--timeout=<ms>]
   naos help
 

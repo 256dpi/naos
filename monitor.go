@@ -26,7 +26,7 @@ type Heartbeat struct {
 // quit channel is closed.
 //
 // Note: Not correctly formatted heartbeats are ignored.
-func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heartbeat)) error {
+func Monitor(url string, baseTopics []string, quit chan struct{}, timeout time.Duration, cb func(*Heartbeat)) error {
 	// prepare channels
 	errs := make(chan error)
 
@@ -82,7 +82,7 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heart
 	}
 
 	// wait for ack
-	err = cf.Wait(5 * time.Second)
+	err = cf.Wait(timeout)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, cb func(*Heart
 	}
 
 	// wait for ack
-	err = sf.Wait(5 * time.Second)
+	err = sf.Wait(timeout)
 	if err != nil {
 		return err
 	}

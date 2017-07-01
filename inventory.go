@@ -182,9 +182,9 @@ func (i *Inventory) SetParams(pattern, param, value string, timeout time.Duratio
 // UnsetParams will unset the specified parameter on all devices matching the
 // supplied glob pattern. The inventory is updated with the removed value and a
 // list of updated devices is returned.
-func (i *Inventory) UnsetParams(pattern, param string) ([]*Device, error) {
+func (i *Inventory) UnsetParams(pattern, param string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	err := UnsetParams(i.Broker, param, i.deviceBaseTopics(pattern))
+	err := UnsetParams(i.Broker, param, i.deviceBaseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -203,8 +203,8 @@ func (i *Inventory) UnsetParams(pattern, param string) ([]*Device, error) {
 
 // Record will enable log recording mode and yield the received log messages
 // until the provided channel has been closed.
-func (i *Inventory) Record(pattern string, quit chan struct{}, callback func(*Device, string)) error {
-	return Record(i.Broker, i.deviceBaseTopics(pattern), quit, func(log *LogMessage) {
+func (i *Inventory) Record(pattern string, quit chan struct{}, timeout time.Duration, callback func(*Device, string)) error {
+	return Record(i.Broker, i.deviceBaseTopics(pattern), quit, timeout, func(log *LogMessage) {
 		// call user callback
 		if callback != nil {
 			callback(i.deviceByBaseTopic(log.BaseTopic), log.Content)
@@ -216,8 +216,8 @@ func (i *Inventory) Record(pattern string, quit chan struct{}, callback func(*De
 // update the inventory accordingly. The specified callback is called for every
 // heartbeat with the update device and the heartbeat available at
 // device.LastHeartbeat.
-func (i *Inventory) Monitor(pattern string, quit chan struct{}, callback func(*Device, *Heartbeat)) error {
-	return Monitor(i.Broker, i.deviceBaseTopics(pattern), quit, func(heartbeat *Heartbeat) {
+func (i *Inventory) Monitor(pattern string, quit chan struct{}, timeout time.Duration, callback func(*Device, *Heartbeat)) error {
+	return Monitor(i.Broker, i.deviceBaseTopics(pattern), quit, timeout, func(heartbeat *Heartbeat) {
 		// get device
 		device, ok := i.Devices[heartbeat.DeviceName]
 		if !ok {

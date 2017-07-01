@@ -182,7 +182,7 @@ func set(cmd *command, p *naos.Project) {
 
 func unset(cmd *command, p *naos.Project) {
 	// unset parameter
-	_, err := p.Inventory.UnsetParams(cmd.aPattern, cmd.aParam)
+	_, err := p.Inventory.UnsetParams(cmd.aPattern, cmd.aParam, cmd.oTimeout)
 	exitIfSet(err)
 
 	// save inventory
@@ -208,7 +208,7 @@ func monitor(cmd *command, p *naos.Project) {
 	list := make(map[*naos.Device]*naos.Heartbeat)
 
 	// monitor devices
-	exitIfSet(p.Inventory.Monitor(cmd.aPattern, quit, func(d *naos.Device, hb *naos.Heartbeat) {
+	exitIfSet(p.Inventory.Monitor(cmd.aPattern, quit, cmd.oTimeout, func(d *naos.Device, hb *naos.Heartbeat) {
 		// set latest heartbeat for device
 		list[d] = hb
 
@@ -238,7 +238,7 @@ func record(cmd *command, p *naos.Project) {
 	}()
 
 	// record devices
-	exitIfSet(p.Inventory.Record(cmd.aPattern, quit, func(d *naos.Device, msg string) {
+	exitIfSet(p.Inventory.Record(cmd.aPattern, quit, cmd.oTimeout, func(d *naos.Device, msg string) {
 		// show log message
 		fmt.Printf("[%s] %s\n", d.Name, msg)
 	}))

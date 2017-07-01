@@ -22,7 +22,7 @@ func SetParams(url, param, value string, baseTopics []string, timeout time.Durat
 
 // UnsetParams will connect to the specified MQTT broker and publish the 'unset'
 // command to unset the provided parameter for all specified base topics.
-func UnsetParams(url, param string, baseTopics []string) error {
+func UnsetParams(url, param string, baseTopics []string, timeout time.Duration) error {
 	// create client
 	cl := client.New()
 
@@ -33,7 +33,7 @@ func UnsetParams(url, param string, baseTopics []string) error {
 	}
 
 	// wait for ack
-	err = cf.Wait(5 * time.Second)
+	err = cf.Wait(timeout)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func UnsetParams(url, param string, baseTopics []string) error {
 		}
 
 		// wait for ack
-		err = pf.Wait(5 * time.Second)
+		err = pf.Wait(timeout)
 		if err != nil {
 			return err
 		}
