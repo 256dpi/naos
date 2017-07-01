@@ -104,8 +104,9 @@ void naos_manager_start() {
   naos_subscribe("naos/collect", 0, NAOS_GLOBAL);
 
   // subscribe to local topics
-  naos_subscribe("naos/set/+", 0, NAOS_LOCAL);
   naos_subscribe("naos/get/+", 0, NAOS_LOCAL);
+  naos_subscribe("naos/set/+", 0, NAOS_LOCAL);
+  naos_subscribe("naos/unset/+", 0, NAOS_LOCAL);
   naos_subscribe("naos/record", 0, NAOS_LOCAL);
   naos_subscribe("naos/update/begin", 0, NAOS_LOCAL);
   naos_subscribe("naos/update/write", 0, NAOS_LOCAL);
@@ -126,6 +127,29 @@ void naos_manager_handle(const char *topic, const char *payload, unsigned int le
   if (scope == NAOS_GLOBAL && strcmp(topic, "naos/collect") == 0) {
     // send announcement
     naos_manager_send_announcement();
+
+    // release mutex
+    NAOS_UNLOCK(naos_manager_mutex);
+
+    return;
+  }
+
+  // check get
+  if (scope == NAOS_LOCAL && strncmp(topic, "naos/get/", 9) == 0) {
+    // get param
+    char *param = (char *)topic + 9;
+
+    // get value
+    char *value = naos_get(param);
+
+    // construct topic
+    char *t = naos_str_concat("naos/value/", param);
+
+    // send value
+    naos_publish_str(t, value, 0, false, NAOS_LOCAL);
+
+    // free topic
+    free(t);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -162,22 +186,16 @@ void naos_manager_handle(const char *topic, const char *payload, unsigned int le
     return;
   }
 
-  // check get
-  if (scope == NAOS_LOCAL && strncmp(topic, "naos/get/", 9) == 0) {
+  // check unset
+  if (scope == NAOS_LOCAL && strncmp(topic, "naos/unset/", 11) == 0) {
     // get param
-    char *param = (char *)topic + 9;
+    char *param = (char *)topic + 11;
 
-    // get value
-    char *value = naos_get(param);
+    // erase param
+    ESP_ERROR_CHECK(nvs_erase_key(naos_manager_nvs_handle, param));
 
-    // construct topic
-    char *t = naos_str_concat("naos/value/", param);
-
-    // send value
-    naos_publish_str(t, value, 0, false, NAOS_LOCAL);
-
-    // free topic
-    free(t);
+    // update task
+    naos_task_update(param, NULL);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);

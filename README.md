@@ -22,7 +22,7 @@ All devices will periodically publish to the local `naos/heartbeat` topic. The p
 
 ### Configuration
 
-All devices will subscribe to the local `naos/set/+` and `naos/get/+` topics to handle configuration write and read requests. The device will acknowledge each action by responding with the saved value on the local topic `naos/value/+`.
+All devices will subscribe to the local `naos/get/+`, `naos/set/+` and `naos/unset/+` topics to handle configuration read, write and delete requests. The device will acknowledge read and write actions by responding with the saved value on the local topic `naos/value/+`.
 
 ### Firmware Update
 
