@@ -55,7 +55,7 @@ func main() {
 
 func create(cmd *command) {
 	// create project
-	p, err := naos.CreateProject(home(), getOutput(cmd))
+	p, err := naos.CreateProject(home(), os.Stdout)
 	exitIfSet(err)
 
 	// save inventory
@@ -64,28 +64,28 @@ func create(cmd *command) {
 
 func setup(cmd *command, p *naos.Project) {
 	// setup toolchain
-	exitIfSet(p.SetupToolchain(cmd.oForce, getOutput(cmd)))
+	exitIfSet(p.SetupToolchain(cmd.oForce, os.Stdout))
 
 	// setup development framework
-	exitIfSet(p.SetupDevelopmentFramework(cmd.oForce, getOutput(cmd)))
+	exitIfSet(p.SetupDevelopmentFramework(cmd.oForce, os.Stdout))
 
 	// setup build tree
-	exitIfSet(p.SetupBuildTree(cmd.oForce, getOutput(cmd)))
+	exitIfSet(p.SetupBuildTree(cmd.oForce, os.Stdout))
 
 	// setup cmake if required
 	if cmd.oCMake {
-		exitIfSet(p.SetupCMake(cmd.oForce, getOutput(cmd)))
+		exitIfSet(p.SetupCMake(cmd.oForce, os.Stdout))
 	}
 }
 
 func build(cmd *command, p *naos.Project) {
 	// build project
-	exitIfSet(p.Build(cmd.oAppOnly, getOutput(cmd)))
+	exitIfSet(p.Build(cmd.oAppOnly, os.Stdout))
 }
 
 func flash(cmd *command, p *naos.Project) {
 	// flash project
-	exitIfSet(p.Flash(cmd.oErase, cmd.oAppOnly, getOutput(cmd)))
+	exitIfSet(p.Flash(cmd.oErase, cmd.oAppOnly, os.Stdout))
 }
 
 func attach(_ *command, p *naos.Project) {
@@ -95,7 +95,7 @@ func attach(_ *command, p *naos.Project) {
 
 func format(cmd *command, p *naos.Project) {
 	// format project
-	exitIfSet(p.Format(getOutput(cmd)))
+	exitIfSet(p.Format(os.Stdout))
 }
 
 func list(_ *command, p *naos.Project) {

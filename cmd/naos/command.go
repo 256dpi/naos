@@ -11,12 +11,12 @@ import (
 var usage = `naos - the networked artifacts operating system
 
 Usage:
-  naos create [-v]
-  naos setup [--force --cmake -v]
-  naos build [--app-only -v]
-  naos flash [--erase --app-only -v]
+  naos create
+  naos setup [--force --cmake]
+  naos build [--app-only]
+  naos flash [--erase --app-only]
   naos attach
-  naos fmt [-v]
+  naos fmt
   naos list
   naos collect [--clear --duration=<ms>]
   naos get <param> [<pattern>] [--timeout=<ms>]
@@ -34,7 +34,6 @@ Options:
   -t --timeout=<ms>   The response timeout [default: 5s].
   -i --image=<path>   Path to the binary app image.
   -c --clear          Remove not available devices from inventory.
-  -v --verbose        Be verbose about whats going on.
   -h --help           Show this screen.
 `
 
@@ -69,7 +68,6 @@ type command struct {
 	oDuration time.Duration
 	oTimeout  time.Duration
 	oImage    string
-	oVerbose  bool
 }
 
 func parseCommand() *command {
@@ -107,7 +105,6 @@ func parseCommand() *command {
 		oDuration: getDuration(a["--duration"]),
 		oTimeout:  getDuration(a["--timeout"]),
 		oImage:    getString(a["--image"]),
-		oVerbose:  getBool(a["--verbose"]),
 	}
 }
 
