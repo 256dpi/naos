@@ -15,7 +15,7 @@ import (
 	"github.com/mholt/archiver"
 )
 
-const espIDFVersion = "cc93e14770e7b3681ebc80b30336e498cc96e961"
+const espIDFVersion = "9b955f4c9f1b32652ea165d3e4cdaad01bba170e"
 const espMQTTVersion = "cc87172126aa7aacc3b982f7be7489950429b733"
 const espLibVersion = "8c9e924556b21f329da12151b18570b62517d3f5"
 
