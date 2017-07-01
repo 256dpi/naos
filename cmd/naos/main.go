@@ -92,7 +92,7 @@ func flash(cmd *command, p *naos.Project) {
 
 func attach(cmd *command, p *naos.Project) {
 	// attach to device
-	exitIfSet(p.Attach(cmd.aDevice, os.Stdout, os.Stdin))
+	exitIfSet(p.Attach(cmd.aDevice, cmd.oSimple, os.Stdout, os.Stdin))
 }
 
 func format(_ *command, p *naos.Project) {

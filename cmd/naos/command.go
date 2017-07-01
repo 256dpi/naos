@@ -30,7 +30,7 @@ Usage:
   naos setup [--force --cmake]
   naos build [--clean --app-only]
   naos flash [<device>] [--erase --app-only]
-  naos attach [<device>]
+  naos attach [<device>] [--simple]
   naos format
   naos list
   naos collect [--clear --duration=<ms>]
@@ -47,6 +47,7 @@ Options:
   --clean          Clean all build artifacts before building again.
   --erase          Erase completely before flashing new image.
   --app-only       Only build or flash the application.
+  --simple         Use simple serial tool.
   --clear          Remove not available devices from inventory.
   --duration=<ms>  Collection duration [default: 1s].
   --timeout=<ms>   Response timeout [default: 5s].
@@ -81,8 +82,9 @@ type command struct {
 	oCMake    bool
 	oClean    bool
 	oErase    bool
-	oClear    bool
 	oAppOnly  bool
+	oSimple   bool
+	oClear    bool
 	oDuration time.Duration
 	oTimeout  time.Duration
 }
@@ -120,8 +122,9 @@ func parseCommand() *command {
 		oCMake:    getBool(a["--cmake"]),
 		oClean:    getBool(a["--clean"]),
 		oErase:    getBool(a["--erase"]),
-		oClear:    getBool(a["--clear"]),
 		oAppOnly:  getBool(a["--app-only"]),
+		oSimple:   getBool(a["--simple"]),
+		oClear:    getBool(a["--clear"]),
 		oDuration: getDuration(a["--duration"]),
 		oTimeout:  getDuration(a["--timeout"]),
 	}

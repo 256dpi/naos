@@ -518,7 +518,7 @@ func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) 
 }
 
 // Attach will attach to the attached device.
-func (p *Project) Attach(device string, out io.Writer, in io.Reader) error {
+func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader) error {
 	// get toolchain location
 	toolchain, err := p.ToolchainLocation()
 	if err != nil {
@@ -531,10 +531,29 @@ func (p *Project) Attach(device string, out io.Writer, in io.Reader) error {
 		return err
 	}
 
-	// TODO: Use idf-monitor.
+	// get development framework location
+	developmentFramework, err := p.DevelopmentFrameworkLocation()
+	if err != nil {
+		return err
+	}
 
-	// construct command
-	cmd := exec.Command("miniterm.py","--rts", "0", "--dtr", "0", "--raw", "--exit-char", "99", device, "115200")
+	// prepare command
+	var cmd *exec.Cmd
+
+	// set simple or advanced command
+	if simple {
+		// construct command
+		cmd = exec.Command("miniterm.py", "--rts", "0", "--dtr", "0", "--raw", device, "115200")
+	} else {
+		// get path of monitor tool
+		tool := filepath.Join(developmentFramework, "tools", "idf_monitor.py")
+
+		// get elf path
+		elf := filepath.Join(buildTree, "build", "naos-project.elf")
+
+		// construct command
+		cmd = exec.Command("python", tool, "--baud", "115200", "--port", device, elf)
+	}
 
 	// set working directory
 	cmd.Dir = buildTree
@@ -567,13 +586,13 @@ func (p *Project) Attach(device string, out io.Writer, in io.Reader) error {
 	quit := make(chan struct{})
 
 	// read data until EOF
-	go func(){
+	go func() {
 		io.Copy(out, tty)
 		close(quit)
 	}()
 
 	// write data until EOF
-	go func(){
+	go func() {
 		io.Copy(tty, in)
 		close(quit)
 	}()
