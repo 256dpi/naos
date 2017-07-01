@@ -8,7 +8,7 @@ import (
 
 // TODO: Support specifying device file for flash and attach.
 
-var usage = `Networked Artifacts Operating System - © 2017 shiftr.io
+var usage = `Networked Artifacts Operating System by shiftr.io
 
 Project Management:
   create  Will create a new naos project in the current directory.
@@ -41,18 +41,17 @@ Usage:
   naos monitor [<pattern>] [--timeout=<ms>]
   naos record [<pattern>]
   naos update [<pattern>] [--image=<path> --timeout=<ms>]
-  naos --help
+  naos help
 
 Options:
-  -f --force          Force a re-installation of components when they exist.
-  -m --cmake          Will create required CMake files for IDEs like CLion.
-  -e --erase          Erase completely before flashing new image.
-  -a --app-only       If set only the app will be built or flashed.
-  -d --duration=<ms>  The collection duration [default: 1s].
-  -t --timeout=<ms>   The response timeout [default: 5s].
-  -i --image=<path>   Path to the binary app image.
-  -c --clear          Remove not available devices from inventory.
-  -h --help           Show this screen.
+  --force          Reinstall dependencies when they already exist.
+  --cmake          Create required CMake files for IDEs like CLion.
+  --erase          Erase completely before flashing new image.
+  --app-only       Only build or flash the application.
+  --clear          Remove not available devices from inventory.
+  --duration=<ms>  Collection duration [default: 1s].
+  --timeout=<ms>   Response timeout [default: 5s].
+  --image=<path>   Alternative path to the binary app image.
 `
 
 type command struct {
@@ -70,6 +69,7 @@ type command struct {
 	cMonitor bool
 	cRecord  bool
 	cUpdate  bool
+	cHelp    bool
 
 	// arguments
 	aParam   string
@@ -89,7 +89,7 @@ type command struct {
 }
 
 func parseCommand() *command {
-	a, err := docopt.Parse(usage, nil, true, "", false)
+	a, err := docopt.Parse(usage, nil, false, "", false)
 	exitIfSet(err)
 
 	return &command{
@@ -107,6 +107,7 @@ func parseCommand() *command {
 		cMonitor: getBool(a["monitor"]),
 		cRecord:  getBool(a["record"]),
 		cUpdate:  getBool(a["update"]),
+		cHelp:    getBool(a["help"]),
 
 		// arguments
 		aName:    getString(a["<name>"]),

@@ -48,6 +48,8 @@ func main() {
 		record(cmd, getProject(cmd))
 	} else if cmd.cUpdate {
 		update(cmd, getProject(cmd))
+	} else if cmd.cHelp {
+		fmt.Println(usage)
 	}
 }
 
