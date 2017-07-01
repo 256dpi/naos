@@ -1,5 +1,7 @@
 package naos
 
+// TODO: Read sdkconfig from 'naos-esp'.
+
 const sdkconfigFile = `#
 # Automatically generated file; DO NOT EDIT.
 # Espressif IoT Development Framework Configuration

@@ -15,9 +15,11 @@ import (
 	"github.com/mholt/archiver"
 )
 
+// TODO: Implement dependency updating.
+
 const idfVersion = "9b955f4c9f1b32652ea165d3e4cdaad01bba170e"
 const mqttVersion = "cc87172126aa7aacc3b982f7be7489950429b733"
-const comVersion = "b9ebf97c370e0ee1261fb650f30192ecc78c5229"
+const comVersion = "41c8c6a839eb20c46f19258b8fdcc5caa3aba01c"
 
 // A Project is a project available on disk.
 type Project struct {
