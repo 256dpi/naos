@@ -192,10 +192,15 @@ void naos_manager_handle(const char *topic, const char *payload, unsigned int le
     char *param = (char *)topic + 11;
 
     // erase param
-    ESP_ERROR_CHECK(nvs_erase_key(naos_manager_nvs_handle, param));
+    esp_err_t err = nvs_erase_key(naos_manager_nvs_handle, param);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+      ESP_ERROR_CHECK(err);
+    }
 
-    // update task
-    naos_task_update(param, NULL);
+    // update task if param was set
+    if (err == ESP_OK) {
+      naos_task_update(param, NULL);
+    }
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
