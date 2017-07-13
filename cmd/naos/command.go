@@ -14,6 +14,7 @@ Project Management:
   build    Will build all source files.
   flash    Will flash the previously built binary to an attached device.
   attach   Will open a serial communication with an attached device.
+  run      Will run 'build', 'flash' and 'attach' sequentially.
   format   Will format all source files in the 'src' subdirectory.
 
 Fleet Management:
@@ -32,6 +33,7 @@ Usage:
   naos build [--clean --app-only]
   naos flash [<device>] [--erase --app-only]
   naos attach [<device>] [--simple]
+  naos run [<device>] [--clean --app-only --erase --simple]
   naos format
   naos list
   naos collect [--clear --duration=<ms>]
@@ -62,6 +64,7 @@ type command struct {
 	cBuild   bool
 	cFlash   bool
 	cAttach  bool
+	cRun     bool
 	cFormat  bool
 	cList    bool
 	cCollect bool
@@ -103,6 +106,7 @@ func parseCommand() *command {
 		cBuild:   getBool(a["build"]),
 		cFlash:   getBool(a["flash"]),
 		cAttach:  getBool(a["attach"]),
+		cRun:     getBool(a["run"]),
 		cFormat:  getBool(a["format"]),
 		cList:    getBool(a["list"]),
 		cCollect: getBool(a["collect"]),
