@@ -17,9 +17,11 @@ Project Management:
   run      Will run 'build', 'flash' and 'attach' sequentially.
   format   Will format all source files in the 'src' subdirectory.
 
+Configuration Management:
+  scan     Will scan for Bluetooth devices and print their configuration.
+
 Fleet Management:
   list     Will list all devices listed in the inventory.
-  scan     Will scan for connected Bluetooth devices.
   collect  Will collect connected devices and add them to the inventory.
   get      Will read a parameter value from connected devices.
   set      Will set a parameter value on connected devices.
@@ -36,8 +38,8 @@ Usage:
   naos attach [<device>] [--simple]
   naos run [<device>] [--clean --app-only --erase --simple]
   naos format
-  naos list
   naos scan [--duration=<ms> --timeout=<ms>]
+  naos list
   naos collect [--clear --duration=<ms>]
   naos get <param> [<pattern>] [--timeout=<ms>]
   naos set <param> <value> [<pattern>] [--timeout=<ms>]
