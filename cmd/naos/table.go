@@ -54,7 +54,7 @@ func (t *table) string() string {
 func (t *table) show(sortColumn int) {
 	// sort table using a column if gte zero
 	if sortColumn >= 0 {
-		sort.Slice(t.data, func(i, j int) bool {
+		sort.Slice(t.data[1:], func(i, j int) bool {
 			return t.data[i][sortColumn] < t.data[j][sortColumn]
 		})
 	}

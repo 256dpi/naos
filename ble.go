@@ -26,6 +26,10 @@ var systemCommandUUID = ble.MustParse("37CF1864-5A8E-450F-A277-2981BD76D0AB")
 
 // BLEDevice is returned by Scan.
 type BLEDevice struct {
+	Address          string
+	DeviceName       string
+	DeviceType       string
+	BaseTopic        string
 	WiFiSSID         string
 	WiFiPassword     string
 	MQTTHost         string
@@ -33,9 +37,6 @@ type BLEDevice struct {
 	MQTTClientID     string
 	MQTTUsername     string
 	MQTTPassword     string
-	DeviceType       string
-	DeviceName       string
-	BaseTopic        string
 	ConnectionStatus string
 }
 
@@ -139,7 +140,9 @@ func bleExplore(addr ble.Addr, timeout time.Duration) (*BLEDevice, error) {
 	}
 
 	// prepare device
-	device := &BLEDevice{}
+	device := &BLEDevice{
+		Address: client.Address().String(),
+	}
 
 	// go through all characteristics
 	for _, c := range characteristics {
@@ -221,6 +224,12 @@ func bleExplore(addr ble.Addr, timeout time.Duration) (*BLEDevice, error) {
 
 			device.ConnectionStatus = string(data)
 		}
+	}
+
+	// disconnect client
+	err = client.CancelConnection()
+	if err != nil {
+		return nil, err
 	}
 
 	return device, nil

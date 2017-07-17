@@ -147,11 +147,11 @@ func scan(cmd *command, _ *naos.Project) {
 	exitIfSet(err)
 
 	// prepare table
-	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "BASE TOPIC", "WIFI SSID", "WIFI PASSWORD", "MQTT HOST", "MQTT PORT", "MQTT CLIENT ID", "MQTT USERNAME", "MQTT PASSWORD", "CONNECTION STATUS")
+	tbl := newTable("ADDRESS", "DEVICE NAME", "DEVICE TYPE", "BASE TOPIC", "WIFI SSID", "WIFI PASSWORD", "MQTT HOST", "MQTT PORT", "MQTT CLIENT ID", "MQTT USERNAME", "MQTT PASSWORD", "CONNECTION STATUS")
 
 	// add rows
 	for _, d := range devices {
-		tbl.add(d.DeviceName, d.DeviceType, d.BaseTopic, d.WiFiSSID, d.WiFiPassword, d.MQTTHost, strconv.Itoa(d.MQTTPort), d.MQTTClientID, d.MQTTUsername, d.MQTTPassword, d.ConnectionStatus)
+		tbl.add(d.Address, d.DeviceName, d.DeviceType, d.BaseTopic, d.WiFiSSID, d.WiFiPassword, d.MQTTHost, strconv.Itoa(d.MQTTPort), d.MQTTClientID, d.MQTTUsername, d.MQTTPassword, d.ConnectionStatus)
 	}
 
 	// show table
