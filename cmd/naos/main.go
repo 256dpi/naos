@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 
 	"code.cloudfoundry.org/bytefmt"
 	"github.com/shiftr-io/naos"
@@ -38,6 +39,8 @@ func main() {
 		run(cmd, getProject(cmd))
 	} else if cmd.cFormat {
 		format(cmd, getProject(cmd))
+	} else if cmd.cScan {
+		scan(cmd, getProject(cmd))
 	} else if cmd.cList {
 		list(cmd, getProject(cmd))
 	} else if cmd.cCollect {
@@ -122,6 +125,33 @@ func list(_ *command, p *naos.Project) {
 	// add rows
 	for _, d := range p.Inventory.Devices {
 		tbl.add(d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
+	}
+
+	// show table
+	tbl.show(0)
+}
+
+func scan(cmd *command, _ *naos.Project) {
+	// prepare channel
+	quit := make(chan struct{})
+
+	// close channel on interrupt
+	go func() {
+		exit := make(chan os.Signal)
+		signal.Notify(exit, os.Interrupt)
+		<-exit
+		close(quit)
+	}()
+
+	devices, err := naos.Scan(cmd.oDuration, cmd.oTimeout)
+	exitIfSet(err)
+
+	// prepare table
+	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "BASE TOPIC", "WIFI SSID", "WIFI PASSWORD", "MQTT HOST", "MQTT PORT", "MQTT CLIENT ID", "MQTT USERNAME", "MQTT PASSWORD", "CONNECTION STATUS")
+
+	// add rows
+	for _, d := range devices {
+		tbl.add(d.DeviceName, d.DeviceType, d.BaseTopic, d.WiFiSSID, d.WiFiPassword, d.MQTTHost, strconv.Itoa(d.MQTTPort), d.MQTTClientID, d.MQTTUsername, d.MQTTPassword, d.ConnectionStatus)
 	}
 
 	// show table

@@ -1,8 +1,16 @@
-hash: 2d46836e9f8d9d336423583dd3ab73ffdf614fe4cf4b5e3ac18690bf4663d682
-updated: 2017-06-29T15:16:58.101373799+02:00
+hash: 86edc7e34117584e89897a958316544af25eae164493eef23e419e98012d5f04
+updated: 2017-07-17T14:10:58.814150659+02:00
 imports:
 - name: code.cloudfoundry.org/bytefmt
   version: f4415fafc5619dd75599a54a7c91fb3948ad58bd
+- name: github.com/bradfitz/gomemcache
+  version: 1952afaa557dc08e8e0d89eafab110fb501c1a2b
+  subpackages:
+  - memcache
+- name: github.com/currantlabs/ble
+  version: 54a939021a2707c8e3d5b45ec49bb773e3f4b420
+  subpackages:
+  - darwin
 - name: github.com/docopt/docopt-go
   version: 784ddc588536785e7299f7272f39101f7faccc3f
 - name: github.com/dsnet/compress
@@ -29,6 +37,16 @@ imports:
   version: 06c7a16c845dc8e0bf575fafeeca0f5462f5eb4d
 - name: github.com/kr/pty
   version: 2c10821df3c3cf905230d078702dfbe9404c9b23
+- name: github.com/mattn/go-colorable
+  version: 3dac7b4f76f6e17fb39b768b89e3783d16e237fe
+- name: github.com/mattn/go-isatty
+  version: ae0b1f8f8004be68d791a576e3d8e7648ab41449
+- name: github.com/mgutz/ansi
+  version: 9520e82c474b0a04dd04f8a40959027271bab992
+- name: github.com/mgutz/logxi
+  version: aebf8a7d67ab4625e0fd4a665766fef9a709161b
+  subpackages:
+  - v1
 - name: github.com/mholt/archiver
   version: 3c9755ff45e1df13e5331d936c3ffab88233dccd
 - name: github.com/nwaples/rardecode
@@ -36,11 +54,21 @@ imports:
 - name: github.com/pierrec/lz4
   version: 5a3d2245f97fc249850e7802e3c01fad02a1c316
 - name: github.com/pierrec/xxHash
-  version: 5a004441f897722c627870a981d02b29924215fa
+  version: a0006b13c722f7f12368c00a3d3c2ae8a999a0c6
   subpackages:
   - xxHash32
+- name: github.com/pkg/errors
+  version: c605e284fe17294bda444b34710735b29d1a9d90
+- name: github.com/raff/goble
+  version: f6ecf99ef03749e4914b6f23547fbd7e4d363858
+  subpackages:
+  - xpc
 - name: github.com/ryanuber/go-glob
   version: 256dc444b735e061061cf46c809487313d5b0065
+- name: github.com/tatsuhiro-t/go-nghttp2
+  version: 4742878d9c9052d786a7b0cd3589bc50e031e20b
+- name: github.com/tatsuhiro-t/spdy
+  version: 3e25f173236051630d530d15e13439bef3191fbf
 - name: github.com/ulikunitz/xz
   version: 0c6b41e72360850ca4f98dc341fd999726ea007f
   subpackages:
@@ -48,9 +76,12 @@ imports:
   - internal/xlog
   - lzma
 - name: golang.org/x/net
-  version: f315505cf3349909cdf013ea56690da34e96a451
+  version: 5627bad10b821d907ac4dc81fb3535ec7dd81c2b
   subpackages:
   - context
+  - http2
+  - http2/hpack
+  - websocket
 - name: gopkg.in/tomb.v2
   version: d5d1b5820637886def9eef33e03a27a9f166942c
 testImports: []

@@ -19,6 +19,7 @@ Project Management:
 
 Fleet Management:
   list     Will list all devices listed in the inventory.
+  scan     Will scan for connected Bluetooth devices.
   collect  Will collect connected devices and add them to the inventory.
   get      Will read a parameter value from connected devices.
   set      Will set a parameter value on connected devices.
@@ -36,6 +37,7 @@ Usage:
   naos run [<device>] [--clean --app-only --erase --simple]
   naos format
   naos list
+  naos scan [--duration=<ms> --timeout=<ms>]
   naos collect [--clear --duration=<ms>]
   naos get <param> [<pattern>] [--timeout=<ms>]
   naos set <param> <value> [<pattern>] [--timeout=<ms>]
@@ -53,7 +55,7 @@ Options:
   --app-only       Only build or flash the application.
   --simple         Use simple serial tool.
   --clear          Remove not available devices from inventory.
-  --duration=<ms>  Collection duration [default: 1s].
+  --duration=<ms>  Collection duration [default: 2s].
   --timeout=<ms>   Response timeout [default: 5s].
 `
 
@@ -67,6 +69,7 @@ type command struct {
 	cRun     bool
 	cFormat  bool
 	cList    bool
+	cScan    bool
 	cCollect bool
 	cGet     bool
 	cSet     bool
@@ -109,6 +112,7 @@ func parseCommand() *command {
 		cRun:     getBool(a["run"]),
 		cFormat:  getBool(a["format"]),
 		cList:    getBool(a["list"]),
+		cScan:    getBool(a["scan"]),
 		cCollect: getBool(a["collect"]),
 		cGet:     getBool(a["get"]),
 		cSet:     getBool(a["set"]),
