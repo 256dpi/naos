@@ -109,8 +109,8 @@ func (p *Project) SaveInventory() error {
 	return nil
 }
 
-// InternalDirectory returns the hidden used to store the toolchain, development
-// framework and other necessary files.
+// InternalDirectory returns the internal directory used to store the toolchain,
+// development framework and other necessary files.
 func (p *Project) InternalDirectory() string {
 	return filepath.Join(p.Location, "naos")
 }
