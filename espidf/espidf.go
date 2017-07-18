@@ -1,5 +1,5 @@
-// Package espidf provides utility functions to manage the esp-idf development
-// framework needed to build NAOS projects.
+// Package espidf provides utility functions to manage the esp-idf esp32
+// development framework needed to build NAOS projects.
 package espidf
 
 import (

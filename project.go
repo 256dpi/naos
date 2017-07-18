@@ -115,24 +115,22 @@ func (p *Project) InternalDirectory() string {
 	return filepath.Join(p.Location, "naos")
 }
 
-// SetupToolchain will setup the compilation toolchain. An existing toolchain
-// will be removed if force is set to true. If out is not nil, it will be used
-// to log information about the process.
-func (p *Project) SetupToolchain(force bool, out io.Writer) error {
-	return xtensa.Install(p.InternalDirectory(), force, out)
-}
-
-// SetupDevelopmentFramework will setup the development framework. An existing
-// development framework will be removed if force is set to true. If out is not
-// nil, it will be used to log information about the process.
-func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
-	return espidf.Install(p.InternalDirectory(), idfVersion, force, out)
-}
-
-// SetupBuildTree will setup the build tree. An existing build tree will be
+// Setup will setup the build tree. An existing build tree will be
 // removed if force is set to true. If out is not nil, it will be used to log
 // information about the process.
-func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
+func (p *Project) Setup(force bool, cmake bool, out io.Writer) error {
+	// install xtensa toolchain
+	err := xtensa.Install(p.InternalDirectory(), force, out)
+	if err != nil {
+		return err
+	}
+
+	// install esp32 development framework
+	err = espidf.Install(p.InternalDirectory(), idfVersion, force, out)
+	if err != nil {
+		return err
+	}
+
 	// prepare build tree directory
 	buildTreeDir := filepath.Join(p.InternalDirectory(), "tree")
 
@@ -216,30 +214,27 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 		return err
 	}
 
-	return nil
-}
-
-// SetupCMake will create required CMake files for IDEs like CLion.
-func (p *Project) SetupCMake(force bool, out io.Writer) error {
-	// write internal cmake file
-	utils.Log(out, "Creating internal CMake file.")
-	err := ioutil.WriteFile(filepath.Join(p.InternalDirectory(), "CMakeLists.txt"), []byte(internalCMakeListsFile), 0644)
-	if err != nil {
-		return err
-	}
-
-	// get project path
-	projectPath := filepath.Join(p.Location, "CMakeLists.txt")
-	ok, err := utils.Exists(projectPath)
-	if err != nil {
-		return err
-	}
-
-	if !ok || force {
-		utils.Log(out, "Creating project CMake file.")
-		err = ioutil.WriteFile(projectPath, []byte(projectCMakeListsFile), 0644)
+	if cmake {
+		// write internal cmake file
+		utils.Log(out, "Creating internal CMake file.")
+		err := ioutil.WriteFile(filepath.Join(p.InternalDirectory(), "CMakeLists.txt"), []byte(internalCMakeListsFile), 0644)
 		if err != nil {
 			return err
+		}
+
+		// get project path
+		projectPath := filepath.Join(p.Location, "CMakeLists.txt")
+		ok, err := utils.Exists(projectPath)
+		if err != nil {
+			return err
+		}
+
+		if !ok || force {
+			utils.Log(out, "Creating project CMake file.")
+			err = ioutil.WriteFile(projectPath, []byte(projectCMakeListsFile), 0644)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
