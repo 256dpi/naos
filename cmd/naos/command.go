@@ -19,6 +19,7 @@ Project Management:
 
 Configuration Management:
   scan     Will scan for Bluetooth devices and print their configuration.
+  rename   Will reset the device name of the device with the specified address.
 
 Fleet Management:
   list     Will list all devices listed in the inventory.
@@ -39,6 +40,7 @@ Usage:
   naos run [<device>] [--clean --app-only --erase --simple]
   naos format
   naos scan [--duration=<ms>]
+  naos rename <address> <name>
   naos list
   naos collect [--clear --duration=<ms>]
   naos get <param> [<pattern>] [--timeout=<ms>]
@@ -72,6 +74,7 @@ type command struct {
 	cFormat  bool
 	cList    bool
 	cScan    bool
+	cRename  bool
 	cCollect bool
 	cGet     bool
 	cSet     bool
@@ -82,11 +85,12 @@ type command struct {
 	cHelp    bool
 
 	// arguments
-	aDevice  string
-	aParam   string
-	aPattern string
-	aValue   string
-	aName    string
+	aDevice   string
+	aAddress  string
+	aName     string
+	aParam    string
+	aPattern  string
+	aValue    string
 
 	// options
 	oForce    bool
@@ -115,6 +119,7 @@ func parseCommand() *command {
 		cFormat:  getBool(a["format"]),
 		cList:    getBool(a["list"]),
 		cScan:    getBool(a["scan"]),
+		cRename:  getBool(a["rename"]),
 		cCollect: getBool(a["collect"]),
 		cGet:     getBool(a["get"]),
 		cSet:     getBool(a["set"]),
@@ -125,11 +130,12 @@ func parseCommand() *command {
 		cHelp:    getBool(a["help"]),
 
 		// arguments
-		aDevice:  getString(a["<device>"]),
-		aName:    getString(a["<name>"]),
-		aPattern: getString(a["<pattern>"]),
-		aParam:   getString(a["<param>"]),
-		aValue:   getString(a["<value>"]),
+		aDevice:   getString(a["<device>"]),
+		aAddress:  getString(a["<address>"]),
+		aName:     getString(a["<name>"]),
+		aPattern:  getString(a["<pattern>"]),
+		aParam:    getString(a["<param>"]),
+		aValue:    getString(a["<value>"]),
 
 		// options
 		oForce:    getBool(a["--force"]),

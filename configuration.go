@@ -49,3 +49,31 @@ func Scan(duration time.Duration) (map[string]*ble.Configuration, error) {
 
 	return store, nil
 }
+
+func Rename(addr, name string) error {
+	// initialize ble
+	err := ble.Initialize()
+	if err != nil {
+		return err
+	}
+
+	// connect to address
+	dev, err := ble.Connect(addr)
+	if err != nil {
+		return err
+	}
+
+	// read configuration
+	err = dev.Write(ble.DeviceNameProperty, name)
+	if err != nil {
+		return err
+	}
+
+	// close connection
+	err = dev.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

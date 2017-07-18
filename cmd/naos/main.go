@@ -41,6 +41,8 @@ func main() {
 		format(cmd, getProject(cmd))
 	} else if cmd.cScan {
 		scan(cmd, getProject(cmd))
+	} else if cmd.cRename {
+		rename(cmd, getProject(cmd))
 	} else if cmd.cList {
 		list(cmd, getProject(cmd))
 	} else if cmd.cCollect {
@@ -157,6 +159,12 @@ func scan(cmd *command, _ *naos.Project) {
 
 	// show table
 	tbl.show(0)
+}
+
+func rename(cmd *command, _ *naos.Project) {
+	// rename device
+	err := naos.Rename(cmd.aAddress, cmd.aName)
+	exitIfSet(err)
 }
 
 func collect(cmd *command, p *naos.Project) {
