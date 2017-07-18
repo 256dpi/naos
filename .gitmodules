@@ -1,0 +1,9 @@
+[submodule "esp-idf"]
+	path = esp-idf
+	url = https://github.com/espressif/esp-idf.git
+[submodule "components/esp-mqtt"]
+	path = components/esp-mqtt
+	url = https://github.com/256dpi/esp-mqtt.git
+[submodule "components/naos-esp"]
+	path = components/naos-esp
+	url = https://github.com/shiftr-io/naos-esp.git
