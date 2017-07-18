@@ -13,7 +13,7 @@ import (
 
 // InstallCompiler will install the xtensa compiler. An existing compiler will
 // be removed if force is set to true. If out is not nil, it will be used to log
-// information about the process.
+// information about the installation process.
 func InstallCompiler(parent string, force bool, out io.Writer) error {
 	// get toolchain url
 	var url string
@@ -83,4 +83,12 @@ func InstallCompiler(parent string, force bool, out io.Writer) error {
 	}
 
 	return nil
+}
+
+// CompilerBinDirectory returns the assumed location of the compiler binary
+// directory.
+//
+// Note: It will not check if the directory exists.
+func CompilerBinDirectory(parent string) string {
+	return filepath.Join(parent, "xtensa-esp32-elf", "bin")
 }

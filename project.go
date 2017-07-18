@@ -276,23 +276,6 @@ func (p *Project) SetupCMake(force bool, out io.Writer) error {
 	return nil
 }
 
-// ToolchainLocation returns the location of the toolchain if it exists or an
-// error if it does not exist.
-func (p *Project) ToolchainLocation() (string, error) {
-	// calculate directory
-	dir := filepath.Join(p.InternalDirectory(), "xtensa-esp32-elf")
-
-	// check if toolchain directory exists
-	ok, err := exists(dir)
-	if err != nil {
-		return "", err
-	} else if !ok {
-		return "", errors.New("toolchain not found")
-	}
-
-	return dir, nil
-}
-
 // DevelopmentFrameworkLocation returns the location of the development
 // framework if it exists or an error if it does not exist.
 func (p *Project) DevelopmentFrameworkLocation() (string, error) {
@@ -456,12 +439,6 @@ func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) 
 
 // Attach will attach to the attached device.
 func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader) error {
-	// get toolchain location
-	toolchain, err := p.ToolchainLocation()
-	if err != nil {
-		return err
-	}
-
 	// get build tree location
 	buildTree, err := p.BuildTreeLocation()
 	if err != nil {
@@ -502,7 +479,7 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 	for i, str := range cmd.Env {
 		if strings.HasPrefix(str, "PATH=") {
 			// prepend toolchain bin directory
-			cmd.Env[i] = "PATH=" + filepath.Join(toolchain, "bin") + ":" + os.Getenv("PATH")
+			cmd.Env[i] = "PATH=" + toolchain.CompilerBinDirectory(p.InternalDirectory()) + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
 			cmd.Env[i] = "PWD=" + buildTree
@@ -586,12 +563,6 @@ func (p *Project) Update(pattern string, timeout time.Duration, callback func(*D
 }
 
 func (p *Project) exec(out io.Writer, in io.Reader, name string, arg ...string) error {
-	// get toolchain location
-	toolchain, err := p.ToolchainLocation()
-	if err != nil {
-		return err
-	}
-
 	// get build tree location
 	buildTree, err := p.BuildTreeLocation()
 	if err != nil {
@@ -616,7 +587,7 @@ func (p *Project) exec(out io.Writer, in io.Reader, name string, arg ...string) 
 	for i, str := range cmd.Env {
 		if strings.HasPrefix(str, "PATH=") {
 			// prepend toolchain bin directory
-			cmd.Env[i] = "PATH=" + filepath.Join(toolchain, "bin") + ":" + os.Getenv("PATH")
+			cmd.Env[i] = "PATH=" + toolchain.CompilerBinDirectory(p.InternalDirectory()) + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
 			cmd.Env[i] = "PWD=" + buildTree
