@@ -52,15 +52,15 @@ Usage:
   naos help
 
 Options:
-  --force            Reinstall dependencies when they already exist.
-  --cmake            Create required CMake files for IDEs like CLion.
-  --clean            Clean all build artifacts before building again.
-  --erase            Erase completely before flashing new image.
-  --app-only         Only build or flash the application.
-  --simple           Use simple serial tool.
-  --clear            Remove not available devices from inventory.
-  --duration=<time>  Scan and collect duration [default: 2s].
-  --timeout=<time>   Operation timeout [default: 5s].
+  --force               Reinstall dependencies when they already exist.
+  --cmake               Create required CMake files for IDEs like CLion.
+  --clean               Clean all build artifacts before building again.
+  --erase               Erase completely before flashing new image.
+  --app-only            Only build or flash the application.
+  --simple              Use simple serial tool.
+  --clear               Remove not available devices from inventory.
+  -d --duration=<time>  Scan and collect duration [default: 2s].
+  -t --timeout=<time>   Operation timeout [default: 5s].
 `
 
 type command struct {
