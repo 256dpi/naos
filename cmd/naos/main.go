@@ -40,9 +40,9 @@ func main() {
 	} else if cmd.cFormat {
 		format(cmd, getProject(cmd))
 	} else if cmd.cScan {
-		scan(cmd, getProject(cmd))
+		scan(cmd)
 	} else if cmd.cRename {
-		rename(cmd, getProject(cmd))
+		rename(cmd)
 	} else if cmd.cList {
 		list(cmd, getProject(cmd))
 	} else if cmd.cCollect {
@@ -133,7 +133,7 @@ func list(_ *command, p *naos.Project) {
 	tbl.show(0)
 }
 
-func scan(cmd *command, _ *naos.Project) {
+func scan(cmd *command) {
 	// prepare channel
 	quit := make(chan struct{})
 
@@ -161,7 +161,7 @@ func scan(cmd *command, _ *naos.Project) {
 	tbl.show(0)
 }
 
-func rename(cmd *command, _ *naos.Project) {
+func rename(cmd *command) {
 	// rename device
 	err := naos.Rename(cmd.aAddress, cmd.aName)
 	exitIfSet(err)
