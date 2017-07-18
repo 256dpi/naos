@@ -6,6 +6,9 @@ ifeq ($(UNAME), Darwin)
 XTENSA_TOOLCHAIN := "xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz"
 endif
 
+ESP_IDF_VERSION := $(shell cat ./data/esp-idf)
+ESP_MQTT_VERSION := $(shell cat ./data/esp-mqtt)
+
 fmt:
 	clang-format -i ./src/*.c ./src/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120}"
 	clang-format -i ./include/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120}"
@@ -38,9 +41,9 @@ monitor: test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
 run: build flash monitor
 
 update:
-	cd test/esp-idf; git pull; git checkout master
+	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
 	cd test/esp-idf/; git submodule update --recursive
-	cd test/components/esp-mqtt/; git pull; git checkout master
+	cd test/components/esp-mqtt/; git fetch; git checkout $(ESP_MQTT_VERSION)
 	cd test/components/esp-mqtt/; git submodule update --recursive
 
 version:
