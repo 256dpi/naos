@@ -106,7 +106,7 @@ func (d *Device) Write(p Property, value string) error {
 	}
 
 	// write characteristic
-	err = d.client.WriteCharacteristic(c.(*ble.Characteristic), []byte(value), true)
+	err = d.client.WriteCharacteristic(c.(*ble.Characteristic), []byte(value), false)
 	if err != nil {
 		return err
 	}
