@@ -18,6 +18,8 @@ import (
 
 // TODO: Implement dependency updating.
 
+// TODO: Read versions from naos-esp?
+
 const idfVersion = "9b955f4c9f1b32652ea165d3e4cdaad01bba170e"
 const mqttVersion = "cc87172126aa7aacc3b982f7be7489950429b733"
 const comVersion = "41c8c6a839eb20c46f19258b8fdcc5caa3aba01c"

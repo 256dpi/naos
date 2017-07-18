@@ -1,6 +1,6 @@
 package naos
 
-// TODO: Read sdkconfig from 'naos-esp'.
+// TODO: Read files from 'naos-esp'.
 
 const sdkconfigFile = `#
 # Automatically generated file; DO NOT EDIT.
