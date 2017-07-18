@@ -2,14 +2,20 @@ all: fmt vet lint
 
 fmt:
 	go fmt .
+	go fmt ./mqtt
+	go fmt ./ble
 	go fmt ./cmd/naos
 
 vet:
 	go vet .
+	go vet ./mqtt
+	go vet ./ble
 	go vet ./cmd/naos
 
 lint:
 	golint .
+	golint ./mqtt
+	golint ./ble
 	golint ./cmd/naos
 
 install:
