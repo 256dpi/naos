@@ -9,23 +9,26 @@ endif
 ESP_IDF_VERSION := $(shell cat ./data/esp-idf)
 ESP_MQTT_VERSION := $(shell cat ./data/esp-mqtt)
 
-fmt:
-	clang-format -i ./src/*.c ./src/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120}"
-	clang-format -i ./include/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120}"
-	clang-format -i ./test/main/*.c -style="{BasedOnStyle: Google, ColumnLimit: 120}"
-
 test/xtensa-esp32-elf:
 	wget https://dl.espressif.com/dl/$(XTENSA_TOOLCHAIN)
 	cd test; tar -xzf ../$(XTENSA_TOOLCHAIN)
 	rm *.tar.gz
 
-# TODO: Fix initial cloning to checkout locked version.
-
 test/esp-idf:
-	git clone --recursive https://github.com/espressif/esp-idf.git test/esp-idf
+	git clone https://github.com/espressif/esp-idf.git test/esp-idf
+	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
+	cd test/esp-idf/; git submodule update --recursive
 
 test/components/esp-mqtt:
-	git clone --recursive https://github.com/256dpi/esp-mqtt.git test/components/esp-mqtt
+	git clone https://github.com/256dpi/esp-mqtt.git test/components/esp-mqtt
+	cd test/components/esp-mqtt/; git fetch; git checkout $(ESP_MQTT_VERSION)
+	cd test/components/esp-mqtt/; git submodule update --recursive
+
+update:
+	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
+	cd test/esp-idf/; git submodule update --recursive
+	cd test/components/esp-mqtt/; git fetch; git checkout $(ESP_MQTT_VERSION)
+	cd test/components/esp-mqtt/; git submodule update --recursive
 
 build: test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
 	export PATH=$(shell pwd)/test/xtensa-esp32-elf/bin:$$PATH; cd ./test; make
@@ -42,8 +45,7 @@ monitor: test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
 
 run: build flash monitor
 
-update:
-	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
-	cd test/esp-idf/; git submodule update --recursive
-	cd test/components/esp-mqtt/; git fetch; git checkout $(ESP_MQTT_VERSION)
-	cd test/components/esp-mqtt/; git submodule update --recursive
+fmt:
+	clang-format -i ./src/*.c ./src/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120}"
+	clang-format -i ./include/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120}"
+	clang-format -i ./test/main/*.c -style="{BasedOnStyle: Google, ColumnLimit: 120}"
