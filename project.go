@@ -13,6 +13,7 @@ import (
 
 	"github.com/kr/pty"
 	"github.com/mholt/archiver"
+	"github.com/shiftr-io/naos/mqtt"
 )
 
 // TODO: Implement dependency updating.
@@ -631,7 +632,7 @@ func (p *Project) Format(out io.Writer) error {
 // Update will update the devices that match the supplied glob pattern with the
 // previously built image. The specified callback is called for every change in
 // state or progress.
-func (p *Project) Update(pattern string, timeout time.Duration, callback func(*Device, *UpdateStatus)) error {
+func (p *Project) Update(pattern string, timeout time.Duration, callback func(*Device, *mqtt.UpdateStatus)) error {
 	// get image path
 	image := filepath.Join(p.InternalDirectory(), "tree", "build", "naos-project.bin")
 

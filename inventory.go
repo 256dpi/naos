@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ryanuber/go-glob"
+	"github.com/shiftr-io/naos/mqtt"
 )
 
 // A Device represents a single device in an Inventory.
@@ -102,7 +103,7 @@ func (i *Inventory) FilterDevices(pattern string) []*Device {
 // added to the inventory.
 func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 	// collect announcements
-	anns, err := Collect(i.Broker, duration)
+	anns, err := mqtt.Collect(i.Broker, duration)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 // answering devices is returned.
 func (i *Inventory) GetParams(pattern, param string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	table, err := GetParams(i.Broker, param, i.deviceBaseTopics(pattern), timeout)
+	table, err := mqtt.GetParams(i.Broker, param, i.deviceBaseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func (i *Inventory) GetParams(pattern, param string, timeout time.Duration) ([]*
 // updated devices is returned.
 func (i *Inventory) SetParams(pattern, param, value string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	table, err := SetParams(i.Broker, param, value, i.deviceBaseTopics(pattern), timeout)
+	table, err := mqtt.SetParams(i.Broker, param, value, i.deviceBaseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +185,7 @@ func (i *Inventory) SetParams(pattern, param, value string, timeout time.Duratio
 // list of updated devices is returned.
 func (i *Inventory) UnsetParams(pattern, param string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	err := UnsetParams(i.Broker, param, i.deviceBaseTopics(pattern), timeout)
+	err := mqtt.UnsetParams(i.Broker, param, i.deviceBaseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +205,7 @@ func (i *Inventory) UnsetParams(pattern, param string, timeout time.Duration) ([
 // Record will enable log recording mode and yield the received log messages
 // until the provided channel has been closed.
 func (i *Inventory) Record(pattern string, quit chan struct{}, timeout time.Duration, callback func(*Device, string)) error {
-	return Record(i.Broker, i.deviceBaseTopics(pattern), quit, timeout, func(log *LogMessage) {
+	return mqtt.Record(i.Broker, i.deviceBaseTopics(pattern), quit, timeout, func(log *mqtt.LogMessage) {
 		// call user callback
 		if callback != nil {
 			callback(i.deviceByBaseTopic(log.BaseTopic), log.Content)
@@ -216,8 +217,8 @@ func (i *Inventory) Record(pattern string, quit chan struct{}, timeout time.Dura
 // update the inventory accordingly. The specified callback is called for every
 // heartbeat with the update device and the heartbeat available at
 // device.LastHeartbeat.
-func (i *Inventory) Monitor(pattern string, quit chan struct{}, timeout time.Duration, callback func(*Device, *Heartbeat)) error {
-	return Monitor(i.Broker, i.deviceBaseTopics(pattern), quit, timeout, func(heartbeat *Heartbeat) {
+func (i *Inventory) Monitor(pattern string, quit chan struct{}, timeout time.Duration, callback func(*Device, *mqtt.Heartbeat)) error {
+	return mqtt.Monitor(i.Broker, i.deviceBaseTopics(pattern), quit, timeout, func(heartbeat *mqtt.Heartbeat) {
 		// get device
 		device, ok := i.Devices[heartbeat.DeviceName]
 		if !ok {
@@ -238,8 +239,8 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, timeout time.Dur
 // Update will update the devices that match the supplied glob pattern with the
 // specified image. The specified callback is called for every change in state
 // or progress.
-func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device, *UpdateStatus)) error {
-	return Update(i.Broker, i.deviceBaseTopics(pattern), firmware, timeout, func(baseTopic string, status *UpdateStatus) {
+func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device, *mqtt.UpdateStatus)) error {
+	return mqtt.Update(i.Broker, i.deviceBaseTopics(pattern), firmware, timeout, func(baseTopic string, status *mqtt.UpdateStatus) {
 		// get device
 		device := i.deviceByBaseTopic(baseTopic)
 		if device == nil {

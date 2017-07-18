@@ -1,4 +1,4 @@
-package naos
+package mqtt
 
 import (
 	"fmt"
