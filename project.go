@@ -12,7 +12,8 @@ import (
 
 	"github.com/kr/pty"
 	"github.com/shiftr-io/naos/mqtt"
-	"github.com/shiftr-io/naos/toolchain"
+	"github.com/shiftr-io/naos/utils"
+	"github.com/shiftr-io/naos/xtensa"
 )
 
 // TODO: Implement dependency updating.
@@ -51,11 +52,11 @@ func CreateProject(path string, out io.Writer) (*Project, error) {
 	}
 
 	// print info
-	log(out, "Created new empty inventory.")
-	log(out, "Please update the settings to suit your needs.")
+	utils.Log(out, "Created new empty inventory.")
+	utils.Log(out, "Please update the settings to suit your needs.")
 
 	// ensure source directory
-	log(out, "Ensuring source directory.")
+	utils.Log(out, "Ensuring source directory.")
 	err = os.MkdirAll(filepath.Join(path, "src"), 0755)
 	if err != nil {
 		return nil, err
@@ -63,14 +64,14 @@ func CreateProject(path string, out io.Writer) (*Project, error) {
 
 	// prepare main source path and check if it already exists
 	mainSourcePath := filepath.Join(path, "src", "main.c")
-	ok, err := exists(mainSourcePath)
+	ok, err := utils.Exists(mainSourcePath)
 	if err != nil {
 		return nil, err
 	}
 
 	// create main source file if it not already exists
 	if !ok {
-		log(out, "Creating default 'main.c' source file.")
+		utils.Log(out, "Creating default 'main.c' source file.")
 		err = ioutil.WriteFile(mainSourcePath, []byte(mainSourceFile), 0644)
 		if err != nil {
 			return nil, err
@@ -118,7 +119,7 @@ func (p *Project) InternalDirectory() string {
 // will be removed if force is set to true. If out is not nil, it will be used
 // to log information about the process.
 func (p *Project) SetupToolchain(force bool, out io.Writer) error {
-	return toolchain.InstallCompiler(p.InternalDirectory(), force, out)
+	return xtensa.Install(p.InternalDirectory(), force, out)
 }
 
 // SetupDevelopmentFramework will setup the development framework. An existing
@@ -129,20 +130,20 @@ func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 	frameworkDir := filepath.Join(p.InternalDirectory(), "esp-idf")
 
 	// check if already exists
-	ok, err := exists(frameworkDir)
+	ok, err := utils.Exists(frameworkDir)
 	if err != nil {
 		return err
 	}
 
 	// return immediately if already exists and not forced
 	if ok && !force {
-		log(out, "Skipping development framework as it already exists.")
+		utils.Log(out, "Skipping development framework as it already exists.")
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
-		log(out, "Removing existing development framework (forced).")
+		utils.Log(out, "Removing existing development framework (forced).")
 		err = os.RemoveAll(frameworkDir)
 		if err != nil {
 			return err
@@ -150,8 +151,8 @@ func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
 	}
 
 	// clone development framework
-	log(out, "Installing development framework...")
-	err = clone("https://github.com/espressif/esp-idf.git", frameworkDir, idfVersion, out)
+	utils.Log(out, "Installing development framework...")
+	err = utils.Clone("https://github.com/espressif/esp-idf.git", frameworkDir, idfVersion, out)
 	if err != nil {
 		return err
 	}
@@ -167,20 +168,20 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	buildTreeDir := filepath.Join(p.InternalDirectory(), "tree")
 
 	// check if already exists
-	ok, err := exists(buildTreeDir)
+	ok, err := utils.Exists(buildTreeDir)
 	if err != nil {
 		return err
 	}
 
 	// return immediately if already exists and no forced
 	if ok && !force {
-		log(out, "Skipping build tree as it already exists.")
+		utils.Log(out, "Skipping build tree as it already exists.")
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
-		log(out, "Removing existing build tree (forced).")
+		utils.Log(out, "Removing existing build tree (forced).")
 		err = os.RemoveAll(buildTreeDir)
 		if err != nil {
 			return err
@@ -188,7 +189,7 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	}
 
 	// print log
-	log(out, "Creating build tree directory structure...")
+	utils.Log(out, "Creating build tree directory structure...")
 
 	// adding directory
 	err = os.MkdirAll(buildTreeDir, 0777)
@@ -233,15 +234,15 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 	}
 
 	// clone component
-	log(out, "Installing MQTT component...")
-	err = clone("https://github.com/256dpi/esp-mqtt.git", filepath.Join(buildTreeDir, "components", "esp-mqtt"), mqttVersion, out)
+	utils.Log(out, "Installing MQTT component...")
+	err = utils.Clone("https://github.com/256dpi/esp-mqtt.git", filepath.Join(buildTreeDir, "components", "esp-mqtt"), mqttVersion, out)
 	if err != nil {
 		return err
 	}
 
 	// clone component
-	log(out, "Installing NAOS component...")
-	err = clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(buildTreeDir, "components", "naos-esp"), comVersion, out)
+	utils.Log(out, "Installing NAOS component...")
+	err = utils.Clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(buildTreeDir, "components", "naos-esp"), comVersion, out)
 	if err != nil {
 		return err
 	}
@@ -252,7 +253,7 @@ func (p *Project) SetupBuildTree(force bool, out io.Writer) error {
 // SetupCMake will create required CMake files for IDEs like CLion.
 func (p *Project) SetupCMake(force bool, out io.Writer) error {
 	// write internal cmake file
-	log(out, "Creating internal CMake file.")
+	utils.Log(out, "Creating internal CMake file.")
 	err := ioutil.WriteFile(filepath.Join(p.InternalDirectory(), "CMakeLists.txt"), []byte(internalCMakeListsFile), 0644)
 	if err != nil {
 		return err
@@ -260,13 +261,13 @@ func (p *Project) SetupCMake(force bool, out io.Writer) error {
 
 	// get project path
 	projectPath := filepath.Join(p.Location, "CMakeLists.txt")
-	ok, err := exists(projectPath)
+	ok, err := utils.Exists(projectPath)
 	if err != nil {
 		return err
 	}
 
 	if !ok || force {
-		log(out, "Creating project CMake file.")
+		utils.Log(out, "Creating project CMake file.")
 		err = ioutil.WriteFile(projectPath, []byte(projectCMakeListsFile), 0644)
 		if err != nil {
 			return err
@@ -283,7 +284,7 @@ func (p *Project) DevelopmentFrameworkLocation() (string, error) {
 	dir := filepath.Join(p.InternalDirectory(), "esp-idf")
 
 	// check if toolchain directory exists
-	ok, err := exists(dir)
+	ok, err := utils.Exists(dir)
 	if err != nil {
 		return "", err
 	} else if !ok {
@@ -300,7 +301,7 @@ func (p *Project) BuildTreeLocation() (string, error) {
 	dir := filepath.Join(p.InternalDirectory(), "tree")
 
 	// check if build tree directory exists
-	ok, err := exists(dir)
+	ok, err := utils.Exists(dir)
 	if err != nil {
 		return "", err
 	} else if !ok {
@@ -314,7 +315,7 @@ func (p *Project) BuildTreeLocation() (string, error) {
 func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
 	// clean project if requested
 	if clean {
-		log(out, "Cleaning project...")
+		utils.Log(out, "Cleaning project...")
 		err := p.exec(out, nil, "make", "clean")
 		if err != nil {
 			return err
@@ -323,7 +324,7 @@ func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
 
 	// build project (app only)
 	if appOnly {
-		log(out, "Building project (app only)...")
+		utils.Log(out, "Building project (app only)...")
 		err := p.exec(out, nil, "make", "app")
 		if err != nil {
 			return err
@@ -333,7 +334,7 @@ func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
 	}
 
 	// build project
-	log(out, "Building project...")
+	utils.Log(out, "Building project...")
 	err := p.exec(out, nil, "make", "all")
 	if err != nil {
 		return err
@@ -409,7 +410,7 @@ func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) 
 
 	// erase attached device if requested
 	if erase {
-		log(out, "Erasing flash...")
+		utils.Log(out, "Erasing flash...")
 		err := p.exec(out, nil, "python", eraseFlash...)
 		if err != nil {
 			return err
@@ -418,7 +419,7 @@ func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) 
 
 	// flash attached device (app only)
 	if appOnly {
-		log(out, "Flashing device (app only)...")
+		utils.Log(out, "Flashing device (app only)...")
 		err := p.exec(out, nil, "python", flashApp...)
 		if err != nil {
 			return err
@@ -428,7 +429,7 @@ func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) 
 	}
 
 	// flash attached device
-	log(out, "Flashing device...")
+	utils.Log(out, "Flashing device...")
 	err = p.exec(out, nil, "python", flashAll...)
 	if err != nil {
 		return err
@@ -479,7 +480,7 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 	for i, str := range cmd.Env {
 		if strings.HasPrefix(str, "PATH=") {
 			// prepend toolchain bin directory
-			cmd.Env[i] = "PATH=" + toolchain.CompilerBinDirectory(p.InternalDirectory()) + ":" + os.Getenv("PATH")
+			cmd.Env[i] = "PATH=" + xtensa.BinDirectory(p.InternalDirectory()) + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
 			cmd.Env[i] = "PWD=" + buildTree
@@ -487,7 +488,7 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 	}
 
 	// start process and get tty
-	log(out, "Attaching to device (press Ctrl+C to exit)...")
+	utils.Log(out, "Attaching to device (press Ctrl+C to exit)...")
 	tty, err := pty.Start(cmd)
 	if err != nil {
 		return err
@@ -587,7 +588,7 @@ func (p *Project) exec(out io.Writer, in io.Reader, name string, arg ...string) 
 	for i, str := range cmd.Env {
 		if strings.HasPrefix(str, "PATH=") {
 			// prepend toolchain bin directory
-			cmd.Env[i] = "PATH=" + toolchain.CompilerBinDirectory(p.InternalDirectory()) + ":" + os.Getenv("PATH")
+			cmd.Env[i] = "PATH=" + xtensa.BinDirectory(p.InternalDirectory()) + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
 			cmd.Env[i] = "PWD=" + buildTree

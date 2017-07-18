@@ -1,4 +1,6 @@
-package toolchain
+// Package xtensa provides utility functions to manage the xtensa toolchain needed
+// to build NAOS projects.
+package xtensa
 
 import (
 	"errors"
@@ -9,12 +11,13 @@ import (
 	"runtime"
 
 	"github.com/mholt/archiver"
+	"github.com/shiftr-io/naos/utils"
 )
 
-// InstallCompiler will install the xtensa compiler. An existing compiler will
-// be removed if force is set to true. If out is not nil, it will be used to log
+// Install will install the xtensa toolchain. An existing toolchain will be
+// removed if force is set to true. If out is not nil, it will be used to log
 // information about the installation process.
-func InstallCompiler(parent string, force bool, out io.Writer) error {
+func Install(parent string, force bool, out io.Writer) error {
 	// get toolchain url
 	var url string
 	switch runtime.GOOS {
@@ -30,20 +33,20 @@ func InstallCompiler(parent string, force bool, out io.Writer) error {
 	dir := filepath.Join(parent, "xtensa-esp32-elf")
 
 	// check if already exists
-	ok, err := exists(dir)
+	ok, err := utils.Exists(dir)
 	if err != nil {
 		return err
 	}
 
 	// return immediately if already exists and not forced
 	if ok && !force {
-		log(out, "Skipping toolchain as it already exists.")
+		utils.Log(out, "Skipping toolchain as it already exists.")
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
-		log(out, "Removing existing toolchain (forced).")
+		utils.Log(out, "Removing existing toolchain (forced).")
 		err = os.RemoveAll(dir)
 		if err != nil {
 			return err
@@ -60,14 +63,14 @@ func InstallCompiler(parent string, force bool, out io.Writer) error {
 	defer tmp.Close()
 
 	// download toolchain
-	log(out, "Downloading toolchain...")
-	err = download(tmp.Name(), url)
+	utils.Log(out, "Downloading toolchain...")
+	err = utils.Download(tmp.Name(), url)
 	if err != nil {
 		return err
 	}
 
 	// unpack toolchain
-	log(out, "Unpacking toolchain...")
+	utils.Log(out, "Unpacking toolchain...")
 	err = archiver.TarGz.Open(tmp.Name(), parent)
 	if err != nil {
 		return err
@@ -85,10 +88,10 @@ func InstallCompiler(parent string, force bool, out io.Writer) error {
 	return nil
 }
 
-// CompilerBinDirectory returns the assumed location of the compiler binary
+// BinDirectory returns the assumed location of the xtensa toolchain 'bin'
 // directory.
 //
 // Note: It will not check if the directory exists.
-func CompilerBinDirectory(parent string) string {
+func BinDirectory(parent string) string {
 	return filepath.Join(parent, "xtensa-esp32-elf", "bin")
 }

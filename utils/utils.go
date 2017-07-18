@@ -1,4 +1,5 @@
-package naos
+// Package utils provides some small utility functions.
+package utils
 
 import (
 	"fmt"
@@ -8,7 +9,8 @@ import (
 	"os/exec"
 )
 
-func exists(path string) (bool, error) {
+// Exists will check if the provided file or directory exists.
+func Exists(path string) (bool, error) {
 	// get file info
 	_, err := os.Stat(path)
 	if err == nil {
@@ -23,9 +25,10 @@ func exists(path string) (bool, error) {
 	return true, err
 }
 
-func download(path, url string) error {
+// Download will download the specified source to the specified destination.
+func Download(destination, source string) error {
 	// create file
-	file, err := os.Create(path)
+	file, err := os.Create(destination)
 	if err != nil {
 		return err
 	}
@@ -34,7 +37,7 @@ func download(path, url string) error {
 	defer file.Close()
 
 	// read data
-	resp, err := http.Get(url)
+	resp, err := http.Get(source)
 	if err != nil {
 		return err
 	}
@@ -57,7 +60,9 @@ func download(path, url string) error {
 	return nil
 }
 
-func clone(repo, path, commit string, out io.Writer) error {
+// Clone will checkout the provided repository set it to the specified version
+// and properly checkout all submodules.
+func Clone(repo, path, commit string, out io.Writer) error {
 	// construct clone command
 	cmd := exec.Command("git", "clone", "--recursive", repo, path)
 	cmd.Stdout = out
@@ -96,7 +101,8 @@ func clone(repo, path, commit string, out io.Writer) error {
 	return nil
 }
 
-func log(out io.Writer, msg string) {
+// Log will format and write the provided message to out if available.
+func Log(out io.Writer, msg string) {
 	if out != nil {
 		fmt.Fprintf(out, "==> %s\n", msg)
 	}
