@@ -115,6 +115,9 @@ static void naos_system_ble_callback(naos_ble_id_t id) {
         // stop task
         naos_task_stop();
 
+        // stop manager
+        naos_manager_stop();
+
         // fallthrough
       }
 
@@ -143,6 +146,9 @@ static void naos_system_ble_callback(naos_ble_id_t id) {
       case NAOS_NETWORKED: {
         // stop task
         naos_task_stop();
+
+        // stop manager
+        naos_manager_stop();
 
         // change state
         naos_system_set_status(NAOS_CONNECTED);
@@ -193,7 +199,16 @@ static void naos_system_wifi_callback(naos_wifi_status_t status) {
     case NAOS_WIFI_STATUS_DISCONNECTED: {
       ESP_LOGI(NAOS_LOG_TAG, "naos_system_wifi_callback: disconnected");
 
-      // check if disconnection is new
+      // check if we have been networked
+      if (naos_system_status == NAOS_NETWORKED) {
+        // stop task
+        naos_task_stop();
+
+        // stop manager
+        naos_manager_stop();
+      }
+
+      // check if we have been connected
       if (naos_system_status >= NAOS_CONNECTED) {
         // stop mqtt
         naos_mqtt_stop();
