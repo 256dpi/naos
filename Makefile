@@ -19,6 +19,8 @@ test/xtensa-esp32-elf:
 	cd test; tar -xzf ../$(XTENSA_TOOLCHAIN)
 	rm *.tar.gz
 
+# TODO: Fix initial cloning to checkout locked version.
+
 test/esp-idf:
 	git clone --recursive https://github.com/espressif/esp-idf.git test/esp-idf
 
@@ -45,11 +47,3 @@ update:
 	cd test/esp-idf/; git submodule update --recursive
 	cd test/components/esp-mqtt/; git fetch; git checkout $(ESP_MQTT_VERSION)
 	cd test/components/esp-mqtt/; git submodule update --recursive
-
-version:
-	@echo esp-idf:
-	@cd test/esp-idf/; git rev-parse HEAD
-	@echo esp-mqtt:
-	@cd test/components/esp-mqtt/; git rev-parse HEAD
-	@echo naos-esp:
-	@git rev-parse HEAD
