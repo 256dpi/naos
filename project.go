@@ -1,7 +1,6 @@
 package naos
 
 import (
-	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/kr/pty"
+	"github.com/shiftr-io/naos/espidf"
 	"github.com/shiftr-io/naos/mqtt"
 	"github.com/shiftr-io/naos/utils"
 	"github.com/shiftr-io/naos/xtensa"
@@ -126,38 +126,7 @@ func (p *Project) SetupToolchain(force bool, out io.Writer) error {
 // development framework will be removed if force is set to true. If out is not
 // nil, it will be used to log information about the process.
 func (p *Project) SetupDevelopmentFramework(force bool, out io.Writer) error {
-	// prepare toolchain directory
-	frameworkDir := filepath.Join(p.InternalDirectory(), "esp-idf")
-
-	// check if already exists
-	ok, err := utils.Exists(frameworkDir)
-	if err != nil {
-		return err
-	}
-
-	// return immediately if already exists and not forced
-	if ok && !force {
-		utils.Log(out, "Skipping development framework as it already exists.")
-		return nil
-	}
-
-	// remove existing directory if existing
-	if ok {
-		utils.Log(out, "Removing existing development framework (forced).")
-		err = os.RemoveAll(frameworkDir)
-		if err != nil {
-			return err
-		}
-	}
-
-	// clone development framework
-	utils.Log(out, "Installing development framework...")
-	err = utils.Clone("https://github.com/espressif/esp-idf.git", frameworkDir, idfVersion, out)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return espidf.Install(p.InternalDirectory(), idfVersion, force, out)
 }
 
 // SetupBuildTree will setup the build tree. An existing build tree will be
@@ -277,23 +246,6 @@ func (p *Project) SetupCMake(force bool, out io.Writer) error {
 	return nil
 }
 
-// DevelopmentFrameworkLocation returns the location of the development
-// framework if it exists or an error if it does not exist.
-func (p *Project) DevelopmentFrameworkLocation() (string, error) {
-	// calculate directory
-	dir := filepath.Join(p.InternalDirectory(), "esp-idf")
-
-	// check if toolchain directory exists
-	ok, err := utils.Exists(dir)
-	if err != nil {
-		return "", err
-	} else if !ok {
-		return "", errors.New("development framework not found")
-	}
-
-	return dir, nil
-}
-
 // BuildTreeLocation returns the location of the build tree if it exists or an
 // error if it does not exist.
 func (p *Project) BuildTreeLocation() (string, error) {
@@ -345,12 +297,6 @@ func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
 
 // Flash will flash the project to the attached device.
 func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) error {
-	// get hidden directory
-	developmentFramework, err := p.DevelopmentFrameworkLocation()
-	if err != nil {
-		return err
-	}
-
 	// get build tree location
 	buildTree, err := p.BuildTreeLocation()
 	if err != nil {
@@ -358,7 +304,7 @@ func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) 
 	}
 
 	// calculate paths
-	espTool := filepath.Join(developmentFramework, "components", "esptool_py", "esptool", "esptool.py")
+	espTool := filepath.Join(espidf.Directory(p.InternalDirectory()), "components", "esptool_py", "esptool", "esptool.py")
 	bootLoaderBinary := filepath.Join(buildTree, "build", "bootloader", "bootloader.bin")
 	projectBinary := filepath.Join(buildTree, "build", "naos-project.bin")
 	partitionsBinary := filepath.Join(buildTree, "build", "partitions_two_ota.bin")
@@ -446,12 +392,6 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 		return err
 	}
 
-	// get development framework location
-	developmentFramework, err := p.DevelopmentFrameworkLocation()
-	if err != nil {
-		return err
-	}
-
 	// prepare command
 	var cmd *exec.Cmd
 
@@ -461,7 +401,7 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 		cmd = exec.Command("miniterm.py", "--rts", "0", "--dtr", "0", "--raw", device, "115200")
 	} else {
 		// get path of monitor tool
-		tool := filepath.Join(developmentFramework, "tools", "idf_monitor.py")
+		tool := filepath.Join(espidf.Directory(p.InternalDirectory()), "tools", "idf_monitor.py")
 
 		// get elf path
 		elf := filepath.Join(buildTree, "build", "naos-project.elf")

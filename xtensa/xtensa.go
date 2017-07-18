@@ -40,13 +40,13 @@ func Install(parent string, force bool, out io.Writer) error {
 
 	// return immediately if already exists and not forced
 	if ok && !force {
-		utils.Log(out, "Skipping toolchain as it already exists.")
+		utils.Log(out, "Skipping xtensa toolchain as it already exists.")
 		return nil
 	}
 
 	// remove existing directory if existing
 	if ok {
-		utils.Log(out, "Removing existing toolchain (forced).")
+		utils.Log(out, "Removing existing xtensa toolchain (forced).")
 		err = os.RemoveAll(dir)
 		if err != nil {
 			return err
@@ -63,14 +63,14 @@ func Install(parent string, force bool, out io.Writer) error {
 	defer tmp.Close()
 
 	// download toolchain
-	utils.Log(out, "Downloading toolchain...")
+	utils.Log(out, "Downloading xtensa toolchain...")
 	err = utils.Download(tmp.Name(), url)
 	if err != nil {
 		return err
 	}
 
 	// unpack toolchain
-	utils.Log(out, "Unpacking toolchain...")
+	utils.Log(out, "Unpacking xtensa toolchain...")
 	err = archiver.TarGz.Open(tmp.Name(), parent)
 	if err != nil {
 		return err
