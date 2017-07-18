@@ -1,5 +1,5 @@
 cmake-build-debug/
-test/xtensa-esp32-elf
-test/esp-idf
-test/components/esp-mqtt
-test/build
+test/xtensa-esp32-elf/
+test/esp-idf/
+test/components/esp-mqtt/
+test/build/
