@@ -20,10 +20,10 @@ test/xtensa-esp32-elf:
 	rm *.tar.gz
 
 test/esp-idf:
-	git clone --recursive --depth 1 https://github.com/espressif/esp-idf.git test/esp-idf
+	git clone --recursive https://github.com/espressif/esp-idf.git test/esp-idf
 
 test/components/esp-mqtt:
-	git clone --recursive --depth 1 https://github.com/256dpi/esp-mqtt.git test/components/esp-mqtt
+	git clone --recursive https://github.com/256dpi/esp-mqtt.git test/components/esp-mqtt
 
 build: test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
 	export PATH=$(shell pwd)/test/xtensa-esp32-elf/bin:$$PATH; cd ./test; make
