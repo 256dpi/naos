@@ -21,7 +21,7 @@ func Scan(duration time.Duration) (map[string]*ble.Configuration, error) {
 	}
 
 	// prepare map
-	var store map[string]*ble.Configuration
+	store := make(map[string]*ble.Configuration)
 
 	// explore devices
 	for _, a := range addresses {
