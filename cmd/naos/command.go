@@ -39,28 +39,28 @@ Usage:
   naos attach [<device>] [--simple]
   naos run [<device>] [--clean --app-only --erase --simple]
   naos format
-  naos scan [--duration=<ms>]
+  naos scan [--duration=<time>]
   naos rename <address> <name>
   naos list
-  naos collect [--clear --duration=<ms>]
-  naos get <param> [<pattern>] [--timeout=<ms>]
-  naos set <param> <value> [<pattern>] [--timeout=<ms>]
-  naos unset <param> [<pattern>] [--timeout=<ms>]
-  naos monitor [<pattern>] [--timeout=<ms>]
-  naos record [<pattern>] [--timeout=<ms>]
-  naos update [<pattern>] [--timeout=<ms>]
+  naos collect [--clear --duration=<time>]
+  naos get <param> [<pattern>] [--timeout=<time>]
+  naos set <param> <value> [<pattern>] [--timeout=<time>]
+  naos unset <param> [<pattern>] [--timeout=<time>]
+  naos monitor [<pattern>] [--timeout=<time>]
+  naos record [<pattern>] [--timeout=<time>]
+  naos update [<pattern>] [--timeout=<time>]
   naos help
 
 Options:
-  --force          Reinstall dependencies when they already exist.
-  --cmake          Create required CMake files for IDEs like CLion.
-  --clean          Clean all build artifacts before building again.
-  --erase          Erase completely before flashing new image.
-  --app-only       Only build or flash the application.
-  --simple         Use simple serial tool.
-  --clear          Remove not available devices from inventory.
-  --duration=<ms>  Scan and collect duration [default: 2s].
-  --timeout=<ms>   Operation timeout [default: 5s].
+  --force            Reinstall dependencies when they already exist.
+  --cmake            Create required CMake files for IDEs like CLion.
+  --clean            Clean all build artifacts before building again.
+  --erase            Erase completely before flashing new image.
+  --app-only         Only build or flash the application.
+  --simple           Use simple serial tool.
+  --clear            Remove not available devices from inventory.
+  --duration=<time>  Scan and collect duration [default: 2s].
+  --timeout=<time>   Operation timeout [default: 5s].
 `
 
 type command struct {
