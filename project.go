@@ -115,7 +115,12 @@ func (p *Project) InternalDirectory() string {
 	return filepath.Join(p.Location, "naos")
 }
 
-// Setup will setup the build tree. An existing build tree will be
+// TreeDirectory returns the internal directory that contains the whole build tree.
+func (p *Project) TreeDirectory() string {
+	return filepath.Join(p.InternalDirectory(), "tree")
+}
+
+// Setup will setup necessary dependencies. Any existing dependencies will be
 // removed if force is set to true. If out is not nil, it will be used to log
 // information about the process.
 func (p *Project) Setup(force bool, cmake bool, out io.Writer) error {
@@ -131,11 +136,8 @@ func (p *Project) Setup(force bool, cmake bool, out io.Writer) error {
 		return err
 	}
 
-	// prepare build tree directory
-	buildTreeDir := filepath.Join(p.InternalDirectory(), "tree")
-
 	// check if already exists
-	ok, err := utils.Exists(buildTreeDir)
+	ok, err := utils.Exists(p.TreeDirectory())
 	if err != nil {
 		return err
 	}
@@ -149,7 +151,7 @@ func (p *Project) Setup(force bool, cmake bool, out io.Writer) error {
 	// remove existing directory if existing
 	if ok {
 		utils.Log(out, "Removing existing build tree (forced).")
-		err = os.RemoveAll(buildTreeDir)
+		err = os.RemoveAll(p.TreeDirectory())
 		if err != nil {
 			return err
 		}
@@ -159,57 +161,57 @@ func (p *Project) Setup(force bool, cmake bool, out io.Writer) error {
 	utils.Log(out, "Creating build tree directory structure...")
 
 	// adding directory
-	err = os.MkdirAll(buildTreeDir, 0777)
+	err = os.MkdirAll(p.TreeDirectory(), 0777)
 	if err != nil {
 		return err
 	}
 
 	// adding sdk config file
-	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "sdkconfig"), []byte(sdkconfigFile), 0644)
+	err = ioutil.WriteFile(filepath.Join(p.TreeDirectory(), "sdkconfig"), []byte(sdkconfigFile), 0644)
 	if err != nil {
 		return err
 	}
 
 	// adding makefile
-	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "Makefile"), []byte(makeFile), 0644)
+	err = ioutil.WriteFile(filepath.Join(p.TreeDirectory(), "Makefile"), []byte(makeFile), 0644)
 	if err != nil {
 		return err
 	}
 
 	// adding main directory
-	err = os.MkdirAll(filepath.Join(buildTreeDir, "main"), 0777)
+	err = os.MkdirAll(filepath.Join(p.TreeDirectory(), "main"), 0777)
 	if err != nil {
 		return err
 	}
 
 	// adding component.mk
-	err = ioutil.WriteFile(filepath.Join(buildTreeDir, "main", "component.mk"), []byte(componentFile), 0644)
+	err = ioutil.WriteFile(filepath.Join(p.TreeDirectory(), "main", "component.mk"), []byte(componentFile), 0644)
 	if err != nil {
 		return err
 	}
 
 	// linking src
-	err = os.Symlink(filepath.Join(p.Location, "src"), filepath.Join(buildTreeDir, "main", "src"))
+	err = os.Symlink(filepath.Join(p.Location, "src"), filepath.Join(p.TreeDirectory(), "main", "src"))
 	if err != nil {
 		return err
 	}
 
 	// adding components directory
-	err = os.MkdirAll(filepath.Join(buildTreeDir, "components"), 0777)
+	err = os.MkdirAll(filepath.Join(p.TreeDirectory(), "components"), 0777)
 	if err != nil {
 		return err
 	}
 
 	// clone component
 	utils.Log(out, "Installing MQTT component...")
-	err = utils.Clone("https://github.com/256dpi/esp-mqtt.git", filepath.Join(buildTreeDir, "components", "esp-mqtt"), mqttVersion, out)
+	err = utils.Clone("https://github.com/256dpi/esp-mqtt.git", filepath.Join(p.TreeDirectory(), "components", "esp-mqtt"), mqttVersion, out)
 	if err != nil {
 		return err
 	}
 
 	// clone component
 	utils.Log(out, "Installing NAOS component...")
-	err = utils.Clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(buildTreeDir, "components", "naos-esp"), comVersion, out)
+	err = utils.Clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(p.TreeDirectory(), "components", "naos-esp"), comVersion, out)
 	if err != nil {
 		return err
 	}
@@ -239,23 +241,6 @@ func (p *Project) Setup(force bool, cmake bool, out io.Writer) error {
 	}
 
 	return nil
-}
-
-// BuildTreeLocation returns the location of the build tree if it exists or an
-// error if it does not exist.
-func (p *Project) BuildTreeLocation() (string, error) {
-	// calculate directory
-	dir := filepath.Join(p.InternalDirectory(), "tree")
-
-	// check if build tree directory exists
-	ok, err := utils.Exists(dir)
-	if err != nil {
-		return "", err
-	} else if !ok {
-		return "", nil
-	}
-
-	return dir, nil
 }
 
 // Build will build the project.
@@ -292,17 +277,11 @@ func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
 
 // Flash will flash the project to the attached device.
 func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) error {
-	// get build tree location
-	buildTree, err := p.BuildTreeLocation()
-	if err != nil {
-		return err
-	}
-
 	// calculate paths
 	espTool := filepath.Join(espidf.Directory(p.InternalDirectory()), "components", "esptool_py", "esptool", "esptool.py")
-	bootLoaderBinary := filepath.Join(buildTree, "build", "bootloader", "bootloader.bin")
-	projectBinary := filepath.Join(buildTree, "build", "naos-project.bin")
-	partitionsBinary := filepath.Join(buildTree, "build", "partitions_two_ota.bin")
+	bootLoaderBinary := filepath.Join(p.TreeDirectory(), "build", "bootloader", "bootloader.bin")
+	projectBinary := filepath.Join(p.TreeDirectory(), "build", "naos-project.bin")
+	partitionsBinary := filepath.Join(p.TreeDirectory(), "build", "partitions_two_ota.bin")
 
 	// prepare erase flash command
 	eraseFlash := []string{
@@ -371,7 +350,7 @@ func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) 
 
 	// flash attached device
 	utils.Log(out, "Flashing device...")
-	err = p.exec(out, nil, "python", flashAll...)
+	err := p.exec(out, nil, "python", flashAll...)
 	if err != nil {
 		return err
 	}
@@ -381,12 +360,6 @@ func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) 
 
 // Attach will attach to the attached device.
 func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader) error {
-	// get build tree location
-	buildTree, err := p.BuildTreeLocation()
-	if err != nil {
-		return err
-	}
-
 	// prepare command
 	var cmd *exec.Cmd
 
@@ -399,14 +372,14 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 		tool := filepath.Join(espidf.Directory(p.InternalDirectory()), "tools", "idf_monitor.py")
 
 		// get elf path
-		elf := filepath.Join(buildTree, "build", "naos-project.elf")
+		elf := filepath.Join(p.TreeDirectory(), "build", "naos-project.elf")
 
 		// construct command
 		cmd = exec.Command("python", tool, "--baud", "115200", "--port", device, elf)
 	}
 
 	// set working directory
-	cmd.Dir = buildTree
+	cmd.Dir = p.TreeDirectory()
 
 	// inherit current environment
 	cmd.Env = os.Environ()
@@ -418,7 +391,7 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 			cmd.Env[i] = "PATH=" + xtensa.BinDirectory(p.InternalDirectory()) + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
-			cmd.Env[i] = "PWD=" + buildTree
+			cmd.Env[i] = "PWD=" + p.TreeDirectory()
 		}
 	}
 
@@ -499,17 +472,11 @@ func (p *Project) Update(pattern string, timeout time.Duration, callback func(*D
 }
 
 func (p *Project) exec(out io.Writer, in io.Reader, name string, arg ...string) error {
-	// get build tree location
-	buildTree, err := p.BuildTreeLocation()
-	if err != nil {
-		return err
-	}
-
 	// construct command
 	cmd := exec.Command(name, arg...)
 
 	// set working directory
-	cmd.Dir = buildTree
+	cmd.Dir = p.TreeDirectory()
 
 	// connect output and inputs
 	cmd.Stdout = out
@@ -526,12 +493,12 @@ func (p *Project) exec(out io.Writer, in io.Reader, name string, arg ...string) 
 			cmd.Env[i] = "PATH=" + xtensa.BinDirectory(p.InternalDirectory()) + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
-			cmd.Env[i] = "PWD=" + buildTree
+			cmd.Env[i] = "PWD=" + p.TreeDirectory()
 		}
 	}
 
 	// run command
-	err = cmd.Run()
+	err := cmd.Run()
 	if err != nil {
 		return err
 	}
