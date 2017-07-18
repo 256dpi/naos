@@ -1,9 +1,9 @@
 package ble
 
 import (
-	"sync"
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/currantlabs/ble"
 )

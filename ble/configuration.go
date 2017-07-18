@@ -22,16 +22,16 @@ func ReadConfiguration(d *Device) (*Configuration, error) {
 
 	// prepare job
 	job := map[Property]*string{
-		WiFiSSIDProperty: &c.WiFiSSID,
-		WiFiPasswordProperty: &c.WiFiPassword,
-		MQTTHostProperty: &c.MQTTHost,
-		MQTTPortProperty: &c.MQTTPort,
-		MQTTClientIDProperty: &c.MQTTClientID,
-		MQTTUsernameProperty: &c.MQTTUsername,
-		MQTTPasswordProperty: &c.MQTTPassword,
-		DeviceTypeProperty: &c.DeviceType,
-		DeviceNameProperty: &c.DeviceName,
-		BaseTopicProperty: &c.BaseTopic,
+		WiFiSSIDProperty:         &c.WiFiSSID,
+		WiFiPasswordProperty:     &c.WiFiPassword,
+		MQTTHostProperty:         &c.MQTTHost,
+		MQTTPortProperty:         &c.MQTTPort,
+		MQTTClientIDProperty:     &c.MQTTClientID,
+		MQTTUsernameProperty:     &c.MQTTUsername,
+		MQTTPasswordProperty:     &c.MQTTPassword,
+		DeviceTypeProperty:       &c.DeviceType,
+		DeviceNameProperty:       &c.DeviceName,
+		BaseTopicProperty:        &c.BaseTopic,
 		ConnectionStatusProperty: &c.ConnectionStatus,
 	}
 
