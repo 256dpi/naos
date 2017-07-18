@@ -50,6 +50,7 @@ func Scan(duration time.Duration) (map[string]*ble.Configuration, error) {
 	return store, nil
 }
 
+// Rename will rename the device name of a Bluetooth device.
 func Rename(addr, name string) error {
 	// initialize ble
 	err := ble.Initialize()
