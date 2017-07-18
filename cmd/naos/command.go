@@ -38,7 +38,7 @@ Usage:
   naos attach [<device>] [--simple]
   naos run [<device>] [--clean --app-only --erase --simple]
   naos format
-  naos scan [--duration=<ms> --timeout=<ms>]
+  naos scan [--duration=<ms>]
   naos list
   naos collect [--clear --duration=<ms>]
   naos get <param> [<pattern>] [--timeout=<ms>]
@@ -57,8 +57,8 @@ Options:
   --app-only       Only build or flash the application.
   --simple         Use simple serial tool.
   --clear          Remove not available devices from inventory.
-  --duration=<ms>  Collection duration [default: 2s].
-  --timeout=<ms>   Response timeout [default: 5s].
+  --duration=<ms>  Scan and collect duration [default: 2s].
+  --timeout=<ms>   Operation timeout [default: 5s].
 `
 
 type command struct {

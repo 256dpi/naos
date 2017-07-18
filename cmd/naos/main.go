@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
 
 	"code.cloudfoundry.org/bytefmt"
 	"github.com/shiftr-io/naos"
@@ -143,15 +142,16 @@ func scan(cmd *command, _ *naos.Project) {
 		close(quit)
 	}()
 
-	devices, err := naos.Scan(cmd.oDuration, cmd.oTimeout)
+	// scan for configurations
+	configurations, err := naos.Scan(cmd.oDuration)
 	exitIfSet(err)
 
 	// prepare table
 	tbl := newTable("ADDRESS", "DEVICE NAME", "DEVICE TYPE", "BASE TOPIC", "WIFI SSID", "WIFI PASSWORD", "MQTT HOST", "MQTT PORT", "MQTT CLIENT ID", "MQTT USERNAME", "MQTT PASSWORD", "CONNECTION STATUS")
 
 	// add rows
-	for _, d := range devices {
-		tbl.add(d.Address, d.DeviceName, d.DeviceType, d.BaseTopic, d.WiFiSSID, d.WiFiPassword, d.MQTTHost, strconv.Itoa(d.MQTTPort), d.MQTTClientID, d.MQTTUsername, d.MQTTPassword, d.ConnectionStatus)
+	for addr, d := range configurations {
+		tbl.add(addr, d.DeviceName, d.DeviceType, d.BaseTopic, d.WiFiSSID, d.WiFiPassword, d.MQTTHost, d.MQTTPort, d.MQTTClientID, d.MQTTUsername, d.MQTTPassword, d.ConnectionStatus)
 	}
 
 	// show table
