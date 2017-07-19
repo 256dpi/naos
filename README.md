@@ -4,6 +4,6 @@
 
 ## Usage
 
-1. Download xtensa toolkit into the tree directory.
+1. Download xtensa toolkit into the directory.
 2. Link the source directory to the `main/src/` directory.
-3. Run `make` and other commands in the build tree structure.
+3. Run `make` and other commands in the build tree.
