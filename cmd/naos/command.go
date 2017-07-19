@@ -32,7 +32,7 @@ Fleet Management:
   update   Will send the previously built binary to connected devices.
 
 Usage:
-  naos create [--cmake]
+  naos create [--cmake --force]
   naos setup [--force]
   naos build [--clean --app-only]
   naos flash [<device>] [--erase --app-only]

@@ -23,30 +23,37 @@ type Project struct {
 
 // CreateProject will initialize a project in the specified directory. If out is
 // not nil, it will be used to log information about the process.
-func CreateProject(path string, cmake bool, out io.Writer) (*Project, error) {
-	// TODO: Add force flag to recreate existing files.
-
+func CreateProject(path string, force, cmake bool, out io.Writer) (*Project, error) {
 	// ensure project directory
+	utils.Log(out, "Ensuring project directory.")
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
 		return nil, err
 	}
 
 	// create project
-	p := &Project{
-		Location:  path,
-		Inventory: NewInventory(),
-	}
+	p := &Project{Location: path}
 
-	// save inventory
-	err = p.SaveInventory()
+	// check if inventory already exists
+	ok, err := utils.Exists(filepath.Join(path, "naos.json"))
 	if err != nil {
 		return nil, err
 	}
 
-	// print info
-	utils.Log(out, "Created new empty inventory.")
-	utils.Log(out, "Please update the settings to suit your needs.")
+	// create new inventory if not already exists
+	if !ok || force {
+		// create empty inventory
+		p.Inventory = NewInventory()
+
+		// save inventory
+		utils.Log(out, "Created new empty inventory.")
+		err = p.SaveInventory()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		utils.Log(out, "Inventory already exists.")
+	}
 
 	// ensure source directory
 	utils.Log(out, "Ensuring source directory.")
@@ -57,20 +64,20 @@ func CreateProject(path string, cmake bool, out io.Writer) (*Project, error) {
 
 	// prepare main source path and check if it already exists
 	mainSourcePath := filepath.Join(path, "src", "main.c")
-	ok, err := utils.Exists(mainSourcePath)
+	ok, err = utils.Exists(mainSourcePath)
 	if err != nil {
 		return nil, err
 	}
 
 	// create main source file if it not already exists
-	if !ok {
-		utils.Log(out, "Creating default 'main.c' source file.")
+	if !ok || force {
+		utils.Log(out, "Creating default source file.")
 		err = ioutil.WriteFile(mainSourcePath, []byte(mainSourceFile), 0644)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		utils.Log(out, "Default 'main.c' source file already exists.")
+		utils.Log(out, "Default source file already exists.")
 	}
 
 	// generate cmake file if requested
@@ -83,7 +90,7 @@ func CreateProject(path string, cmake bool, out io.Writer) (*Project, error) {
 		}
 
 		// create CMake file if it not already exists
-		if !ok {
+		if !ok || force {
 			utils.Log(out, "Creating project CMake file.")
 			err = ioutil.WriteFile(projectPath, []byte(projectCMakeListsFile), 0644)
 			if err != nil {
