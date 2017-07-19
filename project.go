@@ -23,7 +23,9 @@ type Project struct {
 
 // CreateProject will initialize a project in the specified directory. If out is
 // not nil, it will be used to log information about the process.
-func CreateProject(path string, out io.Writer) (*Project, error) {
+func CreateProject(path string, cmake bool, out io.Writer) (*Project, error) {
+	// TODO: Add force flag to recreate existing files.
+
 	// ensure project directory
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
@@ -67,6 +69,29 @@ func CreateProject(path string, out io.Writer) (*Project, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		utils.Log(out, "Default 'main.c' source file already exists.")
+	}
+
+	// generate cmake file if requested
+	if cmake {
+		// get project path
+		projectPath := filepath.Join(p.Location, "CMakeLists.txt")
+		ok, err := utils.Exists(projectPath)
+		if err != nil {
+			return nil, err
+		}
+
+		// create CMake file if it not already exists
+		if !ok {
+			utils.Log(out, "Creating project CMake file.")
+			err = ioutil.WriteFile(projectPath, []byte(projectCMakeListsFile), 0644)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			utils.Log(out, "Project CMake file already exists.")
+		}
 	}
 
 	return p, nil
@@ -109,31 +134,8 @@ func (p *Project) Tree() string {
 // Setup will setup necessary dependencies. Any existing dependencies will be
 // removed if force is set to true. If out is not nil, it will be used to log
 // information about the process.
-func (p *Project) Setup(force bool, cmake bool, out io.Writer) error {
-	// install build tree
-	tree.Install(p.Tree(), filepath.Join(p.Location, "src"), "master", true, out)
-
-	// TODO: Make cmake stuff to create.
-
-	// generate cmake file if requested
-	if cmake {
-		// get project path
-		projectPath := filepath.Join(p.Location, "CMakeLists.txt")
-		ok, err := utils.Exists(projectPath)
-		if err != nil {
-			return err
-		}
-
-		if !ok || force {
-			utils.Log(out, "Creating project CMake file.")
-			err = ioutil.WriteFile(projectPath, []byte(projectCMakeListsFile), 0644)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
+func (p *Project) Setup(force bool, out io.Writer) error {
+	return tree.Install(p.Tree(), filepath.Join(p.Location, "src"), "master", true, out)
 }
 
 // TODO: Move all build tree commands to tree package.

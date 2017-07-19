@@ -66,7 +66,7 @@ func main() {
 
 func create(cmd *command) {
 	// create project
-	p, err := naos.CreateProject(home(), os.Stdout)
+	p, err := naos.CreateProject(home(), cmd.oCMake, os.Stdout)
 	exitIfSet(err)
 
 	// save inventory
@@ -75,7 +75,7 @@ func create(cmd *command) {
 
 func setup(cmd *command, p *naos.Project) {
 	// setup build tree
-	exitIfSet(p.Setup(cmd.oForce, cmd.oCMake, os.Stdout))
+	exitIfSet(p.Setup(cmd.oForce, os.Stdout))
 }
 
 func build(cmd *command, p *naos.Project) {

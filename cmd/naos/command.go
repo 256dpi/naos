@@ -32,8 +32,8 @@ Fleet Management:
   update   Will send the previously built binary to connected devices.
 
 Usage:
-  naos create
-  naos setup [--force --cmake]
+  naos create [--cmake]
+  naos setup [--force]
   naos build [--clean --app-only]
   naos flash [<device>] [--erase --app-only]
   naos attach [<device>] [--simple]
@@ -52,8 +52,8 @@ Usage:
   naos help
 
 Options:
-  --force               Reinstall dependencies when they already exist.
   --cmake               Create required CMake files for IDEs like CLion.
+  --force               Reinstall dependencies when they already exist.
   --clean               Clean all build artifacts before building again.
   --erase               Erase completely before flashing new image.
   --app-only            Only build or flash the application.
