@@ -85,12 +85,12 @@ type command struct {
 	cHelp    bool
 
 	// arguments
-	aDevice   string
-	aAddress  string
-	aName     string
-	aParam    string
-	aPattern  string
-	aValue    string
+	aDevice  string
+	aAddress string
+	aName    string
+	aParam   string
+	aPattern string
+	aValue   string
 
 	// options
 	oForce    bool
@@ -130,12 +130,12 @@ func parseCommand() *command {
 		cHelp:    getBool(a["help"]),
 
 		// arguments
-		aDevice:   getString(a["<device>"]),
-		aAddress:  getString(a["<address>"]),
-		aName:     getString(a["<name>"]),
-		aPattern:  getString(a["<pattern>"]),
-		aParam:    getString(a["<param>"]),
-		aValue:    getString(a["<value>"]),
+		aDevice:  getString(a["<device>"]),
+		aAddress: getString(a["<address>"]),
+		aName:    getString(a["<name>"]),
+		aPattern: getString(a["<pattern>"]),
+		aParam:   getString(a["<param>"]),
+		aValue:   getString(a["<value>"]),
 
 		// options
 		oForce:    getBool(a["--force"]),
