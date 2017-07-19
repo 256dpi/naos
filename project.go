@@ -358,7 +358,7 @@ func (p *Project) Format(out io.Writer) error {
 // state or progress.
 func (p *Project) Update(pattern string, timeout time.Duration, callback func(*Device, *mqtt.UpdateStatus)) error {
 	// get image path
-	image := filepath.Join(p.Tree(), "tree", "build", "naos-project.bin")
+	image := filepath.Join(p.Tree(), "build", "naos-project.bin")
 
 	// read image
 	bytes, err := ioutil.ReadFile(image)
