@@ -1,6 +1,4 @@
-// Package xtensa provides utility functions to manage the xtensa toolchain needed
-// to build NAOS projects.
-package xtensa
+package tree
 
 import (
 	"errors"
@@ -14,10 +12,10 @@ import (
 	"github.com/shiftr-io/naos/utils"
 )
 
-// Install will install the xtensa toolchain. An existing toolchain will be
+// InstallXtensa will install the xtensa toolchain. An existing toolchain will be
 // removed if force is set to true. If out is not nil, it will be used to log
 // information about the installation process.
-func Install(parent string, force bool, out io.Writer) error {
+func InstallXtensa(treePath string, force bool, out io.Writer) error {
 	// get toolchain url
 	var url string
 	switch runtime.GOOS {
@@ -30,7 +28,7 @@ func Install(parent string, force bool, out io.Writer) error {
 	}
 
 	// prepare toolchain directory
-	dir := filepath.Join(parent, "xtensa-esp32-elf")
+	dir := filepath.Join(treePath, "xtensa-esp32-elf")
 
 	// check if already exists
 	ok, err := utils.Exists(dir)
@@ -71,7 +69,7 @@ func Install(parent string, force bool, out io.Writer) error {
 
 	// unpack toolchain
 	utils.Log(out, "Unpacking xtensa toolchain...")
-	err = archiver.TarGz.Open(tmp.Name(), parent)
+	err = archiver.TarGz.Open(tmp.Name(), treePath)
 	if err != nil {
 		return err
 	}

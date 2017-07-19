@@ -10,19 +10,10 @@ import (
 	"time"
 
 	"github.com/kr/pty"
-	"github.com/shiftr-io/naos/espidf"
 	"github.com/shiftr-io/naos/mqtt"
+	"github.com/shiftr-io/naos/tree"
 	"github.com/shiftr-io/naos/utils"
-	"github.com/shiftr-io/naos/xtensa"
 )
-
-// TODO: Implement dependency updating.
-
-// TODO: Read versions from naos-esp?
-
-const idfVersion = "9b955f4c9f1b32652ea165d3e4cdaad01bba170e"
-const mqttVersion = "cc87172126aa7aacc3b982f7be7489950429b733"
-const comVersion = "41c8c6a839eb20c46f19258b8fdcc5caa3aba01c"
 
 // A Project is a project available on disk.
 type Project struct {
@@ -109,121 +100,23 @@ func (p *Project) SaveInventory() error {
 	return nil
 }
 
-// InternalDirectory returns the internal directory used to store the toolchain,
-// development framework and other necessary files.
-func (p *Project) InternalDirectory() string {
+// Tree returns the internal directory used to store the toolchain, development
+// framework and other necessary files.
+func (p *Project) Tree() string {
 	return filepath.Join(p.Location, "naos")
-}
-
-// TreeDirectory returns the internal directory that contains the whole build tree.
-func (p *Project) TreeDirectory() string {
-	return filepath.Join(p.InternalDirectory(), "tree")
 }
 
 // Setup will setup necessary dependencies. Any existing dependencies will be
 // removed if force is set to true. If out is not nil, it will be used to log
 // information about the process.
 func (p *Project) Setup(force bool, cmake bool, out io.Writer) error {
-	// install xtensa toolchain
-	err := xtensa.Install(p.InternalDirectory(), force, out)
-	if err != nil {
-		return err
-	}
+	// install build tree
+	tree.Install(p.Tree(), filepath.Join(p.Location, "src"), "master", true, out)
 
-	// install esp32 development framework
-	err = espidf.Install(p.InternalDirectory(), idfVersion, force, out)
-	if err != nil {
-		return err
-	}
+	// TODO: Make cmake stuff to create.
 
-	// check if already exists
-	ok, err := utils.Exists(p.TreeDirectory())
-	if err != nil {
-		return err
-	}
-
-	// return immediately if already exists and no forced
-	if ok && !force {
-		utils.Log(out, "Skipping build tree as it already exists.")
-		return nil
-	}
-
-	// remove existing directory if existing
-	if ok {
-		utils.Log(out, "Removing existing build tree (forced).")
-		err = os.RemoveAll(p.TreeDirectory())
-		if err != nil {
-			return err
-		}
-	}
-
-	// print log
-	utils.Log(out, "Creating build tree directory structure...")
-
-	// adding directory
-	err = os.MkdirAll(p.TreeDirectory(), 0777)
-	if err != nil {
-		return err
-	}
-
-	// adding sdk config file
-	err = ioutil.WriteFile(filepath.Join(p.TreeDirectory(), "sdkconfig"), []byte(sdkconfigFile), 0644)
-	if err != nil {
-		return err
-	}
-
-	// adding makefile
-	err = ioutil.WriteFile(filepath.Join(p.TreeDirectory(), "Makefile"), []byte(makeFile), 0644)
-	if err != nil {
-		return err
-	}
-
-	// adding main directory
-	err = os.MkdirAll(filepath.Join(p.TreeDirectory(), "main"), 0777)
-	if err != nil {
-		return err
-	}
-
-	// adding component.mk
-	err = ioutil.WriteFile(filepath.Join(p.TreeDirectory(), "main", "component.mk"), []byte(componentFile), 0644)
-	if err != nil {
-		return err
-	}
-
-	// linking src
-	err = os.Symlink(filepath.Join(p.Location, "src"), filepath.Join(p.TreeDirectory(), "main", "src"))
-	if err != nil {
-		return err
-	}
-
-	// adding components directory
-	err = os.MkdirAll(filepath.Join(p.TreeDirectory(), "components"), 0777)
-	if err != nil {
-		return err
-	}
-
-	// clone component
-	utils.Log(out, "Installing MQTT component...")
-	err = utils.Clone("https://github.com/256dpi/esp-mqtt.git", filepath.Join(p.TreeDirectory(), "components", "esp-mqtt"), mqttVersion, out)
-	if err != nil {
-		return err
-	}
-
-	// clone component
-	utils.Log(out, "Installing NAOS component...")
-	err = utils.Clone("https://github.com/shiftr-io/naos-esp.git", filepath.Join(p.TreeDirectory(), "components", "naos-esp"), comVersion, out)
-	if err != nil {
-		return err
-	}
-
+	// generate cmake file if requested
 	if cmake {
-		// write internal cmake file
-		utils.Log(out, "Creating internal CMake file.")
-		err := ioutil.WriteFile(filepath.Join(p.InternalDirectory(), "CMakeLists.txt"), []byte(internalCMakeListsFile), 0644)
-		if err != nil {
-			return err
-		}
-
 		// get project path
 		projectPath := filepath.Join(p.Location, "CMakeLists.txt")
 		ok, err := utils.Exists(projectPath)
@@ -242,6 +135,8 @@ func (p *Project) Setup(force bool, cmake bool, out io.Writer) error {
 
 	return nil
 }
+
+// TODO: Move all build tree commands to tree package.
 
 // Build will build the project.
 func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
@@ -278,10 +173,10 @@ func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
 // Flash will flash the project to the attached device.
 func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) error {
 	// calculate paths
-	espTool := filepath.Join(espidf.Directory(p.InternalDirectory()), "components", "esptool_py", "esptool", "esptool.py")
-	bootLoaderBinary := filepath.Join(p.TreeDirectory(), "build", "bootloader", "bootloader.bin")
-	projectBinary := filepath.Join(p.TreeDirectory(), "build", "naos-project.bin")
-	partitionsBinary := filepath.Join(p.TreeDirectory(), "build", "partitions_two_ota.bin")
+	espTool := filepath.Join(tree.IDFDirectory(p.Tree()), "components", "esptool_py", "esptool", "esptool.py")
+	bootLoaderBinary := filepath.Join(p.Tree(), "build", "bootloader", "bootloader.bin")
+	projectBinary := filepath.Join(p.Tree(), "build", "naos-project.bin")
+	partitionsBinary := filepath.Join(p.Tree(), "build", "partitions_two_ota.bin")
 
 	// prepare erase flash command
 	eraseFlash := []string{
@@ -369,17 +264,17 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 		cmd = exec.Command("miniterm.py", "--rts", "0", "--dtr", "0", "--raw", device, "115200")
 	} else {
 		// get path of monitor tool
-		tool := filepath.Join(espidf.Directory(p.InternalDirectory()), "tools", "idf_monitor.py")
+		tool := filepath.Join(tree.IDFDirectory(p.Tree()), "tools", "idf_monitor.py")
 
 		// get elf path
-		elf := filepath.Join(p.TreeDirectory(), "build", "naos-project.elf")
+		elf := filepath.Join(p.Tree(), "build", "naos-project.elf")
 
 		// construct command
 		cmd = exec.Command("python", tool, "--baud", "115200", "--port", device, elf)
 	}
 
 	// set working directory
-	cmd.Dir = p.TreeDirectory()
+	cmd.Dir = p.Tree()
 
 	// inherit current environment
 	cmd.Env = os.Environ()
@@ -388,10 +283,10 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 	for i, str := range cmd.Env {
 		if strings.HasPrefix(str, "PATH=") {
 			// prepend toolchain bin directory
-			cmd.Env[i] = "PATH=" + xtensa.BinDirectory(p.InternalDirectory()) + ":" + os.Getenv("PATH")
+			cmd.Env[i] = "PATH=" + tree.BinDirectory(p.Tree()) + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
-			cmd.Env[i] = "PWD=" + p.TreeDirectory()
+			cmd.Env[i] = "PWD=" + p.Tree()
 		}
 	}
 
@@ -454,7 +349,7 @@ func (p *Project) Format(out io.Writer) error {
 // state or progress.
 func (p *Project) Update(pattern string, timeout time.Duration, callback func(*Device, *mqtt.UpdateStatus)) error {
 	// get image path
-	image := filepath.Join(p.InternalDirectory(), "tree", "build", "naos-project.bin")
+	image := filepath.Join(p.Tree(), "tree", "build", "naos-project.bin")
 
 	// read image
 	bytes, err := ioutil.ReadFile(image)
@@ -476,7 +371,7 @@ func (p *Project) exec(out io.Writer, in io.Reader, name string, arg ...string) 
 	cmd := exec.Command(name, arg...)
 
 	// set working directory
-	cmd.Dir = p.TreeDirectory()
+	cmd.Dir = p.Tree()
 
 	// connect output and inputs
 	cmd.Stdout = out
@@ -490,10 +385,10 @@ func (p *Project) exec(out io.Writer, in io.Reader, name string, arg ...string) 
 	for i, str := range cmd.Env {
 		if strings.HasPrefix(str, "PATH=") {
 			// prepend toolchain bin directory
-			cmd.Env[i] = "PATH=" + xtensa.BinDirectory(p.InternalDirectory()) + ":" + os.Getenv("PATH")
+			cmd.Env[i] = "PATH=" + tree.BinDirectory(p.Tree()) + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
-			cmd.Env[i] = "PWD=" + p.TreeDirectory()
+			cmd.Env[i] = "PWD=" + p.Tree()
 		}
 	}
 

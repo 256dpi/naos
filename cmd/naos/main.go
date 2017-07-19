@@ -74,19 +74,8 @@ func create(cmd *command) {
 }
 
 func setup(cmd *command, p *naos.Project) {
-	// setup toolchain
-	exitIfSet(p.SetupToolchain(cmd.oForce, os.Stdout))
-
-	// setup development framework
-	exitIfSet(p.SetupDevelopmentFramework(cmd.oForce, os.Stdout))
-
 	// setup build tree
-	exitIfSet(p.SetupBuildTree(cmd.oForce, os.Stdout))
-
-	// setup cmake if required
-	if cmd.oCMake {
-		exitIfSet(p.SetupCMake(cmd.oForce, os.Stdout))
-	}
+	exitIfSet(p.Setup(cmd.oForce, cmd.oCMake, os.Stdout))
 }
 
 func build(cmd *command, p *naos.Project) {
