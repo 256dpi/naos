@@ -52,12 +52,18 @@ func (t *table) string() string {
 }
 
 func (t *table) show(sortColumn int) {
-	// sort table using a column if gte zero
-	if sortColumn >= 0 {
-		sort.Slice(t.data[1:], func(i, j int) bool {
-			return t.data[i][sortColumn] < t.data[j][sortColumn]
-		})
-	}
+	// get a sub slice for sorting (without) header
+	sub := t.data[1:]
+
+	// sort table using a column
+	sort.Slice(sub, func(i, j int) bool {
+		return sub[i][sortColumn] < sub[j][sortColumn]
+	})
+
+	// construct full slice
+	full := append([][]string{}, t.data[0])
+	full = append(full, sub...)
+	t.data = full
 
 	// show table
 	fmt.Print(t.string())
