@@ -163,7 +163,7 @@ void naos_manager_handle(const char *topic, const char *payload, unsigned int le
     char *param = (char *)topic + 9;
 
     // save param
-    ESP_ERROR_CHECK(nvs_set_str(naos_manager_nvs_handle, param, payload));
+    naos_set(param, payload);
 
     // update task
     naos_task_update(param, payload);
@@ -191,14 +191,8 @@ void naos_manager_handle(const char *topic, const char *payload, unsigned int le
     // get param
     char *param = (char *)topic + 11;
 
-    // erase param
-    esp_err_t err = nvs_erase_key(naos_manager_nvs_handle, param);
-    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
-      ESP_ERROR_CHECK(err);
-    }
-
-    // update task if param was set
-    if (err == ESP_OK) {
+    // unset param and update task if it existed
+    if (naos_unset(param)) {
       naos_task_update(param, NULL);
     }
 
@@ -321,6 +315,20 @@ char *naos_get(const char *param) {
   ESP_ERROR_CHECK(nvs_get_str(naos_manager_nvs_handle, param, buf, &required_size));
 
   return buf;
+}
+
+void naos_set(const char *param, const char *value) {
+  ESP_ERROR_CHECK(nvs_set_str(naos_manager_nvs_handle, param, value));
+}
+
+bool naos_unset(const char *param) {
+  // erase paramater
+  esp_err_t err = nvs_erase_key(naos_manager_nvs_handle, param);
+  if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+    ESP_ERROR_CHECK(err);
+  }
+
+  return err == ESP_OK;
 }
 
 void naos_manager_stop() {

@@ -2,6 +2,9 @@
 #include <string.h>
 
 #include <naos.h>
+#include <stdio.h>
+
+static int counter = 0;
 
 static char *message = NULL;
 
@@ -21,9 +24,16 @@ static void update(const char *param, const char *value) {
   // log param change
   naos_log("param %s updated to %s", param, value);
 
+  // set counter
+  if (strcmp(param, "counter") == 0) {
+    counter = atoi(value);
+  }
+
   // clear and update message
-  if (message != NULL) free(message);
-  message = strdup(value);
+  if (strcmp(param, "message") == 0) {
+    if (message != NULL) free(message);
+    message = strdup(value);
+  }
 }
 
 static void handle(const char *topic, const char *payload, unsigned int len, naos_scope_t scope) {
@@ -32,11 +42,19 @@ static void handle(const char *topic, const char *payload, unsigned int len, nao
 }
 
 static void loop() {
+  // increment counter
+  counter++;
+
   // log info
-  naos_log("loop callback called");
+  naos_log("loop callback called (%d)", counter);
 
   // publish message
   naos_publish_str("hello", message, 0, false, NAOS_LOCAL);
+
+  // save counter
+  char buf[16];
+  snprintf(buf, 16, "%d", counter);
+  naos_set("counter", buf);
 }
 
 static void offline() {

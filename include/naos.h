@@ -130,6 +130,22 @@ void naos_log(const char *fmt, ...);
 char *naos_get(const char *param);
 
 /**
+ * Will set the value of the requested parameter.
+ *
+ * @param param - The parameter.
+ * @param value - The value.
+ */
+void naos_set(const char *param, const char *value);
+
+/**
+ * Will unset the requested parameter.
+ *
+ * @param param - The parameter.
+ * @return Whether the parameter was set.
+ */
+bool naos_unset(const char *param);
+
+/**
  * Subscribe to specified topic.
  *
  * The topic is automatically prefixed with the configured base topic if the scope is local.
