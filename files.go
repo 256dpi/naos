@@ -1,7 +1,5 @@
 package naos
 
-// TODO: Read files from 'naos-tree'.
-
 const mainSourceFile = `#include <naos.h>
 
 static naos_config_t config = {.device_type = "my-device",
