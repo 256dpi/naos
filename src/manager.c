@@ -119,7 +119,7 @@ void naos_manager_start() {
   NAOS_UNLOCK(naos_manager_mutex);
 }
 
-void naos_manager_handle(const char *topic, const char *payload, unsigned int len, naos_scope_t scope) {
+void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope) {
   // acquire mutex
   NAOS_LOCK(naos_manager_mutex);
 
@@ -163,10 +163,10 @@ void naos_manager_handle(const char *topic, const char *payload, unsigned int le
     char *param = (char *)topic + 9;
 
     // save param
-    naos_set(param, payload);
+    naos_set(param, (const char *)payload);
 
     // update task
-    naos_task_update(param, payload);
+    naos_task_update(param, (const char *)payload);
 
     // get value
     char *value = naos_get(param);
@@ -205,9 +205,9 @@ void naos_manager_handle(const char *topic, const char *payload, unsigned int le
   // check log
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/record") == 0) {
     // enable or disable logging
-    if (strcmp(payload, "on") == 0) {
+    if (strcmp((const char *)payload, "on") == 0) {
       naos_manager_recording = true;
-    } else if (strcmp(payload, "off") == 0) {
+    } else if (strcmp((const char *)payload, "off") == 0) {
       naos_manager_recording = false;
     }
   }
@@ -215,7 +215,7 @@ void naos_manager_handle(const char *topic, const char *payload, unsigned int le
   // check update begin
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/update/begin") == 0) {
     // get update size
-    long long int total = strtoll(payload, NULL, 10);
+    long long int total = strtoll((const char *)payload, NULL, 10);
     ESP_LOGI(NAOS_LOG_TAG, "naos_manager_handle: begin update with size %lld", total);
 
     // begin update
@@ -234,7 +234,7 @@ void naos_manager_handle(const char *topic, const char *payload, unsigned int le
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/update/write") == 0) {
     // write chunk (very time expensive)
     naos_update_write(payload, (uint16_t)len);
-    ESP_LOGI(NAOS_LOG_TAG, "naos_manager_handle: wrote chunk of %d bytes", len);
+    ESP_LOGI(NAOS_LOG_TAG, "naos_manager_handle: wrote chunk of %zu bytes", len);
 
     // request next chunk
     naos_publish_int("naos/update/request", CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE, 0, false, NAOS_LOCAL);
@@ -261,8 +261,6 @@ void naos_manager_handle(const char *topic, const char *payload, unsigned int le
 
   // release mutex
   NAOS_UNLOCK(naos_manager_mutex);
-
-  return;
 }
 
 void naos_log(const char *fmt, ...) {
@@ -322,7 +320,7 @@ void naos_set(const char *param, const char *value) {
 }
 
 bool naos_unset(const char *param) {
-  // erase paramater
+  // erase parameter
   esp_err_t err = nvs_erase_key(naos_manager_nvs_handle, param);
   if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
     ESP_ERROR_CHECK(err);

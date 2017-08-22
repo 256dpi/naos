@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 /**
@@ -71,7 +72,7 @@ typedef struct {
    * @param len
    * @param scope
    */
-  void (*message_callback)(const char *topic, const char *payload, unsigned int len, naos_scope_t scope);
+  void (*message_callback)(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope);
 
   /**
    * The loop callback is called in over and over as long as the device is online.

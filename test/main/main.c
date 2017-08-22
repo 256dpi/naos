@@ -26,7 +26,7 @@ static void update(const char *param, const char *value) {
 
   // set counter
   if (strcmp(param, "counter") == 0) {
-    counter = atoi(value);
+    counter = (int)strtol(value, NULL, 0);
   }
 
   // clear and update message
@@ -36,9 +36,9 @@ static void update(const char *param, const char *value) {
   }
 }
 
-static void handle(const char *topic, const char *payload, unsigned int len, naos_scope_t scope) {
+static void handle(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope) {
   // log incoming message
-  naos_log("%s message %s with payload %s received", naos_scope_str(scope), topic, payload);
+  naos_log("%s message %s with payload %s (%ld) received", naos_scope_str(scope), topic, payload, len);
 }
 
 static void loop() {

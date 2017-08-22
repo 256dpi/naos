@@ -46,7 +46,7 @@ void naos_update_begin(uint16_t size) {
   NAOS_UNLOCK(naos_update_mutex);
 }
 
-void naos_update_write(const char *chunk, uint16_t len) {
+void naos_update_write(uint8_t *chunk, uint16_t len) {
   // acquire mutex
   NAOS_LOCK(naos_update_mutex);
 

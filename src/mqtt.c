@@ -33,7 +33,7 @@ static const char *naos_mqtt_without_base_topic(const char *topic) {
   return topic + strlen(naos_mqtt_base_topic_prefix);
 }
 
-static void naos_mqtt_message_handler(const char *topic, const char *payload, unsigned int len) {
+static void naos_mqtt_message_handler(const char *topic, uint8_t *payload, size_t len) {
   // remove base topic
   const char *un_prefixed_topic = naos_mqtt_without_base_topic(topic);
 

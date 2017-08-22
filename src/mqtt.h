@@ -8,8 +8,7 @@
 /**
  * The message callback.
  */
-typedef void (*naos_mqtt_message_callback_t)(const char *topic, const char *payload, unsigned int len,
-                                             naos_scope_t scope);
+typedef void (*naos_mqtt_message_callback_t)(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope);
 
 /**
  * Initialize the MQTT subsystem.

@@ -126,7 +126,7 @@ void naos_task_update(const char *param, const char *value) {
   NAOS_UNLOCK(naos_task_mutex);
 }
 
-void naos_task_forward(const char *topic, const char *payload, unsigned int len, naos_scope_t scope) {
+void naos_task_forward(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope) {
   // return immediately if no callback exists
   if (naos_config()->message_callback == NULL) {
     return;
