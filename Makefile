@@ -6,8 +6,8 @@ ifeq ($(UNAME), Darwin)
 XTENSA_TOOLCHAIN := "xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz"
 endif
 
-ESP_IDF_VERSION := "4ec2abbf23084ac060679e4136fa222a2d0ab0e8"
-ESP_MQTT_VERSION := "cc87172126aa7aacc3b982f7be7489950429b733"
+ESP_IDF_VERSION := "fc85cb683d4a5e4c2a5b4cb7d607a3790b0cfb96"
+ESP_MQTT_VERSION := "056f5ab51a48a3366d647dcb85ac95feacfe98bd"
 
 test/xtensa-esp32-elf:
 	wget https://dl.espressif.com/dl/$(XTENSA_TOOLCHAIN)
@@ -15,12 +15,12 @@ test/xtensa-esp32-elf:
 	rm *.tar.gz
 
 test/esp-idf:
-	git clone https://github.com/espressif/esp-idf.git test/esp-idf
+	git clone --recursive  https://github.com/espressif/esp-idf.git test/esp-idf
 	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
 	cd test/esp-idf/; git submodule update --recursive
 
 test/components/esp-mqtt:
-	git clone https://github.com/256dpi/esp-mqtt.git test/components/esp-mqtt
+	git clone --recursive  https://github.com/256dpi/esp-mqtt.git test/components/esp-mqtt
 	cd test/components/esp-mqtt/; git fetch; git checkout $(ESP_MQTT_VERSION)
 	cd test/components/esp-mqtt/; git submodule update --recursive
 
