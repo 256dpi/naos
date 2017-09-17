@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <naos.h>
+#include <naos/utils.h>
 
 #include "naos.h"
 #include "task.h"

@@ -32,7 +32,7 @@ static void naos_manager_send_heartbeat() {
 
   // send heartbeat
   char buf[64];
-  snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s", naos_config()->device_type, naos_config()->firmware_version,
+  snprintf(buf, sizeof buf, "%s,%s,%s,%d,%lld,%s", naos_config()->device_type, naos_config()->firmware_version,
            device_name, esp_get_free_heap_size(), naos_millis(), esp_ota_get_running_partition()->label);
   naos_publish_str("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
 
@@ -282,7 +282,7 @@ void naos_log(const char *fmt, ...) {
   }
 
   // print log message esp like
-  printf("N (%d) %s: %s\n", naos_millis(), naos_config()->device_type, buf);
+  printf("N (%lld) %s: %s\n", naos_millis(), naos_config()->device_type, buf);
 
   // free list
   va_end(args);

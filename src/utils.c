@@ -1,8 +1,15 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <string.h>
+#include <sys/time.h>
 
-uint32_t naos_millis() { return xTaskGetTickCount() * portTICK_PERIOD_MS; }
+uint64_t naos_micros() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return 1000000 * (uint64_t)tv.tv_sec + (uint64_t)tv.tv_usec;
+}
+
+uint64_t naos_millis() { return naos_micros() / 1000; }
 
 void naos_delay(uint32_t millis) {
   if (millis >= portTICK_PERIOD_MS) {
