@@ -12,6 +12,8 @@ void naos_delay(uint32_t millis) {
   }
 }
 
+void naos_sleep(uint32_t us) { ets_delay_us(us); }
+
 char *naos_str_concat(const char *str1, const char *str2) {
   // allocate new buffer
   char *str = malloc(strlen(str1) + strlen(str2) + 1);
