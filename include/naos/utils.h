@@ -10,4 +10,13 @@
  */
 uint32_t naos_millis();
 
+/**
+ * Will sleep for the specified amount of milliseconds.
+ *
+ * Note: This function should only be used inside the loop callback.
+ *
+ * @param millis - The amount of milliseconds to delay.
+ */
+void naos_delay(uint32_t ms);
+
 #endif  // NAOS_UTILS_H

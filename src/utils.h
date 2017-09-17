@@ -25,13 +25,6 @@
 #define NAOS_UNLOCK(mutex) xSemaphoreGive(mutex)
 
 /**
- * Will sleep for the specified amount of milliseconds.
- *
- * @param millis
- */
-void naos_delay(int millis);
-
-/**
  * Will concatenate two strings and return a new one.
  *
  * Note: The caller is responsible to free the returned buffer.

@@ -4,7 +4,7 @@
 
 uint32_t naos_millis() { return xTaskGetTickCount() * portTICK_PERIOD_MS; }
 
-void naos_delay(int millis) {
+void naos_delay(uint32_t millis) {
   if (millis >= portTICK_PERIOD_MS) {
     vTaskDelay(millis / portTICK_PERIOD_MS);
   } else {
