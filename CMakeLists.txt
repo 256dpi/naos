@@ -22,6 +22,8 @@ include_directories(
         test/esp-idf/components/tcpip_adapter/include
         test/esp-idf/components/lwip/include/lwip/port
         test/esp-idf/components/lwip/include/lwip
+        test/esp-idf/components/soc/esp32/include
+        test/esp-idf/components/soc/include
         test/components/esp-mqtt
         include)
 
