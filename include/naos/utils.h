@@ -19,13 +19,4 @@ uint32_t naos_millis();
  */
 void naos_delay(uint32_t ms);
 
-/**
- * Will sleep for the specified amount of milliseconds.
- *
- * Note: This function should be used carefully as it blocks all other processing.
- *
- * @param us - The amount of microseconds to sleep.
- */
-void naos_sleep(uint32_t us);
-
 #endif  // NAOS_UTILS_H
