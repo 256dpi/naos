@@ -4,18 +4,11 @@
 #include <stdint.h>
 
 /**
- * Returns the elapsed microseconds since the start.
- *
- * @return - The elapsed microseconds.
- */
-uint64_t naos_micros();
-
-/**
  * Returns the elapsed milliseconds since the start.
  *
  * @return - The elapsed milliseconds.
  */
-uint64_t naos_millis();
+uint32_t naos_millis();
 
 /**
  * Will delay current task for the specified amount of milliseconds.
