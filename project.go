@@ -161,7 +161,7 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 // available.
 func (p *Project) Format(out io.Writer) error {
 	// get source and header files
-	sourceFiles, headerFiles, err := p.sourceAndHeaderFiles()
+	sourceFiles, headerFiles, err := tree.SourceAndHeaderFiles(p.Tree())
 	if err != nil {
 		return err
 	}
@@ -200,32 +200,4 @@ func (p *Project) Update(pattern string, timeout time.Duration, callback func(*D
 	}
 
 	return nil
-}
-
-func (p *Project) sourceAndHeaderFiles() ([]string, []string, error) {
-	// prepare list
-	sourceFiles := make([]string, 0)
-	headerFiles := make([]string, 0)
-
-	// scan directory
-	err := filepath.Walk(filepath.Join(p.Location, "src"), func(path string, f os.FileInfo, err error) error {
-		// directly return errors
-		if err != nil {
-			return err
-		}
-
-		// add files with matching extension
-		if filepath.Ext(path) == ".c" {
-			sourceFiles = append(sourceFiles, path)
-		} else if filepath.Ext(path) == ".h" {
-			headerFiles = append(headerFiles, path)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return sourceFiles, headerFiles, nil
 }
