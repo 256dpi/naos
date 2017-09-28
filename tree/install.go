@@ -58,10 +58,3 @@ func Install(treePath, sourcePath, version string, force bool, out io.Writer) er
 
 	return nil
 }
-
-// IDFDirectory returns the assumed location of the esp-idf directory.
-//
-// Note: It will not check if the directory exists.
-func IDFDirectory(parent string) string {
-	return filepath.Join(parent, "esp-idf")
-}
