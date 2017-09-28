@@ -2,6 +2,7 @@
 package tree
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -31,7 +32,7 @@ func Install(treePath, sourcePath, version string, force bool, out io.Writer) er
 	// check existence
 	if !ok {
 		// perform initial repo clone
-		utils.Log(out, fmt.Sprintf("Installing tree (%s)...", version))
+		utils.Log(out, fmt.Sprintf("Installing tree '%s'...", version))
 		err = utils.Clone("https://github.com/shiftr-io/naos-tree.git", treePath, version, out)
 		if err != nil {
 			return err
@@ -39,7 +40,7 @@ func Install(treePath, sourcePath, version string, force bool, out io.Writer) er
 		}
 	} else {
 		// perform repo update
-		utils.Log(out, fmt.Sprintf("Updating tree (%s)...", version))
+		utils.Log(out, fmt.Sprintf("Updating tree '%s'...", version))
 		err = utils.Fetch(treePath, version, out)
 		if err != nil {
 			return err
@@ -65,6 +66,53 @@ func Install(treePath, sourcePath, version string, force bool, out io.Writer) er
 		err = os.Symlink(sourcePath, filepath.Join(treePath, "main", "src"))
 		if err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+// InstallComponent will install the specified component in the tree.
+func InstallComponent(treePath, name, repository, version string, force bool, out io.Writer) error {
+	// check component name
+	if name == "esp-mqtt" || name == "naos-esp" {
+		return errors.New("illegal component name")
+	}
+
+	// get component dir
+	comPath := filepath.Join(treePath, "components", name)
+
+	// remove existing directory if existing or force has been set
+	if force {
+		utils.Log(out, fmt.Sprintf("Removing existing component '%s' (forced).", name))
+		err := os.RemoveAll(comPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	// check if component already exists
+	ok, err := utils.Exists(comPath)
+	if err != nil {
+		return err
+	}
+
+	// check existence
+	if !ok {
+		// perform initial repo clone
+		utils.Log(out, fmt.Sprintf("Installing component '%s' '%s'...", name, version))
+		err = utils.Clone(repository, comPath, version, out)
+		if err != nil {
+			return err
+
+		}
+	} else {
+		// perform repo update
+		utils.Log(out, fmt.Sprintf("Updating component '%s' '%s'...", name, version))
+		err = utils.Fetch(comPath, version, out)
+		if err != nil {
+			return err
+
 		}
 	}
 

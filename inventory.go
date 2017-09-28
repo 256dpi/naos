@@ -19,19 +19,27 @@ type Device struct {
 	Parameters      map[string]string `json:"parameters"`
 }
 
+// A Component represents an installable naos component.
+type Component struct {
+	Repository string `json:"repository"`
+	Version    string `json:"version"`
+}
+
 // A Inventory represents the contents of the inventory file.
 type Inventory struct {
-	Version string             `json:"version"`
-	Broker  string             `json:"broker"`
-	Devices map[string]*Device `json:"devices"`
+	Version    string                `json:"version"`
+	Components map[string]*Component `json:"components"`
+	Broker     string                `json:"broker"`
+	Devices    map[string]*Device    `json:"devices"`
 }
 
 // NewInventory creates a new Inventory.
 func NewInventory() *Inventory {
 	return &Inventory{
-		Version: "master",
-		Broker:  "mqtts://key:secret@broker.shiftr.io",
-		Devices: make(map[string]*Device),
+		Version:    "master",
+		Components: make(map[string]*Component),
+		Broker:     "mqtts://key:secret@broker.shiftr.io",
+		Devices:    make(map[string]*Device),
 	}
 }
 
@@ -52,7 +60,12 @@ func ReadInventory(path string) (*Inventory, error) {
 		return nil, err
 	}
 
-	// create map if missing
+	// create map of components if missing
+	if inv.Components == nil {
+		inv.Components = make(map[string]*Component)
+	}
+
+	// create map of devices if missing
 	if inv.Devices == nil {
 		inv.Devices = make(map[string]*Device)
 	}
