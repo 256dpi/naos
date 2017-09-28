@@ -160,24 +160,7 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 // Format will format all source files in the project if 'clang-format' is
 // available.
 func (p *Project) Format(out io.Writer) error {
-	// get source and header files
-	sourceFiles, headerFiles, err := tree.SourceAndHeaderFiles(p.Tree())
-	if err != nil {
-		return err
-	}
-
-	// prepare arguments
-	arguments := []string{"-style", "{BasedOnStyle: Google, ColumnLimit: 120}", "-i"}
-	arguments = append(arguments, sourceFiles...)
-	arguments = append(arguments, headerFiles...)
-
-	// format source files
-	err = tree.Exec(p.Tree(), out, nil, "clang-format", arguments...)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return tree.Format(p.Tree(), out)
 }
 
 // Update will update the devices that match the supplied glob pattern with the
