@@ -20,7 +20,7 @@ func Clone(repo, path, commit string, out io.Writer) error {
 	}
 
 	// construct reset command
-	cmd = exec.Command("git", "reset", "--hard", commit)
+	cmd = exec.Command("git", "reset", "--hard", "origin/"+commit)
 	cmd.Stderr = out
 	cmd.Stdout = out
 	cmd.Dir = path
@@ -46,11 +46,11 @@ func Clone(repo, path, commit string, out io.Writer) error {
 	return nil
 }
 
-// Pull will updates to the remote repository and update all submodules
+// Fetch will updates to the remote repository and update all submodules
 // accordingly.
-func Pull(path, commit string, out io.Writer) error {
+func Fetch(path, commit string, out io.Writer) error {
 	// construct fetch command
-	cmd := exec.Command("git", "pull", "origin", commit)
+	cmd := exec.Command("git", "fetch", "origin")
 	cmd.Stdout = out
 	cmd.Stderr = out
 
@@ -61,7 +61,7 @@ func Pull(path, commit string, out io.Writer) error {
 	}
 
 	// construct reset command
-	cmd = exec.Command("git", "reset", "--hard", commit)
+	cmd = exec.Command("git", "reset", "--hard", "origin/"+commit)
 	cmd.Stderr = out
 	cmd.Stdout = out
 	cmd.Dir = path
