@@ -153,6 +153,12 @@ func (p *Project) Install(force bool, out io.Writer) error {
 		}
 	}
 
+	// update cmake lists file
+	err = tree.WriteCMakeLists(p.Tree(), out)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

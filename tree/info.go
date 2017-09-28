@@ -1,9 +1,35 @@
 package tree
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
+
+// IncludeDirectories returns a list of directories that will be included in the
+// build process.
+func IncludeDirectories(treePath string) ([]string, error) {
+	// update includes.list
+	err := Exec(treePath, nil, nil, "make", "generate_component_includes")
+	if err != nil {
+		return nil, err
+	}
+
+	// read file
+	bytes, err := ioutil.ReadFile(filepath.Join(treePath, "includes.list"))
+	if err != nil {
+		return nil, err
+	}
+
+	// split lines and trim whitespace
+	list := strings.Split(strings.TrimSpace(string(bytes)), "\n")
+	for i, item := range list {
+		list[i] = strings.TrimSpace(item)
+	}
+
+	return list, nil
+}
 
 // SourceAndHeaderFiles will return a list of source and header files.
 func SourceAndHeaderFiles(treePath string) ([]string, []string, error) {
