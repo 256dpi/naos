@@ -135,11 +135,11 @@ func (p *Project) Tree() string {
 	return filepath.Join(p.Location, "naos")
 }
 
-// Setup will setup necessary dependencies. Any existing dependencies will be
+// Install will download necessary dependencies. Any existing dependencies will be
 // removed if force is set to true. If out is not nil, it will be used to log
 // information about the process.
-func (p *Project) Setup(force bool, out io.Writer) error {
-	return tree.Install(p.Tree(), filepath.Join(p.Location, "src"), "master", true, out)
+func (p *Project) Install(force bool, out io.Writer) error {
+	return tree.Install(p.Tree(), filepath.Join(p.Location, "src"), "master", force, out)
 }
 
 // Build will build the project.

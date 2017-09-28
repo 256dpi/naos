@@ -10,7 +10,7 @@ var usage = `Networked Artifacts Operating System by shiftr.io
 
 Project Management:
   create   Will create a new naos project in the current directory.
-  setup    Will download required dependencies to the 'naos' subdirectory.
+  install  Will download required dependencies to the 'naos' subdirectory.
   build    Will build all source files.
   flash    Will flash the previously built binary to an attached device.
   attach   Will open a serial communication with an attached device.
@@ -33,7 +33,7 @@ Fleet Management:
 
 Usage:
   naos create [--cmake --force]
-  naos setup [--force]
+  naos install [--force]
   naos build [--clean --app-only]
   naos flash [<device>] [--erase --app-only]
   naos attach [<device>] [--simple]
@@ -66,7 +66,7 @@ Options:
 type command struct {
 	// commands
 	cCreate  bool
-	cSetup   bool
+	cInstall bool
 	cBuild   bool
 	cFlash   bool
 	cAttach  bool
@@ -111,7 +111,7 @@ func parseCommand() *command {
 	return &command{
 		// commands
 		cCreate:  getBool(a["create"]),
-		cSetup:   getBool(a["setup"]),
+		cInstall: getBool(a["install"]),
 		cBuild:   getBool(a["build"]),
 		cFlash:   getBool(a["flash"]),
 		cAttach:  getBool(a["attach"]),

@@ -27,8 +27,8 @@ func main() {
 	// run desired command
 	if cmd.cCreate {
 		create(cmd)
-	} else if cmd.cSetup {
-		setup(cmd, getProject(cmd))
+	} else if cmd.cInstall {
+		install(cmd, getProject(cmd))
 	} else if cmd.cBuild {
 		build(cmd, getProject(cmd))
 	} else if cmd.cFlash {
@@ -73,9 +73,9 @@ func create(cmd *command) {
 	exitIfSet(p.SaveInventory())
 }
 
-func setup(cmd *command, p *naos.Project) {
-	// setup build tree
-	exitIfSet(p.Setup(cmd.oForce, os.Stdout))
+func install(cmd *command, p *naos.Project) {
+	// install dependencies
+	exitIfSet(p.Install(cmd.oForce, os.Stdout))
 }
 
 func build(cmd *command, p *naos.Project) {
