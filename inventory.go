@@ -106,6 +106,32 @@ func (i *Inventory) FilterDevices(pattern string) []*Device {
 	return devices
 }
 
+// DeviceBaseTopics returns a list of base topics from devices that match the
+// supplied pattern.
+func (i *Inventory) DeviceBaseTopics(pattern string) []string {
+	// prepare list
+	var l []string
+
+	// add all matching devices
+	for _, d := range i.FilterDevices(pattern) {
+		l = append(l, d.BaseTopic)
+	}
+
+	return l
+}
+
+// DeviceByBaseTopic returns the first device that has the matching base topic.
+func (i *Inventory) DeviceByBaseTopic(baseTopic string) *Device {
+	// iterate through all devices
+	for _, d := range i.Devices {
+		if d.BaseTopic == baseTopic {
+			return d
+		}
+	}
+
+	return nil
+}
+
 // Collect will collect announcements and update the inventory with found devices
 // for the given amount of time. It will return a list of devices that have been
 // added to the inventory.
@@ -143,7 +169,7 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 // answering devices is returned.
 func (i *Inventory) GetParams(pattern, param string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	table, err := mqtt.GetParams(i.Broker, param, i.deviceBaseTopics(pattern), timeout)
+	table, err := mqtt.GetParams(i.Broker, param, i.DeviceBaseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +179,7 @@ func (i *Inventory) GetParams(pattern, param string, timeout time.Duration) ([]*
 
 	// update device
 	for baseTopic, value := range table {
-		device := i.deviceByBaseTopic(baseTopic)
+		device := i.DeviceByBaseTopic(baseTopic)
 		if device != nil {
 			device.Parameters[param] = value
 			answering = append(answering, device)
@@ -168,7 +194,7 @@ func (i *Inventory) GetParams(pattern, param string, timeout time.Duration) ([]*
 // updated devices is returned.
 func (i *Inventory) SetParams(pattern, param, value string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	table, err := mqtt.SetParams(i.Broker, param, value, i.deviceBaseTopics(pattern), timeout)
+	table, err := mqtt.SetParams(i.Broker, param, value, i.DeviceBaseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +204,7 @@ func (i *Inventory) SetParams(pattern, param, value string, timeout time.Duratio
 
 	// update device
 	for baseTopic, value := range table {
-		device := i.deviceByBaseTopic(baseTopic)
+		device := i.DeviceByBaseTopic(baseTopic)
 		if device != nil {
 			device.Parameters[param] = value
 			updated = append(updated, device)
@@ -193,7 +219,7 @@ func (i *Inventory) SetParams(pattern, param, value string, timeout time.Duratio
 // list of updated devices is returned.
 func (i *Inventory) UnsetParams(pattern, param string, timeout time.Duration) ([]*Device, error) {
 	// set parameter
-	err := mqtt.UnsetParams(i.Broker, param, i.deviceBaseTopics(pattern), timeout)
+	err := mqtt.UnsetParams(i.Broker, param, i.DeviceBaseTopics(pattern), timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -213,10 +239,10 @@ func (i *Inventory) UnsetParams(pattern, param string, timeout time.Duration) ([
 // Record will enable log recording mode and yield the received log messages
 // until the provided channel has been closed.
 func (i *Inventory) Record(pattern string, quit chan struct{}, timeout time.Duration, callback func(*Device, string)) error {
-	return mqtt.Record(i.Broker, i.deviceBaseTopics(pattern), quit, timeout, func(log *mqtt.LogMessage) {
+	return mqtt.Record(i.Broker, i.DeviceBaseTopics(pattern), quit, timeout, func(log *mqtt.LogMessage) {
 		// call user callback
 		if callback != nil {
-			callback(i.deviceByBaseTopic(log.BaseTopic), log.Content)
+			callback(i.DeviceByBaseTopic(log.BaseTopic), log.Content)
 		}
 	})
 }
@@ -226,7 +252,7 @@ func (i *Inventory) Record(pattern string, quit chan struct{}, timeout time.Dura
 // heartbeat with the update device and the heartbeat available at
 // device.LastHeartbeat.
 func (i *Inventory) Monitor(pattern string, quit chan struct{}, timeout time.Duration, callback func(*Device, *mqtt.Heartbeat)) error {
-	return mqtt.Monitor(i.Broker, i.deviceBaseTopics(pattern), quit, timeout, func(heartbeat *mqtt.Heartbeat) {
+	return mqtt.Monitor(i.Broker, i.DeviceBaseTopics(pattern), quit, timeout, func(heartbeat *mqtt.Heartbeat) {
 		// get device
 		device, ok := i.Devices[heartbeat.DeviceName]
 		if !ok {
@@ -248,9 +274,9 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, timeout time.Dur
 // specified image. The specified callback is called for every change in state
 // or progress.
 func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device, *mqtt.UpdateStatus)) error {
-	return mqtt.Update(i.Broker, i.deviceBaseTopics(pattern), firmware, timeout, func(baseTopic string, status *mqtt.UpdateStatus) {
+	return mqtt.Update(i.Broker, i.DeviceBaseTopics(pattern), firmware, timeout, func(baseTopic string, status *mqtt.UpdateStatus) {
 		// get device
-		device := i.deviceByBaseTopic(baseTopic)
+		device := i.DeviceByBaseTopic(baseTopic)
 		if device == nil {
 			return
 		}
@@ -258,27 +284,4 @@ func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duratio
 		// call callback
 		callback(device, status)
 	})
-}
-
-func (i *Inventory) deviceBaseTopics(pattern string) []string {
-	// prepare list
-	var l []string
-
-	// add all matching devices
-	for _, d := range i.FilterDevices(pattern) {
-		l = append(l, d.BaseTopic)
-	}
-
-	return l
-}
-
-func (i *Inventory) deviceByBaseTopic(baseTopic string) *Device {
-	// iterate through all devices
-	for _, d := range i.Devices {
-		if d.BaseTopic == baseTopic {
-			return d
-		}
-	}
-
-	return nil
 }
