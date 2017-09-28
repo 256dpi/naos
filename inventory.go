@@ -2,6 +2,7 @@ package naos
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"time"
 
@@ -20,6 +21,7 @@ type Device struct {
 
 // A Inventory represents the contents of the inventory file.
 type Inventory struct {
+	Version string             `json:"version"`
 	Broker  string             `json:"broker"`
 	Devices map[string]*Device `json:"devices"`
 }
@@ -27,6 +29,7 @@ type Inventory struct {
 // NewInventory creates a new Inventory.
 func NewInventory() *Inventory {
 	return &Inventory{
+		Version: "master",
 		Broker:  "mqtts://key:secret@broker.shiftr.io",
 		Devices: make(map[string]*Device),
 	}
@@ -59,6 +62,11 @@ func ReadInventory(path string) (*Inventory, error) {
 		if device.Parameters == nil {
 			device.Parameters = make(map[string]string)
 		}
+	}
+
+	// check version
+	if inv.Version == "" {
+		return nil, errors.New("missing version field")
 	}
 
 	return &inv, nil

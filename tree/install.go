@@ -10,37 +10,41 @@ import (
 	"github.com/shiftr-io/naos/utils"
 )
 
-// TODO: Implement tree updating.
-
 // Install will install the NAOS build tree to the specified path and link the
 // source path into the tree.
 func Install(treePath, sourcePath, version string, force bool, out io.Writer) error {
-	// check if already exists
-	ok, err := utils.Exists(treePath)
-	if err != nil {
-		return err
-	}
-
-	// return immediately if already exists and not forced
-	if ok && !force {
-		utils.Log(out, "Skipping tree installation as it already exists.")
-		return nil
-	}
-
-	// remove existing directory if existing
-	if ok {
+	// remove existing directory if existing or force has been set
+	if force {
 		utils.Log(out, "Removing existing tree installation (forced).")
-		err = os.RemoveAll(treePath)
+		err := os.RemoveAll(treePath)
 		if err != nil {
 			return err
 		}
 	}
 
-	// clone repo
-	utils.Log(out, fmt.Sprintf("Installing tree (%s)...", version))
-	err = utils.Clone("https://github.com/shiftr-io/naos-tree.git", treePath, version, out)
+	// check if tree already exists
+	ok, err := utils.Exists(treePath)
 	if err != nil {
 		return err
+	}
+
+	// check existence
+	if !ok {
+		// perform initial repo clone
+		utils.Log(out, fmt.Sprintf("Installing tree (%s)...", version))
+		err = utils.Clone("https://github.com/shiftr-io/naos-tree.git", treePath, version, out)
+		if err != nil {
+			return err
+
+		}
+	} else {
+		// perform repo update
+		utils.Log(out, fmt.Sprintf("Updating tree (%s)...", version))
+		err = utils.Fetch(treePath, version, out)
+		if err != nil {
+			return err
+
+		}
 	}
 
 	// install xtensa toolchain
@@ -49,11 +53,19 @@ func Install(treePath, sourcePath, version string, force bool, out io.Writer) er
 		return err
 	}
 
-	// link sourcePath directory
-	utils.Log(out, "Linking sourcePath directory.")
-	err = os.Symlink(sourcePath, filepath.Join(treePath, "main", "src"))
+	// check source directory
+	ok, err = utils.Exists(filepath.Join(treePath, "main", "src"))
 	if err != nil {
 		return err
+	}
+
+	// link source directory if missing
+	if !ok {
+		utils.Log(out, "Linking source directory.")
+		err = os.Symlink(sourcePath, filepath.Join(treePath, "main", "src"))
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

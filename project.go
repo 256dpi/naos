@@ -139,7 +139,7 @@ func (p *Project) Tree() string {
 // removed if force is set to true. If out is not nil, it will be used to log
 // information about the process.
 func (p *Project) Install(force bool, out io.Writer) error {
-	return tree.Install(p.Tree(), filepath.Join(p.Location, "src"), "master", force, out)
+	return tree.Install(p.Tree(), filepath.Join(p.Location, "src"), p.Inventory.Version, force, out)
 }
 
 // Build will build the project.
