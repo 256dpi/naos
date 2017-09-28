@@ -184,11 +184,8 @@ func (p *Project) Format(out io.Writer) error {
 // previously built image. The specified callback is called for every change in
 // state or progress.
 func (p *Project) Update(pattern string, timeout time.Duration, callback func(*Device, *mqtt.UpdateStatus)) error {
-	// get image path
-	image := filepath.Join(p.Tree(), "build", "naos-project.bin")
-
-	// read image
-	bytes, err := ioutil.ReadFile(image)
+	// get binary
+	bytes, err := tree.AppBinary(p.Tree())
 	if err != nil {
 		return err
 	}

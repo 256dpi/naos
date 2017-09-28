@@ -2,6 +2,8 @@ package tree
 
 import (
 	"io"
+	"io/ioutil"
+	"path/filepath"
 
 	"github.com/shiftr-io/naos/utils"
 )
@@ -36,4 +38,9 @@ func Build(treePath string, clean, appOnly bool, out io.Writer) error {
 	}
 
 	return nil
+}
+
+// AppBinary will return the bytes of the built app binary.
+func AppBinary(treePath string) ([]byte, error) {
+	return ioutil.ReadFile(filepath.Join(treePath, "build", "naos-project.bin"))
 }
