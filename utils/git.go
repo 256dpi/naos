@@ -46,11 +46,11 @@ func Clone(repo, path, commit string, out io.Writer) error {
 	return nil
 }
 
-// Fetch will updates to the remote repository and update all submodules
+// Pull will updates to the remote repository and update all submodules
 // accordingly.
-func Fetch(path, commit string, out io.Writer) error {
+func Pull(path, commit string, out io.Writer) error {
 	// construct fetch command
-	cmd := exec.Command("git", "fetch")
+	cmd := exec.Command("git", "pull", "origin", commit)
 	cmd.Stdout = out
 	cmd.Stderr = out
 

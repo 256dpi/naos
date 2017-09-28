@@ -41,7 +41,7 @@ func Install(treePath, sourcePath, version string, force bool, out io.Writer) er
 	} else {
 		// perform repo update
 		utils.Log(out, fmt.Sprintf("Updating tree '%s'...", version))
-		err = utils.Fetch(treePath, version, out)
+		err = utils.Pull(treePath, version, out)
 		if err != nil {
 			return err
 
@@ -109,7 +109,7 @@ func InstallComponent(treePath, name, repository, version string, force bool, ou
 	} else {
 		// perform repo update
 		utils.Log(out, fmt.Sprintf("Updating component '%s' '%s'...", name, version))
-		err = utils.Fetch(comPath, version, out)
+		err = utils.Pull(comPath, version, out)
 		if err != nil {
 			return err
 
