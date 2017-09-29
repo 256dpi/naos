@@ -53,6 +53,7 @@ func Fetch(path, commit string, out io.Writer) error {
 	cmd := exec.Command("git", "fetch", "origin")
 	cmd.Stdout = out
 	cmd.Stderr = out
+	cmd.Dir = path
 
 	// clone repo
 	err := cmd.Run()
