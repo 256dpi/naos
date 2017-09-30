@@ -1,7 +1,7 @@
+#include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <string.h>
-#include <esp_log.h>
 
 uint32_t naos_millis() { return esp_log_timestamp(); }
 

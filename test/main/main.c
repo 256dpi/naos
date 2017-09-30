@@ -1,8 +1,8 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <naos.h>
-#include <stdio.h>
 
 static int counter = 0;
 
@@ -80,4 +80,7 @@ static naos_config_t config = {.device_type = "naos-test",
 void app_main() {
   // initialize naos
   naos_init(&config);
+
+  // set message default
+  naos_set("message", "world");
 }
