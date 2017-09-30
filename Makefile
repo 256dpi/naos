@@ -1,12 +1,12 @@
 UNAME := $(shell uname)
 
-XTENSA_TOOLCHAIN := "xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz"
+XTENSA_TOOLCHAIN := "xtensa-esp32-elf-linux64-1.22.0-73-ge28a011-5.2.0.tar.gz"
 
 ifeq ($(UNAME), Darwin)
-XTENSA_TOOLCHAIN := "xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz"
+XTENSA_TOOLCHAIN := "xtensa-esp32-elf-osx-1.22.0-73-ge28a011-5.2.0.tar.gz"
 endif
 
-ESP_IDF_VERSION := "fc85cb683d4a5e4c2a5b4cb7d607a3790b0cfb96"
+ESP_IDF_VERSION := "e6afe28bafe5db5ab79fae213f2e8e1ccd9f937c"
 ESP_MQTT_VERSION := "32d3ef69982638d945d8ce620bdad40a10c00d61"
 
 test/xtensa-esp32-elf:
