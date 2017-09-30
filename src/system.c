@@ -282,7 +282,7 @@ static void naos_system_mqtt_callback(esp_mqtt_status_t status) {
 void naos_system_init() {
   // delay startup by max 5000ms if set
   if (naos_config()->delay_startup) {
-    int delay = esp_random() / 858994;
+    uint32_t delay = esp_random() / 858994;
     ESP_LOGI(NAOS_LOG_TAG, "naos_system_init: delay startup by %dms", delay);
     naos_delay(delay);
   }
