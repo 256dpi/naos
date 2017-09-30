@@ -2,7 +2,6 @@
 #include <string.h>
 
 #include <naos.h>
-#include <naos/utils.h>
 #include <stdio.h>
 
 static int counter = 0;
@@ -48,9 +47,6 @@ static void loop() {
 
   // log info
   naos_log("loop callback called (%d)", counter);
-
-  // log time
-  naos_log("micro seconds: %lld", naos_micros());
 
   // publish message
   naos_publish_str("hello", message, 0, false, NAOS_LOCAL);
