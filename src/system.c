@@ -101,11 +101,18 @@ static void naos_system_ble_callback(naos_ble_id_t id) {
   char *value = naos_ble_get_string(NAOS_BLE_ID_COMMAND);
 
   // detect command
+  bool ping = strcmp(value, "ping") == 0;
   bool restart_mqtt = strcmp(value, "restart-mqtt") == 0;
   bool restart_wifi = strcmp(value, "restart-wifi") == 0;
 
   // free string
   free(value);
+
+  // handle ping request
+  if (ping) {
+    // forward ping to task
+    naos_task_ping();
+  }
 
   // handle wifi restart
   if (restart_wifi) {

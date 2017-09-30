@@ -50,6 +50,11 @@ typedef struct {
   const char *firmware_version;
 
   /**
+   *  The callback that is called when a ping is received.
+   */
+  void (*ping_callback)();
+
+  /**
    * The callback that is called once the device comes online.
    */
   void (*online_callback)();

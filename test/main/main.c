@@ -8,6 +8,8 @@ static int counter = 0;
 
 static char *message = NULL;
 
+static void ping() { naos_log("ping received!"); }
+
 static void online() {
   // log info
   naos_log("online callback called");
@@ -69,6 +71,7 @@ static void status(naos_status_t status) {
 
 static naos_config_t config = {.device_type = "naos-test",
                                .firmware_version = "0.0.1",
+                               .ping_callback = ping,
                                .online_callback = online,
                                .message_callback = handle,
                                .update_callback = update,

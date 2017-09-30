@@ -11,6 +11,11 @@
 void naos_task_init();
 
 /**
+ * Call the ping callback if available.
+ */
+void naos_task_ping();
+
+/**
  * Start the task process.
  */
 void naos_task_start();

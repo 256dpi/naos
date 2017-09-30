@@ -38,6 +38,19 @@ void naos_task_init() {
   naos_task_mutex = xSemaphoreCreateMutex();
 }
 
+void naos_task_ping() {
+  // acquire mutex
+  NAOS_LOCK(naos_task_mutex);
+
+  // call ping callback if present
+  if (naos_config()->ping_callback) {
+    naos_config()->ping_callback();
+  }
+
+  // release mutex
+  NAOS_UNLOCK(naos_task_mutex);
+}
+
 void naos_task_start() {
   // acquire mutex
   NAOS_LOCK(naos_task_mutex);
