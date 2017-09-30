@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -29,6 +30,25 @@ func IncludeDirectories(treePath string) ([]string, error) {
 	}
 
 	return list, nil
+}
+
+// RequiredToolchain returns the required toolchain version by the tree.
+func RequiredToolchain(treePath string) (string, error) {
+	// read version
+	bytes, err := ioutil.ReadFile(filepath.Join(treePath, "toolchain.version"))
+	if err != nil {
+		return "", err
+	}
+
+	// trim version
+	version := strings.TrimSpace(string(bytes))
+
+	// check version
+	if version == "" || version == "-" {
+		return "", errors.New("malformed version")
+	}
+
+	return string(version), nil
 }
 
 // SourceAndHeaderFiles will return a list of source and header files.

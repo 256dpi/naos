@@ -38,11 +38,17 @@ func Attach(treePath, port string, simple bool, out io.Writer, in io.Reader) err
 	// inherit current environment
 	cmd.Env = os.Environ()
 
+	// get bin directory
+	bin, err := BinDirectory(treePath)
+	if err != nil {
+		return err
+	}
+
 	// go through all env variables
 	for i, str := range cmd.Env {
 		if strings.HasPrefix(str, "PATH=") {
 			// prepend toolchain bin directory
-			cmd.Env[i] = "PATH=" + BinDirectory(treePath) + ":" + os.Getenv("PATH")
+			cmd.Env[i] = "PATH=" + bin + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
 			cmd.Env[i] = "PWD=" + treePath

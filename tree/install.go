@@ -48,8 +48,14 @@ func Install(treePath, sourcePath, version string, force bool, out io.Writer) er
 		}
 	}
 
+	// get required toolchain
+	toolchainVersion, err := RequiredToolchain(treePath)
+	if err != nil {
+		return err
+	}
+
 	// install xtensa toolchain
-	err = InstallXtensa(treePath, force, out)
+	err = InstallToolchain(treePath, toolchainVersion, force, out)
 	if err != nil {
 		return err
 	}

@@ -12,23 +12,23 @@ import (
 	"github.com/shiftr-io/naos/utils"
 )
 
-// InstallXtensa will install the xtensa toolchain. An existing toolchain will be
-// removed if force is set to true. If out is not nil, it will be used to log
+// InstallToolchain will install the xtensa toolchain. An existing toolchain will
+// be removed if force is set to true. If out is not nil, it will be used to log
 // information about the installation process.
-func InstallXtensa(treePath string, force bool, out io.Writer) error {
+func InstallToolchain(treePath, version string, force bool, out io.Writer) error {
 	// get toolchain url
 	var url string
 	switch runtime.GOOS {
 	case "darwin":
-		url = "https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz"
+		url = "https://dl.espressif.com/dl/xtensa-esp32-elf-osx-" + version + ".tar.gz"
 	case "linux":
-		url = "https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz"
+		url = "https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-" + version + ".tar.gz"
 	default:
 		return errors.New("unsupported os")
 	}
 
 	// prepare toolchain directory
-	dir := filepath.Join(treePath, "xtensa-esp32-elf")
+	dir := filepath.Join(treePath, "toolchain", version)
 
 	// check if already exists
 	ok, err := utils.Exists(dir)
@@ -69,7 +69,7 @@ func InstallXtensa(treePath string, force bool, out io.Writer) error {
 
 	// unpack toolchain
 	utils.Log(out, "Unpacking xtensa toolchain...")
-	err = archiver.TarGz.Open(tmp.Name(), treePath)
+	err = archiver.TarGz.Open(tmp.Name(), dir)
 	if err != nil {
 		return err
 	}
@@ -90,6 +90,12 @@ func InstallXtensa(treePath string, force bool, out io.Writer) error {
 // directory.
 //
 // Note: It will not check if the directory exists.
-func BinDirectory(parent string) string {
-	return filepath.Join(parent, "xtensa-esp32-elf", "bin")
+func BinDirectory(treePath string) (string, error) {
+	// get required toolchain version
+	version, err := RequiredToolchain(treePath)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(treePath, "toolchain", version, "xtensa-esp32-elf", "bin"), nil
 }
