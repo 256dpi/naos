@@ -216,4 +216,20 @@ bool naos_publish_str(const char *topic, const char *str, int qos, bool retained
  */
 bool naos_publish_int(const char *topic, int num, int qos, bool retained, naos_scope_t scope);
 
+/**
+ * Returns the elapsed milliseconds since the start.
+ *
+ * @return - The elapsed milliseconds.
+ */
+uint32_t naos_millis();
+
+/**
+ * Will delay current task for the specified amount of milliseconds.
+ *
+ * Note: This function should only be used inside the loop callback.
+ *
+ * @param ms - The amount of milliseconds to delay.
+ */
+void naos_delay(uint32_t ms);
+
 #endif  // NAOS_H
