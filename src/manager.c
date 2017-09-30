@@ -274,8 +274,6 @@ void naos_log(const char *fmt, ...) {
   char buf[128];
   vsprintf(buf, fmt, args);
 
-  // TODO: Add to offline log?
-
   // publish log message if enabled
   if (naos_manager_recording) {
     naos_publish_str("naos/log", buf, 0, false, NAOS_LOCAL);
