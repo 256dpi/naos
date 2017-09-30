@@ -1,4 +1,4 @@
-xtensa-esp32-elf/
+toolchain/
 build/
 main/src/
 includes.list
