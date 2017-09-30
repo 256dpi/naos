@@ -29,7 +29,6 @@ include_directories(
 
 set(SOURCE_FILES
         include/naos.h
-        include/naos/utils.h
         src/ble.c
         src/ble.h
         src/manager.c
