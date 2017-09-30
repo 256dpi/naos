@@ -2,3 +2,4 @@ xtensa-esp32-elf/
 build/
 main/src/
 includes.list
+toolchain.version

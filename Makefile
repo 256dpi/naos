@@ -10,3 +10,6 @@ endef
 generate_component_includes:
 	rm -f includes.list
 	$(foreach x, $(COMPONENT_INCLUDES), $(call write_component_include, $(x)))
+
+generate_toolchain_version:
+	echo "$(SUPPORTED_TOOLCHAIN_COMMIT_DESC)-$(SUPPORTED_TOOLCHAIN_GCC_VERSIONS)" > toolchain.version
