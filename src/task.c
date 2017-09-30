@@ -2,10 +2,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
-#include <string.h>
 
 #include <naos.h>
-#include <naos/utils.h>
 
 #include "naos.h"
 #include "task.h"

@@ -7,8 +7,6 @@
 #include <nvs.h>
 #include <string.h>
 
-#include <naos/utils.h>
-
 #include "ble.h"
 #include "manager.h"
 #include "naos.h"
