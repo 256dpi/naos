@@ -24,6 +24,12 @@ static bool naos_manager_process_started = false;
 
 static bool naos_manager_recording = false;
 
+static const char *naos_manager_i2str(int num) {
+  static char str[33];
+  itoa(num, str, 10);
+  return str;
+}
+
 static void naos_manager_send_heartbeat() {
   // get device name
   char *device_name = naos_ble_get_string(NAOS_BLE_ID_DEVICE_NAME);
@@ -220,7 +226,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     naos_update_begin((uint16_t)total);
 
     // request first chunk
-    naos_publish_int("naos/update/request", CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE, 0, false, NAOS_LOCAL);
+    naos_publish("naos/update/request", naos_manager_i2str(CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE), 0, false, NAOS_LOCAL);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -235,7 +241,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     ESP_LOGI(NAOS_LOG_TAG, "naos_manager_handle: wrote chunk of %zu bytes", len);
 
     // request next chunk
-    naos_publish_int("naos/update/request", CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE, 0, false, NAOS_LOCAL);
+    naos_publish("naos/update/request", naos_manager_i2str(CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE), 0, false, NAOS_LOCAL);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
