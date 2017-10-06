@@ -312,17 +312,34 @@ char *naos_get(const char *param) {
 }
 
 void naos_set(const char *param, const char *value) {
+  // set parameter
   ESP_ERROR_CHECK(nvs_set_str(naos_manager_nvs_handle, param, value));
+}
+
+bool naos_ensure(const char *param, const char *value) {
+  // check parameter
+  size_t required_size;
+  esp_err_t err = nvs_get_str(naos_manager_nvs_handle, param, NULL, &required_size);
+  if (err == ESP_ERR_NVS_NOT_FOUND) {
+    naos_set(param, value);
+    return true;
+  } else {
+    ESP_ERROR_CHECK(err);
+  }
+
+  return false;
 }
 
 bool naos_unset(const char *param) {
   // erase parameter
   esp_err_t err = nvs_erase_key(naos_manager_nvs_handle, param);
-  if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+  if (err == ESP_ERR_NVS_NOT_FOUND) {
+    return false;
+  } else {
     ESP_ERROR_CHECK(err);
   }
 
-  return err == ESP_OK;
+  return true;
 }
 
 void naos_manager_stop() {

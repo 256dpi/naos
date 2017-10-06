@@ -144,10 +144,19 @@ char *naos_get(const char *param);
 void naos_set(const char *param, const char *value);
 
 /**
+ * Ensure a default value of a parameter if it is missing.
+ *
+ * @param param - The parameter.
+ * @param value - The value.
+ * @return Whether the parameter was set.
+ */
+bool naos_ensure(const char *param, const char *value);
+
+/**
  * Will unset the requested parameter.
  *
  * @param param - The parameter.
- * @return Whether the parameter was set.
+ * @return Whether the parameter was unset.
  */
 bool naos_unset(const char *param);
 

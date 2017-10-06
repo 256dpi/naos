@@ -85,5 +85,5 @@ void app_main() {
   naos_init(&config);
 
   // set message default
-  naos_set("message", "world");
+  naos_ensure("message", "world");
 }
