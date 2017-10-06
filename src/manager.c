@@ -32,7 +32,7 @@ static void naos_manager_send_heartbeat() {
   char buf[64];
   snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s", naos_config()->device_type, naos_config()->firmware_version,
            device_name, esp_get_free_heap_size(), naos_millis(), esp_ota_get_running_partition()->label);
-  naos_publish_str("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
+  naos_publish("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
 
   // free string
   free(device_name);
@@ -47,7 +47,7 @@ static void naos_manager_send_announcement() {
   char buf[64];
   snprintf(buf, sizeof buf, "%s,%s,%s,%s", naos_config()->device_type, naos_config()->firmware_version, device_name,
            base_topic);
-  naos_publish_str("naos/announcement", buf, 0, false, NAOS_GLOBAL);
+  naos_publish("naos/announcement", buf, 0, false, NAOS_GLOBAL);
 
   // free strings
   free(device_name);
@@ -144,7 +144,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     char *t = naos_str_concat("naos/value/", param);
 
     // send value
-    naos_publish_str(t, value, 0, false, NAOS_LOCAL);
+    naos_publish(t, value, 0, false, NAOS_LOCAL);
 
     // free topic
     free(t);
@@ -173,7 +173,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     char *t = naos_str_concat("naos/value/", param);
 
     // send value
-    naos_publish_str(t, value, 0, false, NAOS_LOCAL);
+    naos_publish(t, value, 0, false, NAOS_LOCAL);
 
     // free topic
     free(t);
@@ -274,7 +274,7 @@ void naos_log(const char *fmt, ...) {
 
   // publish log message if enabled
   if (naos_manager_recording) {
-    naos_publish_str("naos/log", buf, 0, false, NAOS_LOCAL);
+    naos_publish("naos/log", buf, 0, false, NAOS_LOCAL);
   }
 
   // print log message esp like

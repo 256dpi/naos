@@ -51,7 +51,7 @@ static void loop() {
   naos_log("loop callback called (%d)", counter);
 
   // publish message
-  naos_publish_str("hello", message, 0, false, NAOS_LOCAL);
+  naos_publish("hello", message, 0, false, NAOS_LOCAL);
 
   // save counter
   char buf[16];

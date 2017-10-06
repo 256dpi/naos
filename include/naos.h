@@ -195,7 +195,7 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope);
  * @param scope
  * @return
  */
-bool naos_publish(const char *topic, void *payload, uint16_t len, int qos, bool retained, naos_scope_t scope);
+bool naos_publish_raw(const char *topic, void *payload, uint16_t len, int qos, bool retained, naos_scope_t scope);
 
 /**
  * Publish string to specified topic.
@@ -209,21 +209,7 @@ bool naos_publish(const char *topic, void *payload, uint16_t len, int qos, bool 
  * @param scope
  * @return
  */
-bool naos_publish_str(const char *topic, const char *str, int qos, bool retained, naos_scope_t scope);
-
-/**
- * Publish integer to specified topic.
- *
- * The topic is automatically prefixed with the configured base topic if the scope is local.
- *
- * @param topic
- * @param num
- * @param qos
- * @param retained
- * @param scope
- * @return
- */
-bool naos_publish_int(const char *topic, int num, int qos, bool retained, naos_scope_t scope);
+bool naos_publish(const char *topic, const char *str, int qos, bool retained, naos_scope_t scope);
 
 /**
  * Returns the elapsed milliseconds since the start.

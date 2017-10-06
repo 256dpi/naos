@@ -95,7 +95,7 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope) {
   return ret;
 }
 
-bool naos_publish(const char *topic, void *payload, uint16_t len, int qos, bool retained, naos_scope_t scope) {
+bool naos_publish_raw(const char *topic, void *payload, uint16_t len, int qos, bool retained, naos_scope_t scope) {
   // add base topic if scope is local
   if (scope == NAOS_LOCAL) {
     topic = naos_mqtt_with_base_topic(topic);
@@ -112,15 +112,8 @@ bool naos_publish(const char *topic, void *payload, uint16_t len, int qos, bool 
   return ret;
 }
 
-bool naos_publish_str(const char *topic, const char *str, int qos, bool retained, naos_scope_t scope) {
-  return naos_publish(topic, (char *)str, (uint16_t)strlen(str), qos, retained, scope);
-}
-
-bool naos_publish_int(const char *topic, int num, int qos, bool retained, naos_scope_t scope) {
-  char buf[33];
-  itoa(num, buf, 10);
-
-  return naos_publish_str(topic, buf, qos, retained, scope);
+bool naos_publish(const char *topic, const char *str, int qos, bool retained, naos_scope_t scope) {
+  return naos_publish_raw(topic, (char *)str, (uint16_t)strlen(str), qos, retained, scope);
 }
 
 void naos_mqtt_stop() {
