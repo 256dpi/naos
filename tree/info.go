@@ -57,8 +57,14 @@ func SourceAndHeaderFiles(treePath string) ([]string, []string, error) {
 	sourceFiles := make([]string, 0)
 	headerFiles := make([]string, 0)
 
+	// read link
+	path, err := os.Readlink(filepath.Join(treePath, "main", "src"))
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// scan directory
-	err := filepath.Walk(filepath.Join(treePath, "main", "src"), func(path string, f os.FileInfo, err error) error {
+	err = filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
 		// directly return errors
 		if err != nil {
 			return err
