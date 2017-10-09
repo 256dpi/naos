@@ -104,6 +104,11 @@ typedef struct {
    * devices restart at the same time.
    */
   bool delay_startup;
+
+  /**
+   * If set, the device will crash on any failed MQTT commands.
+   */
+  bool crash_on_mqtt_failures;
 } naos_config_t;
 
 /**

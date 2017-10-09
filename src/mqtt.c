@@ -1,9 +1,10 @@
+#include <esp_err.h>
 #include <sdkconfig.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "mqtt.h"
+#include "naos.h"
 #include "utils.h"
 
 static char *naos_mqtt_base_topic_prefix = NULL;
@@ -69,6 +70,9 @@ bool naos_subscribe(const char *topic, int qos, naos_scope_t scope) {
 
   // subscribe
   bool ret = esp_mqtt_subscribe(topic, qos);
+  if (!ret && naos_config()->crash_on_mqtt_failures) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
 
   // free prefixed topic
   if (scope == NAOS_LOCAL) {
@@ -86,6 +90,9 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope) {
 
   // unsubscribe
   bool ret = esp_mqtt_unsubscribe(topic);
+  if (!ret && naos_config()->crash_on_mqtt_failures) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
 
   // free prefixed topic
   if (scope == NAOS_LOCAL) {
@@ -103,6 +110,9 @@ bool naos_publish_raw(const char *topic, void *payload, uint16_t len, int qos, b
 
   // publish
   bool ret = esp_mqtt_publish(topic, payload, len, qos, retained);
+  if (!ret && naos_config()->crash_on_mqtt_failures) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
 
   // free prefixed topic
   if (scope == NAOS_LOCAL) {
