@@ -71,7 +71,7 @@ func Collect(url string, duration time.Duration) ([]*Announcement, error) {
 	defer cl.Close()
 
 	// subscribe to announcement topic
-	sf, err := cl.Subscribe("/naos/announcement", 0)
+	sf, err := cl.Subscribe("naos/announcement", 0)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func Collect(url string, duration time.Duration) ([]*Announcement, error) {
 	}
 
 	// collect all devices
-	_, err = cl.Publish("/naos/collect", []byte(""), 0, false)
+	_, err = cl.Publish("naos/collect", []byte(""), 0, false)
 	if err != nil {
 		return nil, err
 	}
