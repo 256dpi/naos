@@ -286,8 +286,8 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, timeout time.Dur
 // Update will update the devices that match the supplied glob pattern with the
 // specified image. The specified callback is called for every change in state
 // or progress.
-func (i *Inventory) Update(pattern string, firmware []byte, timeout time.Duration, callback func(*Device, *mqtt.UpdateStatus)) error {
-	return mqtt.Update(i.Broker, i.DeviceBaseTopics(pattern), firmware, timeout, func(baseTopic string, status *mqtt.UpdateStatus) {
+func (i *Inventory) Update(pattern string, firmware []byte, jobs int, timeout time.Duration, callback func(*Device, *mqtt.UpdateStatus)) error {
+	return mqtt.Update(i.Broker, i.DeviceBaseTopics(pattern), firmware, jobs, timeout, func(baseTopic string, status *mqtt.UpdateStatus) {
 		// get device
 		device := i.DeviceByBaseTopic(baseTopic)
 		if device == nil {

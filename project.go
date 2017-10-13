@@ -186,7 +186,7 @@ func (p *Project) Format(out io.Writer) error {
 // Update will update the devices that match the supplied glob pattern with the
 // previously built image. The specified callback is called for every change in
 // state or progress.
-func (p *Project) Update(pattern string, timeout time.Duration, callback func(*Device, *mqtt.UpdateStatus)) error {
+func (p *Project) Update(pattern string, jobs int, timeout time.Duration, callback func(*Device, *mqtt.UpdateStatus)) error {
 	// get binary
 	bytes, err := tree.AppBinary(p.Tree())
 	if err != nil {
@@ -194,7 +194,7 @@ func (p *Project) Update(pattern string, timeout time.Duration, callback func(*D
 	}
 
 	// run update
-	err = p.Inventory.Update(pattern, bytes, timeout, callback)
+	err = p.Inventory.Update(pattern, bytes, jobs, timeout, callback)
 	if err != nil {
 		return err
 	}

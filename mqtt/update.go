@@ -20,7 +20,7 @@ type UpdateStatus struct {
 // Update will concurrently perform a firmware update and block until all devices
 // have updated or returned errors. If a callback is provided it will be called
 // with the current status of the update.
-func Update(url string, baseTopics []string, firmware []byte, timeout time.Duration, callback func(string, *UpdateStatus)) error {
+func Update(url string, baseTopics []string, firmware []byte, jobs int, timeout time.Duration, callback func(string, *UpdateStatus)) error {
 	// check base topics
 	if len(baseTopics) == 0 {
 		return errors.New("zero base topics")
@@ -29,52 +29,65 @@ func Update(url string, baseTopics []string, firmware []byte, timeout time.Durat
 	// prepare table
 	table := make(map[string]*UpdateStatus)
 
+	// prepare queue
+	queue := make(chan string, len(baseTopics))
+
 	// prepare wait group
 	var wg = sync.WaitGroup{}
 
-	// callback mutex
-	var mutex sync.Mutex
-
+	// fill table and queue
 	for _, baseTopic := range baseTopics {
 		// create status
 		table[baseTopic] = &UpdateStatus{}
 
-		// add process
+		// add job
+		queue <- baseTopic
+
+		// add to group
 		wg.Add(1)
+	}
 
-		// run a single update in background
-		go func(bt string) {
-			// begin update
-			err := updateOne(url, bt, firmware, timeout, func(progress float64) {
-				// lock mutex
-				mutex.Lock()
-				defer mutex.Unlock()
+	// callback mutex
+	var mutex sync.Mutex
 
-				// update progress
-				table[bt].Progress = progress
+	// spawn workers
+	for j := 0; j < jobs; j++ {
+		go func() {
+			for baseTopic := range queue {
+				// begin update
+				err := updateOne(url, baseTopic, firmware, timeout, func(progress float64) {
+					// lock mutex
+					mutex.Lock()
+					defer mutex.Unlock()
 
-				// call callback if provided
-				if callback != nil {
-					callback(bt, table[bt])
+					// update progress
+					table[baseTopic].Progress = progress
+
+					// call callback if provided
+					if callback != nil {
+						callback(baseTopic, table[baseTopic])
+					}
+				})
+				if err != nil {
+					// lock mutex
+					mutex.Lock()
+
+					// update error
+					table[baseTopic].Error = err
+
+					// call callback if provided
+					if callback != nil {
+						callback(baseTopic, table[baseTopic])
+					}
+
+					// unlock mutex
+					mutex.Unlock()
 				}
-			})
-			if err != nil {
-				// lock mutex
-				mutex.Lock()
-				defer mutex.Unlock()
 
-				// update error
-				table[bt].Error = err
-
-				// call callback if provided
-				if callback != nil {
-					callback(bt, table[bt])
-				}
+				// remove from wait group
+				wg.Done()
 			}
-
-			// remove from wait group
-			wg.Done()
-		}(baseTopic)
+		}()
 	}
 
 	// wait for all updates to complete

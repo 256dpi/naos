@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/docopt/docopt-go"
@@ -48,7 +49,7 @@ Usage:
   naos unset <param> [<pattern>] [--timeout=<time>]
   naos monitor [<pattern>] [--timeout=<time>]
   naos record [<pattern>] [--timeout=<time>]
-  naos update [<pattern>] [--timeout=<time>]
+  naos update [<pattern>] [--jobs=<count> --timeout=<time>]
   naos help
 
 Options:
@@ -61,6 +62,7 @@ Options:
   --clear               Remove not available devices from inventory.
   -d --duration=<time>  Scan and collect duration [default: 2s].
   -t --timeout=<time>   Operation timeout [default: 5s].
+  -j --jobs=<count>     Number of simultaneous update jobs [default: 10].
 `
 
 type command struct {
@@ -102,6 +104,7 @@ type command struct {
 	oClear    bool
 	oDuration time.Duration
 	oTimeout  time.Duration
+	oJobs     int
 }
 
 func parseCommand() *command {
@@ -147,6 +150,7 @@ func parseCommand() *command {
 		oClear:    getBool(a["--clear"]),
 		oDuration: getDuration(a["--duration"]),
 		oTimeout:  getDuration(a["--timeout"]),
+		oJobs:     getInt(a["--jobs"]),
 	}
 }
 
@@ -158,6 +162,11 @@ func getBool(field interface{}) bool {
 func getString(field interface{}) string {
 	str, _ := field.(string)
 	return str
+}
+
+func getInt(field interface{}) int {
+	num, _ := strconv.Atoi(getString(field))
+	return num
 }
 
 func getDuration(field interface{}) time.Duration {

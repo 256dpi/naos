@@ -302,7 +302,7 @@ func update(cmd *command, p *naos.Project) {
 	list := make(map[*naos.Device]*mqtt.UpdateStatus)
 
 	// update devices
-	err := p.Update(cmd.aPattern, cmd.oTimeout, func(d *naos.Device, us *mqtt.UpdateStatus) {
+	err := p.Update(cmd.aPattern, cmd.oJobs, cmd.oTimeout, func(d *naos.Device, us *mqtt.UpdateStatus) {
 		// save status
 		list[d] = us
 
