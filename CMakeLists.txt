@@ -31,6 +31,8 @@ set(SOURCE_FILES
         include/naos.h
         src/ble.c
         src/ble.h
+        src/coredump.c
+        src/coredump.h
         src/manager.c
         src/manager.h
         src/mqtt.c
