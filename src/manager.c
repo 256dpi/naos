@@ -214,6 +214,11 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     } else if (strcmp((const char *)payload, "off") == 0) {
       naos_manager_recording = false;
     }
+
+    // release mutex
+    NAOS_UNLOCK(naos_manager_mutex);
+
+    return;
   }
 
   // check update begin
