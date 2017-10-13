@@ -200,7 +200,7 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope);
  * @param scope
  * @return
  */
-bool naos_publish_raw(const char *topic, void *payload, uint16_t len, int qos, bool retained, naos_scope_t scope);
+bool naos_publish_raw(const char *topic, void *payload, size_t len, int qos, bool retained, naos_scope_t scope);
 
 /**
  * Publish string to specified topic.
