@@ -1,4 +1,5 @@
 #include <esp_log.h>
+#include <esp_ota_ops.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -103,6 +104,7 @@ static void naos_system_ble_callback(naos_ble_id_t id) {
   bool ping = strcmp(value, "ping") == 0;
   bool restart_mqtt = strcmp(value, "restart-mqtt") == 0;
   bool restart_wifi = strcmp(value, "restart-wifi") == 0;
+  bool select_factory = strcmp(value, "select-factory") == 0;
 
   // free string
   free(value);
@@ -111,6 +113,12 @@ static void naos_system_ble_callback(naos_ble_id_t id) {
   if (ping) {
     // forward ping to task
     naos_task_ping();
+  }
+
+  // handle select factory
+  else if (select_factory) {
+    ESP_ERROR_CHECK(esp_ota_set_boot_partition(
+        esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL)));
   }
 
   // handle wifi restart
