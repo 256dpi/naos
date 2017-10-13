@@ -1,5 +1,5 @@
-hash: 86edc7e34117584e89897a958316544af25eae164493eef23e419e98012d5f04
-updated: 2017-10-13T11:45:57.145883197+02:00
+hash: a64534e5c9e34adfbb465eefd87ecfb174ca83aaea246b881a75aaf9fbf1adbb
+updated: 2017-10-13T15:46:27.275922059+02:00
 imports:
 - name: code.cloudfoundry.org/bytefmt
   version: f4415fafc5619dd75599a54a7c91fb3948ad58bd
@@ -73,6 +73,10 @@ imports:
   - xpc
 - name: github.com/ryanuber/go-glob
   version: 256dc444b735e061061cf46c809487313d5b0065
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert
 - name: github.com/tatsuhiro-t/go-nghttp2
   version: 4742878d9c9052d786a7b0cd3589bc50e031e20b
 - name: github.com/tatsuhiro-t/spdy
@@ -96,4 +100,12 @@ imports:
   - unix
 - name: gopkg.in/tomb.v2
   version: d5d1b5820637886def9eef33e03a27a9f166942c
-testImports: []
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
