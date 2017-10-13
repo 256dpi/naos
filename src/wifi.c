@@ -70,7 +70,9 @@ static esp_err_t naos_wifi_event_handler(void *ctx, system_event_t *e) {
       break;
     }
 
-    default: { break; }
+    default: {
+      // ESP_LOGI(NAOS_LOG_TAG, "Unhandled WiFi Event: %d", e->event_id);
+    }
   }
 
   // release mutex
