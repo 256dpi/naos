@@ -270,6 +270,9 @@ func monitor(cmd *command, p *naos.Project) {
 		// show table
 		tbl.show(0)
 	}))
+
+	// save inventory
+	exitIfSet(p.SaveInventory())
 }
 
 func record(cmd *command, p *naos.Project) {
