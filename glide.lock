@@ -1,5 +1,5 @@
 hash: 86edc7e34117584e89897a958316544af25eae164493eef23e419e98012d5f04
-updated: 2017-07-17T14:10:58.814150659+02:00
+updated: 2017-10-13T11:45:57.145883197+02:00
 imports:
 - name: code.cloudfoundry.org/bytefmt
   version: f4415fafc5619dd75599a54a7c91fb3948ad58bd
@@ -11,6 +11,14 @@ imports:
   version: 54a939021a2707c8e3d5b45ec49bb773e3f4b420
   subpackages:
   - darwin
+  - linux
+  - linux/adv
+  - linux/att
+  - linux/gatt
+  - linux/hci
+  - linux/hci/cmd
+  - linux/hci/evt
+  - linux/hci/socket
 - name: github.com/docopt/docopt-go
   version: 784ddc588536785e7299f7272f39101f7faccc3f
 - name: github.com/dsnet/compress
@@ -28,15 +36,15 @@ imports:
 - name: github.com/gomqtt/packet
   version: 8dfc4ffe91f1d702227e7ecde40aba55d654aefe
 - name: github.com/gomqtt/tools
-  version: 682e794cd4d0f7213bc7825d57e9a930f64b5426
+  version: cbe549e862254295fc7bb4a4133d226e58f10d7f
 - name: github.com/gomqtt/transport
   version: 3d19f772517f2f4148332238c11db03ad2d93ad7
 - name: github.com/gorilla/websocket
-  version: 3ab3a8b8831546bd18fd182c20687ca853b2bb13
+  version: ea4d1f681babbce9545c9c5f3d5194a789c89f5b
 - name: github.com/jpillora/backoff
   version: 06c7a16c845dc8e0bf575fafeeca0f5462f5eb4d
 - name: github.com/kr/pty
-  version: 2c10821df3c3cf905230d078702dfbe9404c9b23
+  version: 95d05c1eef33a45bd58676b6ce28d105839b8d0b
 - name: github.com/mattn/go-colorable
   version: 3dac7b4f76f6e17fb39b768b89e3783d16e237fe
 - name: github.com/mattn/go-isatty
@@ -48,7 +56,7 @@ imports:
   subpackages:
   - v1
 - name: github.com/mholt/archiver
-  version: 3c9755ff45e1df13e5331d936c3ffab88233dccd
+  version: 26cf5bb32d07aa4e8d0de15f56ce516f4641d7df
 - name: github.com/nwaples/rardecode
   version: f22b7ef81a0afac9ce1447d37e5ab8e99fbd2f73
 - name: github.com/pierrec/lz4
@@ -58,9 +66,9 @@ imports:
   subpackages:
   - xxHash32
 - name: github.com/pkg/errors
-  version: c605e284fe17294bda444b34710735b29d1a9d90
+  version: 2b3a18b5f0fb6b4f9190549597d3f962c02bc5eb
 - name: github.com/raff/goble
-  version: f6ecf99ef03749e4914b6f23547fbd7e4d363858
+  version: b12b34f940c4cf4363660073539b5fa9fd96bd16
   subpackages:
   - xpc
 - name: github.com/ryanuber/go-glob
@@ -82,6 +90,10 @@ imports:
   - http2
   - http2/hpack
   - websocket
+- name: golang.org/x/sys
+  version: 43eea11bc92608addb41b8a406b0407495c106f6
+  subpackages:
+  - unix
 - name: gopkg.in/tomb.v2
   version: d5d1b5820637886def9eef33e03a27a9f166942c
 testImports: []
