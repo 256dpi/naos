@@ -107,14 +107,14 @@ static void naos_system_ble_callback(naos_ble_id_t id) {
   // free string
   free(value);
 
-  // handle ping request
+  // handle ping
   if (ping) {
     // forward ping to task
     naos_task_ping();
   }
 
   // handle wifi restart
-  if (restart_wifi) {
+  else if (restart_wifi) {
     ESP_LOGI(NAOS_LOG_TAG, "naos_system_ble_callback: restart wifi");
 
     switch (naos_system_status) {
@@ -146,7 +146,7 @@ static void naos_system_ble_callback(naos_ble_id_t id) {
   }
 
   // handle mqtt restart
-  if (restart_mqtt) {
+  else if (restart_mqtt) {
     ESP_LOGI(NAOS_LOG_TAG, "naos_system_ble_callback: restart mqtt");
 
     switch (naos_system_status) {
