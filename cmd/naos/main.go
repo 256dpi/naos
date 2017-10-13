@@ -187,15 +187,18 @@ func get(cmd *command, p *naos.Project) {
 	exitIfSet(err)
 
 	// prepare table
-	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
+	tbl := newTable("DEVICE NAME", "VALUE")
 
 	// add rows
 	for _, device := range list {
-		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
+		tbl.add(device.Name, device.Parameters[cmd.aParam])
 	}
 
 	// show table
 	tbl.show(0)
+
+	// show info
+	fmt.Printf("\nGot parameter from %d devices.\n", len(list))
 
 	// save inventory
 	exitIfSet(p.SaveInventory())
@@ -207,15 +210,18 @@ func set(cmd *command, p *naos.Project) {
 	exitIfSet(err)
 
 	// prepare table
-	tbl := newTable("DEVICE NAME", "PARAM", "VALUE")
+	tbl := newTable("DEVICE NAME", "VALUE")
 
 	// add rows
 	for _, device := range list {
-		tbl.add(device.Name, cmd.aParam, device.Parameters[cmd.aParam])
+		tbl.add(device.Name, device.Parameters[cmd.aParam])
 	}
 
 	// show table
 	tbl.show(0)
+
+	// show info
+	fmt.Printf("\nSet parameter on %d devices.\n", len(list))
 
 	// save inventory
 	exitIfSet(p.SaveInventory())

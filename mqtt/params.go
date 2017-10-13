@@ -1,7 +1,6 @@
 package mqtt
 
 import (
-	"strings"
 	"time"
 
 	"github.com/gomqtt/client"
@@ -41,7 +40,7 @@ func UnsetParams(url, param string, baseTopics []string, timeout time.Duration) 
 	// make sure client gets closed
 	defer cl.Close()
 
-	// send unset command
+	// send unset commands
 	for _, baseTopic := range baseTopics {
 		// init variables
 		topic := baseTopic + "/naos/unset/" + param
@@ -70,8 +69,8 @@ func UnsetParams(url, param string, baseTopics []string, timeout time.Duration) 
 
 func commonGetSet(url, param, value string, set bool, baseTopics []string, timeout time.Duration) (map[string]string, error) {
 	// prepare channels
-	errs := make(chan error)
-	response := make(chan struct{})
+	errs := make(chan error, 1)
+	response := make(chan struct{}, len(baseTopics))
 
 	// prepare table
 	table := make(map[string]string)
@@ -89,7 +88,7 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, timeo
 
 		// update table
 		for _, baseTopic := range baseTopics {
-			if strings.HasPrefix(msg.Topic, baseTopic) {
+			if msg.Topic == baseTopic+"/naos/value/"+param {
 				table[baseTopic] = string(msg.Payload)
 				response <- struct{}{}
 			}
@@ -117,7 +116,7 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, timeo
 	// add subscriptions
 	for _, baseTopic := range baseTopics {
 		subs = append(subs, packet.Subscription{
-			Topic: baseTopic + "/naos/value/+",
+			Topic: baseTopic + "/naos/value/" + param,
 			QOS:   0,
 		})
 	}
@@ -134,7 +133,7 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, timeo
 		return nil, err
 	}
 
-	// add subscriptions
+	// send get or set commands
 	for _, baseTopic := range baseTopics {
 		// init variables
 		topic := baseTopic + "/naos/get/" + param
@@ -162,26 +161,20 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, timeo
 	// prepare counter
 	counter := len(baseTopics)
 
+	// prepare timeout
+	deadline := time.After(timeout)
+
 	// wait for errors, counter or timeout
 	for {
 		select {
 		case err = <-errs:
 			return table, err
 		case <-response:
-			counter--
-
-			if counter == 0 {
-				goto exit
+			if counter--; counter == 0 {
+				return table, cl.Disconnect()
 			}
-		case <-time.After(timeout):
-			goto exit
+		case <-deadline:
+			return table, cl.Disconnect()
 		}
 	}
-
-exit:
-
-	// disconnect client
-	cl.Disconnect()
-
-	return table, nil
 }
