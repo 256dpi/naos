@@ -104,7 +104,7 @@ static void naos_system_ble_callback(naos_ble_id_t id) {
   bool ping = strcmp(value, "ping") == 0;
   bool restart_mqtt = strcmp(value, "restart-mqtt") == 0;
   bool restart_wifi = strcmp(value, "restart-wifi") == 0;
-  bool select_factory = strcmp(value, "select-factory") == 0;
+  bool boot_factory = strcmp(value, "boot-factory") == 0;
 
   // free string
   free(value);
@@ -115,10 +115,11 @@ static void naos_system_ble_callback(naos_ble_id_t id) {
     naos_task_ping();
   }
 
-  // handle select factory
-  else if (select_factory) {
+  // handle boot factory
+  else if (boot_factory) {
     ESP_ERROR_CHECK(esp_ota_set_boot_partition(
         esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL)));
+    esp_restart();
   }
 
   // handle wifi restart
