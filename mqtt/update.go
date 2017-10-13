@@ -178,6 +178,11 @@ func updateOne(url, baseTopic string, firmware []byte, timeout time.Duration, pr
 	// prepare counters
 	total := 0
 
+	// set initial progress if available
+	if progress != nil {
+		progress(0)
+	}
+
 	for {
 		// the max size of the next requested chunk
 		maxSize := 0
