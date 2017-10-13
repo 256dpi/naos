@@ -1,6 +1,7 @@
 package mqtt
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -17,6 +18,11 @@ type LogMessage struct {
 // Record will enable log recording mode and yield the received log messages
 // until the provided channel has been closed.
 func Record(url string, baseTopics []string, quit chan struct{}, timeout time.Duration, cb func(*LogMessage)) error {
+	// check base topics
+	if len(baseTopics) == 0 {
+		return errors.New("zero base topics")
+	}
+
 	// prepare channels
 	errs := make(chan error)
 

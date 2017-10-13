@@ -1,6 +1,7 @@
 package mqtt
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +28,11 @@ type Heartbeat struct {
 //
 // Note: Not correctly formatted heartbeats are ignored.
 func Monitor(url string, baseTopics []string, quit chan struct{}, timeout time.Duration, cb func(*Heartbeat)) error {
+	// check base topics
+	if len(baseTopics) == 0 {
+		return errors.New("zero base topics")
+	}
+
 	// prepare channels
 	errs := make(chan error)
 

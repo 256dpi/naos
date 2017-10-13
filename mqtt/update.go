@@ -1,6 +1,7 @@
 package mqtt
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -20,6 +21,11 @@ type UpdateStatus struct {
 // have updated or returned errors. If a callback is provided it will be called
 // with the current status of the update.
 func Update(url string, baseTopics []string, firmware []byte, timeout time.Duration, callback func(string, *UpdateStatus)) error {
+	// check base topics
+	if len(baseTopics) == 0 {
+		return errors.New("zero base topics")
+	}
+
 	// prepare table
 	table := make(map[string]*UpdateStatus)
 

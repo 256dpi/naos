@@ -1,6 +1,7 @@
 package mqtt
 
 import (
+	"errors"
 	"time"
 
 	"github.com/gomqtt/client"
@@ -22,6 +23,11 @@ func SetParams(url, param, value string, baseTopics []string, timeout time.Durat
 // UnsetParams will connect to the specified MQTT broker and publish the 'unset'
 // command to unset the provided parameter for all specified base topics.
 func UnsetParams(url, param string, baseTopics []string, timeout time.Duration) error {
+	// check base topics
+	if len(baseTopics) == 0 {
+		return errors.New("zero base topics")
+	}
+
 	// create client
 	cl := client.New()
 
@@ -68,6 +74,11 @@ func UnsetParams(url, param string, baseTopics []string, timeout time.Duration) 
 }
 
 func commonGetSet(url, param, value string, set bool, baseTopics []string, timeout time.Duration) (map[string]string, error) {
+	// check base topics
+	if len(baseTopics) == 0 {
+		return nil, errors.New("zero base topics")
+	}
+
 	// prepare channels
 	errs := make(chan error, 1)
 	response := make(chan struct{}, len(baseTopics))
