@@ -14,6 +14,6 @@ config NAOS_HEARTBEAT_INTERVAL
 
 config NAOS_UPDATE_MAX_CHUNK_SIZE
     int "The max update chunk size"
-    default 4096
+    default 5000
 
 endmenu
