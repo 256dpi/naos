@@ -11,8 +11,8 @@ import (
 // IDFDirectory returns the assumed location of the esp-idf directory.
 //
 // Note: It will not check if the directory exists.
-func IDFDirectory(parent string) string {
-	return filepath.Join(parent, "esp-idf")
+func IDFDirectory(treePath string) string {
+	return filepath.Join(treePath, "esp-idf")
 }
 
 // Exec runs a named command in the tree. All xtensa toolchain binaries are
