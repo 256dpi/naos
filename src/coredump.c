@@ -35,7 +35,7 @@ uint32_t naos_coredump_size() {
 
 void naos_coredump_read(uint32_t offset, uint32_t length, void* buf) {
   // read coredump chunk
-  ESP_ERROR_CHECK(esp_partition_read(naos_coredump_partition(), offset, buf, length));
+  ESP_ERROR_CHECK(esp_partition_read(naos_coredump_partition(), 4 + offset, buf, length));
 }
 
 void naos_coredump_delete() {
