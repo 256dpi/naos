@@ -249,7 +249,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
       naos_coredump_read(sent, chunk, buf);
 
       // publish chunk
-      naos_publish_raw("naos/dump", buf, chunk, 0, false, NAOS_LOCAL);
+      naos_publish_raw("naos/coredump", buf, chunk, 0, false, NAOS_LOCAL);
 
       // increment counter
       sent += chunk;
@@ -259,7 +259,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     free(buf);
 
     // clear if requested
-    if (len == 5 && strcmp((const char *)payload, "delete") == 0) {
+    if (len == 6 && strcmp((const char *)payload, "delete") == 0) {
       naos_coredump_delete();
     }
 
