@@ -30,6 +30,7 @@ Fleet Management:
   unset    Will unset a parameter on connected devices.
   monitor  Will monitor heartbeats from connected devices.
   record   Will record log messages from connected devices.
+  debug    Will gather debug information from connected devices.
   update   Will send the previously built binary to connected devices.
 
 Usage:
@@ -49,6 +50,7 @@ Usage:
   naos unset <param> [<pattern>] [--timeout=<time>]
   naos monitor [<pattern>] [--timeout=<time>]
   naos record [<pattern>] [--timeout=<time>]
+  naos debug [<pattern>] [--delete --duration=<time>]
   naos update [<pattern>] [--jobs=<count> --timeout=<time>]
   naos help
 
@@ -60,7 +62,8 @@ Options:
   --app-only            Only build or flash the application.
   --simple              Use simple serial tool.
   --clear               Remove not available devices from inventory.
-  -d --duration=<time>  Scan and collect duration [default: 2s].
+  --delete              Delete loaded coredumps from the devices.
+  -d --duration=<time>  Operation duration [default: 2s].
   -t --timeout=<time>   Operation timeout [default: 5s].
   -j --jobs=<count>     Number of simultaneous update jobs [default: 10].
 `
@@ -83,6 +86,7 @@ type command struct {
 	cUnset   bool
 	cMonitor bool
 	cRecord  bool
+	cDebug   bool
 	cUpdate  bool
 	cHelp    bool
 
@@ -102,6 +106,7 @@ type command struct {
 	oAppOnly  bool
 	oSimple   bool
 	oClear    bool
+	oDelete   bool
 	oDuration time.Duration
 	oTimeout  time.Duration
 	oJobs     int
@@ -129,6 +134,7 @@ func parseCommand() *command {
 		cUnset:   getBool(a["unset"]),
 		cMonitor: getBool(a["monitor"]),
 		cRecord:  getBool(a["record"]),
+		cDebug:   getBool(a["debug"]),
 		cUpdate:  getBool(a["update"]),
 		cHelp:    getBool(a["help"]),
 
@@ -148,6 +154,7 @@ func parseCommand() *command {
 		oAppOnly:  getBool(a["--app-only"]),
 		oSimple:   getBool(a["--simple"]),
 		oClear:    getBool(a["--clear"]),
+		oDelete:   getBool(a["--delete"]),
 		oDuration: getDuration(a["--duration"]),
 		oTimeout:  getDuration(a["--timeout"]),
 		oJobs:     getInt(a["--jobs"]),

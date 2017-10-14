@@ -57,6 +57,8 @@ func main() {
 		monitor(cmd, getProject(cmd))
 	} else if cmd.cRecord {
 		record(cmd, getProject(cmd))
+	} else if cmd.cDebug {
+		debug(cmd, getProject(cmd))
 	} else if cmd.cUpdate {
 		update(cmd, getProject(cmd))
 	} else if cmd.cHelp {
@@ -292,6 +294,10 @@ func record(cmd *command, p *naos.Project) {
 		// show log message
 		fmt.Printf("[%s] %s\n", d.Name, msg)
 	}))
+}
+
+func debug(cmd *command, p *naos.Project) {
+	exitIfSet(p.Debug(cmd.aPattern, cmd.oDelete, cmd.oDuration, os.Stdout))
 }
 
 func update(cmd *command, p *naos.Project) {
