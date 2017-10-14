@@ -220,13 +220,9 @@ func updateOne(url, baseTopic string, firmware []byte, timeout time.Duration, pr
 			return nil
 		}
 
-		// check chunk size
+		// check chunk size and prevent overflow
 		if maxSize > remaining {
-			// prevent overflow
 			maxSize = remaining
-		} else if maxSize > 4096 {
-			// limit to 4096 bytes
-			maxSize = 4096
 		}
 
 		// write chunk
