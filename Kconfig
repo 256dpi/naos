@@ -16,4 +16,8 @@ config NAOS_UPDATE_MAX_CHUNK_SIZE
     int "The max update chunk size"
     default 5000
 
+config NAOS_DEBUG_MAX_CHUNK_SIZE
+    int "The max debug chunk size"
+    default 5000
+
 endmenu

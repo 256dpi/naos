@@ -16,6 +16,7 @@ static void online() {
 
   // subscribe to topic
   naos_subscribe("hello", 0, NAOS_LOCAL);
+  naos_subscribe("fail", 0, NAOS_LOCAL);
 
   // clear and update message
   if (message != NULL) free(message);
@@ -39,8 +40,17 @@ static void update(const char *param, const char *value) {
 }
 
 static void handle(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope) {
-  // log incoming message
-  naos_log("%s message %s with payload %s (%ld) received", naos_scope_str(scope), topic, payload, len);
+  // check fail topic
+  if (strcmp(topic, "fail") == 0 && scope == NAOS_LOCAL) {
+    // cause error
+    int r = 10 / 0;
+    naos_log("error: %d", r);
+  }
+
+  // log other incoming message
+  else {
+    naos_log("%s message %s with payload %s (%ld) received", naos_scope_str(scope), topic, payload, len);
+  }
 }
 
 static void loop() {

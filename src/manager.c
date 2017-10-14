@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "ble.h"
+#include "coredump.h"
 #include "manager.h"
 #include "naos.h"
 #include "task.h"
@@ -112,6 +113,7 @@ void naos_manager_start() {
   naos_subscribe("naos/set/+", 0, NAOS_LOCAL);
   naos_subscribe("naos/unset/+", 0, NAOS_LOCAL);
   naos_subscribe("naos/record", 0, NAOS_LOCAL);
+  naos_subscribe("naos/debug", 0, NAOS_LOCAL);
   naos_subscribe("naos/update/begin", 0, NAOS_LOCAL);
   naos_subscribe("naos/update/write", 0, NAOS_LOCAL);
   naos_subscribe("naos/update/finish", 0, NAOS_LOCAL);
@@ -213,6 +215,52 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
       naos_manager_recording = true;
     } else if (strcmp((const char *)payload, "off") == 0) {
       naos_manager_recording = false;
+    }
+
+    // release mutex
+    NAOS_UNLOCK(naos_manager_mutex);
+
+    return;
+  }
+
+  // check debug
+  if (scope == NAOS_LOCAL && strcmp(topic, "naos/debug") == 0) {
+    // get coredump size
+    uint32_t size = naos_coredump_size();
+    if (size == 0) {
+      naos_publish("naos/coredump", "", 0, false, NAOS_LOCAL);
+      NAOS_UNLOCK(naos_manager_mutex);
+      return;
+    }
+
+    // allocate buffer
+    uint8_t *buf = malloc(CONFIG_NAOS_DEBUG_MAX_CHUNK_SIZE);
+
+    // send coredump
+    uint32_t sent = 0;
+    while (sent < size) {
+      // calculate next chunk size
+      uint32_t chunk = CONFIG_NAOS_DEBUG_MAX_CHUNK_SIZE;
+      if (size - sent < CONFIG_NAOS_DEBUG_MAX_CHUNK_SIZE) {
+        chunk = size - sent;
+      }
+
+      // read chunk
+      naos_coredump_read(sent, chunk, buf);
+
+      // publish chunk
+      naos_publish_raw("naos/dump", buf, chunk, 0, false, NAOS_LOCAL);
+
+      // increment counter
+      sent += chunk;
+    }
+
+    // free buffer
+    free(buf);
+
+    // clear if requested
+    if (len == 5 && strcmp((const char *)payload, "delete") == 0) {
+      naos_coredump_delete();
     }
 
     // release mutex
