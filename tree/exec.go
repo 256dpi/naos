@@ -49,6 +49,9 @@ func Exec(treePath string, out io.Writer, in io.Reader, name string, arg ...stri
 		}
 	}
 
+	// add idf path
+	cmd.Env = append(cmd.Env, "IDF_PATH=" + IDFDirectory(treePath))
+
 	// run command
 	err = cmd.Run()
 	if err != nil {
