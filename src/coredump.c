@@ -38,8 +38,8 @@ void naos_coredump_read(uint32_t offset, uint32_t length, void* buf) {
   ESP_ERROR_CHECK(esp_partition_read(naos_coredump_partition(), offset, buf, length));
 }
 
-void naos_coredump_clear() {
-  // overwrite the magic to "erase" the coredump
+void naos_coredump_delete() {
+  // overwrite the magic to "delete" the coredump
   uint32_t magic = 0;
   ESP_ERROR_CHECK(esp_partition_write(naos_coredump_partition(), 0, &magic, 4));
 }
