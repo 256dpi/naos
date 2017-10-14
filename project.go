@@ -1,6 +1,7 @@
 package naos
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -181,6 +182,46 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 // available.
 func (p *Project) Format(out io.Writer) error {
 	return tree.Format(p.Tree(), out)
+}
+
+// Debug will request coredumps from the devices that match the supplied glob
+// pattern. The coredumps are saved to the 'debug' directory in the project.
+func (p *Project) Debug(pattern string, delete bool, duration time.Duration, out io.Writer) error {
+	// collect coredumps
+	coredumps, err := p.Inventory.Debug(pattern, delete, duration)
+	if err != nil {
+		return err
+	}
+
+	// log info
+	utils.Log(out, fmt.Sprintf("Got %d coredump(s)", len(coredumps)))
+
+	// ensure directory
+	err = os.MkdirAll(filepath.Join(p.Location, "debug"), 0755)
+	if err != nil {
+		return err
+	}
+
+	// go through all coredumps
+	for device, coredump := range coredumps {
+		// parse coredump
+		data, err := tree.ParseCoredump(p.Tree(), coredump)
+		if err != nil {
+			return err
+		}
+
+		// prepare path
+		path := filepath.Join(p.Location, "debug", device.Name)
+
+		// write parsed data
+		utils.Log(out, fmt.Sprintf("Writing coredump to '%s", path))
+		err = ioutil.WriteFile(path, data, 0644)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Update will update the devices that match the supplied glob pattern with the

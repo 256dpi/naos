@@ -283,6 +283,26 @@ func (i *Inventory) Monitor(pattern string, quit chan struct{}, timeout time.Dur
 	})
 }
 
+// Debug will load the coredump data from the devices that match the supplied
+// glob pattern.
+func (i *Inventory) Debug(pattern string, delete bool, duration time.Duration) (map[*Device][]byte, error) {
+	// gather coredumps
+	coredumps, err := mqtt.Debug(i.Broker, i.DeviceBaseTopics(pattern), delete, duration)
+	if err != nil {
+		return nil, err
+	}
+
+	// create new table
+	table := make(map[*Device][]byte, len(coredumps))
+
+	// fill table
+	for baseTopic, coredump := range coredumps {
+		table[i.DeviceByBaseTopic(baseTopic)] = coredump
+	}
+
+	return table, nil
+}
+
 // Update will update the devices that match the supplied glob pattern with the
 // specified image. The specified callback is called for every change in state
 // or progress.
