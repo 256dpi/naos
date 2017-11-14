@@ -7,7 +7,7 @@ XTENSA_TOOLCHAIN := "xtensa-esp32-elf-osx-1.22.0-73-ge28a011-5.2.0.tar.gz"
 endif
 
 ESP_IDF_VERSION := "e6afe28bafe5db5ab79fae213f2e8e1ccd9f937c"
-ESP_MQTT_VERSION := "a736921fc8a24d4bb028ed713c4a49699fb29752"
+ESP_MQTT_VERSION := "3979768c98c6a486ee353c98cfb4a0f00f35bd8e"
 
 test/xtensa-esp32-elf:
 	wget https://dl.espressif.com/dl/$(XTENSA_TOOLCHAIN)
