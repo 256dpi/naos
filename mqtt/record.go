@@ -30,11 +30,11 @@ func Record(url string, baseTopics []string, quit chan struct{}, timeout time.Du
 	cl := client.New()
 
 	// set callback
-	cl.Callback = func(msg *packet.Message, err error) {
+	cl.Callback = func(msg *packet.Message, err error) error {
 		// send errors
 		if err != nil {
 			errs <- err
-			return
+			return nil
 		}
 
 		// prepare log message
@@ -49,6 +49,8 @@ func Record(url string, baseTopics []string, quit chan struct{}, timeout time.Du
 
 		// call callback
 		cb(log)
+
+		return nil
 	}
 
 	// connect to the broker using the provided url

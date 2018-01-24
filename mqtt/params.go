@@ -90,11 +90,11 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, timeo
 	cl := client.New()
 
 	// set callback
-	cl.Callback = func(msg *packet.Message, err error) {
+	cl.Callback = func(msg *packet.Message, err error) error {
 		// send errors
 		if err != nil {
 			errs <- err
-			return
+			return nil
 		}
 
 		// update table
@@ -104,6 +104,8 @@ func commonGetSet(url, param, value string, set bool, baseTopics []string, timeo
 				response <- struct{}{}
 			}
 		}
+
+		return nil
 	}
 
 	// connect to the broker using the provided url

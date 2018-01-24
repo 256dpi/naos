@@ -31,11 +31,11 @@ func Debug(url string, baseTopics []string, delete bool, duration time.Duration)
 	cl := client.New()
 
 	// set callback
-	cl.Callback = func(msg *packet.Message, err error) {
+	cl.Callback = func(msg *packet.Message, err error) error {
 		// send errors
 		if err != nil {
 			errs <- err
-			return
+			return nil
 		}
 
 		// update table
@@ -45,6 +45,8 @@ func Debug(url string, baseTopics []string, delete bool, duration time.Duration)
 				table[baseTopic] = append(table[baseTopic], msg.Payload...)
 			}
 		}
+
+		return nil
 	}
 
 	// connect to the broker using the provided url

@@ -40,11 +40,11 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, timeout time.D
 	cl := client.New()
 
 	// set callback
-	cl.Callback = func(msg *packet.Message, err error) {
+	cl.Callback = func(msg *packet.Message, err error) error {
 		// send errors
 		if err != nil {
 			errs <- err
-			return
+			return nil
 		}
 
 		// get data from payload
@@ -52,7 +52,7 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, timeout time.D
 
 		// check length
 		if len(data) < 6 {
-			return
+			return nil
 		}
 
 		// convert integers
@@ -79,6 +79,8 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, timeout time.D
 
 		// call callback
 		cb(hb)
+
+		return nil
 	}
 
 	// connect to the broker using the provided url

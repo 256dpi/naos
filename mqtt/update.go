@@ -112,28 +112,30 @@ func updateOne(url, baseTopic string, firmware []byte, timeout time.Duration, pr
 	cl := client.New()
 
 	// set callback
-	cl.Callback = func(msg *packet.Message, err error) {
+	cl.Callback = func(msg *packet.Message, err error) error {
 		// send errors
 		if err != nil {
 			errs <- err
-			return
+			return nil
 		}
 
 		// otherwise convert the chunk request
 		n, err := strconv.ParseInt(string(msg.Payload), 10, 0)
 		if err != nil {
 			errs <- err
-			return
+			return nil
 		}
 
 		// check size
 		if n <= 0 {
 			errs <- fmt.Errorf("invalid chunk request of size %d", n)
-			return
+			return nil
 		}
 
 		// send chunk request
 		requests <- int(n)
+
+		return nil
 	}
 
 	// connect to the broker using the provided url
