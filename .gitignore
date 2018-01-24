@@ -2,3 +2,4 @@ toolchain/
 build/
 main/src/
 includes.list
+cmake-build-debug/
