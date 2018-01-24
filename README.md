@@ -9,11 +9,3 @@ You can use this build tree to easily build a project that uses the [naos-esp](h
 1. Download the xtensa toolchain (check `toolchain.version`) and add the `bin` directory to your `PATH` environment variable.
 2. Link the source directory to the `main/src/` directory.
 3. Run `make` and other commands in the build tree.
-
-## Update
-
-- Set toolchain version in `toolchain.version`.
-- Set `esp-idf` version: `cd esp-idf; git fetch; git checkout v2.1.1; git submodule update --recursive; cd ..`
-- Set `esp-mqtt` version: `cd components/esp-mqtt; git fetch; git checkout v0.4.3; git submodule update --recursive; cd ../..`
-- Set `naos-esp` version: `cd components/naos-esp; git fetch; git checkout v0.1.0; git submodule update --recursive; cd ../..`
-- Copy `sdkconfig`: `cp components/naos-esp/test/sdkconfig sdkconfig`
