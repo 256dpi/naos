@@ -22,7 +22,7 @@ Devices will periodically publish to the local `naos/heartbeat` topic. The publi
 
 ### Configuration
 
-Devices will subscribe to the local `naos/get/+`, `naos/set/+` and `naos/unset/+` topics to handle configuration read, write and delete requests. The device will acknowledge read and write actions by responding with the saved value on the local topic `naos/value/+`.
+Devices will subscribe to the local `naos/get/+`, `naos/set/+` and `naos/unset/+` topics to handle parameter read, write and delete requests. The device will acknowledge read and write actions by responding with the saved value on the local topic `naos/value/+`.
 
 ### Remote Logging
 
@@ -32,3 +32,7 @@ Devices will subscribe to the local `naos/record` topic and enable or disable re
 ### Firmware Update
 
 Devices will subscribe to the local `naos/update/begin` topic and wait for an update request of the format `total_size`. If one is received the device will publish a request for the next chunk of data by publishing a `max_size` message to the local `naos/update/next` topic. The other end should then publish the next chunk of data to the local `naos/update/write` topic and wait for the next chunk request. When all data has been written the updater publishes a message to the local `naos/update/finish` topic to make the device commit the update and restart to the newly received firmware.
+
+### Remote Debugging
+
+Devices will subscribe to the local `naos/debug` topic and read the coredump from flash on every request and publish it to the local topic `naos/coredump`. If the payload of the request is set to `delete` the stored coredump will be removed after reading.
