@@ -6,7 +6,7 @@ import (
 	"github.com/shiftr-io/naos/ble"
 )
 
-// Scan will scan for available Bluetooth based device configurations.
+// Scan will scan for available bluetooth based device configurations.
 func Scan(duration time.Duration) (map[string]*ble.Configuration, error) {
 	// initialize ble
 	err := ble.Initialize()
@@ -50,7 +50,7 @@ func Scan(duration time.Duration) (map[string]*ble.Configuration, error) {
 	return store, nil
 }
 
-// Rename will rename the device name of a Bluetooth device.
+// Rename will rename the device name of a bluetooth device.
 func Rename(addr, name string) error {
 	// initialize ble
 	err := ble.Initialize()

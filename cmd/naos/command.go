@@ -19,7 +19,7 @@ Project Management:
   format   Will format all source files in the 'src' subdirectory.
 
 Configuration Management:
-  scan     Will scan for Bluetooth devices and print their configuration.
+  scan     Will scan for bluetooth devices and print their configuration.
   rename   Will reset the device name of the device with the specified address.
 
 Fleet Management:
