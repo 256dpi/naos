@@ -7,7 +7,8 @@ import (
 	"github.com/docopt/docopt-go"
 )
 
-var usage = `Networked Artifacts Operating System by shiftr.io
+var usage = `Networked Artifacts Operating System
+Created by Joël Gähwiler © shiftr.io
 
 Project Management:
   create   Will create a new naos project in the current directory.
