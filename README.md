@@ -2,7 +2,7 @@
 
 **The [Networked Artifacts Operating System](https://github.com/shiftr-io/naos) component for the ESP platform.**
 
-You can use this component in any esp-idf project, but using the naos command line utility is recommended.
+You can use this component in any [esp-idf](https://github.com/espressif/esp-idf) project, but using the [naos](https://github.com/shiftr-io/naos) command line utility is recommended.
 
 ## Standalone Requirements
 
