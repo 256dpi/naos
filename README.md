@@ -2,11 +2,13 @@
 
 **The [Networked Artifacts Operating System](https://github.com/shiftr-io/naos) component for the ESP platform.**
 
-## Requirements
+You can use this component in any esp-idf project, but using the naos command line utility is recommended.
+
+## Standalone Requirements
 
 - The [esp-mqtt](https://github.com/256dpi/esp-mqtt) component must be installed alongside `naos-esp`.
 - Bluetooth must be enabled via `menuconfig`.
-- At least two OTA partitions must be configured via `menuconfig`.
+- Partitions should be configured as described [here](https://github.com/shiftr-io/naos-esp/blob/master/test/partitions.csv).
 
 ## Device Management Protocol
 
