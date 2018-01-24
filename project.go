@@ -82,20 +82,12 @@ func CreateProject(path string, force, cmake bool, out io.Writer) (*Project, err
 	if cmake {
 		// get project path
 		projectPath := filepath.Join(p.Location, "CMakeLists.txt")
-		ok, err := utils.Exists(projectPath)
+
+		// update CMake file anyway
+		utils.Log(out, "Ensuring project CMake file.")
+		err = ioutil.WriteFile(projectPath, []byte(projectCMakeListsFile), 0644)
 		if err != nil {
 			return nil, err
-		}
-
-		// create CMake file if it not already exists
-		if !ok || force {
-			utils.Log(out, "Creating project CMake file.")
-			err = ioutil.WriteFile(projectPath, []byte(projectCMakeListsFile), 0644)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			utils.Log(out, "Project CMake file already exists.")
 		}
 	}
 
