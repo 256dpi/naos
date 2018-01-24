@@ -2,8 +2,8 @@ package: github.com/shiftr-io/naos
 import:
 - package: github.com/docopt/docopt-go
   version: ^0.6.2
-- package: github.com/gomqtt/client
-  version: ^0.6.0
+- package: github.com/256dpi/gomqtt
+  version: ^0.5.0
 - package: code.cloudfoundry.org/bytefmt
 - package: github.com/ryanuber/go-glob
   version: master

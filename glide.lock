@@ -1,14 +1,19 @@
-hash: a64534e5c9e34adfbb465eefd87ecfb174ca83aaea246b881a75aaf9fbf1adbb
-updated: 2017-10-13T15:46:27.275922059+02:00
+hash: 33a2138e798d7f3dd3a2391086e1bebf174aaa15078ab18bf2cf7c117628b677
+updated: 2018-01-24T18:19:58.978676+01:00
 imports:
 - name: code.cloudfoundry.org/bytefmt
-  version: f4415fafc5619dd75599a54a7c91fb3948ad58bd
-- name: github.com/bradfitz/gomemcache
-  version: 1952afaa557dc08e8e0d89eafab110fb501c1a2b
+  version: b31f603f5e1e047fdb38584e1a922dcc5c4de5c8
+- name: github.com/256dpi/gomqtt
+  version: 2a588efac5faef2ebc9bb9f3ceb7855f00bdabfc
   subpackages:
-  - memcache
+  - client
+  - client/future
+  - packet
+  - session
+  - topic
+  - transport
 - name: github.com/currantlabs/ble
-  version: 54a939021a2707c8e3d5b45ec49bb773e3f4b420
+  version: c1d21c164cf83d3360fd5abd73a3405cb588c06c
   subpackages:
   - darwin
   - linux
@@ -22,7 +27,7 @@ imports:
 - name: github.com/docopt/docopt-go
   version: 784ddc588536785e7299f7272f39101f7faccc3f
 - name: github.com/dsnet/compress
-  version: 0ae8e136a5df9e3caf6c0f69983608b07438411b
+  version: cc9eb1d7ad760af14e8f918698f745e80377af4f
   subpackages:
   - bzip2
   - bzip2/internal/sais
@@ -31,24 +36,16 @@ imports:
   - internal/prefix
 - name: github.com/golang/snappy
   version: 553a641470496b2327abcac10b36396bd98e45c9
-- name: github.com/gomqtt/client
-  version: 62d8e244f86ff4d00294e0cf5b382dee42c9dace
-- name: github.com/gomqtt/packet
-  version: 8dfc4ffe91f1d702227e7ecde40aba55d654aefe
-- name: github.com/gomqtt/tools
-  version: cbe549e862254295fc7bb4a4133d226e58f10d7f
-- name: github.com/gomqtt/transport
-  version: 3d19f772517f2f4148332238c11db03ad2d93ad7
 - name: github.com/gorilla/websocket
   version: ea4d1f681babbce9545c9c5f3d5194a789c89f5b
 - name: github.com/jpillora/backoff
   version: 06c7a16c845dc8e0bf575fafeeca0f5462f5eb4d
 - name: github.com/kr/pty
-  version: 95d05c1eef33a45bd58676b6ce28d105839b8d0b
+  version: 282ce0e5322c82529687d609ee670fac7c7d917c
 - name: github.com/mattn/go-colorable
-  version: 3dac7b4f76f6e17fb39b768b89e3783d16e237fe
+  version: 6cc8b475d4682021d75d2cbe2bc481bec4ce98e5
 - name: github.com/mattn/go-isatty
-  version: ae0b1f8f8004be68d791a576e3d8e7648ab41449
+  version: 6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c
 - name: github.com/mgutz/ansi
   version: 9520e82c474b0a04dd04f8a40959027271bab992
 - name: github.com/mgutz/logxi
@@ -58,29 +55,25 @@ imports:
 - name: github.com/mholt/archiver
   version: 26cf5bb32d07aa4e8d0de15f56ce516f4641d7df
 - name: github.com/nwaples/rardecode
-  version: f22b7ef81a0afac9ce1447d37e5ab8e99fbd2f73
+  version: e06696f847aeda6f39a8f0b7cdff193b7690aef6
 - name: github.com/pierrec/lz4
-  version: 5a3d2245f97fc249850e7802e3c01fad02a1c316
+  version: ed8d4cc3b461464e69798080a0092bd028910298
 - name: github.com/pierrec/xxHash
   version: a0006b13c722f7f12368c00a3d3c2ae8a999a0c6
   subpackages:
   - xxHash32
 - name: github.com/pkg/errors
-  version: 2b3a18b5f0fb6b4f9190549597d3f962c02bc5eb
+  version: e881fd58d78e04cf6d0de1217f8707c8cc2249bc
 - name: github.com/raff/goble
-  version: b12b34f940c4cf4363660073539b5fa9fd96bd16
+  version: fadc3db9f77abd3b8036a54d4373c7a71030ddac
   subpackages:
   - xpc
 - name: github.com/ryanuber/go-glob
   version: 256dc444b735e061061cf46c809487313d5b0065
 - name: github.com/stretchr/testify
-  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  version: b91bfb9ebec76498946beb6af7c0230c7cc7ba6c
   subpackages:
   - assert
-- name: github.com/tatsuhiro-t/go-nghttp2
-  version: 4742878d9c9052d786a7b0cd3589bc50e031e20b
-- name: github.com/tatsuhiro-t/spdy
-  version: 3e25f173236051630d530d15e13439bef3191fbf
 - name: github.com/ulikunitz/xz
   version: 0c6b41e72360850ca4f98dc341fd999726ea007f
   subpackages:
@@ -88,14 +81,11 @@ imports:
   - internal/xlog
   - lzma
 - name: golang.org/x/net
-  version: 5627bad10b821d907ac4dc81fb3535ec7dd81c2b
+  version: f315505cf3349909cdf013ea56690da34e96a451
   subpackages:
   - context
-  - http2
-  - http2/hpack
-  - websocket
 - name: golang.org/x/sys
-  version: 43eea11bc92608addb41b8a406b0407495c106f6
+  version: af50095a40f9041b3b38960738837185c26e9419
   subpackages:
   - unix
 - name: gopkg.in/tomb.v2

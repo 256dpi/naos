@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gomqtt/client"
-	"github.com/gomqtt/packet"
+	"github.com/256dpi/gomqtt/client"
+	"github.com/256dpi/gomqtt/packet"
 )
 
 // An Announcement is returned by Collect.
@@ -30,11 +30,11 @@ func Collect(url string, duration time.Duration) ([]*Announcement, error) {
 	cl := client.New()
 
 	// set callback
-	cl.Callback = func(msg *packet.Message, err error) {
+	cl.Callback = func(msg *packet.Message, err error) error {
 		// send errors
 		if err != nil {
 			errs <- err
-			return
+			return nil
 		}
 
 		// get data from payload
@@ -42,7 +42,7 @@ func Collect(url string, duration time.Duration) ([]*Announcement, error) {
 
 		// check length
 		if len(data) < 4 {
-			return
+			return nil
 		}
 
 		// add announcement
@@ -53,6 +53,8 @@ func Collect(url string, duration time.Duration) ([]*Announcement, error) {
 			FirmwareVersion: data[1],
 			DeviceName:      data[2],
 		}
+
+		return nil
 	}
 
 	// connect to the broker using the provided url
