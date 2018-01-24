@@ -25,5 +25,4 @@ lint:
 	golint ./utils
 
 install:
-	gp run "go install github.com/shiftr-io/naos/cmd/naos"
-	gp run "cp ./bin/naos /usr/local/bin" -r
+	go install github.com/shiftr-io/naos/cmd/naos
