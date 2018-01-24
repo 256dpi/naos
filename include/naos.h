@@ -72,10 +72,10 @@ typedef struct {
    *
    * Note: The base topic has already been removed from the topic and should not start with a '/'.
    *
-   * @param topic
-   * @param payload
-   * @param len
-   * @param scope
+   * @param topic - The topic.
+   * @param payload - The payload.
+   * @param len - The payload length.
+   * @param scope - The scope.
    */
   void (*message_callback)(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope);
 
@@ -96,6 +96,8 @@ typedef struct {
 
   /**
    * The callback is called once the device has changed its status.
+   *
+   * @param status - The status.
    */
   void (*status_callback)(naos_status_t status);
 
@@ -123,7 +125,7 @@ void naos_init(naos_config_t *config);
 /**
  * Write a log message.
  *
- * The message will be printed in the console and published to the broker if the device has logging enabled.
+ * The message will be printed to the serial port and published to the broker if logging is activated.
  *
  * @param fmt - The message format.
  * @param ... - The used arguments.
@@ -133,7 +135,7 @@ void naos_log(const char *fmt, ...);
 /**
  * Will return the value of the requested parameter.
  *
- * Note: The returned pointer is valid until the next call to naos_get().
+ * Note: The returned pointer is only valid until the next call to naos_get().
  *
  * @param param - The parameter.
  * @return Pointer to value.
@@ -170,9 +172,9 @@ bool naos_unset(const char *param);
  *
  * The topic is automatically prefixed with the configured base topic if the scope is local.
  *
- * @param topic
- * @param scope
- * @return
+ * @param topic - The topic.
+ * @param scope - The scope.
+ * @return Whether the command was successful.
  */
 bool naos_subscribe(const char *topic, int qos, naos_scope_t scope);
 
@@ -181,9 +183,9 @@ bool naos_subscribe(const char *topic, int qos, naos_scope_t scope);
  *
  * The topic is automatically prefixed with the configured base topic if the scope is local.
  *
- * @param topic
- * @param scope
- * @return
+ * @param topic - The topic.
+ * @param scope - The scope.
+ * @return Whether the command was successful.
  */
 bool naos_unsubscribe(const char *topic, naos_scope_t scope);
 
@@ -192,13 +194,13 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope);
  *
  * The topic is automatically prefixed with the configured base topic if the scope is local.
  *
- * @param topic
- * @param payload
- * @param len
- * @param qos
- * @param retained
- * @param scope
- * @return
+ * @param topic - The topic.
+ * @param payload - The payload.
+ * @param len - The payload length.
+ * @param qos - The QoS level.
+ * @param retained - The retained flag.
+ * @param scope - The scope.
+ * @return Whether the command was successful.
  */
 bool naos_publish_raw(const char *topic, void *payload, size_t len, int qos, bool retained, naos_scope_t scope);
 
@@ -207,12 +209,12 @@ bool naos_publish_raw(const char *topic, void *payload, size_t len, int qos, boo
  *
  * The topic is automatically prefixed with the configured base topic if the scope is local.
  *
- * @param topic
- * @param str
- * @param qos
- * @param retained
- * @param scope
- * @return
+ * @param topic - The topic.
+ * @param str - The string.
+ * @param qos - The QoS level.
+ * @param retained - The retained flag.
+ * @param scope - The scope.
+ * @return Whether the command was successful.
  */
 bool naos_publish(const char *topic, const char *str, int qos, bool retained, naos_scope_t scope);
 
