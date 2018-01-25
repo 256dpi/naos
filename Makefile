@@ -24,5 +24,8 @@ lint:
 	golint ./cmd/naos
 	golint ./utils
 
+test:
+	go test ./...
+
 install:
 	go install github.com/shiftr-io/naos/cmd/naos

@@ -37,8 +37,7 @@ func TestInventoryDeviceBaseTopics(t *testing.T) {
 		BaseTopic: "/baz",
 	}
 
-	devices := i.FilterDevices("b*")
-	assert.Len(t, devices, 2)
-	assert.Equal(t, devices[0].Name, "bar")
-	assert.Equal(t, devices[1].Name, "baz")
+	devices := i.FilterDevices("f*")
+	assert.Len(t, devices, 1)
+	assert.Equal(t, devices[0].Name, "foo")
 }
