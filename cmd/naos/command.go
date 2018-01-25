@@ -25,14 +25,14 @@ Configuration Management:
 
 Fleet Management:
   list     Will list all devices listed in the inventory.
-  collect  Will collect connected devices and add them to the inventory.
-  get      Will read a parameter value from connected devices.
-  set      Will set a parameter value on connected devices.
-  unset    Will unset a parameter on connected devices.
-  monitor  Will monitor heartbeats from connected devices.
-  record   Will record log messages from connected devices.
-  debug    Will gather debug information from connected devices.
-  update   Will send the previously built binary to connected devices.
+  collect  Will collect devices and add them to the inventory.
+  get      Will read a parameter value from devices.
+  set      Will set a parameter value on devices.
+  unset    Will unset a parameter on devices.
+  monitor  Will monitor heartbeats from devices.
+  record   Will record log messages from devices.
+  debug    Will gather debug information from devices.
+  update   Will send the previously built binary to devices.
 
 Usage:
   naos create [--cmake --force]
