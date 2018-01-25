@@ -14,7 +14,7 @@ before_deploy:
 deploy:
   provider: releases
   api_key:
-    secure: SET
+    secure: nVPEyArvvMW4pBUFzFOE7iIqzG0Z3QwHNCpm8FgNQQ84Nyw3LDaKvbu3ksNujyIaZNpm27xcnFiqRRt+bxxqSHstCOrp46vRypouNaBBhuPIHNkFD9CYsYkXfCXBySWHj9716/R+AqOkOiOmsQPuAfqzvY3jmqO5HijETlWAZ+U0GRgSy2WIShaQD4AaOlma8mrh6AU2uZJpxn+d3I8RErtOW+yXr7je8gxbF+kZ1B6glFP2epuao0fwSTcybyjaoKU08bYUKJcr1ReoFjeD0ENSiGFAg6oz9EPSGonatiLNvdzOVVn8DNFnQX9Iz0rXBX8xjsq5keNLDKFKvuAyspLfzrBGteumovI5aRpfj/6b++iFv1RCOL4kNjXZw2lmHZ/HHmoOdYF8xtc0YiB0BdhSoxSEu/KBDnG9oG0QFIB6kv4rZMDqGp4BZEFy7vxr0XAk7PDiz6EGpuTzxqan+gxT/RR1vK5KC7x4i4Y5hbQ35EqjBnxc6bf5ONj081szb9vd28dgU1MWm6lg0pPVBgl6XCMLSN3XeZWmiqCbbVDUH0FjcizUzNS3cql0ftZFaiLPXgTxAEgodKQHFU6rkYinLytgYPhDba0hBAw6nNjKZF090Xu+lILGYtv74JfVZLYDxYGEkuuEWiTdHDqDCXWIgjZmF0meg+Os+WW/UFY=
   skip_cleanup: true
   file:
     - ./release/naos-darwin-amd64.gz
