@@ -5,9 +5,9 @@ import (
 	"errors"
 	"runtime"
 
-	"github.com/currantlabs/ble"
-	"github.com/currantlabs/ble/darwin"
-	"github.com/currantlabs/ble/linux"
+	"github.com/go-ble/ble"
+	"github.com/go-ble/ble/darwin"
+	"github.com/go-ble/ble/linux"
 )
 
 // Available returns true if BLE is available on the current platform.

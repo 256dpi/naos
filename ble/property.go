@@ -1,6 +1,6 @@
 package ble
 
-import "github.com/currantlabs/ble"
+import "github.com/go-ble/ble"
 
 // A Property represents a readable and/or writable property.
 type Property string

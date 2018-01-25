@@ -1,5 +1,5 @@
-hash: 33a2138e798d7f3dd3a2391086e1bebf174aaa15078ab18bf2cf7c117628b677
-updated: 2018-01-24T18:19:58.978676+01:00
+hash: f9af6aa8acb0390c4f69199db5fb6670800a29474e010055babaf925dc3e4223
+updated: 2018-01-25T09:35:39.007823+01:00
 imports:
 - name: code.cloudfoundry.org/bytefmt
   version: b31f603f5e1e047fdb38584e1a922dcc5c4de5c8
@@ -12,18 +12,10 @@ imports:
   - session
   - topic
   - transport
-- name: github.com/currantlabs/ble
-  version: c1d21c164cf83d3360fd5abd73a3405cb588c06c
+- name: github.com/bradfitz/gomemcache
+  version: 1952afaa557dc08e8e0d89eafab110fb501c1a2b
   subpackages:
-  - darwin
-  - linux
-  - linux/adv
-  - linux/att
-  - linux/gatt
-  - linux/hci
-  - linux/hci/cmd
-  - linux/hci/evt
-  - linux/hci/socket
+  - memcache
 - name: github.com/docopt/docopt-go
   version: 784ddc588536785e7299f7272f39101f7faccc3f
 - name: github.com/dsnet/compress
@@ -34,6 +26,18 @@ imports:
   - internal
   - internal/errors
   - internal/prefix
+- name: github.com/go-ble/ble
+  version: fe39e478ef1cfc1395b96134e61f825e46e814ba
+  subpackages:
+  - darwin
+  - linux
+  - linux/adv
+  - linux/att
+  - linux/gatt
+  - linux/hci
+  - linux/hci/cmd
+  - linux/hci/evt
+  - linux/hci/socket
 - name: github.com/golang/snappy
   version: 553a641470496b2327abcac10b36396bd98e45c9
 - name: github.com/gorilla/websocket
@@ -74,6 +78,10 @@ imports:
   version: b91bfb9ebec76498946beb6af7c0230c7cc7ba6c
   subpackages:
   - assert
+- name: github.com/tatsuhiro-t/go-nghttp2
+  version: 4742878d9c9052d786a7b0cd3589bc50e031e20b
+- name: github.com/tatsuhiro-t/spdy
+  version: 3e25f173236051630d530d15e13439bef3191fbf
 - name: github.com/ulikunitz/xz
   version: 0c6b41e72360850ca4f98dc341fd999726ea007f
   subpackages:
@@ -84,8 +92,11 @@ imports:
   version: f315505cf3349909cdf013ea56690da34e96a451
   subpackages:
   - context
+  - http2
+  - http2/hpack
+  - websocket
 - name: golang.org/x/sys
-  version: af50095a40f9041b3b38960738837185c26e9419
+  version: ef802241c90f84d84d644a2d8d0de8ee96038c9c
   subpackages:
   - unix
 - name: gopkg.in/tomb.v2

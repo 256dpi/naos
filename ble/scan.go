@@ -2,9 +2,9 @@ package ble
 
 import (
 	"context"
-
-	"github.com/currantlabs/ble"
 	"time"
+
+	"github.com/go-ble/ble"
 )
 
 var serviceUUID = ble.MustParse("632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
@@ -38,7 +38,7 @@ func Scan(duration time.Duration) ([]string, error) {
 		}
 
 		// add device address
-		addresses = append(addresses, a.Address().String())
+		addresses = append(addresses, a.Addr().String())
 	}
 
 	return addresses, nil

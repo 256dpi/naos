@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/currantlabs/ble"
+	"github.com/go-ble/ble"
 )
 
 // A Device is a BLE connected NAOS device.
@@ -47,7 +47,7 @@ func (d *Device) Address() string {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	return d.client.Address().String()
+	return d.client.Addr().String()
 }
 
 // Read will read the specified property.
