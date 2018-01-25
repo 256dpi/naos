@@ -22,10 +22,6 @@ Project Management:
   run      Will run 'build', 'flash' and 'attach' sequentially.
   format   Will format all source files in the 'src' subdirectory.
 
-Configuration Management:
-  scan     Will scan for bluetooth devices and print their configuration.
-  rename   Will reset the device name of the device with the specified address.
-
 Fleet Management:
   list     Will list all devices listed in the inventory.
   collect  Will collect devices and add them to the inventory.
@@ -45,8 +41,6 @@ Usage:
   naos attach [<device>] [--simple]
   naos run [<device>] [--clean --app-only --erase --simple]
   naos format
-  naos scan [--duration=<time>]
-  naos rename <address> <name>
   naos list
   naos collect [--clear --duration=<time>]
   naos get <param> [<pattern>] [--timeout=<time>]
