@@ -6,6 +6,8 @@ import (
 	"github.com/shiftr-io/naos/ble"
 )
 
+// TODO: Add more BLE configuration methods.
+
 // Scan will scan for available bluetooth based device configurations.
 func Scan(duration time.Duration) (map[string]*ble.Configuration, error) {
 	// initialize ble
