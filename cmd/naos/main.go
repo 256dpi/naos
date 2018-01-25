@@ -39,10 +39,6 @@ func main() {
 		run(cmd, getProject(cmd))
 	} else if cmd.cFormat {
 		format(cmd, getProject(cmd))
-	} else if cmd.cScan {
-		scan(cmd)
-	} else if cmd.cRename {
-		rename(cmd)
 	} else if cmd.cList {
 		list(cmd, getProject(cmd))
 	} else if cmd.cCollect {
@@ -122,40 +118,6 @@ func list(_ *command, p *naos.Project) {
 
 	// show table
 	tbl.show(0)
-}
-
-func scan(cmd *command) {
-	// prepare channel
-	quit := make(chan struct{})
-
-	// close channel on interrupt
-	go func() {
-		exit := make(chan os.Signal)
-		signal.Notify(exit, os.Interrupt)
-		<-exit
-		close(quit)
-	}()
-
-	// scan for configurations
-	configurations, err := naos.Scan(cmd.oDuration)
-	exitIfSet(err)
-
-	// prepare table
-	tbl := newTable("ADDRESS", "DEVICE NAME", "DEVICE TYPE", "BASE TOPIC", "WIFI SSID", "WIFI PASSWORD", "MQTT HOST", "MQTT PORT", "MQTT CLIENT ID", "MQTT USERNAME", "MQTT PASSWORD", "CONNECTION STATUS")
-
-	// add rows
-	for addr, d := range configurations {
-		tbl.add(addr, d.DeviceName, d.DeviceType, d.BaseTopic, d.WiFiSSID, d.WiFiPassword, d.MQTTHost, d.MQTTPort, d.MQTTClientID, d.MQTTUsername, d.MQTTPassword, d.ConnectionStatus)
-	}
-
-	// show table
-	tbl.show(0)
-}
-
-func rename(cmd *command) {
-	// rename device
-	err := naos.Rename(cmd.aAddress, cmd.aName)
-	exitIfSet(err)
 }
 
 func collect(cmd *command, p *naos.Project) {
