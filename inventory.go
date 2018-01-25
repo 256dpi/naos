@@ -297,6 +297,12 @@ func (i *Inventory) Debug(pattern string, delete bool, duration time.Duration) (
 
 	// fill table
 	for baseTopic, coredump := range coredumps {
+		// ignore zero length coredump
+		if len(coredump) == 0 {
+			continue
+		}
+
+		// add entry
 		table[i.DeviceByBaseTopic(baseTopic)] = coredump
 	}
 
