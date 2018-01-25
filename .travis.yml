@@ -1,0 +1,24 @@
+language: go
+go:
+  - 1.9
+before_install:
+  - go get github.com/Masterminds/glide
+  - go get github.com/mitchellh/gox
+install:
+  - glide install
+script:
+  - make test
+before_deploy:
+  - gox -osarch="darwin/amd64 linux/amd64" -output="./release/naos-{{.OS}}-{{.Arch}}" github.com/shiftr-io/naos/cmd/naos
+  - gzip ./release/*
+deploy:
+  provider: releases
+  api_key:
+    secure: SET
+  skip_cleanup: true
+  file:
+    - ./release/naos-darwin-amd64.gz
+    - ./release/naos-linux-amd64.gz
+  on:
+    repo: shiftr-io/naos
+    tags: true
