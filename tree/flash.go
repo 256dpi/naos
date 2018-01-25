@@ -13,7 +13,7 @@ func Flash(treePath, port string, erase, appOnly bool, out io.Writer) error {
 	espTool := filepath.Join(IDFDirectory(treePath), "components", "esptool_py", "esptool", "esptool.py")
 	bootLoaderBinary := filepath.Join(treePath, "build", "bootloader", "bootloader.bin")
 	projectBinary := filepath.Join(treePath, "build", "naos-project.bin")
-	partitionsBinary := filepath.Join(treePath, "build", "partitions_two_ota.bin")
+	partitionsBinary := filepath.Join(treePath, "build", "partitions.bin")
 
 	// prepare erase flash command
 	eraseFlash := []string{
