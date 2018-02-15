@@ -72,16 +72,21 @@ static void naos_system_configure_wifi() {
 static void naos_system_start_mqtt() {
   // get settings
   char *mqtt_host = naos_ble_get_string(NAOS_BLE_ID_MQTT_HOST);
+  char *mqtt_port = naos_ble_get_string(NAOS_BLE_ID_MQTT_PORT);
   char *mqtt_client_id = naos_ble_get_string(NAOS_BLE_ID_MQTT_CLIENT_ID);
   char *mqtt_username = naos_ble_get_string(NAOS_BLE_ID_MQTT_USERNAME);
   char *mqtt_password = naos_ble_get_string(NAOS_BLE_ID_MQTT_PASSWORD);
   char *base_topic = naos_ble_get_string(NAOS_BLE_ID_BASE_TOPIC);
 
+  // convert port
+  unsigned int mqtt_port_i = (unsigned int)strtol(mqtt_port, NULL, 10);
+
   // start mqtt
-  naos_mqtt_start(mqtt_host, 1883, mqtt_client_id, mqtt_username, mqtt_password, base_topic);
+  naos_mqtt_start(mqtt_host, mqtt_port_i, mqtt_client_id, mqtt_username, mqtt_password, base_topic);
 
   // free strings
   free(mqtt_host);
+  free(mqtt_port);
   free(mqtt_client_id);
   free(mqtt_username);
   free(mqtt_password);
