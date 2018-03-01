@@ -134,7 +134,8 @@ void naos_init(naos_config_t *config);
 void naos_log(const char *fmt, ...);
 
 /**
- * Will return the value of the requested parameter.
+ * Will return the value of the requested parameter. It will return an empty string for not set parameters for
+ * convenience.
  *
  * Note: The returned pointer is only valid until the next call to naos_get().
  *
