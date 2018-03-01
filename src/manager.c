@@ -172,7 +172,11 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     naos_set(param, (const char *)payload);
 
     // update task
-    naos_task_update(param, (const char *)payload);
+    if (len > 0) {
+      naos_task_update(param, (const char *)payload);
+    } else {
+      naos_task_update(param, "");
+    }
 
     // get value
     char *value = naos_get(param);

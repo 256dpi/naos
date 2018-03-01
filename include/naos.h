@@ -60,7 +60,8 @@ typedef struct {
   void (*online_callback)();
 
   /**
-   * The callback that is called when a parameter has been updated.
+   * The callback that is called when a parameter has been updated. If the parameter was set, value is the string value.
+   * If the parameter was unset, value is NULL.
    *
    * @param param - The parameter.
    * @param value - The value.
