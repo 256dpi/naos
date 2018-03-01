@@ -42,7 +42,7 @@ Usage:
   naos list
   naos collect [--clear --duration=<time>]
   naos get <param> [<pattern>] [--timeout=<time>]
-  naos set <param> <value> [<pattern>] [--timeout=<time>]
+  naos set <param> [--] <value> [<pattern>] [--timeout=<time>]
   naos unset <param> [<pattern>] [--timeout=<time>]
   naos monitor [<pattern>] [--timeout=<time>]
   naos record [<pattern>] [--timeout=<time>]
