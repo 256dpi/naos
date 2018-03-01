@@ -32,7 +32,7 @@
  * @param num - The number.
  * @return The number as a string.
  */
-const char *naos_manager_i2str(int32_t num);
+const char *naos_i2str(int32_t num);
 
 /**
  * Convert number to string.
@@ -42,7 +42,7 @@ const char *naos_manager_i2str(int32_t num);
  * @param num - The number.
  * @return The number as a string.
  */
-const char *naos_manager_d2str(double num);
+const char *naos_d2str(double num);
 
 /**
  * Will concatenate two strings and return a new one.

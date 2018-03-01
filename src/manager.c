@@ -375,7 +375,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     naos_update_begin((uint16_t)total);
 
     // request first chunk
-    naos_publish("naos/update/request", naos_manager_i2str(CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE), 0, false, NAOS_LOCAL);
+    naos_publish("naos/update/request", naos_i2str(CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE), 0, false, NAOS_LOCAL);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -390,7 +390,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     ESP_LOGI(NAOS_LOG_TAG, "naos_manager_handle: wrote chunk of %zu bytes", len);
 
     // request next chunk
-    naos_publish("naos/update/request", naos_manager_i2str(CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE), 0, false, NAOS_LOCAL);
+    naos_publish("naos/update/request", naos_i2str(CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE), 0, false, NAOS_LOCAL);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -477,11 +477,11 @@ void naos_set(const char *param, const char *value) {
   ESP_ERROR_CHECK(nvs_set_str(naos_manager_nvs_handle, param, value));
 }
 
-void naos_set_b(const char *param, bool value) { naos_set(param, naos_manager_i2str(value)); }
+void naos_set_b(const char *param, bool value) { naos_set(param, naos_i2str(value)); }
 
-void naos_set_l(const char *param, int32_t value) { naos_set(param, naos_manager_i2str(value)); }
+void naos_set_l(const char *param, int32_t value) { naos_set(param, naos_i2str(value)); }
 
-void naos_set_d(const char *param, double value) { naos_set(param, naos_manager_d2str(value)); }
+void naos_set_d(const char *param, double value) { naos_set(param, naos_d2str(value)); }
 
 bool naos_ensure(const char *param, const char *value) {
   // check parameter
@@ -497,11 +497,11 @@ bool naos_ensure(const char *param, const char *value) {
   return false;
 }
 
-bool naos_ensure_b(const char *param, bool value) { return naos_ensure(param, naos_manager_i2str(value)); }
+bool naos_ensure_b(const char *param, bool value) { return naos_ensure(param, naos_i2str(value)); }
 
-bool naos_ensure_l(const char *param, int32_t value) { return naos_ensure(param, naos_manager_i2str(value)); }
+bool naos_ensure_l(const char *param, int32_t value) { return naos_ensure(param, naos_i2str(value)); }
 
-bool naos_ensure_d(const char *param, double value) { return naos_ensure(param, naos_manager_d2str(value)); }
+bool naos_ensure_d(const char *param, double value) { return naos_ensure(param, naos_d2str(value)); }
 
 bool naos_unset(const char *param) {
   // erase parameter
