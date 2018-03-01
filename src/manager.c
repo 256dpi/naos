@@ -27,18 +27,22 @@ static bool naos_manager_process_started = false;
 
 static bool naos_manager_recording = false;
 
-static struct {
+typedef enum {
+  NAOS_MANAGER_SYNC_TYPE_S,
+  NAOS_MANAGER_SYNC_TYPE_B,
+  NAOS_MANAGER_SYNC_TYPE_L,
+  NAOS_MANAGER_SYNC_TYPE_D,
+} naos_manager_sync_type_t;
+
+typedef struct {
+  naos_manager_sync_type_t type;
   const char *param;
-  char **pointer;
-} naos_sync_registry[NAOS_SYNC_REGISTRY_SIZE];
+  void *pointer;
+} naos_manager_sync_item_t;
 
-static size_t naos_sync_registry_count = 0;
+naos_manager_sync_item_t naos_manager_sync_registry[NAOS_SYNC_REGISTRY_SIZE];
 
-static const char *naos_manager_i2str(int num) {
-  static char str[33];
-  itoa(num, str, 10);
-  return str;
-}
+static size_t naos_manager_sync_registry_count = 0;
 
 static void naos_manager_send_heartbeat() {
   // get device name
@@ -83,6 +87,84 @@ static void naos_manager_process(void *p) {
 
     // wait for next interval
     naos_delay(CONFIG_NAOS_HEARTBEAT_INTERVAL);
+  }
+}
+
+static bool naos_manager_add_sync(const char *param, naos_manager_sync_item_t item) {
+  // check param length
+  if (strlen(param) == 0) {
+    return false;
+  }
+
+  // check registry count
+  if (naos_manager_sync_registry_count >= NAOS_SYNC_REGISTRY_SIZE) {
+    return false;
+  }
+
+  // add entry to registry
+  naos_manager_sync_registry[naos_manager_sync_registry_count] = item;
+
+  // increment counter
+  naos_manager_sync_registry_count++;
+
+  return true;
+}
+
+static void naos_manager_sync_update(const char *param) {
+  // update synchronized variables
+  for (size_t i = 0; i < naos_manager_sync_registry_count; i++) {
+    // get item
+    naos_manager_sync_item_t item = naos_manager_sync_registry[i];
+
+    // check param
+    if (strcmp(item.param, param) != 0) {
+      continue;
+    }
+
+    // check type
+    switch (item.type) {
+      case NAOS_MANAGER_SYNC_TYPE_S: {
+        // get pointer
+        char **pointer = item.pointer;
+
+        // free existing value if pointer is set
+        if (*pointer != NULL) {
+          free(*pointer);
+        }
+
+        // set new value
+        *pointer = strdup(naos_get(param));
+
+        break;
+      }
+      case NAOS_MANAGER_SYNC_TYPE_B: {
+        // get pointer
+        bool *pointer = item.pointer;
+
+        // set new value
+        *pointer = naos_get_b(param);
+
+        break;
+      }
+      case NAOS_MANAGER_SYNC_TYPE_L: {
+        // get pointer
+        int32_t *pointer = item.pointer;
+
+        // set new value
+        *pointer = naos_get_l(param);
+
+        break;
+      }
+      case NAOS_MANAGER_SYNC_TYPE_D: {
+        // get pointer
+        double *pointer = item.pointer;
+
+        // set new value
+        *pointer = naos_get_d(param);
+
+        break;
+      }
+    }
   }
 }
 
@@ -187,33 +269,17 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
       naos_task_update(param, "");
     }
 
-    // get value
-    char *value = naos_get(param);
-
     // construct topic
     char *t = naos_str_concat("naos/value/", param);
 
     // send value
-    naos_publish(t, value, 0, false, NAOS_LOCAL);
+    naos_publish(t, naos_get(param), 0, false, NAOS_LOCAL);
 
     // free topic
     free(t);
 
     // update synchronized variables
-    for (size_t i = 0; i < naos_sync_registry_count; i++) {
-      // check param
-      if (strcmp(naos_sync_registry[i].param, param) != 0) {
-        continue;
-      }
-
-      // free existing value if pointer is set
-      if (*naos_sync_registry[i].pointer != NULL) {
-        free(*naos_sync_registry[i].pointer);
-      }
-
-      // set new value
-      *naos_sync_registry[i].pointer = strdup(value);
-    }
+    naos_manager_sync_update(param);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -231,24 +297,8 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
       naos_task_update(param, NULL);
     }
 
-    // get value
-    char *value = naos_get(param);
-
     // update synchronized variables
-    for (size_t i = 0; i < naos_sync_registry_count; i++) {
-      // check param
-      if (strcmp(naos_sync_registry[i].param, param) != 0) {
-        continue;
-      }
-
-      // free existing value if pointer is set
-      if (*naos_sync_registry[i].pointer != NULL) {
-        free(*naos_sync_registry[i].pointer);
-      }
-
-      // set null pointer
-      *naos_sync_registry[i].pointer = strdup(value);
-    }
+    naos_manager_sync_update(param);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -297,7 +347,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
       naos_coredump_read(sent, chunk, buf);
 
       // publish chunk
-      naos_publish_raw("naos/coredump", buf, chunk, 0, false, NAOS_LOCAL);
+      naos_publish_r("naos/coredump", buf, chunk, 0, false, NAOS_LOCAL);
 
       // increment counter
       sent += chunk;
@@ -418,10 +468,22 @@ char *naos_get(const char *param) {
   return buf;
 }
 
+bool naos_get_b(const char *param) { return strtol(naos_get(param), NULL, 10) == 1; }
+
+int32_t naos_get_l(const char *param) { return (int32_t)strtol(naos_get(param), NULL, 10); }
+
+double naos_get_d(const char *param) { return strtod(naos_get(param), NULL); }
+
 void naos_set(const char *param, const char *value) {
   // set parameter
   ESP_ERROR_CHECK(nvs_set_str(naos_manager_nvs_handle, param, value));
 }
+
+void naos_set_b(const char *param, bool value) { naos_set(param, naos_manager_i2str(value)); }
+
+void naos_set_l(const char *param, int32_t value) { naos_set(param, naos_manager_i2str(value)); }
+
+void naos_set_d(const char *param, double value) { naos_set(param, naos_manager_d2str(value)); }
 
 bool naos_ensure(const char *param, const char *value) {
   // check parameter
@@ -437,6 +499,12 @@ bool naos_ensure(const char *param, const char *value) {
   return false;
 }
 
+bool naos_ensure_b(const char *param, bool value) { return naos_ensure(param, naos_manager_i2str(value)); }
+
+bool naos_ensure_l(const char *param, int32_t value) { return naos_ensure(param, naos_manager_i2str(value)); }
+
+bool naos_ensure_d(const char *param, double value) { return naos_ensure(param, naos_manager_d2str(value)); }
+
 bool naos_unset(const char *param) {
   // erase parameter
   esp_err_t err = nvs_erase_key(naos_manager_nvs_handle, param);
@@ -450,27 +518,71 @@ bool naos_unset(const char *param) {
 }
 
 bool naos_sync(const char *param, char **pointer) {
-  // check param length
-  if (strlen(param) == 0) {
-    return false;
-  }
+  // prepare item
+  naos_manager_sync_item_t item = {
+      .type = NAOS_MANAGER_SYNC_TYPE_S,
+      .param = param,
+      .pointer = pointer,
+  };
 
-  // check registry count
-  if (naos_sync_registry_count >= NAOS_SYNC_REGISTRY_SIZE) {
-    return false;
-  }
-
-  // add entry to registry
-  naos_sync_registry[naos_sync_registry_count].param = strdup(param);
-  naos_sync_registry[naos_sync_registry_count].pointer = pointer;
-
-  // increment counter
-  naos_sync_registry_count++;
+  // add sync item
+  bool ret = naos_manager_add_sync(param, item);
 
   // read current value
   *pointer = strdup(naos_get(param));
 
-  return true;
+  return ret;
+}
+
+bool naos_sync_b(const char *param, bool *pointer) {
+  // prepare item
+  naos_manager_sync_item_t item = {
+      .type = NAOS_MANAGER_SYNC_TYPE_B,
+      .param = param,
+      .pointer = pointer,
+  };
+
+  // add sync item
+  bool ret = naos_manager_add_sync(param, item);
+
+  // read current value
+  *pointer = naos_get_b(param);
+
+  return ret;
+}
+
+bool naos_sync_l(const char *param, int32_t *pointer) {
+  // prepare item
+  naos_manager_sync_item_t item = {
+      .type = NAOS_MANAGER_SYNC_TYPE_L,
+      .param = param,
+      .pointer = pointer,
+  };
+
+  // add sync item
+  bool ret = naos_manager_add_sync(param, item);
+
+  // read current value
+  *pointer = naos_get_l(param);
+
+  return ret;
+}
+
+bool naos_sync_d(const char *param, double *pointer) {
+  // prepare item
+  naos_manager_sync_item_t item = {
+      .type = NAOS_MANAGER_SYNC_TYPE_D,
+      .param = param,
+      .pointer = pointer,
+  };
+
+  // add sync item
+  bool ret = naos_manager_add_sync(param, item);
+
+  // read current value
+  *pointer = naos_get_d(param);
+
+  return ret;
 }
 
 void naos_manager_stop() {

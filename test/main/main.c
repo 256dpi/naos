@@ -10,6 +10,8 @@ static char *message = NULL;
 
 static char *shadow = NULL;
 
+static double var = 0;
+
 static void ping() { naos_log("ping received!"); }
 
 static void online() {
@@ -76,6 +78,9 @@ static void loop() {
     naos_log("shadow: NULL");
   }
 
+  // log var
+  naos_log("var: %f", var);
+
   // save counter
   char buf[16];
   snprintf(buf, 16, "%d", counter);
@@ -112,4 +117,7 @@ void app_main() {
 
   // synchronize shadow
   naos_sync("shadow", &shadow);
+
+  // synchronize var
+  naos_sync_d("var", &var);
 }

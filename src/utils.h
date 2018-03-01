@@ -25,6 +25,26 @@
 #define NAOS_UNLOCK(mutex) xSemaphoreGive(mutex)
 
 /**
+ * Convert number to string.
+ *
+ * Note: The returned string is valid until the next invocation.
+ *
+ * @param num - The number.
+ * @return The number as a string.
+ */
+const char *naos_manager_i2str(int32_t num);
+
+/**
+ * Convert number to string.
+ *
+ * Note: The returned string is valid until the next invocation.
+ *
+ * @param num - The number.
+ * @return The number as a string.
+ */
+const char *naos_manager_d2str(double num);
+
+/**
  * Will concatenate two strings and return a new one.
  *
  * Note: The caller is responsible to free the returned buffer.
