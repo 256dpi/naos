@@ -106,6 +106,18 @@ bool naos_publish(const char *topic, const char *payload, int qos, bool retained
   return naos_publish_r(topic, (char *)payload, strlen(payload), qos, retained, scope);
 }
 
+bool naos_publish_b(const char *topic, bool payload, int qos, bool retained, naos_scope_t scope) {
+  return naos_publish(topic, naos_i2str(payload), qos, retained, scope);
+}
+
+bool naos_publish_l(const char *topic, int32_t payload, int qos, bool retained, naos_scope_t scope) {
+  return naos_publish(topic, naos_i2str(payload), qos, retained, scope);
+}
+
+bool naos_publish_d(const char *topic, double payload, int qos, bool retained, naos_scope_t scope) {
+  return naos_publish(topic, naos_d2str(payload), qos, retained, scope);
+}
+
 bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool retained, naos_scope_t scope) {
   // add base topic if scope is local
   if (scope == NAOS_LOCAL) {
