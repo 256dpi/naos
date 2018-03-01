@@ -8,6 +8,8 @@ static int counter = 0;
 
 static char *message = NULL;
 
+static char *shadow = NULL;
+
 static void ping() { naos_log("ping received!"); }
 
 static void online() {
@@ -25,7 +27,11 @@ static void online() {
 
 static void update(const char *param, const char *value) {
   // log param change
-  naos_log("param %s updated to %s", param, value);
+  if (value != NULL) {
+    naos_log("param %s updated to %s", param, value);
+  } else {
+    naos_log("param %s updated to NULL", param);
+  }
 
   // set counter
   if (strcmp(param, "counter") == 0) {
@@ -63,6 +69,13 @@ static void loop() {
   // publish message
   naos_publish("hello", message, 0, false, NAOS_LOCAL);
 
+  // log shadow
+  if (shadow != NULL) {
+    naos_log("shadow: %s", shadow);
+  } else {
+    naos_log("shadow: NULL");
+  }
+
   // save counter
   char buf[16];
   snprintf(buf, 16, "%d", counter);
@@ -96,4 +109,7 @@ void app_main() {
 
   // set message default
   naos_ensure("message", "world");
+
+  // synchronize shadow
+  naos_sync("shadow", &shadow);
 }

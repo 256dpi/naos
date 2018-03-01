@@ -43,6 +43,9 @@ monitor: test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
 	@clear
 	miniterm.py /dev/cu.SLAB_USBtoUART 115200 --rts 0 --dtr 0 --raw --exit-char 99
 
+idf-monitor: test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
+	export PATH=$(shell pwd)/test/xtensa-esp32-elf/bin:$$PATH; cd ./test; make monitor
+
 config:
 	export PATH=$(shell pwd)/test/xtensa-esp32-elf/bin:$$PATH; cd ./test; make menuconfig
 

@@ -170,6 +170,19 @@ bool naos_ensure(const char *param, const char *value);
 bool naos_unset(const char *param);
 
 /**
+ * Will automatically apply parameter modifications and set the specified pointer to a buffer that contains the set
+ * value or an empty string if unset. It will read the currently stored value when called.
+ *
+ * Note: This function should only be called from app_main() to ensure only one synchronization is registered per
+ * parameter.
+ *
+ * @param param - The parameter.
+ * @param pointer - The pointer.
+ * @return Whether the registration was successful.
+ */
+bool naos_sync(const char *param, char **pointer);
+
+/**
  * Subscribe to specified topic.
  *
  * The topic is automatically prefixed with the configured base topic if the scope is local.
