@@ -134,8 +134,7 @@ void naos_init(naos_config_t *config);
 void naos_log(const char *fmt, ...);
 
 /**
- * Will return the value of the requested parameter. It will return an empty string for not set parameters for
- * convenience.
+ * Will return the value of the requested parameter. It will return an empty string for not set parameters.
  *
  * Note: The returned pointer is only valid until the next call to naos_get().
  *
@@ -144,10 +143,28 @@ void naos_log(const char *fmt, ...);
  */
 char *naos_get(const char *param);
 
+/**
+ * Will return the value of the requested parameter.
+ *
+ * @param param - The parameter.
+ * @return Pointer to value.
+ */
 bool naos_get_b(const char *param);
 
+/**
+ * Will return the value of the requested parameter.
+ *
+ * @param param - The parameter.
+ * @return Pointer to value.
+ */
 int32_t naos_get_l(const char *param);
 
+/**
+ * Will return the value of the requested parameter.
+ *
+ * @param param - The parameter.
+ * @return Pointer to value.
+ */
 double naos_get_d(const char *param);
 
 /**
@@ -158,10 +175,28 @@ double naos_get_d(const char *param);
  */
 void naos_set(const char *param, const char *value);
 
+/**
+ * Will set the value of the requested parameter.
+ *
+ * @param param - The parameter.
+ * @param value - The value.
+ */
 void naos_set_b(const char *param, bool value);
 
+/**
+ * Will set the value of the requested parameter.
+ *
+ * @param param - The parameter.
+ * @param value - The value.
+ */
 void naos_set_l(const char *param, int32_t value);
 
+/**
+ * Will set the value of the requested parameter.
+ *
+ * @param param - The parameter.
+ * @param value - The value.
+ */
 void naos_set_d(const char *param, double value);
 
 /**
@@ -173,10 +208,31 @@ void naos_set_d(const char *param, double value);
  */
 bool naos_ensure(const char *param, const char *value);
 
+/**
+ * Ensure a default value of a parameter if it is missing.
+ *
+ * @param param - The parameter.
+ * @param value - The value.
+ * @return Whether the parameter was set.
+ */
 bool naos_ensure_b(const char *param, bool value);
 
+/**
+ * Ensure a default value of a parameter if it is missing.
+ *
+ * @param param - The parameter.
+ * @param value - The value.
+ * @return Whether the parameter was set.
+ */
 bool naos_ensure_l(const char *param, int32_t value);
 
+/**
+ * Ensure a default value of a parameter if it is missing.
+ *
+ * @param param - The parameter.
+ * @param value - The value.
+ * @return Whether the parameter was set.
+ */
 bool naos_ensure_d(const char *param, double value);
 
 /**
@@ -189,7 +245,7 @@ bool naos_unset(const char *param);
 
 /**
  * Will automatically apply parameter modifications and set the specified pointer to a buffer that contains the set
- * value or an empty string if unset. It will read the currently stored value when called.
+ * value or an empty string if unset.  It will read and set the currently stored value when invoked.
  *
  * Note: This function should only be called from app_main() to ensure only one synchronization is registered per
  * parameter.
@@ -200,10 +256,43 @@ bool naos_unset(const char *param);
  */
 bool naos_sync(const char *param, char **pointer);
 
+/**
+ * Will automatically apply parameter modifications and set the specified pointer to the set value. It will read and
+ * set the currently stored value when invoked.
+ *
+ * Note: This function should only be called from app_main() to ensure only one synchronization is registered per
+ * parameter.
+ *
+ * @param param - The parameter.
+ * @param pointer - The pointer.
+ * @return Whether the registration was successful.
+ */
 bool naos_sync_b(const char *param, bool *pointer);
 
+/**
+ * Will automatically apply parameter modifications and set the specified pointer to the set value. It will read and
+ * set the currently stored value when invoked.
+ *
+ * Note: This function should only be called from app_main() to ensure only one synchronization is registered per
+ * parameter.
+ *
+ * @param param - The parameter.
+ * @param pointer - The pointer.
+ * @return Whether the registration was successful.
+ */
 bool naos_sync_l(const char *param, int32_t *pointer);
 
+/**
+ * Will automatically apply parameter modifications and set the specified pointer to the set value. It will read and
+ * set the currently stored value when invoked.
+ *
+ * Note: This function should only be called from app_main() to ensure only one synchronization is registered per
+ * parameter.
+ *
+ * @param param - The parameter.
+ * @param pointer - The pointer.
+ * @return Whether the registration was successful.
+ */
 bool naos_sync_d(const char *param, double *pointer);
 
 /**
@@ -229,7 +318,7 @@ bool naos_subscribe(const char *topic, int qos, naos_scope_t scope);
 bool naos_unsubscribe(const char *topic, naos_scope_t scope);
 
 /**
- * Publish string to specified topic.
+ * Publish to the specified topic.
  *
  * The topic is automatically prefixed with the configured base topic if the scope is local.
  *
@@ -242,12 +331,60 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope);
  */
 bool naos_publish(const char *topic, const char *payload, int qos, bool retained, naos_scope_t scope);
 
+/**
+ * Publish to the specified topic.
+ *
+ * The topic is automatically prefixed with the configured base topic if the scope is local.
+ *
+ * @param topic - The topic.
+ * @param payload - The payload.
+ * @param qos - The QoS level.
+ * @param retained - The retained flag.
+ * @param scope - The scope.
+ * @return Whether the command was successful.
+ */
 bool naos_publish_b(const char *topic, bool payload, int qos, bool retained, naos_scope_t scope);
 
+/**
+ * Publish to the specified topic.
+ *
+ * The topic is automatically prefixed with the configured base topic if the scope is local.
+ *
+ * @param topic - The topic.
+ * @param payload - The payload.
+ * @param qos - The QoS level.
+ * @param retained - The retained flag.
+ * @param scope - The scope.
+ * @return Whether the command was successful.
+ */
 bool naos_publish_l(const char *topic, int32_t payload, int qos, bool retained, naos_scope_t scope);
 
+/**
+ * Publish to the specified topic.
+ *
+ * The topic is automatically prefixed with the configured base topic if the scope is local.
+ *
+ * @param topic - The topic.
+ * @param payload - The payload.
+ * @param qos - The QoS level.
+ * @param retained - The retained flag.
+ * @param scope - The scope.
+ * @return Whether the command was successful.
+ */
 bool naos_publish_d(const char *topic, double payload, int qos, bool retained, naos_scope_t scope);
 
+/**
+ * Publish to the specified topic.
+ *
+ * The topic is automatically prefixed with the configured base topic if the scope is local.
+ *
+ * @param topic - The topic.
+ * @param payload - The payload.
+ * @param qos - The QoS level.
+ * @param retained - The retained flag.
+ * @param scope - The scope.
+ * @return Whether the command was successful.
+ */
 bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool retained, naos_scope_t scope);
 
 /**
