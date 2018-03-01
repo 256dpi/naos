@@ -194,8 +194,6 @@ void naos_manager_start() {
   ESP_LOGI(NAOS_LOG_TAG, "naos_manager_start: create task");
   xTaskCreatePinnedToCore(naos_manager_process, "naos-manager", 2048, NULL, 2, &naos_manager_task, 1);
 
-  // TODO: Optimize by issuing all subscriptions at once.
-
   // subscribe to global topics
   naos_subscribe("naos/collect", 0, NAOS_GLOBAL);
 

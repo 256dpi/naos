@@ -24,8 +24,6 @@ void naos_update_begin(uint16_t size) {
 
   // end a previous update and discard its result
   if (naos_update_handle != 0) {
-    // TODO: A esp_ota_cancel() function would be more appropriate here. (Check upstream)
-
     esp_ota_end(naos_update_handle);
     naos_update_handle = 0;
   }
@@ -36,8 +34,6 @@ void naos_update_begin(uint16_t size) {
   // get update partition
   naos_update_partition = esp_ota_get_next_update_partition(NULL);
   assert(naos_update_partition != NULL);
-
-  // TODO: If we pass in the total, esp_ota_begin() crashes. (Check upstream)
 
   // begin update
   ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, 0, &naos_update_handle));
@@ -56,8 +52,6 @@ void naos_update_write(uint8_t *chunk, uint16_t len) {
     NAOS_UNLOCK(naos_update_mutex);
     return;
   }
-
-  // TODO: Calling esp_ota_write() is very slow. Are there options for speeding it up? (Check upstream)
 
   // write chunk
   ESP_ERROR_CHECK(esp_ota_write(naos_update_handle, (const void *)chunk, len));
