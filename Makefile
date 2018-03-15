@@ -17,18 +17,18 @@ test/xtensa-esp32-elf:
 test/esp-idf:
 	git clone --recursive  https://github.com/espressif/esp-idf.git test/esp-idf
 	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
-	cd test/esp-idf/; git submodule update --recursive
+	cd test/esp-idf; git submodule update --recursive
 
 test/components/esp-mqtt:
 	git clone --recursive  https://github.com/256dpi/esp-mqtt.git test/components/esp-mqtt
-	cd test/components/esp-mqtt/; git fetch; git checkout $(ESP_MQTT_VERSION)
-	cd test/components/esp-mqtt/; git submodule update --recursive
+	cd test/components/esp-mqtt; git fetch; git checkout $(ESP_MQTT_VERSION)
+	cd test/components/esp-mqtt; git submodule update --recursive
 
 update:
 	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
-	cd test/esp-idf/; git submodule update --recursive
-	cd test/components/esp-mqtt/; git fetch; git checkout $(ESP_MQTT_VERSION)
-	cd test/components/esp-mqtt/; git submodule update --recursive
+	cd test/esp-idf; git submodule update --recursive
+	cd test/components/esp-mqtt; git fetch; git checkout $(ESP_MQTT_VERSION)
+	cd test/components/esp-mqtt; git submodule update --recursive
 
 build: test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
 	export PATH=$(shell pwd)/test/xtensa-esp32-elf/bin:$$PATH; cd ./test; make
