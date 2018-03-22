@@ -78,11 +78,8 @@ static void naos_system_start_mqtt() {
   char *mqtt_password = naos_ble_get_string(NAOS_BLE_ID_MQTT_PASSWORD);
   char *base_topic = naos_ble_get_string(NAOS_BLE_ID_BASE_TOPIC);
 
-  // convert port
-  unsigned int mqtt_port_i = (unsigned int)strtol(mqtt_port, NULL, 10);
-
   // start mqtt
-  naos_mqtt_start(mqtt_host, mqtt_port_i, mqtt_client_id, mqtt_username, mqtt_password, base_topic);
+  naos_mqtt_start(mqtt_host, mqtt_port, mqtt_client_id, mqtt_username, mqtt_password, base_topic);
 
   // free strings
   free(mqtt_host);

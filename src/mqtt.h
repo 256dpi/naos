@@ -30,8 +30,8 @@ void naos_mqtt_init(esp_mqtt_status_callback_t scb, naos_mqtt_message_callback_t
  * @param password - The client password.
  * @param base_topic - The base topic.
  */
-void naos_mqtt_start(const char *host, unsigned int port, const char *client_id, const char *username,
-                     const char *password, const char *base_topic);
+void naos_mqtt_start(const char *host, char *port, const char *client_id, const char *username, const char *password,
+                     const char *base_topic);
 
 /**
  * Stop the MQTT process.
