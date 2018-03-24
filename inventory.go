@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/ryanuber/go-glob"
@@ -175,6 +176,28 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 	}
 
 	return newDevices, nil
+}
+
+// Send will send a message to all devices matching the supplied glob pattern.
+func (i *Inventory) Send(pattern, topic, message string, timeout time.Duration) error {
+	// get base topics
+	baseTopics := i.DeviceBaseTopics(pattern)
+
+	// prepare new list
+	topics := make([]string, 0, len(baseTopics))
+
+	// generate topics
+	for _, bt := range baseTopics {
+		topics = append(topics, bt+"/"+strings.Trim(topic, "/"))
+	}
+
+	// send message to the generated topics
+	err := mqtt.Send(i.Broker, topics, message, timeout)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetParams will request specified parameter from all devices matching the supplied

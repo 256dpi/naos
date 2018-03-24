@@ -23,6 +23,7 @@ Project Management:
 Fleet Management:
   list     Will list all devices listed in the inventory.
   collect  Will collect devices and add them to the inventory.
+  send     Will send a message to all devices.
   get      Will read a parameter value from devices.
   set      Will set a parameter value on devices.
   unset    Will unset a parameter on devices.
@@ -41,6 +42,7 @@ Usage:
   naos format
   naos list
   naos collect [--clear --duration=<time>]
+  naos send <topic> [--] <message> [<pattern>] [--timeout=<time>]
   naos get <param> [<pattern>] [--timeout=<time>]
   naos set <param> [--] <value> [<pattern>] [--timeout=<time>]
   naos unset <param> [<pattern>] [--timeout=<time>]
@@ -75,6 +77,7 @@ type command struct {
 	cFormat  bool
 	cList    bool
 	cCollect bool
+	cSend    bool
 	cGet     bool
 	cSet     bool
 	cUnset   bool
@@ -88,6 +91,8 @@ type command struct {
 	aDevice  string
 	aParam   string
 	aPattern string
+	aTopic   string
+	aMessage string
 	aValue   string
 
 	// options
@@ -119,6 +124,7 @@ func parseCommand() *command {
 		cFormat:  getBool(a["format"]),
 		cList:    getBool(a["list"]),
 		cCollect: getBool(a["collect"]),
+		cSend:    getBool(a["send"]),
 		cGet:     getBool(a["get"]),
 		cSet:     getBool(a["set"]),
 		cUnset:   getBool(a["unset"]),
@@ -131,6 +137,8 @@ func parseCommand() *command {
 		// arguments
 		aDevice:  getString(a["<device>"]),
 		aPattern: getString(a["<pattern>"]),
+		aTopic:   getString(a["<topic>"]),
+		aMessage: getString(a["<message>"]),
 		aParam:   getString(a["<param>"]),
 		aValue:   getString(a["<value>"]),
 

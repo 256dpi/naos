@@ -43,6 +43,8 @@ func main() {
 		list(cmd, getProject(cmd))
 	} else if cmd.cCollect {
 		collect(cmd, getProject(cmd))
+	} else if cmd.cSend {
+		send(cmd, getProject(cmd))
 	} else if cmd.cGet {
 		get(cmd, getProject(cmd))
 	} else if cmd.cSet {
@@ -143,6 +145,11 @@ func collect(cmd *command, p *naos.Project) {
 
 	// save inventory
 	exitIfSet(p.SaveInventory())
+}
+
+func send(cmd *command, p *naos.Project) {
+	// send message
+	exitIfSet(p.Inventory.Send(cmd.aPattern, cmd.aTopic, cmd.aMessage, cmd.oTimeout))
 }
 
 func get(cmd *command, p *naos.Project) {
@@ -259,6 +266,7 @@ func record(cmd *command, p *naos.Project) {
 }
 
 func debug(cmd *command, p *naos.Project) {
+	// debug devices
 	exitIfSet(p.Debug(cmd.aPattern, cmd.oDelete, cmd.oDuration, os.Stdout))
 }
 
