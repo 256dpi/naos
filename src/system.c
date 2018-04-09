@@ -56,7 +56,7 @@ static void naos_system_set_status(naos_status_t status) {
   naos_system_status = status;
 
   // update connection status
-  naos_ble_notify(NAOS_BLE_ID_CONNECTION_STATUS, (char *)name);
+  naos_ble_notify(NAOS_BLE_CHAR_CONNECTION_STATUS, (char *)name);
 
   // notify task
   naos_task_notify(status);
@@ -191,71 +191,71 @@ static void naos_system_handle_command(const char *command) {
   NAOS_UNLOCK(naos_system_mutex);
 }
 
-static char *naos_system_read_callback(naos_ble_id_t id) {
-  switch (id) {
-    case NAOS_BLE_ID_WIFI_SSID:
+static char *naos_system_read_callback(naos_ble_char_t ch) {
+  switch (ch) {
+    case NAOS_BLE_CHAR_WIFI_SSID:
       return naos_settings_read(NAOS_SETTING_WIFI_SSID);
-    case NAOS_BLE_ID_WIFI_PASSWORD:
+    case NAOS_BLE_CHAR_WIFI_PASSWORD:
       return naos_settings_read(NAOS_SETTING_WIFI_PASSWORD);
-    case NAOS_BLE_ID_MQTT_HOST:
+    case NAOS_BLE_CHAR_MQTT_HOST:
       return naos_settings_read(NAOS_SETTING_MQTT_HOST);
-    case NAOS_BLE_ID_MQTT_PORT:
+    case NAOS_BLE_CHAR_MQTT_PORT:
       return naos_settings_read(NAOS_SETTING_MQTT_PORT);
-    case NAOS_BLE_ID_MQTT_CLIENT_ID:
+    case NAOS_BLE_CHAR_MQTT_CLIENT_ID:
       return naos_settings_read(NAOS_SETTING_MQTT_CLIENT_ID);
-    case NAOS_BLE_ID_MQTT_USERNAME:
+    case NAOS_BLE_CHAR_MQTT_USERNAME:
       return naos_settings_read(NAOS_SETTING_MQTT_USERNAME);
-    case NAOS_BLE_ID_MQTT_PASSWORD:
+    case NAOS_BLE_CHAR_MQTT_PASSWORD:
       return naos_settings_read(NAOS_SETTING_MQTT_PASSWORD);
-    case NAOS_BLE_ID_DEVICE_TYPE:
+    case NAOS_BLE_CHAR_DEVICE_TYPE:
       return strdup(naos_config()->device_type);
-    case NAOS_BLE_ID_DEVICE_NAME:
+    case NAOS_BLE_CHAR_DEVICE_NAME:
       return naos_settings_read(NAOS_SETTING_DEVICE_NAME);
-    case NAOS_BLE_ID_BASE_TOPIC:
+    case NAOS_BLE_CHAR_BASE_TOPIC:
       return naos_settings_read(NAOS_SETTING_BASE_TOPIC);
-    case NAOS_BLE_ID_CONNECTION_STATUS:
+    case NAOS_BLE_CHAR_CONNECTION_STATUS:
       return strdup(naos_system_status_string(naos_system_status));
-    case NAOS_BLE_ID_COMMAND:
+    case NAOS_BLE_CHAR_COMMAND:
       return NULL;
   }
 
   return NULL;
 }
 
-static void naos_system_write_callback(naos_ble_id_t id, const char *value) {
-  switch (id) {
-    case NAOS_BLE_ID_WIFI_SSID:
+static void naos_system_write_callback(naos_ble_char_t ch, const char *value) {
+  switch (ch) {
+    case NAOS_BLE_CHAR_WIFI_SSID:
       naos_settings_write(NAOS_SETTING_WIFI_SSID, value);
       return;
-    case NAOS_BLE_ID_WIFI_PASSWORD:
+    case NAOS_BLE_CHAR_WIFI_PASSWORD:
       naos_settings_write(NAOS_SETTING_WIFI_PASSWORD, value);
       return;
-    case NAOS_BLE_ID_MQTT_HOST:
+    case NAOS_BLE_CHAR_MQTT_HOST:
       naos_settings_write(NAOS_SETTING_MQTT_HOST, value);
       return;
-    case NAOS_BLE_ID_MQTT_PORT:
+    case NAOS_BLE_CHAR_MQTT_PORT:
       naos_settings_write(NAOS_SETTING_MQTT_PORT, value);
       return;
-    case NAOS_BLE_ID_MQTT_CLIENT_ID:
+    case NAOS_BLE_CHAR_MQTT_CLIENT_ID:
       naos_settings_write(NAOS_SETTING_MQTT_CLIENT_ID, value);
       return;
-    case NAOS_BLE_ID_MQTT_USERNAME:
+    case NAOS_BLE_CHAR_MQTT_USERNAME:
       naos_settings_write(NAOS_SETTING_MQTT_USERNAME, value);
       return;
-    case NAOS_BLE_ID_MQTT_PASSWORD:
+    case NAOS_BLE_CHAR_MQTT_PASSWORD:
       naos_settings_write(NAOS_SETTING_MQTT_PASSWORD, value);
       return;
-    case NAOS_BLE_ID_DEVICE_TYPE:
+    case NAOS_BLE_CHAR_DEVICE_TYPE:
       return;
-    case NAOS_BLE_ID_DEVICE_NAME:
+    case NAOS_BLE_CHAR_DEVICE_NAME:
       naos_settings_write(NAOS_SETTING_DEVICE_NAME, value);
       return;
-    case NAOS_BLE_ID_BASE_TOPIC:
+    case NAOS_BLE_CHAR_BASE_TOPIC:
       naos_settings_write(NAOS_SETTING_BASE_TOPIC, value);
       return;
-    case NAOS_BLE_ID_CONNECTION_STATUS:
+    case NAOS_BLE_CHAR_CONNECTION_STATUS:
       return;
-    case NAOS_BLE_ID_COMMAND:
+    case NAOS_BLE_CHAR_COMMAND:
       naos_system_handle_command(value);
       return;
   }
