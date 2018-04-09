@@ -343,6 +343,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
           // send error response
           ESP_ERROR_CHECK(
               esp_ble_gatts_send_response(i, p->read.conn_id, p->read.trans_id, ESP_GATT_READ_NOT_PERMIT, NULL));
+          NAOS_UNLOCK(naos_ble_mutex);
           return;
         }
 
@@ -354,7 +355,9 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         rsp.attr_value.handle = c->handle;
 
         // call callback
+        NAOS_UNLOCK(naos_ble_mutex);
         char *value = naos_ble_read_callback(c->ch);
+        NAOS_LOCK(naos_ble_mutex);
 
         // set value
         strcpy((char *)rsp.attr_value.value, value);
@@ -406,6 +409,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
           // send error response
           ESP_ERROR_CHECK(
               esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, ESP_GATT_WRITE_NOT_PERMIT, NULL));
+          NAOS_UNLOCK(naos_ble_mutex);
           return;
         }
 
@@ -414,6 +418,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
           // send error response
           ESP_ERROR_CHECK(
               esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, ESP_GATT_INVALID_ATTR_LEN, NULL));
+          NAOS_UNLOCK(naos_ble_mutex);
           return;
         }
 
@@ -423,7 +428,12 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         value[p->write.len] = '\0';
 
         // call callback
+        NAOS_UNLOCK(naos_ble_mutex);
         naos_ble_write_callback(c->ch, value);
+        NAOS_LOCK(naos_ble_mutex);
+
+        // free value
+        free(value);
 
         // send response if requested
         if (p->write.need_rsp) {
