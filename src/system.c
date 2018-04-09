@@ -10,6 +10,7 @@
 #include "manager.h"
 #include "mqtt.h"
 #include "naos.h"
+#include "settings.h"
 #include "task.h"
 #include "update.h"
 #include "utils.h"
@@ -19,7 +20,7 @@ SemaphoreHandle_t naos_system_mutex;
 
 static naos_status_t naos_system_status;
 
-static void naos_system_set_status(naos_status_t status) {
+static const char *naos_system_status_string(naos_status_t status) {
   // default state name
   const char *name = "Unknown";
 
@@ -31,24 +32,31 @@ static void naos_system_set_status(naos_status_t status) {
       break;
     }
 
-    // handle connected state
+      // handle connected state
     case NAOS_CONNECTED: {
       name = "Connected";
       break;
     }
 
-    // handle networked state
+      // handle networked state
     case NAOS_NETWORKED: {
       name = "Networked";
       break;
     }
   }
 
+  return name;
+}
+
+static void naos_system_set_status(naos_status_t status) {
+  // get name
+  const char *name = naos_system_status_string(status);
+
   // change state
   naos_system_status = status;
 
   // update connection status
-  naos_ble_set_string(NAOS_BLE_ID_CONNECTION_STATUS, (char *)name);
+  naos_ble_notify(NAOS_BLE_ID_CONNECTION_STATUS, (char *)name);
 
   // notify task
   naos_task_notify(status);
@@ -58,8 +66,8 @@ static void naos_system_set_status(naos_status_t status) {
 
 static void naos_system_configure_wifi() {
   // get ssid & password
-  char *wifi_ssid = naos_ble_get_string(NAOS_BLE_ID_WIFI_SSID);
-  char *wifi_password = naos_ble_get_string(NAOS_BLE_ID_WIFI_PASSWORD);
+  char *wifi_ssid = naos_settings_read(NAOS_SETTING_WIFI_SSID);
+  char *wifi_password = naos_settings_read(NAOS_SETTING_WIFI_PASSWORD);
 
   // configure wifi
   naos_wifi_configure(wifi_ssid, wifi_password);
@@ -71,12 +79,12 @@ static void naos_system_configure_wifi() {
 
 static void naos_system_start_mqtt() {
   // get settings
-  char *mqtt_host = naos_ble_get_string(NAOS_BLE_ID_MQTT_HOST);
-  char *mqtt_port = naos_ble_get_string(NAOS_BLE_ID_MQTT_PORT);
-  char *mqtt_client_id = naos_ble_get_string(NAOS_BLE_ID_MQTT_CLIENT_ID);
-  char *mqtt_username = naos_ble_get_string(NAOS_BLE_ID_MQTT_USERNAME);
-  char *mqtt_password = naos_ble_get_string(NAOS_BLE_ID_MQTT_PASSWORD);
-  char *base_topic = naos_ble_get_string(NAOS_BLE_ID_BASE_TOPIC);
+  char *mqtt_host = naos_settings_read(NAOS_SETTING_MQTT_HOST);
+  char *mqtt_port = naos_settings_read(NAOS_SETTING_MQTT_PORT);
+  char *mqtt_client_id = naos_settings_read(NAOS_SETTING_MQTT_CLIENT_ID);
+  char *mqtt_username = naos_settings_read(NAOS_SETTING_MQTT_USERNAME);
+  char *mqtt_password = naos_settings_read(NAOS_SETTING_MQTT_PASSWORD);
+  char *base_topic = naos_settings_read(NAOS_SETTING_BASE_TOPIC);
 
   // start mqtt
   naos_mqtt_start(mqtt_host, mqtt_port, mqtt_client_id, mqtt_username, mqtt_password, base_topic);
@@ -90,26 +98,15 @@ static void naos_system_start_mqtt() {
   free(base_topic);
 }
 
-static void naos_system_ble_callback(naos_ble_id_t id) {
-  // dismiss any other changed characteristic
-  if (id != NAOS_BLE_ID_COMMAND) {
-    return;
-  }
-
+static void naos_system_handle_command(const char *command) {
   // acquire mutex
   NAOS_LOCK(naos_system_mutex);
 
-  // get value
-  char *value = naos_ble_get_string(NAOS_BLE_ID_COMMAND);
-
   // detect command
-  bool ping = strcmp(value, "ping") == 0;
-  bool restart_mqtt = strcmp(value, "restart-mqtt") == 0;
-  bool restart_wifi = strcmp(value, "restart-wifi") == 0;
-  bool boot_factory = strcmp(value, "boot-factory") == 0;
-
-  // free string
-  free(value);
+  bool ping = strcmp(command, "ping") == 0;
+  bool restart_mqtt = strcmp(command, "restart-mqtt") == 0;
+  bool restart_wifi = strcmp(command, "restart-wifi") == 0;
+  bool boot_factory = strcmp(command, "boot-factory") == 0;
 
   // handle ping
   if (ping) {
@@ -192,6 +189,76 @@ static void naos_system_ble_callback(naos_ble_id_t id) {
 
   // release mutex
   NAOS_UNLOCK(naos_system_mutex);
+}
+
+static char *naos_system_read_callback(naos_ble_id_t id) {
+  switch (id) {
+    case NAOS_BLE_ID_WIFI_SSID:
+      return naos_settings_read(NAOS_SETTING_WIFI_SSID);
+    case NAOS_BLE_ID_WIFI_PASSWORD:
+      return naos_settings_read(NAOS_SETTING_WIFI_PASSWORD);
+    case NAOS_BLE_ID_MQTT_HOST:
+      return naos_settings_read(NAOS_SETTING_MQTT_HOST);
+    case NAOS_BLE_ID_MQTT_PORT:
+      return naos_settings_read(NAOS_SETTING_MQTT_PORT);
+    case NAOS_BLE_ID_MQTT_CLIENT_ID:
+      return naos_settings_read(NAOS_SETTING_MQTT_CLIENT_ID);
+    case NAOS_BLE_ID_MQTT_USERNAME:
+      return naos_settings_read(NAOS_SETTING_MQTT_USERNAME);
+    case NAOS_BLE_ID_MQTT_PASSWORD:
+      return naos_settings_read(NAOS_SETTING_MQTT_PASSWORD);
+    case NAOS_BLE_ID_DEVICE_TYPE:
+      return strdup(naos_config()->device_type);
+    case NAOS_BLE_ID_DEVICE_NAME:
+      return naos_settings_read(NAOS_SETTING_DEVICE_NAME);
+    case NAOS_BLE_ID_BASE_TOPIC:
+      return naos_settings_read(NAOS_SETTING_BASE_TOPIC);
+    case NAOS_BLE_ID_CONNECTION_STATUS:
+      return strdup(naos_system_status_string(naos_system_status));
+    case NAOS_BLE_ID_COMMAND:
+      return NULL;
+  }
+
+  return NULL;
+}
+
+static void naos_system_write_callback(naos_ble_id_t id, const char *value) {
+  switch (id) {
+    case NAOS_BLE_ID_WIFI_SSID:
+      naos_settings_write(NAOS_SETTING_WIFI_SSID, value);
+      return;
+    case NAOS_BLE_ID_WIFI_PASSWORD:
+      naos_settings_write(NAOS_SETTING_WIFI_PASSWORD, value);
+      return;
+    case NAOS_BLE_ID_MQTT_HOST:
+      naos_settings_write(NAOS_SETTING_MQTT_HOST, value);
+      return;
+    case NAOS_BLE_ID_MQTT_PORT:
+      naos_settings_write(NAOS_SETTING_MQTT_PORT, value);
+      return;
+    case NAOS_BLE_ID_MQTT_CLIENT_ID:
+      naos_settings_write(NAOS_SETTING_MQTT_CLIENT_ID, value);
+      return;
+    case NAOS_BLE_ID_MQTT_USERNAME:
+      naos_settings_write(NAOS_SETTING_MQTT_USERNAME, value);
+      return;
+    case NAOS_BLE_ID_MQTT_PASSWORD:
+      naos_settings_write(NAOS_SETTING_MQTT_PASSWORD, value);
+      return;
+    case NAOS_BLE_ID_DEVICE_TYPE:
+      return;
+    case NAOS_BLE_ID_DEVICE_NAME:
+      naos_settings_write(NAOS_SETTING_DEVICE_NAME, value);
+      return;
+    case NAOS_BLE_ID_BASE_TOPIC:
+      naos_settings_write(NAOS_SETTING_BASE_TOPIC, value);
+      return;
+    case NAOS_BLE_ID_CONNECTION_STATUS:
+      return;
+    case NAOS_BLE_ID_COMMAND:
+      naos_system_handle_command(value);
+      return;
+  }
 }
 
 static void naos_system_wifi_callback(naos_wifi_status_t status) {
@@ -303,6 +370,9 @@ void naos_system_init() {
   // initialize flash memory
   ESP_ERROR_CHECK(nvs_flash_init());
 
+  // init settings
+  naos_settings_init();
+
   // init task
   naos_task_init();
 
@@ -310,7 +380,7 @@ void naos_system_init() {
   naos_manager_init();
 
   // initialize bluetooth stack
-  naos_ble_init(naos_system_ble_callback, naos_config()->device_type);
+  naos_ble_init(naos_system_read_callback, naos_system_write_callback);
 
   // initialize wifi stack
   naos_wifi_init(naos_system_wifi_callback);

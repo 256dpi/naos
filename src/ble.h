@@ -20,36 +20,40 @@ typedef enum {
 } naos_ble_id_t;
 
 /**
- * The attribute callback.
+ * The read callback. The read callback will free the passed pointer.
+ *
+ * Note: Do not call other BLE APIs!
+ *
+ * @param id - The characteristic.
  */
-typedef void (*naos_ble_attribute_callback_t)(naos_ble_id_t);
+typedef char *(*naos_ble_read_callback_t)(naos_ble_id_t);
+
+/**
+ * The write callback.
+ *
+ * Note: Do not call other BLE APIs!
+ *
+ * @param id - The characteristic.
+ * @param value - The value.
+ */
+typedef void (*naos_ble_write_callback_t)(naos_ble_id_t id, const char *value);
 
 /**
  * Initialize the BLE subsystem.
  *
  * Note: Should only be called once on boot.
  *
- * @param cb - The attribute callback.
- * @param device_type - The device type.
+ * @param rcb - The read callback.
+ * @param wcb - The write callback.
  */
-void naos_ble_init(naos_ble_attribute_callback_t cb, const char *device_type);
+void naos_ble_init(naos_ble_read_callback_t rcb, naos_ble_write_callback_t wcb);
 
 /**
- * Get the the string value of the characteristic with the supplied id.
+ * Notify connected clients about changed values
  *
- * The caller is responsible to free the string after it has been used.
- *
- * @param id - The attribute id.
- * @return The copied string.
+ * @param id - The characteristic.
+ * @param value - The value.
  */
-char *naos_ble_get_string(naos_ble_id_t id);
-
-/**
- * Set the the string value of the characteristic with the supplied id.
- *
- * @param id - The attribute id.
- * @param str - The new string value.
- */
-void naos_ble_set_string(naos_ble_id_t id, const char *str);
+void naos_ble_notify(naos_ble_id_t id, const char *value);
 
 #endif  // _NAOS_BLE_H

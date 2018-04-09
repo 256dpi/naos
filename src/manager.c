@@ -7,10 +7,10 @@
 #include <nvs.h>
 #include <string.h>
 
-#include "ble.h"
 #include "coredump.h"
 #include "manager.h"
 #include "naos.h"
+#include "settings.h"
 #include "task.h"
 #include "update.h"
 #include "utils.h"
@@ -46,7 +46,7 @@ static size_t naos_manager_sync_registry_count = 0;
 
 static void naos_manager_send_heartbeat() {
   // get device name
-  char *device_name = naos_ble_get_string(NAOS_BLE_ID_DEVICE_NAME);
+  char *device_name = naos_settings_read(NAOS_SETTING_DEVICE_NAME);
 
   // send heartbeat
   char buf[64];
@@ -60,8 +60,8 @@ static void naos_manager_send_heartbeat() {
 
 static void naos_manager_send_announcement() {
   // get device name & base topic
-  char *device_name = naos_ble_get_string(NAOS_BLE_ID_DEVICE_NAME);
-  char *base_topic = naos_ble_get_string(NAOS_BLE_ID_BASE_TOPIC);
+  char *device_name = naos_settings_read(NAOS_SETTING_DEVICE_NAME);
+  char *base_topic = naos_settings_read(NAOS_SETTING_BASE_TOPIC);
 
   // send announce
   char buf[64];
