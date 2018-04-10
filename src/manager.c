@@ -9,12 +9,11 @@
 #include "coredump.h"
 #include "manager.h"
 #include "naos.h"
+#include "params.h"
 #include "settings.h"
 #include "task.h"
 #include "update.h"
 #include "utils.h"
-
-#define NAOS_SYNC_REGISTRY_SIZE 32
 
 static SemaphoreHandle_t naos_manager_mutex;
 
@@ -24,22 +23,6 @@ static bool naos_manager_process_started = false;
 
 static bool naos_manager_recording = false;
 
-typedef enum {
-  NAOS_MANAGER_SYNC_TYPE_S,
-  NAOS_MANAGER_SYNC_TYPE_B,
-  NAOS_MANAGER_SYNC_TYPE_L,
-  NAOS_MANAGER_SYNC_TYPE_D,
-} naos_manager_sync_type_t;
-
-typedef struct {
-  naos_manager_sync_type_t type;
-  const char *param;
-  void *pointer;
-} naos_manager_sync_item_t;
-
-naos_manager_sync_item_t naos_manager_sync_registry[NAOS_SYNC_REGISTRY_SIZE];
-
-static size_t naos_manager_sync_registry_count = 0;
 
 static void naos_manager_send_heartbeat() {
   // get device name
@@ -87,139 +70,9 @@ static void naos_manager_process(void *p) {
   }
 }
 
-static bool naos_manager_add_sync(const char *param, naos_manager_sync_item_t item) {
-  // check param length
-  if (strlen(param) == 0) {
-    return false;
-  }
-
-  // check registry count
-  if (naos_manager_sync_registry_count >= NAOS_SYNC_REGISTRY_SIZE) {
-    return false;
-  }
-
-  // add entry to registry
-  naos_manager_sync_registry[naos_manager_sync_registry_count] = item;
-
-  // increment counter
-  naos_manager_sync_registry_count++;
-
-  return true;
-}
-
-static void naos_manager_sync_update(const char *param) {
-  // update synchronized variables
-  for (size_t i = 0; i < naos_manager_sync_registry_count; i++) {
-    // get item
-    naos_manager_sync_item_t item = naos_manager_sync_registry[i];
-
-    // check param
-    if (strcmp(item.param, param) != 0) {
-      continue;
-    }
-
-    // check type
-    switch (item.type) {
-      case NAOS_MANAGER_SYNC_TYPE_S: {
-        // get pointer
-        char **pointer = item.pointer;
-
-        // free existing value if pointer is set
-        if (*pointer != NULL) {
-          free(*pointer);
-        }
-
-        // set new value
-        *pointer = strdup(naos_get(param));
-
-        break;
-      }
-      case NAOS_MANAGER_SYNC_TYPE_B: {
-        // get pointer
-        bool *pointer = item.pointer;
-
-        // set new value
-        *pointer = naos_get_b(param);
-
-        break;
-      }
-      case NAOS_MANAGER_SYNC_TYPE_L: {
-        // get pointer
-        int32_t *pointer = item.pointer;
-
-        // set new value
-        *pointer = naos_get_l(param);
-
-        break;
-      }
-      case NAOS_MANAGER_SYNC_TYPE_D: {
-        // get pointer
-        double *pointer = item.pointer;
-
-        // set new value
-        *pointer = naos_get_d(param);
-
-        break;
-      }
-    }
-  }
-}
-
 void naos_manager_init() {
   // create mutex
   naos_manager_mutex = xSemaphoreCreateMutex();
-
-  // initialize params
-  for (int i = 0; i < naos_config()->num_parameters; i++) {
-    // get param
-    naos_param_t param = naos_config()->parameters[i];
-
-    // check_type
-    switch (param.type) {
-      case NAOS_STRING:
-        naos_ensure(param.name, param.default_s);
-        break;
-      case NAOS_BOOL:
-        naos_ensure_b(param.name, param.default_b);
-        break;
-      case NAOS_LONG:
-        naos_ensure_l(param.name, param.default_l);
-        break;
-      case NAOS_DOUBLE:
-        naos_ensure_d(param.name, param.default_d);
-        break;
-    }
-  }
-
-  // setup shadowing
-  for (int i = 0; i < naos_config()->num_parameters; i++) {
-    // get param
-    naos_param_t param = naos_config()->parameters[i];
-
-    // check_type
-    switch (param.type) {
-      case NAOS_STRING:
-        if (param.shadow_s != NULL) {
-          naos_sync(param.name, param.shadow_s);
-        }
-        break;
-      case NAOS_BOOL:
-        if (param.shadow_b != NULL) {
-          naos_sync_b(param.name, param.shadow_b);
-        }
-        break;
-      case NAOS_LONG:
-        if (param.shadow_l != NULL) {
-          naos_sync_l(param.name, param.shadow_l);
-        }
-        break;
-      case NAOS_DOUBLE:
-        if (param.shadow_d != NULL) {
-          naos_sync_d(param.name, param.shadow_d);
-        }
-        break;
-    }
-  }
 }
 
 void naos_manager_start() {
@@ -318,8 +171,8 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     // free topic
     free(t);
 
-    // update synchronized variables
-    naos_manager_sync_update(param);
+    // synchronize param
+    naos_params_sync(param);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -337,8 +190,8 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
       naos_task_update(param, NULL);
     }
 
-    // update synchronized variables
-    naos_manager_sync_update(param);
+    // synchronize param
+    naos_params_sync(param);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -479,74 +332,6 @@ void naos_log(const char *fmt, ...) {
 
   // free list
   va_end(args);
-}
-
-bool naos_sync(const char *param, char **pointer) {
-  // prepare item
-  naos_manager_sync_item_t item = {
-      .type = NAOS_MANAGER_SYNC_TYPE_S,
-      .param = param,
-      .pointer = pointer,
-  };
-
-  // add sync item
-  bool ret = naos_manager_add_sync(param, item);
-
-  // read current value
-  *pointer = strdup(naos_get(param));
-
-  return ret;
-}
-
-bool naos_sync_b(const char *param, bool *pointer) {
-  // prepare item
-  naos_manager_sync_item_t item = {
-      .type = NAOS_MANAGER_SYNC_TYPE_B,
-      .param = param,
-      .pointer = pointer,
-  };
-
-  // add sync item
-  bool ret = naos_manager_add_sync(param, item);
-
-  // read current value
-  *pointer = naos_get_b(param);
-
-  return ret;
-}
-
-bool naos_sync_l(const char *param, int32_t *pointer) {
-  // prepare item
-  naos_manager_sync_item_t item = {
-      .type = NAOS_MANAGER_SYNC_TYPE_L,
-      .param = param,
-      .pointer = pointer,
-  };
-
-  // add sync item
-  bool ret = naos_manager_add_sync(param, item);
-
-  // read current value
-  *pointer = naos_get_l(param);
-
-  return ret;
-}
-
-bool naos_sync_d(const char *param, double *pointer) {
-  // prepare item
-  naos_manager_sync_item_t item = {
-      .type = NAOS_MANAGER_SYNC_TYPE_D,
-      .param = param,
-      .pointer = pointer,
-  };
-
-  // add sync item
-  bool ret = naos_manager_add_sync(param, item);
-
-  // read current value
-  *pointer = naos_get_d(param);
-
-  return ret;
 }
 
 void naos_manager_stop() {
