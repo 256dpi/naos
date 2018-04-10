@@ -97,8 +97,14 @@ static void status(naos_status_t status) {
   naos_log("status changed to %s", naos_status_str(status));
 }
 
+static naos_param_t params[] = {{.name = "message", .type = NAOS_STRING, .default_s = "world"},
+                                {.name = "shadow", .type = NAOS_STRING, .default_s = "", .shadow_s = &shadow},
+                                {.name = "var", .type = NAOS_DOUBLE, .default_d = 0, .shadow_d = &var}};
+
 static naos_config_t config = {.device_type = "naos-test",
                                .firmware_version = "0.0.1",
+                               .parameters = params,
+                               .num_parameters = 3,
                                .ping_callback = ping,
                                .online_callback = online,
                                .message_callback = handle,
@@ -111,13 +117,4 @@ static naos_config_t config = {.device_type = "naos-test",
 void app_main() {
   // initialize naos
   naos_init(&config);
-
-  // set message default
-  naos_ensure("message", "world");
-
-  // synchronize shadow
-  naos_sync("shadow", &shadow);
-
-  // synchronize var
-  naos_sync_d("var", &var);
 }

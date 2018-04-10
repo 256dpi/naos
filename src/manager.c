@@ -174,6 +174,58 @@ void naos_manager_init() {
 
   // open nvs namespace
   ESP_ERROR_CHECK(nvs_open("naos-manager", NVS_READWRITE, &naos_manager_nvs_handle));
+
+  // initialize params
+  for (int i = 0; i < naos_config()->num_parameters; i++) {
+    // get param
+    naos_param_t param = naos_config()->parameters[i];
+
+    // check_type
+    switch (param.type) {
+      case NAOS_STRING:
+        naos_ensure(param.name, param.default_s);
+        break;
+      case NAOS_BOOL:
+        naos_ensure_b(param.name, param.default_b);
+        break;
+      case NAOS_LONG:
+        naos_ensure_l(param.name, param.default_l);
+        break;
+      case NAOS_DOUBLE:
+        naos_ensure_d(param.name, param.default_d);
+        break;
+    }
+  }
+
+  // setup shadowing
+  for (int i = 0; i < naos_config()->num_parameters; i++) {
+    // get param
+    naos_param_t param = naos_config()->parameters[i];
+
+    // check_type
+    switch (param.type) {
+      case NAOS_STRING:
+        if (param.shadow_s != NULL) {
+          naos_sync(param.name, param.shadow_s);
+        }
+        break;
+      case NAOS_BOOL:
+        if (param.shadow_b != NULL) {
+          naos_sync_b(param.name, param.shadow_b);
+        }
+        break;
+      case NAOS_LONG:
+        if (param.shadow_l != NULL) {
+          naos_sync_l(param.name, param.shadow_l);
+        }
+        break;
+      case NAOS_DOUBLE:
+        if (param.shadow_d != NULL) {
+          naos_sync_d(param.name, param.shadow_d);
+        }
+        break;
+    }
+  }
 }
 
 void naos_manager_start() {

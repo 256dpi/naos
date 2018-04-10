@@ -36,6 +36,27 @@ typedef enum { NAOS_DISCONNECTED, NAOS_CONNECTED, NAOS_NETWORKED } naos_status_t
 const char *naos_status_str(naos_status_t status);
 
 /**
+ * The parameter types.
+ */
+typedef enum { NAOS_STRING, NAOS_BOOL, NAOS_LONG, NAOS_DOUBLE } naos_type_t;
+
+/**
+ * A single parameter.
+ */
+typedef struct {
+  const char *name;
+  naos_type_t type;
+  const char *default_s;
+  bool default_b;
+  int32_t default_l;
+  double default_d;
+  char **shadow_s;
+  bool *shadow_b;
+  int32_t *shadow_l;
+  double *shadow_d;
+} naos_param_t;
+
+/**
  * The main configuration object.
  */
 typedef struct {
@@ -48,6 +69,16 @@ typedef struct {
    * The firmware version.
    */
   const char *firmware_version;
+
+  /**
+   * The managed parameters.
+   */
+  naos_param_t *parameters;
+
+  /**
+   * The number of managed parameters.
+   */
+  size_t num_parameters;
 
   /**
    *  The callback that is called when a ping is received.
