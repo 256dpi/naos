@@ -22,16 +22,12 @@ typedef enum {
 /**
  * The read callback. The read callback will free the passed pointer.
  *
- * Note: Do not call other BLE APIs!
- *
  * @param ch - The characteristic.
  */
 typedef char *(*naos_ble_read_callback_t)(naos_ble_char_t ch);
 
 /**
  * The write callback.
- *
- * Note: Do not call other BLE APIs!
  *
  * @param ch - The characteristic.
  * @param value - The value.
