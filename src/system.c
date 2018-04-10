@@ -10,6 +10,7 @@
 #include "manager.h"
 #include "mqtt.h"
 #include "naos.h"
+#include "params.h"
 #include "settings.h"
 #include "task.h"
 #include "update.h"
@@ -372,6 +373,9 @@ void naos_system_init() {
 
   // init settings
   naos_settings_init();
+
+  // init parameters
+  naos_params_init();
 
   // init task
   naos_task_init();

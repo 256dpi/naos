@@ -39,6 +39,8 @@ set(SOURCE_FILES
         src/mqtt.h
         src/naos.c
         src/naos.h
+        src/params.c
+        src/params.h
         src/settings.c
         src/settings.h
         src/system.c
