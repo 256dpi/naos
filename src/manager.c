@@ -326,7 +326,7 @@ char *naos_manager_list_params() {
     naos_param_t param = naos_config()->parameters[i];
 
     // add length
-    length += strlen(param.name) + 1;
+    length += strlen(param.name) + 3;
   }
 
   // allocate buffer
@@ -341,6 +341,27 @@ char *naos_manager_list_params() {
     // copy name
     strcpy(buf + pos, param.name);
     pos += strlen(param.name);
+
+    // write separator
+    buf[pos] = ':';
+    pos++;
+
+    // write type
+    switch (param.type) {
+      case NAOS_STRING:
+        buf[pos] = 's';
+        break;
+      case NAOS_BOOL:
+        buf[pos] = 'b';
+        break;
+      case NAOS_LONG:
+        buf[pos] = 'l';
+        break;
+      case NAOS_DOUBLE:
+        buf[pos] = 'd';
+        break;
+    }
+    pos++;
 
     // write comma or zero
     buf[pos] = (char)((i == naos_config()->num_parameters - 1) ? '\0' : ',');
