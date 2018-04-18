@@ -8,11 +8,10 @@ static int counter = 0;
 
 static char *message = NULL;
 
-static char *shadow = NULL;
-
-static double var = 0;
-
-static bool boolean = true;
+static char *var_s = NULL;
+static int32_t var_l = 0;
+static double var_d = 0;
+static bool var_b = true;
 
 static void ping() { naos_log("ping received!"); }
 
@@ -73,16 +72,6 @@ static void loop() {
   // publish message
   naos_publish("hello", message, 0, false, NAOS_LOCAL);
 
-  // log shadow
-  if (shadow != NULL) {
-    naos_log("shadow: %s", shadow);
-  } else {
-    naos_log("shadow: NULL");
-  }
-
-  // log var
-  naos_log("var: %f", var);
-
   // save counter
   char buf[16];
   snprintf(buf, 16, "%d", counter);
@@ -99,10 +88,10 @@ static void status(naos_status_t status) {
   naos_log("status changed to %s", naos_status_str(status));
 }
 
-static naos_param_t params[] = {{.name = "message", .type = NAOS_STRING, .default_s = "world"},
-                                {.name = "shadow", .type = NAOS_STRING, .default_s = "", .shadow_s = &shadow},
-                                {.name = "var", .type = NAOS_DOUBLE, .default_d = 0, .shadow_d = &var},
-                                {.name = "boolean", .type = NAOS_BOOL, .default_b = true, .shadow_b = &boolean}};
+static naos_param_t params[] = {{.name = "var_s", .type = NAOS_STRING, .default_s = "", .shadow_s = &var_s},
+                                {.name = "var_l", .type = NAOS_LONG, .default_l = 0, .shadow_l = &var_l},
+                                {.name = "var_d", .type = NAOS_DOUBLE, .default_d = 0, .shadow_d = &var_d},
+                                {.name = "var_b", .type = NAOS_BOOL, .default_b = true, .shadow_b = &var_b}};
 
 static naos_config_t config = {.device_type = "naos-test",
                                .firmware_version = "0.0.1",
