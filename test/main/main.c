@@ -12,6 +12,8 @@ static char *shadow = NULL;
 
 static double var = 0;
 
+static bool boolean = true;
+
 static void ping() { naos_log("ping received!"); }
 
 static void online() {
@@ -99,12 +101,13 @@ static void status(naos_status_t status) {
 
 static naos_param_t params[] = {{.name = "message", .type = NAOS_STRING, .default_s = "world"},
                                 {.name = "shadow", .type = NAOS_STRING, .default_s = "", .shadow_s = &shadow},
-                                {.name = "var", .type = NAOS_DOUBLE, .default_d = 0, .shadow_d = &var}};
+                                {.name = "var", .type = NAOS_DOUBLE, .default_d = 0, .shadow_d = &var},
+                                {.name = "boolean", .type = NAOS_BOOL, .default_b = true, .shadow_b = &boolean}};
 
 static naos_config_t config = {.device_type = "naos-test",
                                .firmware_version = "0.0.1",
                                .parameters = params,
-                               .num_parameters = 3,
+                               .num_parameters = 4,
                                .ping_callback = ping,
                                .online_callback = online,
                                .message_callback = handle,
