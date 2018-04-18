@@ -218,6 +218,12 @@ static char *naos_system_read_callback(naos_ble_char_t ch) {
       return strdup(naos_system_status_string(naos_system_status));
     case NAOS_BLE_CHAR_COMMAND:
       return NULL;
+    case NAOS_BLE_CHAR_PARAMS_LIST:
+      return naos_manager_list_params();
+    case NAOS_BLE_CHAR_PARAMS_SELECT:
+      return NULL;
+    case NAOS_BLE_CHAR_PARAMS_VALUE:
+      return naos_manager_read_param();
   }
 
   return NULL;
@@ -258,6 +264,14 @@ static void naos_system_write_callback(naos_ble_char_t ch, const char *value) {
       return;
     case NAOS_BLE_CHAR_COMMAND:
       naos_system_handle_command(value);
+      return;
+    case NAOS_BLE_CHAR_PARAMS_LIST:
+      return;
+    case NAOS_BLE_CHAR_PARAMS_SELECT:
+      naos_manager_select_param(value);
+      return;
+    case NAOS_BLE_CHAR_PARAMS_VALUE:
+      naos_manager_write_param(value);
       return;
   }
 }

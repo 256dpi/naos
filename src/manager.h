@@ -28,6 +28,34 @@ void naos_manager_start();
 void naos_manager_handle(const char* topic, uint8_t* payload, size_t len, naos_scope_t scope);
 
 /**
+ * List all available parameters.
+ *
+ * @return A list of parameter:type pairs.
+ */
+char* naos_manager_list_params();
+
+/**
+ * Select a parameter for reading and writing.
+ *
+ * @param param - The parameter.
+ */
+void naos_manager_select_param(const char* param);
+
+/**
+ * Read the previously selected parameter.
+ *
+ * @return
+ */
+char* naos_manager_read_param();
+
+/**
+ * Write the previously selected parameter.
+ *
+ * @param value - The value.
+ */
+void naos_manager_write_param(const char* value);
+
+/**
  * Stop the manager process.
  */
 void naos_manager_stop();

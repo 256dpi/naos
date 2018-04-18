@@ -140,13 +140,32 @@ static naos_ble_gatts_char_t naos_ble_char_system_command = {
     .prop = ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_length = 16};
 
-#define NAOS_BLE_NUM_CHARS 12
+static naos_ble_gatts_char_t naos_ble_char_params_list = {
+    .ch = NAOS_BLE_CHAR_PARAMS_LIST,
+    .uuid = {0x83, 0x2c, 0x10, 0x26, 0xe8, 0x4d, 0x2d, 0x92, 0xb4, 0x46, 0x98, 0x42, 0x8c, 0x41, 0x89, 0x9b},
+    .prop = ESP_GATT_CHAR_PROP_BIT_READ,
+    .max_length = 32};
+
+static naos_ble_gatts_char_t naos_ble_char_params_select = {
+    .ch = NAOS_BLE_CHAR_PARAMS_SELECT,
+    .uuid = {0x72, 0xe3, 0x84, 0xec, 0x2e, 0x27, 0x10, 0xb8, 0x11, 0x43, 0x6c, 0xb2, 0x8a, 0x61, 0x7b, 0xa2},
+    .prop = ESP_GATT_CHAR_PROP_BIT_WRITE,
+    .max_length = 32};
+
+static naos_ble_gatts_char_t naos_ble_char_params_value = {
+    .ch = NAOS_BLE_CHAR_PARAMS_VALUE,
+    .uuid = {0xa3, 0xbf, 0x7c, 0x55, 0x31, 0x30, 0x91, 0xae, 0xa7, 0x45, 0x33, 0xed, 0x90, 0x9e, 0x3a, 0x29},
+    .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
+    .max_length = 32};
+
+#define NAOS_BLE_NUM_CHARS 15
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
     &naos_ble_char_wifi_ssid,     &naos_ble_char_wifi_password,     &naos_ble_char_mqtt_host,
     &naos_ble_char_mqtt_port,     &naos_ble_char_mqtt_client_id,    &naos_ble_char_mqtt_username,
     &naos_ble_char_mqtt_password, &naos_ble_char_device_type,       &naos_ble_char_device_name,
-    &naos_ble_char_base_topic,    &naos_ble_char_connection_status, &naos_ble_char_system_command};
+    &naos_ble_char_base_topic,    &naos_ble_char_connection_status, &naos_ble_char_system_command,
+    &naos_ble_char_params_list,   &naos_ble_char_params_select,     &naos_ble_char_params_value};
 
 static void naos_ble_gap_event_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
   switch (e) {

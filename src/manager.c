@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
+#include <naos.h>
 #include <string.h>
 
 #include "coredump.h"
@@ -23,6 +24,7 @@ static bool naos_manager_process_started = false;
 
 static bool naos_manager_recording = false;
 
+static naos_param_t *naos_manager_selected_param = NULL;
 
 static void naos_manager_send_heartbeat() {
   // get device name
@@ -306,6 +308,81 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
 
   // if not handled, forward message to the task
   naos_task_forward(topic, payload, len, scope);
+
+  // release mutex
+  NAOS_UNLOCK(naos_manager_mutex);
+}
+
+char *naos_manager_list_params() {
+  // return empty string if there are no params
+  if (naos_config()->num_parameters == 0) {
+    return strdup("");
+  }
+
+  // determine list length
+  size_t length = 0;
+  for (int i = 0; i < naos_config()->num_parameters; i++) {
+    // get param
+    naos_param_t param = naos_config()->parameters[i];
+
+    // add length
+    length += strlen(param.name) + 1;
+  }
+
+  // allocate buffer
+  char *buf = malloc(length);
+
+  // write names
+  size_t pos = 0;
+  for (int i = 0; i < naos_config()->num_parameters; i++) {
+    // get param
+    naos_param_t param = naos_config()->parameters[i];
+
+    // copy name
+    strcpy(buf + pos, param.name);
+    pos += strlen(param.name);
+
+    // write comma or zero
+    buf[pos] = (char)((i == naos_config()->num_parameters - 1) ? '\0' : ',');
+    pos++;
+  }
+
+  return buf;
+}
+
+void naos_manager_select_param(const char *param) {
+  // check params
+  for (int i = 0; i < naos_config()->num_parameters; i++) {
+    // get param
+    naos_param_t p = naos_config()->parameters[i];
+
+    // continue if not matching
+    if (strcmp(param, p.name) != 0) {
+      continue;
+    }
+
+    // set selected param
+    naos_manager_selected_param = naos_config()->parameters + i;
+  }
+}
+
+char *naos_manager_read_param() {
+  // get param
+  return strdup(naos_get(naos_manager_selected_param->name));
+}
+
+void naos_manager_write_param(const char *value) {
+  // acquire mutex
+  NAOS_LOCK(naos_manager_mutex);
+
+  // save param
+  naos_set(naos_manager_selected_param->name, value);
+
+  // update task
+  naos_task_update(naos_manager_selected_param->name, value);
+
+  // synchronize param
+  naos_params_sync(naos_manager_selected_param->name);
 
   // release mutex
   NAOS_UNLOCK(naos_manager_mutex);
