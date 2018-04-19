@@ -6,7 +6,7 @@ config NAOS_MQTT_BUFFER_SIZE
 
 config NAOS_MQTT_COMMAND_TIMEOUT
     int "The MQTT command timeout"
-    default 2000
+    default 1000
 
 config NAOS_HEARTBEAT_INTERVAL
     int "The heartbeat interval"
