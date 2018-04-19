@@ -70,9 +70,6 @@ bool naos_subscribe(const char *topic, int qos, naos_scope_t scope) {
 
   // subscribe
   bool ret = esp_mqtt_subscribe(topic, qos);
-  if (!ret && naos_config()->crash_on_mqtt_failures) {
-    ESP_ERROR_CHECK(ESP_FAIL);
-  }
 
   // free prefixed topic
   if (scope == NAOS_LOCAL) {
@@ -90,9 +87,6 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope) {
 
   // unsubscribe
   bool ret = esp_mqtt_unsubscribe(topic);
-  if (!ret && naos_config()->crash_on_mqtt_failures) {
-    ESP_ERROR_CHECK(ESP_FAIL);
-  }
 
   // free prefixed topic
   if (scope == NAOS_LOCAL) {
@@ -126,9 +120,6 @@ bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool 
 
   // publish
   bool ret = esp_mqtt_publish(topic, payload, len, qos, retained);
-  if (!ret && naos_config()->crash_on_mqtt_failures) {
-    ESP_ERROR_CHECK(ESP_FAIL);
-  }
 
   // free prefixed topic
   if (scope == NAOS_LOCAL) {
