@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 
 	"code.cloudfoundry.org/bytefmt"
 	"github.com/shiftr-io/naos"
@@ -45,6 +46,8 @@ func main() {
 		collect(cmd, getProject(cmd))
 	} else if cmd.cSend {
 		send(cmd, getProject(cmd))
+	} else if cmd.cDiscover {
+		discover(cmd, getProject(cmd))
 	} else if cmd.cGet {
 		get(cmd, getProject(cmd))
 	} else if cmd.cSet {
@@ -150,6 +153,34 @@ func collect(cmd *command, p *naos.Project) {
 func send(cmd *command, p *naos.Project) {
 	// send message
 	exitIfSet(p.Inventory.Send(cmd.aPattern, cmd.aTopic, cmd.aMessage, cmd.oTimeout))
+}
+
+func discover(cmd *command, p *naos.Project) {
+	// discover parameters
+	list, err := p.Inventory.Discover(cmd.aPattern, cmd.oTimeout)
+	exitIfSet(err)
+
+	// prepare table
+	tbl := newTable("DEVICE NAME", "PARAMETERS")
+
+	// add rows
+	for _, device := range list {
+		var list []string
+		for p := range device.Parameters {
+			list = append(list, p)
+		}
+
+		tbl.add(device.Name, strings.Join(list, ", "))
+	}
+
+	// show table
+	tbl.show(0)
+
+	// show info
+	fmt.Printf("\nGot parameters from %d devices.\n", len(list))
+
+	// save inventory
+	exitIfSet(p.SaveInventory())
 }
 
 func get(cmd *command, p *naos.Project) {

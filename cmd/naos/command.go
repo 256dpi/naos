@@ -24,6 +24,7 @@ Fleet Management:
   list     Will list all devices listed in the inventory.
   collect  Will collect devices and add them to the inventory.
   send     Will send a message to all devices.
+  discover Will discover all parameters of a device.
   get      Will read a parameter value from devices.
   set      Will set a parameter value on devices.
   unset    Will unset a parameter on devices.
@@ -43,6 +44,7 @@ Usage:
   naos list
   naos collect [--clear --duration=<time>]
   naos send <topic> [--] <message> [<pattern>] [--timeout=<time>]
+  naos discover [pattern] [--timeout=<time>]
   naos get <param> [<pattern>] [--timeout=<time>]
   naos set <param> [--] <value> [<pattern>] [--timeout=<time>]
   naos unset <param> [<pattern>] [--timeout=<time>]
@@ -68,24 +70,25 @@ Options:
 
 type command struct {
 	// commands
-	cCreate  bool
-	cInstall bool
-	cBuild   bool
-	cFlash   bool
-	cAttach  bool
-	cRun     bool
-	cFormat  bool
-	cList    bool
-	cCollect bool
-	cSend    bool
-	cGet     bool
-	cSet     bool
-	cUnset   bool
-	cMonitor bool
-	cRecord  bool
-	cDebug   bool
-	cUpdate  bool
-	cHelp    bool
+	cCreate   bool
+	cInstall  bool
+	cBuild    bool
+	cFlash    bool
+	cAttach   bool
+	cRun      bool
+	cFormat   bool
+	cList     bool
+	cCollect  bool
+	cSend     bool
+	cDiscover bool
+	cGet      bool
+	cSet      bool
+	cUnset    bool
+	cMonitor  bool
+	cRecord   bool
+	cDebug    bool
+	cUpdate   bool
+	cHelp     bool
 
 	// arguments
 	aDevice  string
@@ -115,24 +118,25 @@ func parseCommand() *command {
 
 	return &command{
 		// commands
-		cCreate:  getBool(a["create"]),
-		cInstall: getBool(a["install"]),
-		cBuild:   getBool(a["build"]),
-		cFlash:   getBool(a["flash"]),
-		cAttach:  getBool(a["attach"]),
-		cRun:     getBool(a["run"]),
-		cFormat:  getBool(a["format"]),
-		cList:    getBool(a["list"]),
-		cCollect: getBool(a["collect"]),
-		cSend:    getBool(a["send"]),
-		cGet:     getBool(a["get"]),
-		cSet:     getBool(a["set"]),
-		cUnset:   getBool(a["unset"]),
-		cMonitor: getBool(a["monitor"]),
-		cRecord:  getBool(a["record"]),
-		cDebug:   getBool(a["debug"]),
-		cUpdate:  getBool(a["update"]),
-		cHelp:    getBool(a["help"]),
+		cCreate:   getBool(a["create"]),
+		cInstall:  getBool(a["install"]),
+		cBuild:    getBool(a["build"]),
+		cFlash:    getBool(a["flash"]),
+		cAttach:   getBool(a["attach"]),
+		cRun:      getBool(a["run"]),
+		cFormat:   getBool(a["format"]),
+		cList:     getBool(a["list"]),
+		cCollect:  getBool(a["collect"]),
+		cSend:     getBool(a["send"]),
+		cDiscover: getBool(a["discover"]),
+		cGet:      getBool(a["get"]),
+		cSet:      getBool(a["set"]),
+		cUnset:    getBool(a["unset"]),
+		cMonitor:  getBool(a["monitor"]),
+		cRecord:   getBool(a["record"]),
+		cDebug:    getBool(a["debug"]),
+		cUpdate:   getBool(a["update"]),
+		cHelp:     getBool(a["help"]),
 
 		// arguments
 		aDevice:  getString(a["<device>"]),

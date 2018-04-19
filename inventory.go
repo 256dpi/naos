@@ -200,6 +200,37 @@ func (i *Inventory) Send(pattern, topic, message string, timeout time.Duration) 
 	return nil
 }
 
+// Discover will request the list of parameters from all devices matching the
+// supplied glob pattern. The inventory is updated with the reported parameters
+// and a list of answering devices is returned.
+func (i *Inventory) Discover(pattern string, timeout time.Duration) ([]*Device, error) {
+	// discover parameters
+	table, err := mqtt.Discover(i.Broker, i.DeviceBaseTopics(pattern), timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	// prepare list of answering devices
+	var answering []*Device
+
+	// update device
+	for baseTopic, parameters := range table {
+		device := i.DeviceByBaseTopic(baseTopic)
+		if device != nil {
+			// initialize unset parameters
+			for _, p := range parameters {
+				if _, ok := device.Parameters[p]; !ok {
+					device.Parameters[p] = ""
+				}
+			}
+
+			answering = append(answering, device)
+		}
+	}
+
+	return answering, nil
+}
+
 // GetParams will request specified parameter from all devices matching the supplied
 // glob pattern. The inventory is updated with the reported value and a list of
 // answering devices is returned.
