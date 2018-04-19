@@ -159,6 +159,64 @@ void naos_params_init() {
   }
 }
 
+char *naos_params_list() {
+  // return empty string if there are no params
+  if (naos_config()->num_parameters == 0) {
+    return strdup("");
+  }
+
+  // determine list length
+  size_t length = 0;
+  for (int i = 0; i < naos_config()->num_parameters; i++) {
+    // get param
+    naos_param_t param = naos_config()->parameters[i];
+
+    // add length
+    length += strlen(param.name) + 3;
+  }
+
+  // allocate buffer
+  char *buf = malloc(length);
+
+  // write names
+  size_t pos = 0;
+  for (int i = 0; i < naos_config()->num_parameters; i++) {
+    // get param
+    naos_param_t param = naos_config()->parameters[i];
+
+    // copy name
+    strcpy(buf + pos, param.name);
+    pos += strlen(param.name);
+
+    // write separator
+    buf[pos] = ':';
+    pos++;
+
+    // write type
+    switch (param.type) {
+      case NAOS_STRING:
+        buf[pos] = 's';
+        break;
+      case NAOS_BOOL:
+        buf[pos] = 'b';
+        break;
+      case NAOS_LONG:
+        buf[pos] = 'l';
+        break;
+      case NAOS_DOUBLE:
+        buf[pos] = 'd';
+        break;
+    }
+    pos++;
+
+    // write comma or zero
+    buf[pos] = (char)((i == naos_config()->num_parameters - 1) ? '\0' : ',');
+    pos++;
+  }
+
+  return buf;
+}
+
 char *naos_get(const char *param) {
   // static reference to buffer
   static char *buf;

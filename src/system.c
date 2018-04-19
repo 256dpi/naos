@@ -219,7 +219,7 @@ static char *naos_system_read_callback(naos_ble_char_t ch) {
     case NAOS_BLE_CHAR_COMMAND:
       return NULL;
     case NAOS_BLE_CHAR_PARAMS_LIST:
-      return naos_manager_list_params();
+      return naos_params_list();
     case NAOS_BLE_CHAR_PARAMS_SELECT:
       return NULL;
     case NAOS_BLE_CHAR_PARAMS_VALUE:

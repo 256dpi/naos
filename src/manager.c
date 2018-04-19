@@ -99,6 +99,7 @@ void naos_manager_start() {
   naos_subscribe("naos/collect", 0, NAOS_GLOBAL);
 
   // subscribe to local topics
+  naos_subscribe("naos/discover", 0, NAOS_LOCAL);
   naos_subscribe("naos/get/+", 0, NAOS_LOCAL);
   naos_subscribe("naos/set/+", 0, NAOS_LOCAL);
   naos_subscribe("naos/unset/+", 0, NAOS_LOCAL);
@@ -123,6 +124,23 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
   if (scope == NAOS_GLOBAL && strcmp(topic, "naos/collect") == 0) {
     // send announcement
     naos_manager_send_announcement();
+
+    // release mutex
+    NAOS_UNLOCK(naos_manager_mutex);
+
+    return;
+  }
+
+  // check discover
+  if (scope == NAOS_LOCAL && strcmp(topic, "naos/discover") == 0) {
+    // get list
+    char *list = naos_params_list();
+
+    // send value
+    naos_publish("naos/parameters", list, 0, false, NAOS_LOCAL);
+
+    // free list
+    free(list);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -305,64 +323,6 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
 
   // release mutex
   NAOS_UNLOCK(naos_manager_mutex);
-}
-
-char *naos_manager_list_params() {
-  // return empty string if there are no params
-  if (naos_config()->num_parameters == 0) {
-    return strdup("");
-  }
-
-  // determine list length
-  size_t length = 0;
-  for (int i = 0; i < naos_config()->num_parameters; i++) {
-    // get param
-    naos_param_t param = naos_config()->parameters[i];
-
-    // add length
-    length += strlen(param.name) + 3;
-  }
-
-  // allocate buffer
-  char *buf = malloc(length);
-
-  // write names
-  size_t pos = 0;
-  for (int i = 0; i < naos_config()->num_parameters; i++) {
-    // get param
-    naos_param_t param = naos_config()->parameters[i];
-
-    // copy name
-    strcpy(buf + pos, param.name);
-    pos += strlen(param.name);
-
-    // write separator
-    buf[pos] = ':';
-    pos++;
-
-    // write type
-    switch (param.type) {
-      case NAOS_STRING:
-        buf[pos] = 's';
-        break;
-      case NAOS_BOOL:
-        buf[pos] = 'b';
-        break;
-      case NAOS_LONG:
-        buf[pos] = 'l';
-        break;
-      case NAOS_DOUBLE:
-        buf[pos] = 'd';
-        break;
-    }
-    pos++;
-
-    // write comma or zero
-    buf[pos] = (char)((i == naos_config()->num_parameters - 1) ? '\0' : ',');
-    pos++;
-  }
-
-  return buf;
 }
 
 void naos_manager_select_param(const char *param) {
