@@ -46,14 +46,18 @@ typedef enum { NAOS_STRING, NAOS_BOOL, NAOS_LONG, NAOS_DOUBLE } naos_type_t;
 typedef struct {
   const char *name;
   naos_type_t type;
+
+  // default
   const char *default_s;
   bool default_b;
   int32_t default_l;
   double default_d;
-  char **shadow_s;
-  bool *shadow_b;
-  int32_t *shadow_l;
-  double *shadow_d;
+
+  // synchronization
+  char **sync_s;
+  bool *sync_b;
+  int32_t *sync_l;
+  double *sync_d;
 } naos_param_t;
 
 /**
@@ -140,7 +144,7 @@ typedef struct {
   bool delay_startup;
 
   /**
-   * If set, the device will crash on any failed MQTT commands.
+   * If set, the device will crash and reboot on any failed MQTT command.
    */
   bool crash_on_mqtt_failures;
 } naos_config_t;
@@ -178,7 +182,7 @@ char *naos_get(const char *param);
  * Will return the value of the requested parameter.
  *
  * @param param - The parameter.
- * @return Pointer to value.
+ * @return The value.
  */
 bool naos_get_b(const char *param);
 
@@ -186,7 +190,7 @@ bool naos_get_b(const char *param);
  * Will return the value of the requested parameter.
  *
  * @param param - The parameter.
- * @return Pointer to value.
+ * @return The value.
  */
 int32_t naos_get_l(const char *param);
 
@@ -194,7 +198,7 @@ int32_t naos_get_l(const char *param);
  * Will return the value of the requested parameter.
  *
  * @param param - The parameter.
- * @return Pointer to value.
+ * @return The value.
  */
 double naos_get_d(const char *param);
 
