@@ -13,7 +13,7 @@ typedef struct {
   void *pointer;
 } naos_params_sync_item_t;
 
-static naos_params_sync_item_t naos_params_sync_registry[NAOS_SYNC_REGISTRY_SIZE];
+static naos_params_sync_item_t naos_params_sync_registry[CONFIG_NAOS_SYNC_REGISTRY_SIZE];
 
 static size_t naos_params_sync_registry_count = 0;
 
@@ -26,7 +26,7 @@ static bool naos_params_add_sync(const char *param, naos_params_sync_item_t item
   }
 
   // check registry count
-  if (naos_params_sync_registry_count >= NAOS_SYNC_REGISTRY_SIZE) {
+  if (naos_params_sync_registry_count >= CONFIG_NAOS_SYNC_REGISTRY_SIZE) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_params_add_sync: registry full");
     return false;
   }
