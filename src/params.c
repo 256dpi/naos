@@ -42,7 +42,7 @@ static bool naos_params_add_sync(const char *param, naos_manager_sync_item_t ite
   return true;
 }
 
-void naos_params_sync(const char *param) {
+static void naos_params_sync(const char *param) {
   // update synchronized variables
   for (size_t i = 0; i < naos_manager_sync_registry_count; i++) {
     // get item
@@ -195,6 +195,9 @@ double naos_get_d(const char *param) { return strtod(naos_get(param), NULL); }
 void naos_set(const char *param, const char *value) {
   // set parameter
   ESP_ERROR_CHECK(nvs_set_str(naos_manager_nvs_handle, param, value));
+
+  // sync param
+  naos_params_sync(param);
 }
 
 void naos_set_b(const char *param, bool value) { naos_set(param, naos_i2str(value)); }
@@ -231,6 +234,9 @@ bool naos_unset(const char *param) {
   } else {
     ESP_ERROR_CHECK(err);
   }
+
+  // sync param
+  naos_params_sync(param);
 
   return true;
 }

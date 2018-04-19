@@ -199,7 +199,7 @@ int32_t naos_get_l(const char *param);
 double naos_get_d(const char *param);
 
 /**
- * Will set the value of the requested parameter.
+ * Will set the value of the requested parameter. Synchronized parameters are automatically updated.
  *
  * @param param - The parameter.
  * @param value - The value.
@@ -207,7 +207,7 @@ double naos_get_d(const char *param);
 void naos_set(const char *param, const char *value);
 
 /**
- * Will set the value of the requested parameter.
+ * Will set the value of the requested parameter. Synchronized parameters are automatically updated.
  *
  * @param param - The parameter.
  * @param value - The value.
@@ -215,7 +215,7 @@ void naos_set(const char *param, const char *value);
 void naos_set_b(const char *param, bool value);
 
 /**
- * Will set the value of the requested parameter.
+ * Will set the value of the requested parameter. Synchronized parameters are automatically updated.
  *
  * @param param - The parameter.
  * @param value - The value.
@@ -223,7 +223,7 @@ void naos_set_b(const char *param, bool value);
 void naos_set_l(const char *param, int32_t value);
 
 /**
- * Will set the value of the requested parameter.
+ * Will set the value of the requested parameter. Synchronized parameters are automatically updated.
  *
  * @param param - The parameter.
  * @param value - The value.
@@ -267,7 +267,7 @@ bool naos_ensure_l(const char *param, int32_t value);
 bool naos_ensure_d(const char *param, double value);
 
 /**
- * Will unset the requested parameter.
+ * Will unset the requested parameter. Synchronized parameters are automatically updated.
  *
  * @param param - The parameter.
  * @return Whether the parameter was unset.
@@ -276,7 +276,7 @@ bool naos_unset(const char *param);
 
 /**
  * Will automatically apply parameter modifications and set the specified pointer to a buffer that contains the set
- * value or an empty string if unset.  It will read and set the currently stored value when invoked.
+ * value or an empty string if unset. It will read and set the currently stored value when invoked.
  *
  * Note: This function should only be called from app_main() to ensure only one synchronization is registered per
  * parameter.

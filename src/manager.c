@@ -173,9 +173,6 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     // free topic
     free(t);
 
-    // synchronize param
-    naos_params_sync(param);
-
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
 
@@ -191,9 +188,6 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     if (naos_unset(param)) {
       naos_task_update(param, NULL);
     }
-
-    // synchronize param
-    naos_params_sync(param);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -401,9 +395,6 @@ void naos_manager_write_param(const char *value) {
 
   // update task
   naos_task_update(naos_manager_selected_param->name, value);
-
-  // synchronize param
-  naos_params_sync(naos_manager_selected_param->name);
 
   // release mutex
   NAOS_UNLOCK(naos_manager_mutex);
