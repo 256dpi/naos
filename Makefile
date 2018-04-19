@@ -6,8 +6,8 @@ ifeq ($(UNAME), Darwin)
 XTENSA_TOOLCHAIN := "xtensa-esp32-elf-osx-1.22.0-61-gab8375a-5.2.0.tar.gz"
 endif
 
-ESP_IDF_VERSION := "8bca703467be0d5e43e2a3dce2ca7727ca826474" # 2.1.1
-ESP_MQTT_VERSION := "f0cb3de0e693b976782920737d63420df5628ac1" # 0.5.2
+ESP_IDF_VERSION := "v2.1.1"
+ESP_MQTT_VERSION := "v0.5.3"
 
 test/xtensa-esp32-elf:
 	wget https://dl.espressif.com/dl/$(XTENSA_TOOLCHAIN)
