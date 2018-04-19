@@ -7,8 +7,6 @@
 #include "naos.h"
 #include "utils.h"
 
-#define NAOS_SYNC_REGISTRY_SIZE 32
-
 typedef struct {
   naos_type_t type;
   const char *param;
