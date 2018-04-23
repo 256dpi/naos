@@ -116,7 +116,7 @@ typedef struct {
   void (*message_callback)(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope);
 
   /**
-   * The loop callback is called in over and over as long as the device is online.
+   * The loop callback is called repeatedly if the device is online.
    */
   void (*loop_callback)();
 
