@@ -138,6 +138,14 @@ typedef struct {
   void (*status_callback)(naos_status_t status);
 
   /**
+   * This callback is called to retrieve battery information. It should be provided if the device has a battery power
+   * source.
+   *
+   * @return A value between 0 and 1 indicating the battery charge level.
+   */
+  float (*battery_level)();
+
+  /**
    * If set, the device will randomly (up to 5s) delay startup to overcome WiFi and MQTT congestion issues if many
    * devices restart at the same time.
    */

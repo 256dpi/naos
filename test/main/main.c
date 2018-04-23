@@ -78,6 +78,8 @@ static void loop() {
   naos_set("counter", buf);
 }
 
+static float battery() { return 0.42; }
+
 static void offline() {
   // log info
   naos_log("offline callback called");
@@ -103,6 +105,7 @@ static naos_config_t config = {.device_type = "naos-test",
                                .update_callback = update,
                                .loop_callback = loop,
                                .loop_interval = 1000,
+                               .battery_level = battery,
                                .offline_callback = offline,
                                .status_callback = status};
 

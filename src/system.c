@@ -216,6 +216,12 @@ static char *naos_system_read_callback(naos_ble_char_t ch) {
       return naos_settings_read(NAOS_SETTING_BASE_TOPIC);
     case NAOS_BLE_CHAR_CONNECTION_STATUS:
       return strdup(naos_system_status_string(naos_system_status));
+    case NAOS_BLE_CHAR_BATTERY_LEVEL:
+      if (naos_config()->battery_level != NULL) {
+        return strdup(naos_d2str(naos_config()->battery_level()));
+      } else {
+        return strdup("-1");
+      }
     case NAOS_BLE_CHAR_COMMAND:
       return NULL;
     case NAOS_BLE_CHAR_PARAMS_LIST:
@@ -261,6 +267,8 @@ static void naos_system_write_callback(naos_ble_char_t ch, const char *value) {
       naos_settings_write(NAOS_SETTING_BASE_TOPIC, value);
       return;
     case NAOS_BLE_CHAR_CONNECTION_STATUS:
+      return;
+    case NAOS_BLE_CHAR_BATTERY_LEVEL:
       return;
     case NAOS_BLE_CHAR_COMMAND:
       naos_system_handle_command(value);

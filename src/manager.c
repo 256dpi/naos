@@ -30,10 +30,16 @@ static void naos_manager_send_heartbeat() {
   // get device name
   char *device_name = naos_settings_read(NAOS_SETTING_DEVICE_NAME);
 
+  // get battery level
+  float battery_level = -1;
+  if (naos_config()->battery_level != NULL) {
+    battery_level = naos_config()->battery_level();
+  }
+
   // send heartbeat
   char buf[64];
-  snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s", naos_config()->device_type, naos_config()->firmware_version,
-           device_name, esp_get_free_heap_size(), naos_millis(), esp_ota_get_running_partition()->label);
+  snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s,%.2f", naos_config()->device_type, naos_config()->firmware_version,
+           device_name, esp_get_free_heap_size(), naos_millis(), esp_ota_get_running_partition()->label, battery_level);
   naos_publish("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
 
   // free string
