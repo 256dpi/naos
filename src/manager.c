@@ -99,6 +99,7 @@ void naos_manager_start() {
   naos_subscribe("naos/collect", 0, NAOS_GLOBAL);
 
   // subscribe to local topics
+  naos_subscribe("naos/ping", 0, NAOS_LOCAL);
   naos_subscribe("naos/discover", 0, NAOS_LOCAL);
   naos_subscribe("naos/get/+", 0, NAOS_LOCAL);
   naos_subscribe("naos/set/+", 0, NAOS_LOCAL);
@@ -124,6 +125,17 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
   if (scope == NAOS_GLOBAL && strcmp(topic, "naos/collect") == 0) {
     // send announcement
     naos_manager_send_announcement();
+
+    // release mutex
+    NAOS_UNLOCK(naos_manager_mutex);
+
+    return;
+  }
+
+  // check ping
+  if (scope == NAOS_LOCAL && strcmp(topic, "naos/ping") == 0) {
+    // ping task
+    naos_task_ping();
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
