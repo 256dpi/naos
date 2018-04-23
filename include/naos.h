@@ -44,16 +44,27 @@ typedef enum { NAOS_STRING, NAOS_BOOL, NAOS_LONG, NAOS_DOUBLE } naos_type_t;
  * A single parameter.
  */
 typedef struct {
+  /**
+   * The name of the parameter e.g. "my-param".
+   */
   const char *name;
+
+  /**
+   * The parameter type.
+   */
   naos_type_t type;
 
-  // default
+  /**
+   * The default value per type.
+   */
   const char *default_s;
   bool default_b;
   int32_t default_l;
   double default_d;
 
-  // synchronization
+  /**
+   * The synchronized variable per type.
+   */
   char **sync_s;
   bool *sync_b;
   int32_t *sync_l;
