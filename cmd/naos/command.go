@@ -12,26 +12,26 @@ Created by Joël Gähwiler © shiftr.io
 https://github.com/shiftr-io/naos
 
 Project Management:
-  create   Will create a new naos project in the current directory.
-  install  Will download required dependencies to the 'naos' subdirectory.
-  build    Will build all source files.
-  flash    Will flash the previously built binary to an attached device.
-  attach   Will open a serial communication with an attached device.
-  run      Will run 'build', 'flash' and 'attach' sequentially.
-  format   Will format all source files in the 'src' subdirectory.
+  create   Create a new naos project in the current directory.
+  install  Download required dependencies to the 'naos' subdirectory.
+  build    Build all source files.
+  flash    Flash the previously built binary to an attached device.
+  attach   Open a serial communication with an attached device.
+  run      Run 'build', 'flash' and 'attach' sequentially.
+  format   Format all source files in the 'src' subdirectory.
 
 Fleet Management:
-  list     Will list all devices listed in the inventory.
-  collect  Will collect devices and add them to the inventory.
-  send     Will send a message to all devices.
-  discover Will discover all parameters of a device.
-  get      Will read a parameter value from devices.
-  set      Will set a parameter value on devices.
-  unset    Will unset a parameter on devices.
-  monitor  Will monitor heartbeats from devices.
-  record   Will record log messages from devices.
-  debug    Will gather debug information from devices.
-  update   Will send the previously built binary to devices.
+  list     List all devices listed in the inventory.
+  collect  Collect devices and add them to the inventory.
+  send     Send a message to devices.
+  discover Discover all parameters of a device.
+  get      Read a parameter from devices.
+  set      Set a parameter on devices.
+  unset    Unset a parameter on devices.
+  monitor  Monitor heartbeats from devices.
+  record   Record log messages from devices.
+  debug    Gather debug information from devices.
+  update   Send the previously built binary to devices.
 
 Usage:
   naos create [--cmake --force]
