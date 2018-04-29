@@ -23,6 +23,7 @@ Project Management:
 Fleet Management:
   list     List all devices listed in the inventory.
   collect  Collect devices and add them to the inventory.
+  ping     Ping devices.
   send     Send a message to devices.
   discover Discover all parameters of a device.
   get      Read a parameter from devices.
@@ -43,6 +44,7 @@ Usage:
   naos format
   naos list
   naos collect [--clear --duration=<time>]
+  naos ping [<pattern>] [--timeout=<time>]
   naos send <topic> [--] <message> [<pattern>] [--timeout=<time>]
   naos discover [pattern] [--timeout=<time>]
   naos get <param> [<pattern>] [--timeout=<time>]
@@ -79,6 +81,7 @@ type command struct {
 	cFormat   bool
 	cList     bool
 	cCollect  bool
+	cPing     bool
 	cSend     bool
 	cDiscover bool
 	cGet      bool
@@ -127,6 +130,7 @@ func parseCommand() *command {
 		cFormat:   getBool(a["format"]),
 		cList:     getBool(a["list"]),
 		cCollect:  getBool(a["collect"]),
+		cPing:     getBool(a["ping"]),
 		cSend:     getBool(a["send"]),
 		cDiscover: getBool(a["discover"]),
 		cGet:      getBool(a["get"]),

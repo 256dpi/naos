@@ -44,6 +44,8 @@ func main() {
 		list(cmd, getProject(cmd))
 	} else if cmd.cCollect {
 		collect(cmd, getProject(cmd))
+	} else if cmd.cPing {
+		ping(cmd, getProject(cmd))
 	} else if cmd.cSend {
 		send(cmd, getProject(cmd))
 	} else if cmd.cDiscover {
@@ -148,6 +150,11 @@ func collect(cmd *command, p *naos.Project) {
 
 	// save inventory
 	exitIfSet(p.SaveInventory())
+}
+
+func ping(cmd *command, p *naos.Project) {
+	// send message
+	exitIfSet(p.Inventory.Ping(cmd.aPattern, cmd.oTimeout))
 }
 
 func send(cmd *command, p *naos.Project) {

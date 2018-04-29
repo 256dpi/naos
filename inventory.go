@@ -178,6 +178,28 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 	return newDevices, nil
 }
 
+// Ping will send a ping message to all devices matching the supplied glob pattern.
+func (i *Inventory) Ping(pattern string, timeout time.Duration) error {
+	// get base topics
+	baseTopics := i.DeviceBaseTopics(pattern)
+
+	// prepare new list
+	topics := make([]string, 0, len(baseTopics))
+
+	// generate topics
+	for _, bt := range baseTopics {
+		topics = append(topics, bt+"/naos/ping")
+	}
+
+	// send message to the generated topics
+	err := mqtt.Send(i.Broker, topics, "", timeout)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Send will send a message to all devices matching the supplied glob pattern.
 func (i *Inventory) Send(pattern, topic, message string, timeout time.Duration) error {
 	// get base topics
