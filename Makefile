@@ -52,6 +52,10 @@ idf-monitor: test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
 config:
 	export PATH=$(shell pwd)/test/xtensa-esp32-elf/bin:$$PATH; cd ./test; make menuconfig
 
+info:
+	export PATH=$(shell pwd)/test/xtensa-esp32-elf/bin:$$PATH; cd ./test; make size-components
+	export PATH=$(shell pwd)/test/xtensa-esp32-elf/bin:$$PATH; cd ./test; make size
+
 run: build flash monitor
 
 fmt:
