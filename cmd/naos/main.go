@@ -261,10 +261,10 @@ func monitor(cmd *command, p *naos.Project) {
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION")
 
 	// prepare list
-	list := make(map[*naos.Device]*mqtt.Heartbeat)
+	list := make(map[*naos.Device]*fleet.Heartbeat)
 
 	// monitor devices
-	exitIfSet(p.Inventory.Monitor(cmd.aPattern, quit, cmd.oTimeout, func(d *naos.Device, hb *mqtt.Heartbeat) {
+	exitIfSet(p.Inventory.Monitor(cmd.aPattern, quit, cmd.oTimeout, func(d *naos.Device, hb *fleet.Heartbeat) {
 		// set latest heartbeat for device
 		list[d] = hb
 
@@ -313,10 +313,10 @@ func update(cmd *command, p *naos.Project) {
 	tbl := newTable("DEVICE NAME", "PROGRESS", "ERROR")
 
 	// prepare list
-	list := make(map[*naos.Device]*mqtt.UpdateStatus)
+	list := make(map[*naos.Device]*fleet.UpdateStatus)
 
 	// update devices
-	err := p.Update(cmd.aPattern, cmd.oJobs, cmd.oTimeout, func(d *naos.Device, us *mqtt.UpdateStatus) {
+	err := p.Update(cmd.aPattern, cmd.oJobs, cmd.oTimeout, func(d *naos.Device, us *fleet.UpdateStatus) {
 		// save status
 		list[d] = us
 

@@ -8,7 +8,7 @@ vet:
 
 lint:
 	golint .
-	golint ./mqtt
+	golint ./fleet
 	golint ./tree
 	golint ./cmd/naos
 	golint ./utils

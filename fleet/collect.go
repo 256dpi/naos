@@ -1,4 +1,4 @@
-package mqtt
+package fleet
 
 import (
 	"strings"

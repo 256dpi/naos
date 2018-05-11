@@ -1,7 +1,8 @@
-package mqtt
+package fleet
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -9,15 +10,24 @@ import (
 	"github.com/256dpi/gomqtt/packet"
 )
 
-// LogMessage is emitted by Record.
-type LogMessage struct {
-	BaseTopic string
-	Content   string
+// A Heartbeat is emitted by Monitor.
+type Heartbeat struct {
+	ReceivedAt      time.Time
+	BaseTopic       string
+	DeviceName      string
+	DeviceType      string
+	FirmwareVersion string
+	FreeHeapSize    int
+	UpTime          time.Duration
+	StartPartition  string
 }
 
-// Record will enable log recording mode and yield the received log messages
-// until the provided channel has been closed.
-func Record(url string, baseTopics []string, quit chan struct{}, timeout time.Duration, cb func(*LogMessage)) error {
+// Monitor will connect to the specified MQTT broker and listen on the passed
+// base topics for heartbeats and call the supplied callback until the specified
+// quit channel is closed.
+//
+// Note: Not correctly formatted heartbeats are ignored.
+func Monitor(url string, baseTopics []string, quit chan struct{}, timeout time.Duration, cb func(*Heartbeat)) error {
 	// check base topics
 	if len(baseTopics) == 0 {
 		return errors.New("zero base topics")
@@ -37,18 +47,38 @@ func Record(url string, baseTopics []string, quit chan struct{}, timeout time.Du
 			return nil
 		}
 
-		// prepare log message
-		log := &LogMessage{Content: string(msg.Payload)}
+		// get data from payload
+		data := strings.Split(string(msg.Payload), ",")
+
+		// check length
+		if len(data) < 6 {
+			return nil
+		}
+
+		// convert integers
+		freeHeapSize, _ := strconv.Atoi(data[3])
+		upTime, _ := strconv.Atoi(data[4])
+
+		// create heartbeat
+		hb := &Heartbeat{
+			ReceivedAt:      time.Now(),
+			DeviceType:      data[0],
+			FirmwareVersion: data[1],
+			DeviceName:      data[2],
+			FreeHeapSize:    freeHeapSize,
+			UpTime:          time.Duration(upTime) * time.Millisecond,
+			StartPartition:  data[5],
+		}
 
 		// set base topic
 		for _, baseTopic := range baseTopics {
 			if strings.HasPrefix(msg.Topic, baseTopic) {
-				log.BaseTopic = baseTopic
+				hb.BaseTopic = baseTopic
 			}
 		}
 
 		// call callback
-		cb(log)
+		cb(hb)
 
 		return nil
 	}
@@ -74,7 +104,7 @@ func Record(url string, baseTopics []string, quit chan struct{}, timeout time.Du
 	// add subscriptions
 	for _, baseTopic := range baseTopics {
 		subs = append(subs, packet.Subscription{
-			Topic: baseTopic + "/naos/log",
+			Topic: baseTopic + "/naos/heartbeat",
 			QOS:   0,
 		})
 	}
@@ -91,42 +121,12 @@ func Record(url string, baseTopics []string, quit chan struct{}, timeout time.Du
 		return err
 	}
 
-	// enable message recording
-	for _, baseTopic := range baseTopics {
-		// publish config update
-		pf, err := cl.Publish(baseTopic+"/naos/record/", []byte("on"), 0, false)
-		if err != nil {
-			return err
-		}
-
-		// wait for ack
-		err = pf.Wait(timeout)
-		if err != nil {
-			return err
-		}
-	}
-
 	// wait for error or quit
 	select {
 	case err = <-errs:
 		return err
 	case <-quit:
 		// move on
-	}
-
-	// disable message recording
-	for _, baseTopic := range baseTopics {
-		// publish config update
-		pf, err := cl.Publish(baseTopic+"/naos/record/", []byte("off"), 0, false)
-		if err != nil {
-			return err
-		}
-
-		// wait for ack
-		err = pf.Wait(timeout)
-		if err != nil {
-			return err
-		}
 	}
 
 	// disconnect client
