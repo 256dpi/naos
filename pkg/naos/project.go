@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/shiftr-io/naos/mqtt"
+	"github.com/shiftr-io/naos/pkg/fleet"
 	"github.com/shiftr-io/naos/pkg/tree"
 	"github.com/shiftr-io/naos/pkg/utils"
 )
