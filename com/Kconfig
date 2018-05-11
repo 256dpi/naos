@@ -1,0 +1,27 @@
+menu "naos"
+
+config NAOS_MQTT_BUFFER_SIZE
+    int "The MQTT read and write buffer size"
+    default 10000
+
+config NAOS_MQTT_COMMAND_TIMEOUT
+    int "The MQTT command timeout"
+    default 1000
+
+config NAOS_HEARTBEAT_INTERVAL
+    int "The heartbeat interval"
+    default 5000
+
+config NAOS_UPDATE_MAX_CHUNK_SIZE
+    int "The max update chunk size"
+    default 5000
+
+config NAOS_DEBUG_MAX_CHUNK_SIZE
+    int "The max debug chunk size"
+    default 5000
+
+config NAOS_SYNC_REGISTRY_SIZE
+    int "The size of the synchronized parameters list"
+    default 32
+
+endmenu
