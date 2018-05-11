@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/shiftr-io/naos/mqtt"
-	"github.com/shiftr-io/naos/tree"
-	"github.com/shiftr-io/naos/utils"
+	"github.com/shiftr-io/naos/pkg/tree"
+	"github.com/shiftr-io/naos/pkg/utils"
 )
 
 // A Project is a project available on disk.

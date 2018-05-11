@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/shiftr-io/naos/utils"
+	"github.com/shiftr-io/naos/pkg/utils"
 )
 
 // Install will install the NAOS build tree to the specified path and link the

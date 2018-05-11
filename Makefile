@@ -7,11 +7,11 @@ vet:
 	go vet ./...
 
 lint:
-	golint .
-	golint ./fleet
-	golint ./tree
 	golint ./cmd/naos
-	golint ./utils
+	golint ./pkg/naos
+	golint ./pkg/fleet
+	golint ./pkg/tree
+	golint ./pkg/utils
 
 test:
 	go test ./...
