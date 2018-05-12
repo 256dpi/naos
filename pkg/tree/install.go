@@ -11,20 +11,20 @@ import (
 	"github.com/shiftr-io/naos/pkg/utils"
 )
 
-// Install will install the NAOS build tree to the specified path and link the
-// source path into the tree.
-func Install(treePath, sourcePath, version string, force bool, out io.Writer) error {
+// Install will install the NAOS repo to the specified path and link the source
+// path into the build tree.
+func Install(naosPath, sourcePath, version string, force bool, out io.Writer) error {
 	// remove existing directory if existing or force has been set
 	if force {
-		utils.Log(out, "Removing existing tree installation (forced).")
-		err := os.RemoveAll(treePath)
+		utils.Log(out, "Removing existing NAOS installation (forced).")
+		err := os.RemoveAll(naosPath)
 		if err != nil {
 			return err
 		}
 	}
 
 	// check if tree already exists
-	ok, err := utils.Exists(treePath)
+	ok, err := utils.Exists(naosPath)
 	if err != nil {
 		return err
 	}
@@ -32,36 +32,35 @@ func Install(treePath, sourcePath, version string, force bool, out io.Writer) er
 	// check existence
 	if !ok {
 		// perform initial repo clone
-		utils.Log(out, fmt.Sprintf("Installing tree '%s'...", version))
-		err = utils.Clone("https://github.com/shiftr-io/naos-tree.git", treePath, version, out)
+		utils.Log(out, fmt.Sprintf("Installing NAOS '%s'...", version))
+		err = utils.Clone("https://github.com/shiftr-io/naos.git", naosPath, version, out)
 		if err != nil {
 			return err
 
 		}
 	} else {
 		// perform repo update
-		utils.Log(out, fmt.Sprintf("Updating tree '%s'...", version))
-		err = utils.Fetch(treePath, version, out)
+		utils.Log(out, fmt.Sprintf("Updating NAOS '%s'...", version))
+		err = utils.Fetch(naosPath, version, out)
 		if err != nil {
 			return err
-
 		}
 	}
 
 	// get required toolchain
-	toolchainVersion, err := RequiredToolchain(treePath)
+	toolchainVersion, err := RequiredToolchain(naosPath)
 	if err != nil {
 		return err
 	}
 
 	// install xtensa toolchain
-	err = InstallToolchain(treePath, toolchainVersion, force, out)
+	err = InstallToolchain(naosPath, toolchainVersion, force, out)
 	if err != nil {
 		return err
 	}
 
 	// check source directory
-	ok, err = utils.Exists(filepath.Join(treePath, "main", "src"))
+	ok, err = utils.Exists(filepath.Join(naosPath, "tree", "main", "src"))
 	if err != nil {
 		return err
 	}
@@ -69,7 +68,7 @@ func Install(treePath, sourcePath, version string, force bool, out io.Writer) er
 	// link source directory if missing
 	if !ok {
 		utils.Log(out, "Linking source directory.")
-		err = os.Symlink(sourcePath, filepath.Join(treePath, "main", "src"))
+		err = os.Symlink(sourcePath, filepath.Join(naosPath, "tree", "main", "src"))
 		if err != nil {
 			return err
 		}
@@ -78,15 +77,15 @@ func Install(treePath, sourcePath, version string, force bool, out io.Writer) er
 	return nil
 }
 
-// InstallComponent will install the specified component in the tree.
-func InstallComponent(treePath, name, repository, version string, force bool, out io.Writer) error {
+// InstallComponent will install the specified component in the build tree.
+func InstallComponent(naosPath, name, repository, version string, force bool, out io.Writer) error {
 	// check component name
-	if name == "esp-mqtt" || name == "naos-esp" {
+	if name == "esp-mqtt" || name == "naos" {
 		return errors.New("illegal component name")
 	}
 
 	// get component dir
-	comPath := filepath.Join(treePath, "components", name)
+	comPath := filepath.Join(naosPath, "tree", "components", name)
 
 	// remove existing directory if existing or force has been set
 	if force {

@@ -15,7 +15,7 @@ import (
 // InstallToolchain will install the xtensa toolchain. An existing toolchain will
 // be removed if force is set to true. If out is not nil, it will be used to log
 // information about the installation process.
-func InstallToolchain(treePath, version string, force bool, out io.Writer) error {
+func InstallToolchain(naosPath, version string, force bool, out io.Writer) error {
 	// get toolchain url
 	var url string
 	switch runtime.GOOS {
@@ -28,7 +28,7 @@ func InstallToolchain(treePath, version string, force bool, out io.Writer) error
 	}
 
 	// prepare toolchain directory
-	dir := filepath.Join(treePath, "toolchain", version)
+	dir := filepath.Join(naosPath, "tree", "toolchain", version)
 
 	// check if already exists
 	ok, err := utils.Exists(dir)
@@ -90,12 +90,12 @@ func InstallToolchain(treePath, version string, force bool, out io.Writer) error
 // directory.
 //
 // Note: It will not check if the directory exists.
-func BinDirectory(treePath string) (string, error) {
+func BinDirectory(naosPath string) (string, error) {
 	// get required toolchain version
-	version, err := RequiredToolchain(treePath)
+	version, err := RequiredToolchain(naosPath)
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(treePath, "toolchain", version, "xtensa-esp32-elf", "bin"), nil
+	return filepath.Join(naosPath, "tree", "toolchain", version, "xtensa-esp32-elf", "bin"), nil
 }

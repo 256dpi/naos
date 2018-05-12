@@ -8,12 +8,12 @@ import (
 )
 
 // Flash will flash the project using the specified serial port.
-func Flash(treePath, port string, erase, appOnly bool, out io.Writer) error {
+func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
 	// calculate paths
-	espTool := filepath.Join(IDFDirectory(treePath), "components", "esptool_py", "esptool", "esptool.py")
-	bootLoaderBinary := filepath.Join(treePath, "build", "bootloader", "bootloader.bin")
-	projectBinary := filepath.Join(treePath, "build", "naos-project.bin")
-	partitionsBinary := filepath.Join(treePath, "build", "partitions.bin")
+	espTool := filepath.Join(IDFDirectory(naosPath), "components", "esptool_py", "esptool", "esptool.py")
+	bootLoaderBinary := filepath.Join(naosPath, "tree", "build", "bootloader", "bootloader.bin")
+	projectBinary := filepath.Join(naosPath, "tree", "build", "naos-project.bin")
+	partitionsBinary := filepath.Join(naosPath, "tree", "build", "partitions.bin")
 
 	// prepare erase flash command
 	eraseFlash := []string{
@@ -63,7 +63,7 @@ func Flash(treePath, port string, erase, appOnly bool, out io.Writer) error {
 	// erase if requested
 	if erase {
 		utils.Log(out, "Erasing flash...")
-		err := Exec(treePath, out, nil, "python", eraseFlash...)
+		err := Exec(naosPath, out, nil, "python", eraseFlash...)
 		if err != nil {
 			return err
 		}
@@ -72,7 +72,7 @@ func Flash(treePath, port string, erase, appOnly bool, out io.Writer) error {
 	// flash app only
 	if appOnly {
 		utils.Log(out, "Flashing (app only)...")
-		err := Exec(treePath, out, nil, "python", flashApp...)
+		err := Exec(naosPath, out, nil, "python", flashApp...)
 		if err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func Flash(treePath, port string, erase, appOnly bool, out io.Writer) error {
 
 	// flash all
 	utils.Log(out, "Flashing...")
-	err := Exec(treePath, out, nil, "python", flashAll...)
+	err := Exec(naosPath, out, nil, "python", flashAll...)
 	if err != nil {
 		return err
 	}

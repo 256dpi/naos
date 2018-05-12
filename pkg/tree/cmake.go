@@ -9,12 +9,12 @@ import (
 )
 
 // WriteCMakeLists will write a CMakeLists.txt with all included directories.
-func WriteCMakeLists(treePath string, out io.Writer) error {
+func WriteCMakeLists(naosPath string, out io.Writer) error {
 	// log message
 	utils.Log(out, "Generating CMakeLists.txt...")
 
 	// get list of include directories
-	list, err := IncludeDirectories(treePath)
+	list, err := IncludeDirectories(naosPath)
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func WriteCMakeLists(treePath string, out io.Writer) error {
 	file += ")\n"
 
 	// update cmake config
-	err = ioutil.WriteFile(filepath.Join(treePath, "CMakeLists.txt"), []byte(file), 0644)
+	err = ioutil.WriteFile(filepath.Join(naosPath, "CMakeLists.txt"), []byte(file), 0644)
 	if err != nil {
 		return err
 	}

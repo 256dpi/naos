@@ -13,7 +13,7 @@ import (
 
 // Attach will attach to the specified serial port using either miniterm in simple
 // mode or idf_monitor.
-func Attach(treePath, port string, simple bool, out io.Writer, in io.Reader) error {
+func Attach(naosPath, port string, simple bool, out io.Writer, in io.Reader) error {
 	// prepare command
 	var cmd *exec.Cmd
 
@@ -23,23 +23,23 @@ func Attach(treePath, port string, simple bool, out io.Writer, in io.Reader) err
 		cmd = exec.Command("miniterm.py", "--rts", "0", "--dtr", "0", "--raw", port, "115200")
 	} else {
 		// get path of monitor tool
-		tool := filepath.Join(IDFDirectory(treePath), "tools", "idf_monitor.py")
+		tool := filepath.Join(IDFDirectory(naosPath), "tools", "idf_monitor.py")
 
 		// get elf path
-		elf := filepath.Join(treePath, "build", "naos-project.elf")
+		elf := filepath.Join(naosPath, "tree", "build", "naos-project.elf")
 
 		// construct command
 		cmd = exec.Command("python", tool, "--baud", "115200", "--port", port, elf)
 	}
 
 	// set working directory
-	cmd.Dir = treePath
+	cmd.Dir = filepath.Join(naosPath, "tree")
 
 	// inherit current environment
 	cmd.Env = os.Environ()
 
 	// get bin directory
-	bin, err := BinDirectory(treePath)
+	bin, err := BinDirectory(naosPath)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func Attach(treePath, port string, simple bool, out io.Writer, in io.Reader) err
 			cmd.Env[i] = "PATH=" + bin + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
-			cmd.Env[i] = "PWD=" + treePath
+			cmd.Env[i] = "PWD=" + filepath.Join(naosPath, "tree")
 		}
 	}
 

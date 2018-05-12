@@ -10,15 +10,15 @@ import (
 
 // IncludeDirectories returns a list of directories that will be included in the
 // build process.
-func IncludeDirectories(treePath string) ([]string, error) {
+func IncludeDirectories(naosPath string) ([]string, error) {
 	// update includes.list
-	err := Exec(treePath, nil, nil, "make", "generate_component_includes")
+	err := Exec(naosPath, nil, nil, "make", "generate_component_includes")
 	if err != nil {
 		return nil, err
 	}
 
 	// read file
-	bytes, err := ioutil.ReadFile(filepath.Join(treePath, "includes.list"))
+	bytes, err := ioutil.ReadFile(filepath.Join(naosPath, "tree", "includes.list"))
 	if err != nil {
 		return nil, err
 	}
@@ -32,10 +32,11 @@ func IncludeDirectories(treePath string) ([]string, error) {
 	return list, nil
 }
 
-// RequiredToolchain returns the required toolchain version by the tree.
-func RequiredToolchain(treePath string) (string, error) {
+// RequiredToolchain returns the required toolchain version by the current
+// NAOS installation.
+func RequiredToolchain(naosPath string) (string, error) {
 	// read version
-	bytes, err := ioutil.ReadFile(filepath.Join(treePath, "toolchain.version"))
+	bytes, err := ioutil.ReadFile(filepath.Join(naosPath, "tree", "toolchain.version"))
 	if err != nil {
 		return "", err
 	}
@@ -52,13 +53,13 @@ func RequiredToolchain(treePath string) (string, error) {
 }
 
 // SourceAndHeaderFiles will return a list of source and header files.
-func SourceAndHeaderFiles(treePath string) ([]string, []string, error) {
+func SourceAndHeaderFiles(naosPath string) ([]string, []string, error) {
 	// prepare list
 	sourceFiles := make([]string, 0)
 	headerFiles := make([]string, 0)
 
 	// read link
-	path, err := os.Readlink(filepath.Join(treePath, "main", "src"))
+	path, err := os.Readlink(filepath.Join(naosPath, "tree", "main", "src"))
 	if err != nil {
 		return nil, nil, err
 	}

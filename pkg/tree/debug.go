@@ -9,10 +9,10 @@ import (
 
 // ParseCoredump will parse the provided raw coredump data and return a human
 // readable representation.
-func ParseCoredump(treePath string, coredump []byte) ([]byte, error) {
+func ParseCoredump(naosPath string, coredump []byte) ([]byte, error) {
 	// get paths
-	espCoredump := filepath.Join(IDFDirectory(treePath), "components", "espcoredump", "espcoredump.py")
-	projectELF := filepath.Join(treePath, "build", "naos-project.elf")
+	espCoredump := filepath.Join(IDFDirectory(naosPath), "components", "espcoredump", "espcoredump.py")
+	projectELF := filepath.Join(naosPath, "tree", "build", "naos-project.elf")
 
 	// get a temporary file
 	file, err := ioutil.TempFile("", "coredump")
@@ -39,7 +39,7 @@ func ParseCoredump(treePath string, coredump []byte) ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	// parse coredump
-	err = Exec(treePath, buf, nil, espCoredump, "info_corefile", "-t", "raw", "-c", file.Name(), projectELF)
+	err = Exec(naosPath, buf, nil, espCoredump, "info_corefile", "-t", "raw", "-c", file.Name(), projectELF)
 	if err != nil {
 		return nil, err
 	}
