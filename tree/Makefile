@@ -15,5 +15,4 @@ update_naos_tree:
 	echo "1.22.0-80-g6c4433a-5.2.0" > toolchain.version
 	cd esp-idf; git fetch; git checkout v3.0; git submodule update --recursive; cd ..
 	cd components/esp-mqtt; git fetch; git checkout v0.6.0; git submodule update --recursive; cd ../..
-	cd components/naos-esp; git fetch; git checkout v0.2.1; git submodule update --recursive; cd ../..
-	cp components/naos-esp/test/sdkconfig sdkconfig
+	cp components/naos/test/sdkconfig sdkconfig

@@ -1,6 +1,4 @@
-# naos-esp
-
-[![Build Status](https://travis-ci.org/shiftr-io/naos-esp.svg?branch=master)](https://travis-ci.org/shiftr-io/naos-esp)
+# naos component
 
 **The [Networked Artifacts Operating System](https://github.com/shiftr-io/naos) component for the ESP platform.**
 
@@ -8,9 +6,9 @@ You can use this component in any [esp-idf](https://github.com/espressif/esp-idf
 
 ## Standalone Requirements
 
-- The [esp-mqtt](https://github.com/256dpi/esp-mqtt) component must be installed alongside `naos-esp`.
+- The [esp-mqtt](https://github.com/256dpi/esp-mqtt) component must be installed.
 - Bluetooth must be enabled via `menuconfig`.
-- Partitions should be configured as described [here](https://github.com/shiftr-io/naos-esp/blob/master/test/partitions.csv).
+- Partitions should be configured as described [here](https://github.com/shiftr-io/naos/blob/master/com/test/partitions.csv).
 
 ## Device Management Protocol
 
