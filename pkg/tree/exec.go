@@ -22,7 +22,7 @@ func Exec(naosPath string, out io.Writer, in io.Reader, name string, arg ...stri
 	cmd := exec.Command(name, arg...)
 
 	// set working directory
-	cmd.Dir = filepath.Join(Directory(naosPath))
+	cmd.Dir = Directory(naosPath)
 
 	// connect output and inputs
 	cmd.Stdout = out
@@ -45,7 +45,7 @@ func Exec(naosPath string, out io.Writer, in io.Reader, name string, arg ...stri
 			cmd.Env[i] = "PATH=" + bin + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
-			cmd.Env[i] = "PWD=" + filepath.Join(Directory(naosPath))
+			cmd.Env[i] = "PWD=" + Directory(naosPath)
 		}
 	}
 

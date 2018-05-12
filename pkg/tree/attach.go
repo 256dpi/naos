@@ -33,7 +33,7 @@ func Attach(naosPath, port string, simple bool, out io.Writer, in io.Reader) err
 	}
 
 	// set working directory
-	cmd.Dir = filepath.Join(Directory(naosPath))
+	cmd.Dir = Directory(naosPath)
 
 	// inherit current environment
 	cmd.Env = os.Environ()
@@ -51,7 +51,7 @@ func Attach(naosPath, port string, simple bool, out io.Writer, in io.Reader) err
 			cmd.Env[i] = "PATH=" + bin + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
-			cmd.Env[i] = "PWD=" + filepath.Join(Directory(naosPath))
+			cmd.Env[i] = "PWD=" + Directory(naosPath)
 		}
 	}
 
