@@ -1,0 +1,11 @@
+{{ define "main" }}
+    {{ .Content }}
+
+    <ul>
+        {{ range .Data.Pages }}
+        <li>
+            <a href="{{ strings.TrimRight "/" .URL }}">{{ .Title }}</a>
+        </li>
+        {{ end }}
+    </ul>
+{{ end }}

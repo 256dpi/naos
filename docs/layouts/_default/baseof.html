@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ block "title" . }} {{ .Site.Title }} {{ end }}</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/quickstart">Quickstart</a></li>
+                <li><a href="/documentation">Documentation</a></li>
+                <li><a href="/support">Support</a></li>
+                <li><a href="https://github.com/shiftr-io/naos">GitHub</a></li>
+                <li><a href="https://shiftr.io">shiftr.io</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section>
+        {{ block "main" . }} {{ end }}
+    </section>
+
+    <footer>
+        © 2018 shiftr.io - Licensed under Apache 2.0
+    </footer>
+</body>
+</html>

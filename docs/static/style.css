@@ -1,0 +1,26 @@
+body {
+    font-family: sans-serif;
+}
+
+header, section, footer {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+header {
+    margin-top: 150px;
+    margin-bottom: 75px;
+}
+
+header nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+header nav ul li {
+    display: inline-block;
+}
+
+footer {
+    margin-top: 75px;
+}
