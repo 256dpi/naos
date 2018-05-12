@@ -23,7 +23,6 @@
 
     {{ range .Site.Data.api.Enums }}
         <h2 id="{{ .Name }}" class="js-type">{{ .Name }}</h2>
-        <pre><code>{{ .Name }}</code></pre>
         <p>{{ .Description }}</p>
 
         {{ range .Values }}
@@ -34,7 +33,6 @@
 
     {{ range .Site.Data.api.Structs }}
         <h2 id="{{ .Name }}" class="js-type">{{ .Name }}</h2>
-        <pre><code>{{ .Name }}</code></pre>
         <p>{{ .Description }}</p>
 
         {{ range .Fields }}
