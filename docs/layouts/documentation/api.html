@@ -25,10 +25,14 @@
         <h2 id="{{ .Name }}" class="js-type">{{ .Name }}</h2>
         <p>{{ .Description }}</p>
 
-        {{ range .Values }}
-            <h3>{{ .Name }}</h3>
-            <p>{{ .Description }}</p>
-        {{ end }}
+        <table>
+            {{ range .Values }}
+                <tr>
+                    <td>{{ .Name }}</td>
+                    <td>{{ .Description }}</td>
+                </tr>
+            {{ end }}
+        </table>
     {{ end }}
 
     {{ range .Site.Data.api.Structs }}
@@ -40,22 +44,24 @@
             <pre><code class="definition">{{ .Type }} {{ .Name }}{{.Args }}</code></pre>
             <p>{{ .Description }}</p>
 
-            {{ if .Params }}
-                <h4>Parameters</h4>
-                <table>
-                {{ range .Params }}
-                    <tr>
-                        <td><code>{{ .Type }}</code></td>
-                        <td>{{ .Name }}</td>
-                        <td>{{ .Description }}</td>
-                    </tr>
-                {{ end }}
-                </table>
-            {{ end }}
+            {{ if or .Params .Returns }}
+                <table class="parameters">
+                    {{ range .Params }}
+                        <tr>
+                            <td><code>{{ .Type }}</code></td>
+                            <td>{{ .Name }}</td>
+                            <td>{{ .Description }}</td>
+                        </tr>
+                    {{ end }}
 
-            {{ if .Returns }}
-                <h4>Return Value</h4>
-                <p>{{ .Returns }}</p>
+                    {{ if .Returns }}
+                        <tr>
+                            <td><code>{{ .Type }}</code></td>
+                            <td>↵</td>
+                            <td>{{ .Returns }}</td>
+                        </tr>
+                    {{ end }}
+                </table>
             {{ end }}
         {{ end }}
     {{ end }}
@@ -69,22 +75,24 @@
         <p><em>{{ .Note }}</em></p>
         {{ end }}
 
-        {{ if .Params }}
-            <h3>Parameters</h3>
-            <table>
-            {{ range .Params }}
-                <tr>
-                    <td><code>{{ .Type }}</code></td>
-                    <td>{{ .Name }}</td>
-                    <td>{{ .Description }}</td>
-                </tr>
-            {{ end }}
-            </table>
-        {{ end }}
+        {{ if or .Params .Returns }}
+            <table class="parameters">
+                {{ range .Params }}
+                    <tr>
+                        <td><code>{{ .Type }}</code></td>
+                        <td>{{ .Name }}</td>
+                        <td>{{ .Description }}</td>
+                    </tr>
+                {{ end }}
 
-        {{ if .Returns }}
-            <h3>Return Value</h3>
-            <p><code>{{ .Type }}</code> {{ .Returns }}</p>
+                {{ if .Returns }}
+                    <tr>
+                        <td><code>{{ .Type }}</code></td>
+                        <td>↵</td>
+                        <td>{{ .Returns }}</td>
+                    </tr>
+                {{ end }}
+            </table>
         {{ end }}
     {{ end }}
 {{ end }}

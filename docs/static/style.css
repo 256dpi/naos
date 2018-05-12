@@ -38,7 +38,12 @@ footer {
 
 code.definition {
     font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
     background-color: #eee;
     border-radius: 3px;
     padding: 2px 4px;
+}
+
+table.parameters {
+    border: 1px solid #aaa;
 }
