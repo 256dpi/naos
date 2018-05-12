@@ -10,15 +10,15 @@
  * The messages scopes.
  */
 typedef enum {
-    /**
-     * The local scope denotes messages that are transferred under the configured base topic of the device.
-     */
-    NAOS_LOCAL,
+  /**
+   * The local scope denotes messages that are transferred under the configured base topic of the device.
+   */
+  NAOS_LOCAL,
 
-    /**
-     * The global scope denotes messages that are transferred on a global level.
-     */
-    NAOS_GLOBAL
+  /**
+   * The global scope denotes messages that are transferred on a global level.
+   */
+  NAOS_GLOBAL
 } naos_scope_t;
 
 /**
@@ -33,20 +33,20 @@ const char *naos_scope_str(naos_scope_t scope);
  * The system statuses.
  */
 typedef enum {
-    /**
-     * Device is disconnected.
-     */
-    NAOS_DISCONNECTED,
+  /**
+   * Device is disconnected.
+   */
+  NAOS_DISCONNECTED,
 
-    /**
-     * The device is connected to a WiFi access point.
-     */
-    NAOS_CONNECTED,
+  /**
+   * The device is connected to a WiFi access point.
+   */
+  NAOS_CONNECTED,
 
-    /**
-     * The device is networked with a MQTT broker.
-     */
-    NAOS_NETWORKED
+  /**
+   * The device is networked with a MQTT broker.
+   */
+  NAOS_NETWORKED
 } naos_status_t;
 
 /**
@@ -61,25 +61,25 @@ const char *naos_status_str(naos_status_t status);
  * The parameter types.
  */
 typedef enum {
-    /**
-     * A string parameter.
-     */
-    NAOS_STRING,
+  /**
+   * A string parameter.
+   */
+  NAOS_STRING,
 
-    /**
-     * A boolean parameter.
-     */
-    NAOS_BOOL,
+  /**
+   * A boolean parameter.
+   */
+  NAOS_BOOL,
 
-    /**
-     * A long parameter.
-     */
-    NAOS_LONG,
+  /**
+   * A long parameter.
+   */
+  NAOS_LONG,
 
-    /**
-     * A double parameter.
-     */
-    NAOS_DOUBLE
+  /**
+   * A double parameter.
+   */
+  NAOS_DOUBLE
 } naos_type_t;
 
 /**
@@ -97,19 +97,43 @@ typedef struct {
   naos_type_t type;
 
   /**
-   * The default value per type.
+   * The default string value.
    */
   const char *default_s;
+
+  /**
+   * The default boolean value.
+   */
   bool default_b;
+
+  /**
+   * The default long value.
+   */
   int32_t default_l;
+
+  /**
+   * The default double value.
+   */
   double default_d;
 
   /**
-   * The synchronized variable per type.
+   * The synchronized string variable.
    */
   char **sync_s;
+
+  /**
+   * The synchronized boolean variable.
+   */
   bool *sync_b;
+
+  /**
+   * The synchronized long variable.
+   */
   int32_t *sync_l;
+
+  /**
+   * The synchronized double variable.
+   */
   double *sync_d;
 } naos_param_t;
 
@@ -215,8 +239,6 @@ typedef struct {
 void naos_init(naos_config_t *config);
 
 /**
- * Write a log message.
- *
  * The message will be printed to the serial port and published to the broker if logging is activated.
  *
  * @param fmt The message format.
@@ -387,9 +409,8 @@ bool naos_sync_l(const char *param, int32_t *pointer);
 bool naos_sync_d(const char *param, double *pointer);
 
 /**
- * Subscribe to specified topic.
- *
- * The topic is automatically prefixed with the configured base topic if the scope is local.
+ * Subscribe to specified topic. The topic is automatically prefixed with the configured base topic if the scope is
+ * local.
  *
  * @param topic The topic.
  * @param scope The scope.
@@ -398,9 +419,8 @@ bool naos_sync_d(const char *param, double *pointer);
 bool naos_subscribe(const char *topic, int qos, naos_scope_t scope);
 
 /**
- * Unsubscribe from specified topic.
- *
- * The topic is automatically prefixed with the configured base topic if the scope is local.
+ * Unsubscribe from specified topic. The topic is automatically prefixed with the configured base topic if the scope is
+ * local.
  *
  * @param topic The topic.
  * @param scope The scope.
@@ -409,9 +429,8 @@ bool naos_subscribe(const char *topic, int qos, naos_scope_t scope);
 bool naos_unsubscribe(const char *topic, naos_scope_t scope);
 
 /**
- * Publish to the specified topic.
- *
- * The topic is automatically prefixed with the configured base topic if the scope is local.
+ * Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is
+ * local.
  *
  * @param topic The topic.
  * @param payload The payload.
@@ -423,9 +442,8 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope);
 bool naos_publish(const char *topic, const char *payload, int qos, bool retained, naos_scope_t scope);
 
 /**
- * Publish to the specified topic.
- *
- * The topic is automatically prefixed with the configured base topic if the scope is local.
+ * Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is
+ * local.
  *
  * @param topic The topic.
  * @param payload The payload.
@@ -437,9 +455,8 @@ bool naos_publish(const char *topic, const char *payload, int qos, bool retained
 bool naos_publish_b(const char *topic, bool payload, int qos, bool retained, naos_scope_t scope);
 
 /**
- * Publish to the specified topic.
- *
- * The topic is automatically prefixed with the configured base topic if the scope is local.
+ * Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is
+ * local.
  *
  * @param topic The topic.
  * @param payload The payload.
@@ -451,9 +468,8 @@ bool naos_publish_b(const char *topic, bool payload, int qos, bool retained, nao
 bool naos_publish_l(const char *topic, int32_t payload, int qos, bool retained, naos_scope_t scope);
 
 /**
- * Publish to the specified topic.
- *
- * The topic is automatically prefixed with the configured base topic if the scope is local.
+ * Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is
+ * local.
  *
  * @param topic The topic.
  * @param payload The payload.
@@ -465,9 +481,8 @@ bool naos_publish_l(const char *topic, int32_t payload, int qos, bool retained, 
 bool naos_publish_d(const char *topic, double payload, int qos, bool retained, naos_scope_t scope);
 
 /**
- * Publish to the specified topic.
- *
- * The topic is automatically prefixed with the configured base topic if the scope is local.
+ * Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is
+ * local.
  *
  * @param topic The topic.
  * @param payload The payload.
