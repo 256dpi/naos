@@ -46,7 +46,7 @@ Usage:
   naos collect [--clear --duration=<time>]
   naos ping [<pattern>] [--timeout=<time>]
   naos send <topic> [--] <message> [<pattern>] [--timeout=<time>]
-  naos discover [pattern] [--timeout=<time>]
+  naos discover [<pattern>] [--timeout=<time>]
   naos get <param> [<pattern>] [--timeout=<time>]
   naos set <param> [--] <value> [<pattern>] [--timeout=<time>]
   naos unset <param> [<pattern>] [--timeout=<time>]
