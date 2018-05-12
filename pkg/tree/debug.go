@@ -12,7 +12,7 @@ import (
 func ParseCoredump(naosPath string, coredump []byte) ([]byte, error) {
 	// get paths
 	espCoredump := filepath.Join(IDFDirectory(naosPath), "components", "espcoredump", "espcoredump.py")
-	projectELF := filepath.Join(naosPath, "tree", "build", "naos-project.elf")
+	projectELF := filepath.Join(Directory(naosPath), "build", "naos-project.elf")
 
 	// get a temporary file
 	file, err := ioutil.TempFile("", "coredump")

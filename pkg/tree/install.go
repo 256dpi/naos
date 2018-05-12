@@ -60,7 +60,7 @@ func Install(naosPath, sourcePath, version string, force bool, out io.Writer) er
 	}
 
 	// check source directory
-	ok, err = utils.Exists(filepath.Join(naosPath, "tree", "main", "src"))
+	ok, err = utils.Exists(filepath.Join(Directory(naosPath), "main", "src"))
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func Install(naosPath, sourcePath, version string, force bool, out io.Writer) er
 	// link source directory if missing
 	if !ok {
 		utils.Log(out, "Linking source directory.")
-		err = os.Symlink(sourcePath, filepath.Join(naosPath, "tree", "main", "src"))
+		err = os.Symlink(sourcePath, filepath.Join(Directory(naosPath), "main", "src"))
 		if err != nil {
 			return err
 		}
@@ -85,7 +85,7 @@ func InstallComponent(naosPath, name, repository, version string, force bool, ou
 	}
 
 	// get component dir
-	comPath := filepath.Join(naosPath, "tree", "components", name)
+	comPath := filepath.Join(Directory(naosPath), "components", name)
 
 	// remove existing directory if existing or force has been set
 	if force {

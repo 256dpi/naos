@@ -11,9 +11,9 @@ import (
 func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
 	// calculate paths
 	espTool := filepath.Join(IDFDirectory(naosPath), "components", "esptool_py", "esptool", "esptool.py")
-	bootLoaderBinary := filepath.Join(naosPath, "tree", "build", "bootloader", "bootloader.bin")
-	projectBinary := filepath.Join(naosPath, "tree", "build", "naos-project.bin")
-	partitionsBinary := filepath.Join(naosPath, "tree", "build", "partitions.bin")
+	bootLoaderBinary := filepath.Join(Directory(naosPath), "build", "bootloader", "bootloader.bin")
+	projectBinary := filepath.Join(Directory(naosPath), "build", "naos-project.bin")
+	partitionsBinary := filepath.Join(Directory(naosPath), "build", "partitions.bin")
 
 	// prepare erase flash command
 	eraseFlash := []string{

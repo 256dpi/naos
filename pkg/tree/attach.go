@@ -26,14 +26,14 @@ func Attach(naosPath, port string, simple bool, out io.Writer, in io.Reader) err
 		tool := filepath.Join(IDFDirectory(naosPath), "tools", "idf_monitor.py")
 
 		// get elf path
-		elf := filepath.Join(naosPath, "tree", "build", "naos-project.elf")
+		elf := filepath.Join(Directory(naosPath), "build", "naos-project.elf")
 
 		// construct command
 		cmd = exec.Command("python", tool, "--baud", "115200", "--port", port, elf)
 	}
 
 	// set working directory
-	cmd.Dir = filepath.Join(naosPath, "tree")
+	cmd.Dir = filepath.Join(Directory(naosPath))
 
 	// inherit current environment
 	cmd.Env = os.Environ()
@@ -51,7 +51,7 @@ func Attach(naosPath, port string, simple bool, out io.Writer, in io.Reader) err
 			cmd.Env[i] = "PATH=" + bin + ":" + os.Getenv("PATH")
 		} else if strings.HasPrefix(str, "PWD=") {
 			// override shell working directory
-			cmd.Env[i] = "PWD=" + filepath.Join(naosPath, "tree")
+			cmd.Env[i] = "PWD=" + filepath.Join(Directory(naosPath))
 		}
 	}
 

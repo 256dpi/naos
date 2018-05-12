@@ -42,5 +42,5 @@ func Build(naosPath string, clean, appOnly bool, out io.Writer) error {
 
 // AppBinary will return the bytes of the built app binary.
 func AppBinary(naosPath string) ([]byte, error) {
-	return ioutil.ReadFile(filepath.Join(naosPath, "tree", "build", "naos-project.bin"))
+	return ioutil.ReadFile(filepath.Join(Directory(naosPath), "build", "naos-project.bin"))
 }

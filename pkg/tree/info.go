@@ -18,7 +18,7 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 	}
 
 	// read file
-	bytes, err := ioutil.ReadFile(filepath.Join(naosPath, "tree", "includes.list"))
+	bytes, err := ioutil.ReadFile(filepath.Join(Directory(naosPath), "includes.list"))
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 // NAOS installation.
 func RequiredToolchain(naosPath string) (string, error) {
 	// read version
-	bytes, err := ioutil.ReadFile(filepath.Join(naosPath, "tree", "toolchain.version"))
+	bytes, err := ioutil.ReadFile(filepath.Join(Directory(naosPath), "toolchain.version"))
 	if err != nil {
 		return "", err
 	}
@@ -59,7 +59,7 @@ func SourceAndHeaderFiles(naosPath string) ([]string, []string, error) {
 	headerFiles := make([]string, 0)
 
 	// read link
-	path, err := os.Readlink(filepath.Join(naosPath, "tree", "main", "src"))
+	path, err := os.Readlink(filepath.Join(Directory(naosPath), "main", "src"))
 	if err != nil {
 		return nil, nil, err
 	}

@@ -28,7 +28,7 @@ func InstallToolchain(naosPath, version string, force bool, out io.Writer) error
 	}
 
 	// prepare toolchain directory
-	dir := filepath.Join(naosPath, "tree", "toolchain", version)
+	dir := filepath.Join(Directory(naosPath), "toolchain", version)
 
 	// check if already exists
 	ok, err := utils.Exists(dir)
@@ -97,5 +97,5 @@ func BinDirectory(naosPath string) (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(naosPath, "tree", "toolchain", version, "xtensa-esp32-elf", "bin"), nil
+	return filepath.Join(Directory(naosPath), "toolchain", version, "xtensa-esp32-elf", "bin"), nil
 }
