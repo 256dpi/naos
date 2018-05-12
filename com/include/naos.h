@@ -52,7 +52,7 @@ typedef enum {
 /**
  * Get the string representation of the specified status.
  *
- * @param scope The status.
+ * @param status The status.
  * @return The string value.
  */
 const char *naos_status_str(naos_status_t status);
@@ -413,6 +413,7 @@ bool naos_sync_d(const char *param, double *pointer);
  * local.
  *
  * @param topic The topic.
+ * @param qos The QoS level.
  * @param scope The scope.
  * @return Whether the command was successful.
  */
@@ -486,6 +487,7 @@ bool naos_publish_d(const char *topic, double payload, int qos, bool retained, n
  *
  * @param topic The topic.
  * @param payload The payload.
+ * @param len The payload length.
  * @param qos The QoS level.
  * @param retained The retained flag.
  * @param scope The scope.

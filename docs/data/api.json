@@ -78,7 +78,7 @@
       "Note": null,
       "Params": [
         {
-          "Name": "scope",
+          "Name": "status",
           "Description": "The status. "
         }
       ],
@@ -414,6 +414,10 @@
           "Description": "The topic. "
         },
         {
+          "Name": "qos",
+          "Description": "The QoS level. "
+        },
+        {
           "Name": "scope",
           "Description": "The scope. "
         }
@@ -572,6 +576,10 @@
         {
           "Name": "payload",
           "Description": "The payload. "
+        },
+        {
+          "Name": "len",
+          "Description": "The payload length. "
         },
         {
           "Name": "qos",
