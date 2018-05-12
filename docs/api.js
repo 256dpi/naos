@@ -55,8 +55,6 @@ fileNames.forEach(function(fileName) {
     return;
   }
 
-  console.log("parsing " + fileName);
-
   let content = fs.readFileSync("./doxygen/xml/" + fileName, 'utf-8');
 
   xml.parseString(content, function (err, result) {
@@ -136,5 +134,3 @@ fs.writeFileSync('./data/api.json', JSON.stringify({
   Functions: functions,
   Structs: structs
 }, null, '  '));
-
-console.log("done!");
