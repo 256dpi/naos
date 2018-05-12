@@ -1,5 +1,11 @@
+/*
+font-family: 'IBM Plex Sans', sans-serif;
+font-family: 'IBM Plex Serif', serif;
+font-family: 'IBM Plex Mono', monospace;
+ */
+
 body {
-    font-family: sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
 }
 
 header, section, footer {
@@ -10,6 +16,11 @@ header, section, footer {
 header {
     margin-top: 150px;
     margin-bottom: 75px;
+}
+
+header h1 {
+    font-weight: 700;
+    font-size: 48px;
 }
 
 header nav ul {
@@ -23,4 +34,8 @@ header nav ul li {
 
 footer {
     margin-top: 75px;
+}
+
+code {
+    font-family: 'IBM Plex Mono', monospace;
 }
