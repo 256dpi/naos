@@ -8,11 +8,18 @@
 
 /**
  * The messages scopes.
- *
- * The 'local' scope denotes messages that are transferred under the configured base topic of the device while the
- * 'global' scope denotes messages that are transferred directly below the root.
  */
-typedef enum { NAOS_LOCAL, NAOS_GLOBAL } naos_scope_t;
+typedef enum {
+    /**
+     * The local scope denotes messages that are transferred under the configured base topic of the device.
+     */
+    NAOS_LOCAL,
+
+    /**
+     * The global scope denotes messages that are transferred on a global level.
+     */
+    NAOS_GLOBAL
+} naos_scope_t;
 
 /**
  * Get the string representation of the specified scope.
@@ -25,7 +32,22 @@ const char *naos_scope_str(naos_scope_t scope);
 /**
  * The system statuses.
  */
-typedef enum { NAOS_DISCONNECTED, NAOS_CONNECTED, NAOS_NETWORKED } naos_status_t;
+typedef enum {
+    /**
+     * Device is disconnected.
+     */
+    NAOS_DISCONNECTED,
+
+    /**
+     * The device is connected to a WiFi access point.
+     */
+    NAOS_CONNECTED,
+
+    /**
+     * The device is networked with a MQTT broker.
+     */
+    NAOS_NETWORKED
+} naos_status_t;
 
 /**
  * Get the string representation of the specified status.
@@ -38,7 +60,27 @@ const char *naos_status_str(naos_status_t status);
 /**
  * The parameter types.
  */
-typedef enum { NAOS_STRING, NAOS_BOOL, NAOS_LONG, NAOS_DOUBLE } naos_type_t;
+typedef enum {
+    /**
+     * A string parameter.
+     */
+    NAOS_STRING,
+
+    /**
+     * A boolean parameter.
+     */
+    NAOS_BOOL,
+
+    /**
+     * A long parameter.
+     */
+    NAOS_LONG,
+
+    /**
+     * A double parameter.
+     */
+    NAOS_DOUBLE
+} naos_type_t;
 
 /**
  * A single parameter.
