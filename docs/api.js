@@ -7,6 +7,36 @@ let enums = [];
 let structs = [];
 let functions = [];
 
+function parseDescription(list) {
+  let d = {};
+
+  list.forEach((p) => {
+    if(typeof p === 'string') {
+      d.Description = p;
+      return;
+    }
+
+    if (p['parameterlist']) {
+      d.Params = (p['parameterlist'][0]['parameteritem'].map((pi) => {
+        return {
+          Name: pi['parameternamelist'][0]['parametername'][0],
+          Description: pi['parameterdescription'][0]['para'][0]
+        };
+      }));
+    }
+
+    if (p['simplesect']) {
+      if(p['simplesect'][0]['$']['kind'] === 'note') {
+        d.Note = p['simplesect'][0]['para'][0];
+      } else if(p['simplesect'][0]['$']['kind'] === 'return') {
+        d.Returns = p['simplesect'][0]['para'][0];
+      }
+    }
+  });
+
+  return d;
+}
+
 fileNames.forEach(function(fileName) {
   if(!fileName.match(".*.xml")) {
     return;
@@ -63,39 +93,17 @@ fileNames.forEach(function(fileName) {
           }
 
           if(md['$']['kind'] === 'function') {
+            let d = parseDescription(md['detaileddescription'][0]['para']);
+
             let f = {
               Name: md['name'][0],
               Type: md['type'][0],
               Args: md['argsstring'][0],
-              Description: "",
-              Note: null,
-              Params: [],
-              Returns: null
+              Description: d.Description || '',
+              Note: d.Note || null,
+              Params: d.Params || [],
+              Returns: d.Returns || null
             };
-
-            md['detaileddescription'][0]['para'].forEach((p) => {
-              if(typeof p === 'string') {
-                f.Description = p;
-                return;
-              }
-
-              if (p['parameterlist']) {
-                f.Params = (p['parameterlist'][0]['parameteritem'].map((pi) => {
-                  return {
-                    Name: pi['parameternamelist'][0]['parametername'][0],
-                    Description: pi['parameterdescription'][0]['para'][0]
-                  };
-                }));
-              }
-
-              if (p['simplesect']) {
-                if(p['simplesect'][0]['$']['kind'] === 'note') {
-                  f.Note = p['simplesect'][0]['para'][0];
-                } else if(p['simplesect'][0]['$']['kind'] === 'return') {
-                  f.Returns = p['simplesect'][0]['para'][0];
-                }
-              }
-            });
 
             functions.push(f);
           }
