@@ -1,0 +1,64 @@
+{{ define "main" }}
+    {{.Content}}
+
+    <h2>Index</h2>
+
+    <h3>Types</h3>
+    <ul>
+        {{ range .Site.Data.api.Enums }}
+            <li><a href="#{{ .Name }}">{{ .Name }}</a></li>
+        {{ end }}
+
+        {{ range .Site.Data.api.Structs }}
+            <li><a href="#{{ .Name }}">{{ .Name }}</a></li>
+        {{ end }}
+    </ul>
+
+    <h3>Functions</h3>
+    <ul>
+        {{ range .Site.Data.api.Functions }}
+            <li><a href="#{{ .Name }}">{{ .Name }}</a></li>
+        {{ end }}
+    </ul>
+
+    {{ range .Site.Data.api.Enums }}
+        <h2 id="{{ .Name }}">{{ .Name }}</h2>
+        <pre><code>{{ .Name }}</code></pre>
+        <p>{{ .Description }}</p>
+
+        {{ range .Values }}
+            <h3>{{ .Name }}</h3>
+            <p>{{ .Description }}</p>
+        {{ end }}
+    {{ end }}
+
+    {{ range .Site.Data.api.Structs }}
+        <h2 id="{{ .Name }}">{{ .Name }}</h2>
+        <pre><code>{{ .Name }}</code></pre>
+        <p>{{ .Description }}</p>
+
+        {{ range .Fields }}
+            <h3>{{ .Name }}</h3>
+            <p>{{ .Description }}</p>
+        {{ end }}
+    {{ end }}
+
+    {{ range .Site.Data.api.Functions }}
+        <h2 id="{{ .Name }}">{{ .Name }}</h2>
+        <pre><code>{{ .Type }} {{ .Name }}{{.Args }}</code></pre>
+        <p>{{ .Description }}</p>
+
+        {{ if .Params }}
+            <h3>Parameters</h3>
+            {{ range .Params }}
+                <h4>{{ .Name }}</h4>
+                <p>{{ .Description }}</p>
+            {{ end }}
+        {{ end }}
+
+        {{ if .Returns }}
+            <h4>Return Value</h4>
+            <p>{{ .Returns }}</p>
+        {{ end }}
+    {{ end }}
+{{ end }}

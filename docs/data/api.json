@@ -2,6 +2,7 @@
   "Enums": [
     {
       "Name": "naos_scope_t",
+      "Description": "The messages scopes. ",
       "Values": [
         {
           "Name": "NAOS_LOCAL",
@@ -15,6 +16,7 @@
     },
     {
       "Name": "naos_status_t",
+      "Description": "The system statuses. ",
       "Values": [
         {
           "Name": "NAOS_DISCONNECTED",
@@ -32,6 +34,7 @@
     },
     {
       "Name": "naos_type_t",
+      "Description": "The parameter types. ",
       "Values": [
         {
           "Name": "NAOS_STRING",
@@ -56,53 +59,52 @@
     {
       "Name": "naos_scope_str",
       "Type": "const char *",
+      "Args": "(naos_scope_t scope)",
       "Description": "Get the string representation of the specified scope.",
       "Note": null,
-      "Params": [],
-      "Returns": "The string value. ",
-      "params": [
+      "Params": [
         {
           "Name": "scope",
           "Description": "The scope. "
         }
-      ]
+      ],
+      "Returns": "The string value. "
     },
     {
       "Name": "naos_status_str",
       "Type": "const char *",
+      "Args": "(naos_status_t status)",
       "Description": "Get the string representation of the specified status.",
       "Note": null,
-      "Params": [],
-      "Returns": "The string value. ",
-      "params": [
+      "Params": [
         {
           "Name": "scope",
           "Description": "The status. "
         }
-      ]
+      ],
+      "Returns": "The string value. "
     },
     {
       "Name": "naos_init",
       "Type": "void",
+      "Args": "(naos_config_t *config)",
       "Description": "Initialize the system.",
       "Note": "Should only be called once on boot.",
-      "Params": [],
-      "Returns": null,
-      "params": [
+      "Params": [
         {
           "Name": "config",
           "Description": "The configuration object. "
         }
-      ]
+      ],
+      "Returns": null
     },
     {
       "Name": "naos_log",
       "Type": "void",
+      "Args": "(const char *fmt,...)",
       "Description": "The message will be printed to the serial port and published to the broker if logging is activated.",
       "Note": null,
-      "Params": [],
-      "Returns": null,
-      "params": [
+      "Params": [
         {
           "Name": "fmt",
           "Description": "The message format. "
@@ -111,72 +113,72 @@
           "Name": "...",
           "Description": "The used arguments. "
         }
-      ]
+      ],
+      "Returns": null
     },
     {
       "Name": "naos_get",
       "Type": "char *",
+      "Args": "(const char *param)",
       "Description": "Will return the value of the requested parameter. It will return an empty string for not set parameters.",
       "Note": "The returned pointer is only valid until the next call.",
-      "Params": [],
-      "Returns": null,
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
         }
-      ]
+      ],
+      "Returns": null
     },
     {
       "Name": "naos_get_b",
       "Type": "bool",
+      "Args": "(const char *param)",
       "Description": "Will return the value of the requested parameter.",
       "Note": null,
-      "Params": [],
-      "Returns": "The value. ",
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
         }
-      ]
+      ],
+      "Returns": "The value. "
     },
     {
       "Name": "naos_get_l",
       "Type": "int32_t",
+      "Args": "(const char *param)",
       "Description": "Will return the value of the requested parameter.",
       "Note": null,
-      "Params": [],
-      "Returns": "The value. ",
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
         }
-      ]
+      ],
+      "Returns": "The value. "
     },
     {
       "Name": "naos_get_d",
       "Type": "double",
+      "Args": "(const char *param)",
       "Description": "Will return the value of the requested parameter.",
       "Note": null,
-      "Params": [],
-      "Returns": "The value. ",
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
         }
-      ]
+      ],
+      "Returns": "The value. "
     },
     {
       "Name": "naos_set",
       "Type": "void",
+      "Args": "(const char *param, const char *value)",
       "Description": "Will set the value of the requested parameter. Synchronized parameters are automatically updated.",
       "Note": null,
-      "Params": [],
-      "Returns": null,
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
@@ -185,16 +187,16 @@
           "Name": "value",
           "Description": "The value. "
         }
-      ]
+      ],
+      "Returns": null
     },
     {
       "Name": "naos_set_b",
       "Type": "void",
+      "Args": "(const char *param, bool value)",
       "Description": "Will set the value of the requested parameter. Synchronized parameters are automatically updated.",
       "Note": null,
-      "Params": [],
-      "Returns": null,
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
@@ -203,16 +205,16 @@
           "Name": "value",
           "Description": "The value. "
         }
-      ]
+      ],
+      "Returns": null
     },
     {
       "Name": "naos_set_l",
       "Type": "void",
+      "Args": "(const char *param, int32_t value)",
       "Description": "Will set the value of the requested parameter. Synchronized parameters are automatically updated.",
       "Note": null,
-      "Params": [],
-      "Returns": null,
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
@@ -221,16 +223,16 @@
           "Name": "value",
           "Description": "The value. "
         }
-      ]
+      ],
+      "Returns": null
     },
     {
       "Name": "naos_set_d",
       "Type": "void",
+      "Args": "(const char *param, double value)",
       "Description": "Will set the value of the requested parameter. Synchronized parameters are automatically updated.",
       "Note": null,
-      "Params": [],
-      "Returns": null,
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
@@ -239,16 +241,16 @@
           "Name": "value",
           "Description": "The value. "
         }
-      ]
+      ],
+      "Returns": null
     },
     {
       "Name": "naos_ensure",
       "Type": "bool",
+      "Args": "(const char *param, const char *value)",
       "Description": "Ensure a default value of a parameter if it is missing.",
       "Note": null,
-      "Params": [],
-      "Returns": "Whether the parameter was set. ",
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
@@ -257,16 +259,16 @@
           "Name": "value",
           "Description": "The value. "
         }
-      ]
+      ],
+      "Returns": "Whether the parameter was set. "
     },
     {
       "Name": "naos_ensure_b",
       "Type": "bool",
+      "Args": "(const char *param, bool value)",
       "Description": "Ensure a default value of a parameter if it is missing.",
       "Note": null,
-      "Params": [],
-      "Returns": "Whether the parameter was set. ",
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
@@ -275,16 +277,16 @@
           "Name": "value",
           "Description": "The value. "
         }
-      ]
+      ],
+      "Returns": "Whether the parameter was set. "
     },
     {
       "Name": "naos_ensure_l",
       "Type": "bool",
+      "Args": "(const char *param, int32_t value)",
       "Description": "Ensure a default value of a parameter if it is missing.",
       "Note": null,
-      "Params": [],
-      "Returns": "Whether the parameter was set. ",
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
@@ -293,16 +295,16 @@
           "Name": "value",
           "Description": "The value. "
         }
-      ]
+      ],
+      "Returns": "Whether the parameter was set. "
     },
     {
       "Name": "naos_ensure_d",
       "Type": "bool",
+      "Args": "(const char *param, double value)",
       "Description": "Ensure a default value of a parameter if it is missing.",
       "Note": null,
-      "Params": [],
-      "Returns": "Whether the parameter was set. ",
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
@@ -311,30 +313,30 @@
           "Name": "value",
           "Description": "The value. "
         }
-      ]
+      ],
+      "Returns": "Whether the parameter was set. "
     },
     {
       "Name": "naos_unset",
       "Type": "bool",
+      "Args": "(const char *param)",
       "Description": "Will unset the requested parameter. Synchronized parameters are automatically updated.",
       "Note": null,
-      "Params": [],
-      "Returns": "Whether the parameter was unset. ",
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
         }
-      ]
+      ],
+      "Returns": "Whether the parameter was unset. "
     },
     {
       "Name": "naos_sync",
       "Type": "bool",
+      "Args": "(const char *param, char **pointer)",
       "Description": "Will automatically apply parameter modifications and set the specified pointer to a buffer that contains the set value or an empty string if unset. It will read and set the currently stored value when invoked.",
       "Note": "This function should only be called from app_main() to ensure only one synchronization is registered per parameter.",
-      "Params": [],
-      "Returns": null,
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
@@ -343,16 +345,16 @@
           "Name": "pointer",
           "Description": "The pointer. "
         }
-      ]
+      ],
+      "Returns": null
     },
     {
       "Name": "naos_sync_b",
       "Type": "bool",
+      "Args": "(const char *param, bool *pointer)",
       "Description": "Will automatically apply parameter modifications and set the specified pointer to the set value. It will read and set the currently stored value when invoked.",
       "Note": "This function should only be called from app_main() to ensure only one synchronization is registered per parameter.",
-      "Params": [],
-      "Returns": null,
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
@@ -361,16 +363,16 @@
           "Name": "pointer",
           "Description": "The pointer. "
         }
-      ]
+      ],
+      "Returns": null
     },
     {
       "Name": "naos_sync_l",
       "Type": "bool",
+      "Args": "(const char *param, int32_t *pointer)",
       "Description": "Will automatically apply parameter modifications and set the specified pointer to the set value. It will read and set the currently stored value when invoked.",
       "Note": "This function should only be called from app_main() to ensure only one synchronization is registered per parameter.",
-      "Params": [],
-      "Returns": null,
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
@@ -379,16 +381,16 @@
           "Name": "pointer",
           "Description": "The pointer. "
         }
-      ]
+      ],
+      "Returns": null
     },
     {
       "Name": "naos_sync_d",
       "Type": "bool",
+      "Args": "(const char *param, double *pointer)",
       "Description": "Will automatically apply parameter modifications and set the specified pointer to the set value. It will read and set the currently stored value when invoked.",
       "Note": "This function should only be called from app_main() to ensure only one synchronization is registered per parameter.",
-      "Params": [],
-      "Returns": null,
-      "params": [
+      "Params": [
         {
           "Name": "param",
           "Description": "The parameter. "
@@ -397,16 +399,16 @@
           "Name": "pointer",
           "Description": "The pointer. "
         }
-      ]
+      ],
+      "Returns": null
     },
     {
       "Name": "naos_subscribe",
       "Type": "bool",
+      "Args": "(const char *topic, int qos, naos_scope_t scope)",
       "Description": "Subscribe to specified topic. The topic is automatically prefixed with the configured base topic if the scope is local.",
       "Note": null,
-      "Params": [],
-      "Returns": "Whether the command was successful. ",
-      "params": [
+      "Params": [
         {
           "Name": "topic",
           "Description": "The topic. "
@@ -415,16 +417,16 @@
           "Name": "scope",
           "Description": "The scope. "
         }
-      ]
+      ],
+      "Returns": "Whether the command was successful. "
     },
     {
       "Name": "naos_unsubscribe",
       "Type": "bool",
+      "Args": "(const char *topic, naos_scope_t scope)",
       "Description": "Unsubscribe from specified topic. The topic is automatically prefixed with the configured base topic if the scope is local.",
       "Note": null,
-      "Params": [],
-      "Returns": "Whether the command was successful. ",
-      "params": [
+      "Params": [
         {
           "Name": "topic",
           "Description": "The topic. "
@@ -433,16 +435,16 @@
           "Name": "scope",
           "Description": "The scope. "
         }
-      ]
+      ],
+      "Returns": "Whether the command was successful. "
     },
     {
       "Name": "naos_publish",
       "Type": "bool",
+      "Args": "(const char *topic, const char *payload, int qos, bool retained, naos_scope_t scope)",
       "Description": "Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is local.",
       "Note": null,
-      "Params": [],
-      "Returns": "Whether the command was successful. ",
-      "params": [
+      "Params": [
         {
           "Name": "topic",
           "Description": "The topic. "
@@ -463,16 +465,16 @@
           "Name": "scope",
           "Description": "The scope. "
         }
-      ]
+      ],
+      "Returns": "Whether the command was successful. "
     },
     {
       "Name": "naos_publish_b",
       "Type": "bool",
+      "Args": "(const char *topic, bool payload, int qos, bool retained, naos_scope_t scope)",
       "Description": "Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is local.",
       "Note": null,
-      "Params": [],
-      "Returns": "Whether the command was successful. ",
-      "params": [
+      "Params": [
         {
           "Name": "topic",
           "Description": "The topic. "
@@ -493,16 +495,16 @@
           "Name": "scope",
           "Description": "The scope. "
         }
-      ]
+      ],
+      "Returns": "Whether the command was successful. "
     },
     {
       "Name": "naos_publish_l",
       "Type": "bool",
+      "Args": "(const char *topic, int32_t payload, int qos, bool retained, naos_scope_t scope)",
       "Description": "Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is local.",
       "Note": null,
-      "Params": [],
-      "Returns": "Whether the command was successful. ",
-      "params": [
+      "Params": [
         {
           "Name": "topic",
           "Description": "The topic. "
@@ -523,16 +525,16 @@
           "Name": "scope",
           "Description": "The scope. "
         }
-      ]
+      ],
+      "Returns": "Whether the command was successful. "
     },
     {
       "Name": "naos_publish_d",
       "Type": "bool",
+      "Args": "(const char *topic, double payload, int qos, bool retained, naos_scope_t scope)",
       "Description": "Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is local.",
       "Note": null,
-      "Params": [],
-      "Returns": "Whether the command was successful. ",
-      "params": [
+      "Params": [
         {
           "Name": "topic",
           "Description": "The topic. "
@@ -553,16 +555,16 @@
           "Name": "scope",
           "Description": "The scope. "
         }
-      ]
+      ],
+      "Returns": "Whether the command was successful. "
     },
     {
       "Name": "naos_publish_r",
       "Type": "bool",
+      "Args": "(const char *topic, void *payload, size_t len, int qos, bool retained, naos_scope_t scope)",
       "Description": "Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is local.",
       "Note": null,
-      "Params": [],
-      "Returns": "Whether the command was successful. ",
-      "params": [
+      "Params": [
         {
           "Name": "topic",
           "Description": "The topic. "
@@ -583,11 +585,13 @@
           "Name": "scope",
           "Description": "The scope. "
         }
-      ]
+      ],
+      "Returns": "Whether the command was successful. "
     },
     {
       "Name": "naos_millis",
       "Type": "uint32_t",
+      "Args": "()",
       "Description": "Returns the elapsed milliseconds since the start.",
       "Note": null,
       "Params": [],
@@ -596,16 +600,16 @@
     {
       "Name": "naos_delay",
       "Type": "void",
+      "Args": "(uint32_t ms)",
       "Description": "Will delay current task for the specified amount of milliseconds.",
       "Note": "This function should only be used inside the loop callback.",
-      "Params": [],
-      "Returns": null,
-      "params": [
+      "Params": [
         {
           "Name": "ms",
           "Description": "The amount of milliseconds to delay. "
         }
-      ]
+      ],
+      "Returns": null
     }
   ],
   "Structs": [

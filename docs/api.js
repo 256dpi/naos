@@ -52,6 +52,7 @@ fileNames.forEach(function(fileName) {
           if(md['$']['kind']  === 'enum') {
             enums.push({
               Name: md['name'][0],
+              Description: md['detaileddescription'][0]['para'][0],
               Values: md['enumvalue'].map((ev) => {
                 return {
                   Name: ev['name'][0],
@@ -65,6 +66,7 @@ fileNames.forEach(function(fileName) {
             let f = {
               Name: md['name'][0],
               Type: md['type'][0],
+              Args: md['argsstring'][0],
               Description: "",
               Note: null,
               Params: [],
@@ -78,7 +80,7 @@ fileNames.forEach(function(fileName) {
               }
 
               if (p['parameterlist']) {
-                f.params = (p['parameterlist'][0]['parameteritem'].map((pi) => {
+                f.Params = (p['parameterlist'][0]['parameteritem'].map((pi) => {
                   return {
                     Name: pi['parameternamelist'][0]['parametername'][0],
                     Description: pi['parameterdescription'][0]['para'][0]
