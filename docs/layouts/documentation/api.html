@@ -22,7 +22,7 @@
     </ul>
 
     {{ range .Site.Data.api.Enums }}
-        <h2 id="{{ .Name }}">{{ .Name }}</h2>
+        <h2 id="{{ .Name }}" class="js-type">{{ .Name }}</h2>
         <pre><code>{{ .Name }}</code></pre>
         <p>{{ .Description }}</p>
 
@@ -33,7 +33,7 @@
     {{ end }}
 
     {{ range .Site.Data.api.Structs }}
-        <h2 id="{{ .Name }}">{{ .Name }}</h2>
+        <h2 id="{{ .Name }}" class="js-type">{{ .Name }}</h2>
         <pre><code>{{ .Name }}</code></pre>
         <p>{{ .Description }}</p>
 
