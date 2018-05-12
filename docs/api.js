@@ -7,6 +7,19 @@ let enums = [];
 let structs = [];
 let functions = [];
 
+function parseType(type) {
+  if(type['ref']) {
+    let suffix = '';
+    if(type['_']) {
+      suffix = type['_'];
+    }
+
+    return type['ref'][0]['_'] + suffix;
+  }
+
+  return type;
+}
+
 function parseDescription(list) {
   let d = {};
 
@@ -69,7 +82,7 @@ fileNames.forEach(function(fileName) {
         let d = parseDescription(md['detaileddescription'][0]['para']);
 
         s.Fields.push({
-          Type: md['type'][0]['ref'] ? md['type'][0]['ref'][0]['_'] : md['type'][0],
+          Type: parseType(md['type'][0]),
           Args: md['argsstring'][0],
           Name: md['name'][0],
           Description: d.Description || '',
@@ -102,7 +115,7 @@ fileNames.forEach(function(fileName) {
 
             let f = {
               Name: md['name'][0],
-              Type: md['type'][0],
+              Type: parseType(md['type'][0]),
               Args: md['argsstring'][0],
               Description: d.Description || '',
               Note: d.Note || null,

@@ -634,7 +634,7 @@
           "Returns": null
         },
         {
-          "Type": "naos_param_t",
+          "Type": "naos_param_t *",
           "Args": "",
           "Name": "parameters",
           "Description": "The managed parameters. ",
