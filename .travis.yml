@@ -1,5 +1,6 @@
 jobs:
   include:
+
     - stage: test pkgs and cli
       language: go
       go: 1.9
@@ -10,6 +11,7 @@ jobs:
         - glide install
       script:
         - make test
+
     - stage: test com
       language: cpp
       addons:
@@ -19,7 +21,16 @@ jobs:
       script:
         - pip install pyserial
         - cd com; make build
-    - stage: deploy
+
+    - stage: deploy cli
+      if: tag =~ ^v.*
+      language: go
+      go: 1.9
+      before_install:
+        - go get github.com/Masterminds/glide
+        - go get github.com/mitchellh/gox
+      install:
+        - glide install
       before_deploy:
         - gox -osarch="darwin/amd64 linux/amd64" -output="./release/naos-{{.OS}}-{{.Arch}}" github.com/shiftr-io/naos/cmd/naos
         - gzip ./release/*
