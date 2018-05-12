@@ -39,11 +39,13 @@ function parseDescription(list) {
     }
 
     if (p['simplesect']) {
-      if(p['simplesect'][0]['$']['kind'] === 'note') {
-        d.Note = p['simplesect'][0]['para'][0];
-      } else if(p['simplesect'][0]['$']['kind'] === 'return') {
-        d.Returns = p['simplesect'][0]['para'][0];
-      }
+      p['simplesect'].forEach((sc) => {
+        if(sc['$']['kind'] === 'note') {
+          d.Note = sc['para'][0];
+        } else if(sc['$']['kind'] === 'return') {
+          d.Returns = sc['para'][0];
+        }
+      });
     }
   });
 
