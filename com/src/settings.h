@@ -21,7 +21,7 @@ void naos_settings_init();
 /**
  * Will read a setting form storage. The returned pointer must be freed after usage.
  *
- * @param setting - The requested setting.
+ * @param setting The requested setting.
  * @return A pointer to the string value.
  */
 char* naos_settings_read(naos_setting_t setting);
@@ -29,7 +29,7 @@ char* naos_settings_read(naos_setting_t setting);
 /**
  * Will write a setting to storage.
  *
- * @param setting - The setting.
- * @param value - The value.
+ * @param setting The setting.
+ * @param value The value.
  */
 void naos_settings_write(naos_setting_t setting, const char* value);

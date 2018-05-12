@@ -6,7 +6,7 @@
 /**
  * Initialize the task subsystem.
  *
- * Note: Should only be called once on boot.
+ * @note Should only be called once on boot.
  */
 void naos_task_init();
 
@@ -40,10 +40,10 @@ void naos_task_update(const char *param, const char *value);
 /**
  * Forward a message to the task process.
  *
- * @param topic - The topic.
- * @param payload - The payload.
- * @param len - The payload length.
- * @param scope - The scope.
+ * @param topic The topic.
+ * @param payload The payload.
+ * @param len The payload length.
+ * @param scope The scope.
  */
 void naos_task_forward(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope);
 

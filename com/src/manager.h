@@ -6,7 +6,7 @@
 /**
  * Initialize the manager subsystem.
  *
- * Note: Should only be called once on boot.
+ * @note Should only be called once on boot.
  */
 void naos_manager_init();
 
@@ -20,17 +20,17 @@ void naos_manager_start();
  *
  * The message is forwarded to the task if not handled by the manager.
  *
- * @param topic - The topic.
- * @param payload - The payload.
- * @param len - The payload length.
- * @param scope - The scope.
+ * @param topic The topic.
+ * @param payload The payload.
+ * @param len The payload length.
+ * @param scope The scope.
  */
 void naos_manager_handle(const char* topic, uint8_t* payload, size_t len, naos_scope_t scope);
 
 /**
  * Select a parameter for reading and writing.
  *
- * @param param - The parameter.
+ * @param param The parameter.
  */
 void naos_manager_select_param(const char* param);
 
@@ -44,7 +44,7 @@ char* naos_manager_read_param();
 /**
  * Write the previously selected parameter.
  *
- * @param value - The value.
+ * @param value The value.
  */
 void naos_manager_write_param(const char* value);
 

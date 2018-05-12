@@ -4,7 +4,7 @@
 /**
  * Initialize the main system.
  *
- * Note: Should only be called once on boot.
+ * @note Should only be called once on boot.
  */
 void naos_system_init();
 

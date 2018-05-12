@@ -26,33 +26,33 @@ typedef enum {
 /**
  * The read callback. The read callback will free the passed pointer.
  *
- * @param ch - The characteristic.
+ * @param ch The characteristic.
  */
 typedef char *(*naos_ble_read_callback_t)(naos_ble_char_t ch);
 
 /**
  * The write callback.
  *
- * @param ch - The characteristic.
- * @param value - The value.
+ * @param ch The characteristic.
+ * @param value The value.
  */
 typedef void (*naos_ble_write_callback_t)(naos_ble_char_t ch, const char *value);
 
 /**
  * Initialize the BLE subsystem.
  *
- * Note: Should only be called once on boot.
+ * @note Should only be called once on boot.
  *
- * @param rcb - The read callback.
- * @param wcb - The write callback.
+ * @param rcb The read callback.
+ * @param wcb The write callback.
  */
 void naos_ble_init(naos_ble_read_callback_t rcb, naos_ble_write_callback_t wcb);
 
 /**
  * Notify connected clients about changed values
  *
- * @param ch - The characteristic.
- * @param value - The value.
+ * @param ch The characteristic.
+ * @param value The value.
  */
 void naos_ble_notify(naos_ble_char_t ch, const char *value);
 

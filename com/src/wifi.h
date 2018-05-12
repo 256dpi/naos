@@ -14,19 +14,19 @@ typedef void (*naos_wifi_status_callback_t)(naos_wifi_status_t);
 /**
  * Initialize the WiFi subsystem.
  *
- * Note: Should only be called once on boot.
+ * @note Should only be called once on boot.
  *
- * @param callback - The status callback.
+ * @param callback The status callback.
  */
 void naos_wifi_init(naos_wifi_status_callback_t callback);
 
 /**
  * Configure the WiFi connection.
  *
- * Note: Will automatically disconnect if already connected.
+ * @note Will automatically disconnect if already connected.
  *
- * @param ssid - The WiFi AP SSID.
- * @param password - The WiFi AP password.
+ * @param ssid The WiFi AP SSID.
+ * @param password The WiFi AP password.
  */
 void naos_wifi_configure(const char *ssid, const char *password);
 
