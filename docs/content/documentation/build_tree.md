@@ -1,6 +1,8 @@
-# naos-tree
+---
+title: Build Tree
+---
 
-**The [Networked Artifacts Operating System](https://github.com/shiftr-io/naos) build tree.**
+# Build Tree
 
 You can use this build tree to easily build a project that uses the naos component, but using the [naos](https://github.com/shiftr-io/naos) command line utility is recommended.
 
