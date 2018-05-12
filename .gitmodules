@@ -4,6 +4,3 @@
 [submodule "tree/components/esp-mqtt"]
 	path = tree/components/esp-mqtt
 	url = https://github.com/256dpi/esp-mqtt.git
-[submodule "tree/components/naos-esp"]
-	path = tree/components/naos-esp
-	url = https://github.com/shiftr-io/naos-esp.git
