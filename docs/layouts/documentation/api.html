@@ -39,6 +39,7 @@
 
         {{ range .Fields }}
             <h3>{{ .Name }}</h3>
+            <pre><code>{{ .Type }}</code></pre>
             <p>{{ .Description }}</p>
         {{ end }}
     {{ end }}
@@ -47,6 +48,10 @@
         <h2 id="{{ .Name }}">{{ .Name }}</h2>
         <pre><code>{{ .Type }} {{ .Name }}{{.Args }}</code></pre>
         <p>{{ .Description }}</p>
+
+        {{ if .Note }}
+        <p><em>{{ .Note }}</em></p>
+        {{ end }}
 
         {{ if .Params }}
             <h3>Parameters</h3>
