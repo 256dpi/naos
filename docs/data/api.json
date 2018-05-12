@@ -619,73 +619,146 @@
       "Fields": [
         {
           "Type": "const char *",
+          "Args": "",
           "Name": "device_type",
-          "Description": "The device type. "
+          "Description": "The device type. ",
+          "Params": [],
+          "Returns": null
         },
         {
           "Type": "const char *",
+          "Args": "",
           "Name": "firmware_version",
-          "Description": "The firmware version. "
+          "Description": "The firmware version. ",
+          "Params": [],
+          "Returns": null
         },
         {
-          "Type": "[object Object]",
+          "Type": "naos_param_t",
+          "Args": "",
           "Name": "parameters",
-          "Description": "The managed parameters. "
+          "Description": "The managed parameters. ",
+          "Params": [],
+          "Returns": null
         },
         {
           "Type": "size_t",
+          "Args": "",
           "Name": "num_parameters",
-          "Description": "The number of managed parameters. "
+          "Description": "The number of managed parameters. ",
+          "Params": [],
+          "Returns": null
         },
         {
-          "Type": "void(*)()",
+          "Type": "void(*",
+          "Args": ")()",
           "Name": "ping_callback",
-          "Description": "The callback that is called when a ping is received. "
+          "Description": "The callback that is called when a ping is received. ",
+          "Params": [],
+          "Returns": null
         },
         {
-          "Type": "void(*)()",
+          "Type": "void(*",
+          "Args": ")()",
           "Name": "online_callback",
-          "Description": "The callback that is called once the device comes online. "
+          "Description": "The callback that is called once the device comes online. ",
+          "Params": [],
+          "Returns": null
         },
         {
-          "Type": "void(*)(const char *param, const char *value)",
+          "Type": "void(*",
+          "Args": ")(const char *param, const char *value)",
           "Name": "update_callback",
-          "Description": "The callback that is called when a parameter has been updated. If the parameter was set, value is the string value. If the parameter was unset, value is NULL."
+          "Description": "The callback that is called when a parameter has been updated. If the parameter was set, value is the string value. If the parameter was unset, value is NULL.",
+          "Params": [
+            {
+              "Name": "param",
+              "Description": "The parameter. "
+            },
+            {
+              "Name": "value",
+              "Description": "The value. "
+            }
+          ],
+          "Returns": null
         },
         {
-          "Type": "void(*)(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope)",
+          "Type": "void(*",
+          "Args": ")(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope)",
           "Name": "message_callback",
-          "Description": "The message callback is called with incoming messages."
+          "Description": "The message callback is called with incoming messages.",
+          "Params": [
+            {
+              "Name": "topic",
+              "Description": "The topic. "
+            },
+            {
+              "Name": "payload",
+              "Description": "The payload. "
+            },
+            {
+              "Name": "len",
+              "Description": "The payload length. "
+            },
+            {
+              "Name": "scope",
+              "Description": "The scope. "
+            }
+          ],
+          "Returns": null
         },
         {
-          "Type": "void(*)()",
+          "Type": "void(*",
+          "Args": ")()",
           "Name": "loop_callback",
-          "Description": "The loop callback is called repeatedly if the device is online. "
+          "Description": "The loop callback is called repeatedly if the device is online. ",
+          "Params": [],
+          "Returns": null
         },
         {
           "Type": "int",
+          "Args": "",
           "Name": "loop_interval",
-          "Description": "The interval of the loop callback in milliseconds. "
+          "Description": "The interval of the loop callback in milliseconds. ",
+          "Params": [],
+          "Returns": null
         },
         {
-          "Type": "void(*)()",
+          "Type": "void(*",
+          "Args": ")()",
           "Name": "offline_callback",
-          "Description": "The offline callback is called once the device becomes offline. "
+          "Description": "The offline callback is called once the device becomes offline. ",
+          "Params": [],
+          "Returns": null
         },
         {
-          "Type": "void(*)(naos_status_t status)",
+          "Type": "void(*",
+          "Args": ")(naos_status_t status)",
           "Name": "status_callback",
-          "Description": "The callback is called once the device has changed its status."
+          "Description": "The callback is called once the device has changed its status.",
+          "Params": [
+            {
+              "Name": "status",
+              "Description": "The status. "
+            }
+          ],
+          "Returns": null
         },
         {
-          "Type": "float(*)()",
+          "Type": "float(*",
+          "Args": ")()",
           "Name": "battery_level",
-          "Description": "This callback is called to retrieve battery information. It should be provided if the device has a battery power source."
+          "Description": "This callback is called to retrieve battery information. It should be provided if the device has a battery power source.",
+          "Params": [],
+          "Returns": "A value between 0 and 1 indicating the battery charge level. "
         },
         {
           "Type": "bool",
+          "Args": "",
           "Name": "delay_startup",
-          "Description": "If set, the device will randomly (up to 5s) delay startup to overcome WiFi and MQTT congestion issues if many devices restart at the same time. "
+          "Description": "If set, the device will randomly (up to 5s) delay startup to overcome WiFi and MQTT congestion issues if many devices restart at the same time. ",
+          "Params": [],
+          "Returns": null
         }
       ]
     },
@@ -695,53 +768,83 @@
       "Fields": [
         {
           "Type": "const char *",
+          "Args": "",
           "Name": "name",
-          "Description": "The name of the parameter e.g. \"my-param\". "
+          "Description": "The name of the parameter e.g. \"my-param\". ",
+          "Params": [],
+          "Returns": null
         },
         {
-          "Type": "[object Object]",
+          "Type": "naos_type_t",
+          "Args": "",
           "Name": "type",
-          "Description": "The parameter type. "
+          "Description": "The parameter type. ",
+          "Params": [],
+          "Returns": null
         },
         {
           "Type": "const char *",
+          "Args": "",
           "Name": "default_s",
-          "Description": "The default string value. "
+          "Description": "The default string value. ",
+          "Params": [],
+          "Returns": null
         },
         {
           "Type": "bool",
+          "Args": "",
           "Name": "default_b",
-          "Description": "The default boolean value. "
+          "Description": "The default boolean value. ",
+          "Params": [],
+          "Returns": null
         },
         {
           "Type": "int32_t",
+          "Args": "",
           "Name": "default_l",
-          "Description": "The default long value. "
+          "Description": "The default long value. ",
+          "Params": [],
+          "Returns": null
         },
         {
           "Type": "double",
+          "Args": "",
           "Name": "default_d",
-          "Description": "The default double value. "
+          "Description": "The default double value. ",
+          "Params": [],
+          "Returns": null
         },
         {
           "Type": "char **",
+          "Args": "",
           "Name": "sync_s",
-          "Description": "The synchronized string variable. "
+          "Description": "The synchronized string variable. ",
+          "Params": [],
+          "Returns": null
         },
         {
           "Type": "bool *",
+          "Args": "",
           "Name": "sync_b",
-          "Description": "The synchronized boolean variable. "
+          "Description": "The synchronized boolean variable. ",
+          "Params": [],
+          "Returns": null
         },
         {
           "Type": "int32_t *",
+          "Args": "",
           "Name": "sync_l",
-          "Description": "The synchronized long variable. "
+          "Description": "The synchronized long variable. ",
+          "Params": [],
+          "Returns": null
         },
         {
           "Type": "double *",
+          "Args": "",
           "Name": "sync_d",
-          "Description": "The synchronized double variable. "
+          "Description": "The synchronized double variable. ",
+          "Params": [],
+          "Returns": null
         }
       ]
     }

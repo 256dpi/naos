@@ -66,10 +66,15 @@ fileNames.forEach(function(fileName) {
       };
 
       cd['sectiondef'][0]['memberdef'].forEach((md) => {
+        let d = parseDescription(md['detaileddescription'][0]['para']);
+
         s.Fields.push({
-          Type: md['type'][0]+md['argsstring'][0],
+          Type: md['type'][0]['ref'] ? md['type'][0]['ref'][0]['_'] : md['type'][0],
+          Args: md['argsstring'][0],
           Name: md['name'][0],
-          Description: md['detaileddescription'][0]['para'][0],
+          Description: d.Description || '',
+          Params: d.Params || [],
+          Returns: d.Returns || null
         });
       });
 
