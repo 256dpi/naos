@@ -1,2 +1,6 @@
+# ignore development files
 vendor/
 test/
+
+# ignore generated files
+CMakeLists.txt
