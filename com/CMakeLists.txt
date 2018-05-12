@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.7)
-project(naos-esp)
+project(naos)
 
 set(CMAKE_C_STANDARD 99)
 
@@ -55,4 +55,4 @@ set(SOURCE_FILES
         src/wifi.h
         test/main/main.c)
 
-add_library(naos-esp ${SOURCE_FILES})
+add_library(naos ${SOURCE_FILES})
