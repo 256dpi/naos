@@ -1,13 +1,23 @@
-language: go
-go:
-  - 1.9
-before_install:
-  - go get github.com/Masterminds/glide
-  - go get github.com/mitchellh/gox
-install:
-  - glide install
-script:
-  - make test
+matrix:
+  include:
+    - language: go
+      go: 1.9
+      before_install:
+        - go get github.com/Masterminds/glide
+        - go get github.com/mitchellh/gox
+      install:
+        - glide install
+      script:
+        - make test
+    - language: cpp
+      addons:
+        apt:
+          packages:
+          - gperf
+      script:
+        - pip install pyserial
+        - make build
+
 before_deploy:
   - gox -osarch="darwin/amd64 linux/amd64" -output="./release/naos-{{.OS}}-{{.Arch}}" github.com/shiftr-io/naos/cmd/naos
   - gzip ./release/*
