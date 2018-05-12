@@ -16,7 +16,7 @@ matrix:
           - gperf
       script:
         - pip install pyserial
-        - make build
+        - cd com; make build
 
 before_deploy:
   - gox -osarch="darwin/amd64 linux/amd64" -output="./release/naos-{{.OS}}-{{.Arch}}" github.com/shiftr-io/naos/cmd/naos
