@@ -65,7 +65,8 @@
       "Params": [
         {
           "Name": "scope",
-          "Description": "The scope. "
+          "Description": "The scope. ",
+          "Type": "naos_scope_t"
         }
       ],
       "Returns": "The string value. "
@@ -79,7 +80,8 @@
       "Params": [
         {
           "Name": "status",
-          "Description": "The status. "
+          "Description": "The status. ",
+          "Type": "naos_status_t"
         }
       ],
       "Returns": "The string value. "
@@ -93,7 +95,8 @@
       "Params": [
         {
           "Name": "config",
-          "Description": "The configuration object. "
+          "Description": "The configuration object. ",
+          "Type": "naos_config_t *"
         }
       ],
       "Returns": null
@@ -107,11 +110,13 @@
       "Params": [
         {
           "Name": "fmt",
-          "Description": "The message format. "
+          "Description": "The message format. ",
+          "Type": "const char *"
         },
         {
           "Name": "...",
-          "Description": "The used arguments. "
+          "Description": "The used arguments. ",
+          "Type": "..."
         }
       ],
       "Returns": null
@@ -125,7 +130,8 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         }
       ],
       "Returns": "Pointer to value. "
@@ -139,7 +145,8 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         }
       ],
       "Returns": "The value. "
@@ -153,7 +160,8 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         }
       ],
       "Returns": "The value. "
@@ -167,7 +175,8 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         }
       ],
       "Returns": "The value. "
@@ -181,11 +190,13 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         },
         {
           "Name": "value",
-          "Description": "The value. "
+          "Description": "The value. ",
+          "Type": "const char *"
         }
       ],
       "Returns": null
@@ -199,11 +210,13 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         },
         {
           "Name": "value",
-          "Description": "The value. "
+          "Description": "The value. ",
+          "Type": "bool"
         }
       ],
       "Returns": null
@@ -217,11 +230,13 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         },
         {
           "Name": "value",
-          "Description": "The value. "
+          "Description": "The value. ",
+          "Type": "int32_t"
         }
       ],
       "Returns": null
@@ -235,11 +250,13 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         },
         {
           "Name": "value",
-          "Description": "The value. "
+          "Description": "The value. ",
+          "Type": "double"
         }
       ],
       "Returns": null
@@ -253,11 +270,13 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         },
         {
           "Name": "value",
-          "Description": "The value. "
+          "Description": "The value. ",
+          "Type": "const char *"
         }
       ],
       "Returns": "Whether the parameter was set. "
@@ -271,11 +290,13 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         },
         {
           "Name": "value",
-          "Description": "The value. "
+          "Description": "The value. ",
+          "Type": "bool"
         }
       ],
       "Returns": "Whether the parameter was set. "
@@ -289,11 +310,13 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         },
         {
           "Name": "value",
-          "Description": "The value. "
+          "Description": "The value. ",
+          "Type": "int32_t"
         }
       ],
       "Returns": "Whether the parameter was set. "
@@ -307,11 +330,13 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         },
         {
           "Name": "value",
-          "Description": "The value. "
+          "Description": "The value. ",
+          "Type": "double"
         }
       ],
       "Returns": "Whether the parameter was set. "
@@ -325,7 +350,8 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         }
       ],
       "Returns": "Whether the parameter was unset. "
@@ -339,11 +365,13 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         },
         {
           "Name": "pointer",
-          "Description": "The pointer. "
+          "Description": "The pointer. ",
+          "Type": "char **"
         }
       ],
       "Returns": "Whether the registration was successful. "
@@ -357,11 +385,13 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         },
         {
           "Name": "pointer",
-          "Description": "The pointer. "
+          "Description": "The pointer. ",
+          "Type": "bool *"
         }
       ],
       "Returns": "Whether the registration was successful. "
@@ -375,11 +405,13 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         },
         {
           "Name": "pointer",
-          "Description": "The pointer. "
+          "Description": "The pointer. ",
+          "Type": "int32_t *"
         }
       ],
       "Returns": "Whether the registration was successful. "
@@ -393,11 +425,13 @@
       "Params": [
         {
           "Name": "param",
-          "Description": "The parameter. "
+          "Description": "The parameter. ",
+          "Type": "const char *"
         },
         {
           "Name": "pointer",
-          "Description": "The pointer. "
+          "Description": "The pointer. ",
+          "Type": "double *"
         }
       ],
       "Returns": "Whether the registration was successful. "
@@ -411,15 +445,18 @@
       "Params": [
         {
           "Name": "topic",
-          "Description": "The topic. "
+          "Description": "The topic. ",
+          "Type": "const char *"
         },
         {
           "Name": "qos",
-          "Description": "The QoS level. "
+          "Description": "The QoS level. ",
+          "Type": "int"
         },
         {
           "Name": "scope",
-          "Description": "The scope. "
+          "Description": "The scope. ",
+          "Type": "naos_scope_t"
         }
       ],
       "Returns": "Whether the command was successful. "
@@ -433,11 +470,13 @@
       "Params": [
         {
           "Name": "topic",
-          "Description": "The topic. "
+          "Description": "The topic. ",
+          "Type": "const char *"
         },
         {
           "Name": "scope",
-          "Description": "The scope. "
+          "Description": "The scope. ",
+          "Type": "naos_scope_t"
         }
       ],
       "Returns": "Whether the command was successful. "
@@ -451,23 +490,28 @@
       "Params": [
         {
           "Name": "topic",
-          "Description": "The topic. "
+          "Description": "The topic. ",
+          "Type": "const char *"
         },
         {
           "Name": "payload",
-          "Description": "The payload. "
+          "Description": "The payload. ",
+          "Type": "const char *"
         },
         {
           "Name": "qos",
-          "Description": "The QoS level. "
+          "Description": "The QoS level. ",
+          "Type": "int"
         },
         {
           "Name": "retained",
-          "Description": "The retained flag. "
+          "Description": "The retained flag. ",
+          "Type": "bool"
         },
         {
           "Name": "scope",
-          "Description": "The scope. "
+          "Description": "The scope. ",
+          "Type": "naos_scope_t"
         }
       ],
       "Returns": "Whether the command was successful. "
@@ -481,23 +525,28 @@
       "Params": [
         {
           "Name": "topic",
-          "Description": "The topic. "
+          "Description": "The topic. ",
+          "Type": "const char *"
         },
         {
           "Name": "payload",
-          "Description": "The payload. "
+          "Description": "The payload. ",
+          "Type": "bool"
         },
         {
           "Name": "qos",
-          "Description": "The QoS level. "
+          "Description": "The QoS level. ",
+          "Type": "int"
         },
         {
           "Name": "retained",
-          "Description": "The retained flag. "
+          "Description": "The retained flag. ",
+          "Type": "bool"
         },
         {
           "Name": "scope",
-          "Description": "The scope. "
+          "Description": "The scope. ",
+          "Type": "naos_scope_t"
         }
       ],
       "Returns": "Whether the command was successful. "
@@ -511,23 +560,28 @@
       "Params": [
         {
           "Name": "topic",
-          "Description": "The topic. "
+          "Description": "The topic. ",
+          "Type": "const char *"
         },
         {
           "Name": "payload",
-          "Description": "The payload. "
+          "Description": "The payload. ",
+          "Type": "int32_t"
         },
         {
           "Name": "qos",
-          "Description": "The QoS level. "
+          "Description": "The QoS level. ",
+          "Type": "int"
         },
         {
           "Name": "retained",
-          "Description": "The retained flag. "
+          "Description": "The retained flag. ",
+          "Type": "bool"
         },
         {
           "Name": "scope",
-          "Description": "The scope. "
+          "Description": "The scope. ",
+          "Type": "naos_scope_t"
         }
       ],
       "Returns": "Whether the command was successful. "
@@ -541,23 +595,28 @@
       "Params": [
         {
           "Name": "topic",
-          "Description": "The topic. "
+          "Description": "The topic. ",
+          "Type": "const char *"
         },
         {
           "Name": "payload",
-          "Description": "The payload. "
+          "Description": "The payload. ",
+          "Type": "double"
         },
         {
           "Name": "qos",
-          "Description": "The QoS level. "
+          "Description": "The QoS level. ",
+          "Type": "int"
         },
         {
           "Name": "retained",
-          "Description": "The retained flag. "
+          "Description": "The retained flag. ",
+          "Type": "bool"
         },
         {
           "Name": "scope",
-          "Description": "The scope. "
+          "Description": "The scope. ",
+          "Type": "naos_scope_t"
         }
       ],
       "Returns": "Whether the command was successful. "
@@ -571,27 +630,33 @@
       "Params": [
         {
           "Name": "topic",
-          "Description": "The topic. "
+          "Description": "The topic. ",
+          "Type": "const char *"
         },
         {
           "Name": "payload",
-          "Description": "The payload. "
+          "Description": "The payload. ",
+          "Type": "void *"
         },
         {
           "Name": "len",
-          "Description": "The payload length. "
+          "Description": "The payload length. ",
+          "Type": "size_t"
         },
         {
           "Name": "qos",
-          "Description": "The QoS level. "
+          "Description": "The QoS level. ",
+          "Type": "int"
         },
         {
           "Name": "retained",
-          "Description": "The retained flag. "
+          "Description": "The retained flag. ",
+          "Type": "bool"
         },
         {
           "Name": "scope",
-          "Description": "The scope. "
+          "Description": "The scope. ",
+          "Type": "naos_scope_t"
         }
       ],
       "Returns": "Whether the command was successful. "
@@ -614,7 +679,8 @@
       "Params": [
         {
           "Name": "ms",
-          "Description": "The amount of milliseconds to delay. "
+          "Description": "The amount of milliseconds to delay. ",
+          "Type": "uint32_t"
         }
       ],
       "Returns": null
@@ -681,11 +747,13 @@
           "Params": [
             {
               "Name": "param",
-              "Description": "The parameter. "
+              "Description": "The parameter. ",
+              "Type": "const char *"
             },
             {
               "Name": "value",
-              "Description": "The value. "
+              "Description": "The value. ",
+              "Type": "const char *"
             }
           ],
           "Returns": null
@@ -698,19 +766,23 @@
           "Params": [
             {
               "Name": "topic",
-              "Description": "The topic. "
+              "Description": "The topic. ",
+              "Type": "const char *"
             },
             {
               "Name": "payload",
-              "Description": "The payload. "
+              "Description": "The payload. ",
+              "Type": "uint8_t *"
             },
             {
               "Name": "len",
-              "Description": "The payload length. "
+              "Description": "The payload length. ",
+              "Type": "size_t"
             },
             {
               "Name": "scope",
-              "Description": "The scope. "
+              "Description": "The scope. ",
+              "Type": "naos_scope_t"
             }
           ],
           "Returns": null
@@ -747,7 +819,8 @@
           "Params": [
             {
               "Name": "status",
-              "Description": "The status. "
+              "Description": "The status. ",
+              "Type": "naos_status_t"
             }
           ],
           "Returns": null

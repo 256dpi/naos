@@ -52,6 +52,44 @@ function parseDescription(list) {
   return d;
 }
 
+function parseParams(list) {
+  return list.map((p) => {
+    let t = parseType(p['type'][0]);
+
+    return {
+      Type: t,
+      Name: p['declname'] ? p['declname'][0] : t
+    }
+  });
+}
+
+function parseArgString(str) {
+  if(!str) {
+    return [];
+  }
+
+  let p = str.slice(2, -1).split(', ');
+  if (!p[0]) {
+    return [];
+  }
+
+  return p.map((p) => {
+    let i = p.lastIndexOf('*');
+    if(i >= 0) {
+      return {
+        Type: p.slice(0, i+1),
+        Name: p.slice(i+1)
+      };
+    }
+
+    i = p.lastIndexOf(' ');
+    return {
+      Type: p.slice(0, i),
+      Name: p.slice(i+1)
+    };
+  });
+}
+
 fileNames.forEach(function(fileName) {
   if(!fileName.match(".*.xml")) {
     return;
@@ -80,6 +118,12 @@ fileNames.forEach(function(fileName) {
 
       cd['sectiondef'][0]['memberdef'].forEach((md) => {
         let d = parseDescription(md['detaileddescription'][0]['para']);
+        let p = parseArgString(md['argsstring'][0]);
+
+        p.forEach((p1)=>{
+          let p2 = d.Params.find((p2)=> p2.Name === p1.Name);
+          p2['Type'] = p1.Type;
+        });
 
         s.Fields.push({
           Type: parseType(md['type'][0]),
@@ -112,6 +156,12 @@ fileNames.forEach(function(fileName) {
 
           if(md['$']['kind'] === 'function') {
             let d = parseDescription(md['detaileddescription'][0]['para']);
+            let p = parseParams(md['param'] || []);
+
+            p.forEach((p1)=>{
+              let p2 = d.Params.find((p2)=> p2.Name === p1.Name);
+              p2['Type'] = p1.Type;
+            });
 
             let f = {
               Name: md['name'][0],

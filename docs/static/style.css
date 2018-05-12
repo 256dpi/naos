@@ -36,6 +36,9 @@ footer {
     margin-top: 75px;
 }
 
-code {
+code.definition {
     font-family: 'IBM Plex Mono', monospace;
+    background-color: #eee;
+    border-radius: 3px;
+    padding: 2px 4px;
 }
