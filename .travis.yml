@@ -31,6 +31,8 @@ jobs:
         - go get github.com/mitchellh/gox
       install:
         - glide install
+      script:
+        - true
       before_deploy:
         - gox -osarch="darwin/amd64 linux/amd64" -output="./release/naos-{{.OS}}-{{.Arch}}" github.com/shiftr-io/naos/cmd/naos
         - gzip ./release/*
