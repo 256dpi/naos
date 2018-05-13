@@ -4,6 +4,8 @@ jobs:
     - stage: test pkgs and cli
       language: go
       go: 1.9
+      git:
+        submodules: false
       before_install:
         - go get github.com/Masterminds/glide
         - go get github.com/mitchellh/gox
@@ -14,6 +16,8 @@ jobs:
 
     - stage: test com
       language: cpp
+      git:
+        submodules: false
       addons:
         apt:
           packages:
@@ -26,6 +30,8 @@ jobs:
       if: tag =~ ^v.*
       language: go
       go: 1.9
+      git:
+        submodules: false
       before_install:
         - go get github.com/Masterminds/glide
         - go get github.com/mitchellh/gox
