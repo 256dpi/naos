@@ -2,7 +2,7 @@
 
 body {
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 20px;
+    font-size: 18px;
 }
 
 a {
@@ -14,9 +14,14 @@ a:hover {
     text-decoration: underline;
 }
 
+code {
+    background-color: #f4f4f4;
+    padding: 3px 6px;
+}
+
 pre code {
     display: block;
-    background-color: #eee;
+    background-color: #f4f4f4;
     padding: 6px 12px;
 }
 
@@ -58,10 +63,9 @@ h2 {
 code.definition {
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px;
-    background-color: #eee;
+    background-color: #f4f4f4;
     border-radius: 3px;
-    padding: 3px 6px;
+    padding: 6px 12px;
     white-space: normal;
     line-height: 1.2;
 }
@@ -71,8 +75,18 @@ table.parameters {
 }
 
 table.parameters td {
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     padding: 5px 10px;
+    vertical-align: top;
+}
+
+table.parameters td.code {
+    background-color: #f4f4f4;
+}
+
+table.parameters td code {
+    background: none;
+    padding: 0;
 }
 
 /* Footer */

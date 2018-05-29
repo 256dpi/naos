@@ -28,7 +28,7 @@
         <table class="parameters">
             {{ range .Values }}
                 <tr>
-                    <td><code>{{ .Name }}</code></td>
+                    <td class="code"><code>{{ .Name }}</code></td>
                     <td>{{ .Description }}</td>
                 </tr>
             {{ end }}
@@ -48,7 +48,7 @@
                 <table class="parameters">
                     {{ range .Params }}
                         <tr>
-                            <td><code>{{ .Type }}</code></td>
+                            <td class="code"><code>{{ .Type }}</code></td>
                             <td>{{ .Name }}</td>
                             <td>{{ .Description }}</td>
                         </tr>
@@ -56,7 +56,7 @@
 
                     {{ if .Returns }}
                         <tr>
-                            <td><code>{{ .Type }}</code></td>
+                            <td class="code"><code>{{ .Type }}</code></td>
                             <td>↵</td>
                             <td>{{ .Returns }}</td>
                         </tr>
@@ -79,7 +79,7 @@
             <table class="parameters">
                 {{ range .Params }}
                     <tr>
-                        <td><code>{{ .Type }}</code></td>
+                        <td class="code"><code>{{ .Type }}</code></td>
                         <td>{{ .Name }}</td>
                         <td>{{ .Description }}</td>
                     </tr>
@@ -87,7 +87,7 @@
 
                 {{ if .Returns }}
                     <tr>
-                        <td><code>{{ .Type }}</code></td>
+                        <td class="code"><code>{{ .Type }}</code></td>
                         <td>↵</td>
                         <td>{{ .Returns }}</td>
                     </tr>
