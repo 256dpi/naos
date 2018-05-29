@@ -41,7 +41,7 @@
 
         {{ range .Fields }}
             <h3>{{ .Name }}</h3>
-            <pre><code class="definition">{{ .Type }} {{ .Name }}{{.Args }}</code></pre>
+            <pre><code class="definition">{{ .Definition }}</code></pre>
             <p>{{ .Description }}</p>
 
             {{ if or .Params .Returns }}
@@ -68,7 +68,7 @@
 
     {{ range .Site.Data.api.Functions }}
         <h2 id="{{ .Name }}">{{ .Name }}</h2>
-        <pre><code class="definition">{{ .Type }} {{ .Name }}{{.Args }}</code></pre>
+        <pre><code class="definition">{{ .Definition }}</code></pre>
         <p>{{ .Description }}</p>
 
         {{ if .Note }}

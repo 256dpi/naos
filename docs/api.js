@@ -125,14 +125,29 @@ fileNames.forEach(function(fileName) {
           p2['Type'] = p1.Type;
         });
 
-        s.Fields.push({
-          Type: parseType(md['type'][0]),
-          Args: md['argsstring'][0],
-          Name: md['name'][0],
-          Description: d.Description || '',
-          Params: d.Params || [],
-          Returns: d.Returns || null
-        });
+        let a = md['argsstring'][0];
+        let t = parseType(md['type'][0]);
+        let n = md['name'][0];
+
+        if(a) {
+          s.Fields.push({
+            Kind: 'function',
+            Definition: t + n + a,
+            Type: t.slice(0, t.indexOf('(')),
+            Name: n,
+            Description: d.Description || '',
+            Params: d.Params || [],
+            Returns: d.Returns || null
+          });
+        } else {
+          s.Fields.push({
+            Kind: 'variable',
+            Definition: `${t} ${n}`,
+            Type: t,
+            Name: n,
+            Description: d.Description || ''
+          });
+        }
       });
 
       structs.push(s);
@@ -163,10 +178,14 @@ fileNames.forEach(function(fileName) {
               p2['Type'] = p1.Type;
             });
 
+            let t = parseType(md['type'][0]);
+            let n = md['name'][0];
+            let a = md['argsstring'][0];
+
             let f = {
-              Name: md['name'][0],
-              Type: parseType(md['type'][0]),
-              Args: md['argsstring'][0],
+              Definition: `${t} ${n}${a}`.replace('...', ' ...'),
+              Name: n,
+              Type: t,
               Description: d.Description || '',
               Note: d.Note || null,
               Params: d.Params || [],
