@@ -25,10 +25,10 @@
         <h2 id="{{ .Name }}" class="js-type">{{ .Name }}</h2>
         <p>{{ .Description }}</p>
 
-        <table>
+        <table class="parameters">
             {{ range .Values }}
                 <tr>
-                    <td>{{ .Name }}</td>
+                    <td><code>{{ .Name }}</code></td>
                     <td>{{ .Description }}</td>
                 </tr>
             {{ end }}

@@ -8,6 +8,15 @@ body {
     font-family: 'IBM Plex Sans', sans-serif;
 }
 
+a {
+    color: #1aaa54;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
 header, section, footer {
     max-width: 600px;
     margin: 0 auto;
@@ -30,20 +39,35 @@ header nav ul {
 
 header nav ul li {
     display: inline-block;
+    margin-right: 5px;
 }
 
-footer {
-    margin-top: 75px;
+h2 {
+    border-bottom: 1px solid black;
+    padding-bottom: 10px;
+    margin-top: 50px;
 }
 
 code.definition {
+    display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 14px;
     background-color: #eee;
     border-radius: 3px;
-    padding: 2px 4px;
+    padding: 3px 6px;
+    white-space: normal;
+    line-height: 1.2;
 }
 
 table.parameters {
-    border: 1px solid #aaa;
+    border-collapse: collapse;
+}
+
+table.parameters td {
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+}
+
+footer {
+    margin-top: 75px;
 }
