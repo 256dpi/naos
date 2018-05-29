@@ -142,7 +142,7 @@ fileNames.forEach(function(fileName) {
         } else {
           s.Fields.push({
             Kind: 'variable',
-            Definition: `${t} ${n}`,
+            Definition: `${t} ${n}`.replace('* ', '*'),
             Type: t,
             Name: n,
             Description: d.Description || ''
@@ -183,7 +183,7 @@ fileNames.forEach(function(fileName) {
             let a = md['argsstring'][0];
 
             let f = {
-              Definition: `${t} ${n}${a}`.replace('...', ' ...'),
+              Definition: `${t} ${n}${a}`.replace('...', ' ...').replace('* ', '*'),
               Name: n,
               Type: t,
               Description: d.Description || '',

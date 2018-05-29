@@ -57,7 +57,7 @@
   ],
   "Functions": [
     {
-      "Definition": "const char * naos_scope_str(naos_scope_t scope)",
+      "Definition": "const char *naos_scope_str(naos_scope_t scope)",
       "Name": "naos_scope_str",
       "Type": "const char *",
       "Description": "Get the string representation of the specified scope.",
@@ -72,7 +72,7 @@
       "Returns": "The string value. "
     },
     {
-      "Definition": "const char * naos_status_str(naos_status_t status)",
+      "Definition": "const char *naos_status_str(naos_status_t status)",
       "Name": "naos_status_str",
       "Type": "const char *",
       "Description": "Get the string representation of the specified status.",
@@ -122,7 +122,7 @@
       "Returns": null
     },
     {
-      "Definition": "char * naos_get(const char *param)",
+      "Definition": "char *naos_get(const char *param)",
       "Name": "naos_get",
       "Type": "char *",
       "Description": "Will return the value of the requested parameter. It will return an empty string for not set parameters.",
@@ -693,21 +693,21 @@
       "Fields": [
         {
           "Kind": "variable",
-          "Definition": "const char * device_type",
+          "Definition": "const char *device_type",
           "Type": "const char *",
           "Name": "device_type",
           "Description": "The device type. "
         },
         {
           "Kind": "variable",
-          "Definition": "const char * firmware_version",
+          "Definition": "const char *firmware_version",
           "Type": "const char *",
           "Name": "firmware_version",
           "Description": "The firmware version. "
         },
         {
           "Kind": "variable",
-          "Definition": "naos_param_t * parameters",
+          "Definition": "naos_param_t *parameters",
           "Type": "naos_param_t *",
           "Name": "parameters",
           "Description": "The managed parameters. "
@@ -851,7 +851,7 @@
       "Fields": [
         {
           "Kind": "variable",
-          "Definition": "const char * name",
+          "Definition": "const char *name",
           "Type": "const char *",
           "Name": "name",
           "Description": "The name of the parameter e.g. \"my-param\". "
@@ -865,7 +865,7 @@
         },
         {
           "Kind": "variable",
-          "Definition": "const char * default_s",
+          "Definition": "const char *default_s",
           "Type": "const char *",
           "Name": "default_s",
           "Description": "The default string value. "
@@ -893,28 +893,28 @@
         },
         {
           "Kind": "variable",
-          "Definition": "char ** sync_s",
+          "Definition": "char **sync_s",
           "Type": "char **",
           "Name": "sync_s",
           "Description": "The synchronized string variable. "
         },
         {
           "Kind": "variable",
-          "Definition": "bool * sync_b",
+          "Definition": "bool *sync_b",
           "Type": "bool *",
           "Name": "sync_b",
           "Description": "The synchronized boolean variable. "
         },
         {
           "Kind": "variable",
-          "Definition": "int32_t * sync_l",
+          "Definition": "int32_t *sync_l",
           "Type": "int32_t *",
           "Name": "sync_l",
           "Description": "The synchronized long variable. "
         },
         {
           "Kind": "variable",
-          "Definition": "double * sync_d",
+          "Definition": "double *sync_d",
           "Type": "double *",
           "Name": "sync_d",
           "Description": "The synchronized double variable. "
