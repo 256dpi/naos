@@ -4,6 +4,8 @@ title: Quickstart
 
 # Quickstart
 
+The following steps illustrate how you can get started with NAOS. We will guide you through installation, project setup and flashing.
+
 ## Installation
 
 First, you need to install the latest version of the `naos` command line utility (CLI):

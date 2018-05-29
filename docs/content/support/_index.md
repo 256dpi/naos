@@ -1,7 +1,0 @@
----
-title: Support
----
-
-# Support
-
-...
