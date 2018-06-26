@@ -512,12 +512,12 @@ uint32_t naos_millis();
 void naos_delay(uint32_t ms);
 
 /**
- * Acquire will acquire the global naos mutex.
+ * Acquire will acquire the global naos mutex. This allows to synchronize custom callbacks with naos callbacks.
  */
 void naos_acquire();
 
 /**
- * Release will release the global naos mutex.
+ * Release will release the global naos mutex. This allows to synchronize custom callbacks with naos callbacks.
  */
 void naos_release();
 
