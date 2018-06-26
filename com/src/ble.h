@@ -24,7 +24,9 @@ typedef enum {
 } naos_ble_char_t;
 
 /**
- * The read callback. The read callback will free the passed pointer.
+ * The read callback.
+ *
+ * @note The returned pointer will automatically be freed.
  *
  * @param ch The characteristic.
  */
