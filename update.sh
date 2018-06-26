@@ -17,3 +17,7 @@ cd ..
 
 printf "\nCopying sdkconfig...\n"
 cp com/test/sdkconfig tree/sdkconfig
+
+printf "\nUpdating naos com...\n"
+cd com
+make update
