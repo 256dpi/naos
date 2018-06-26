@@ -35,7 +35,7 @@ static esp_err_t naos_wifi_event_handler(void *ctx, system_event_t *e) {
         // release mutex
         NAOS_UNLOCK(naos_wifi_mutex);
 
-        // call callback if available
+        // call callback if present
         if (naos_wifi_callback) {
           naos_wifi_callback(NAOS_WIFI_STATUS_CONNECTED);
         }
@@ -59,7 +59,7 @@ static esp_err_t naos_wifi_event_handler(void *ctx, system_event_t *e) {
         // release mutex
         NAOS_UNLOCK(naos_wifi_mutex);
 
-        // call callback if available
+        // call callback if present
         if (naos_wifi_callback) {
           naos_wifi_callback(NAOS_WIFI_STATUS_DISCONNECTED);
         }

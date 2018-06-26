@@ -31,22 +31,19 @@ static void naos_task_process(void *p) {
   }
 }
 
+void naos_acquire() {
+  // acquire mutex
+  NAOS_LOCK(naos_task_mutex);
+}
+
+void naos_release() {
+  // release mutex
+  NAOS_UNLOCK(naos_task_mutex);
+}
+
 void naos_task_init() {
   // create mutex
   naos_task_mutex = xSemaphoreCreateMutex();
-}
-
-void naos_task_ping() {
-  // acquire mutex
-  NAOS_LOCK(naos_task_mutex);
-
-  // call ping callback if present
-  if (naos_config()->ping_callback) {
-    naos_config()->ping_callback();
-  }
-
-  // release mutex
-  NAOS_UNLOCK(naos_task_mutex);
 }
 
 void naos_task_start() {
@@ -101,54 +98,6 @@ void naos_task_stop() {
     ESP_LOGI(NAOS_LOG_TAG, "naos_task_stop: deleting task");
     vTaskDelete(naos_task_ref);
   }
-
-  // release mutex
-  NAOS_UNLOCK(naos_task_mutex);
-}
-
-void naos_task_notify(naos_status_t status) {
-  // return immediately if no callback exists
-  if (naos_config()->status_callback == NULL) {
-    return;
-  }
-
-  // acquire mutex
-  NAOS_LOCK(naos_task_mutex);
-
-  // call handle callback
-  naos_config()->status_callback(status);
-
-  // release mutex
-  NAOS_UNLOCK(naos_task_mutex);
-}
-
-void naos_task_update(const char *param, const char *value) {
-  // return immediately if no callback exists
-  if (naos_config()->update_callback == NULL) {
-    return;
-  }
-
-  // acquire mutex
-  NAOS_LOCK(naos_task_mutex);
-
-  // call handle callback
-  naos_config()->update_callback(param, value);
-
-  // release mutex
-  NAOS_UNLOCK(naos_task_mutex);
-}
-
-void naos_task_forward(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope) {
-  // return immediately if no callback exists
-  if (naos_config()->message_callback == NULL) {
-    return;
-  }
-
-  // acquire mutex
-  NAOS_LOCK(naos_task_mutex);
-
-  // call handle callback
-  naos_config()->message_callback(topic, payload, len, scope);
 
   // release mutex
   NAOS_UNLOCK(naos_task_mutex);

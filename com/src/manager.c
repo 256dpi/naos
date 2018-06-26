@@ -140,8 +140,12 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
 
   // check ping
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/ping") == 0) {
-    // ping task
-    naos_task_ping();
+    // call ping callback if present
+    if (naos_config()->ping_callback != NULL) {
+      naos_acquire();
+      naos_config()->ping_callback();
+      naos_release();
+    }
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -197,8 +201,12 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     // save param
     naos_set(param, (const char *)payload);
 
-    // update task
-    naos_task_update(param, (const char *)payload);
+    // call update callback if present
+    if (naos_config()->update_callback != NULL) {
+      naos_acquire();
+      naos_config()->update_callback(param, (const char *)payload);
+      naos_release();
+    }
 
     // construct topic
     char *t = naos_str_concat("naos/value/", param);
@@ -222,7 +230,12 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
 
     // unset param and update task if it existed
     if (naos_unset(param)) {
-      naos_task_update(param, NULL);
+      // call update callback if present
+      if (naos_config()->update_callback != NULL) {
+        naos_acquire();
+        naos_config()->update_callback(param, NULL);
+        naos_release();
+      }
     }
 
     // release mutex
@@ -336,8 +349,12 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     return;
   }
 
-  // if not handled, forward message to the task
-  naos_task_forward(topic, payload, len, scope);
+  // call message callback if present
+  if (naos_config()->message_callback != NULL) {
+    naos_acquire();
+    naos_config()->message_callback(topic, payload, len, scope);
+    naos_release();
+  }
 
   // release mutex
   NAOS_UNLOCK(naos_manager_mutex);
@@ -371,8 +388,12 @@ void naos_manager_write_param(const char *value) {
   // save param
   naos_set(naos_manager_selected_param->name, value);
 
-  // update task
-  naos_task_update(naos_manager_selected_param->name, value);
+  // call update callback if present
+  if (naos_config()->update_callback != NULL) {
+    naos_acquire();
+    naos_config()->update_callback(naos_manager_selected_param->name, value);
+    naos_release();
+  }
 
   // release mutex
   NAOS_UNLOCK(naos_manager_mutex);

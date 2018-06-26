@@ -511,4 +511,14 @@ uint32_t naos_millis();
  */
 void naos_delay(uint32_t ms);
 
+/**
+ * Acquire will acquire the global naos mutex.
+ */
+void naos_acquire();
+
+/**
+ * Release will release the global naos mutex.
+ */
+void naos_release();
+
 #endif  // NAOS_H
