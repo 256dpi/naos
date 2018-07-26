@@ -36,7 +36,7 @@ void naos_update_begin(uint16_t size) {
   assert(naos_update_partition != NULL);
 
   // begin update
-  ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, 0, &naos_update_handle));
+  ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, size, &naos_update_handle));
 
   // release mutex
   NAOS_UNLOCK(naos_update_mutex);
