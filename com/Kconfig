@@ -24,4 +24,8 @@ config NAOS_SYNC_REGISTRY_SIZE
     int "The size of the synchronized parameters list"
     default 32
 
+config NAOS_DEBUG_LOCKS
+    bool "Enable to debug internal locks"
+    default false
+
 endmenu
