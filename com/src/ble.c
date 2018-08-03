@@ -62,7 +62,7 @@ typedef struct {
   naos_ble_char_t ch;
   uint8_t uuid[16];
   esp_gatt_char_prop_t prop;
-  uint8_t max_length;
+  uint16_t max_length;
   // ---
   uint16_t handle;
   esp_bt_uuid_t _uuid;
@@ -150,19 +150,19 @@ static naos_ble_gatts_char_t naos_ble_char_params_list = {
     .ch = NAOS_BLE_CHAR_PARAMS_LIST,
     .uuid = {0x83, 0x2c, 0x10, 0x26, 0xe8, 0x4d, 0x2d, 0x92, 0xb4, 0x46, 0x98, 0x42, 0x8c, 0x41, 0x89, 0x9b},
     .prop = ESP_GATT_CHAR_PROP_BIT_READ,
-    .max_length = 32};
+    .max_length = 128};
 
 static naos_ble_gatts_char_t naos_ble_char_params_select = {
     .ch = NAOS_BLE_CHAR_PARAMS_SELECT,
     .uuid = {0x72, 0xe3, 0x84, 0xec, 0x2e, 0x27, 0x10, 0xb8, 0x11, 0x43, 0x6c, 0xb2, 0x8a, 0x61, 0x7b, 0xa2},
     .prop = ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_length = 32};
+    .max_length = 64};
 
 static naos_ble_gatts_char_t naos_ble_char_params_value = {
     .ch = NAOS_BLE_CHAR_PARAMS_VALUE,
     .uuid = {0xa3, 0xbf, 0x7c, 0x55, 0x31, 0x30, 0x91, 0xae, 0xa7, 0x45, 0x33, 0xed, 0x90, 0x9e, 0x3a, 0x29},
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_length = 32};
+    .max_length = 128};
 
 #define NAOS_BLE_NUM_CHARS 16
 
