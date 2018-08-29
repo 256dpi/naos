@@ -385,6 +385,8 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         char *value = naos_ble_read_callback(c->ch);
         NAOS_LOCK(naos_ble_mutex);
 
+        // TODO: Check offset
+
         // set value
         strcpy((char *)rsp.attr_value.value, value);
         rsp.attr_value.len = (uint16_t)strlen(value);
@@ -447,6 +449,8 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
           NAOS_UNLOCK(naos_ble_mutex);
           return;
         }
+
+        // TODO: Check offset
 
         // allocate value
         char *value = malloc(p->write.len + 1);
