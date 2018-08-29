@@ -7,10 +7,7 @@ jobs:
       git:
         submodules: false
       before_install:
-        - go get github.com/Masterminds/glide
         - go get github.com/mitchellh/gox
-      install:
-        - glide install
       script:
         - make test
 
@@ -33,10 +30,7 @@ jobs:
       git:
         submodules: false
       before_install:
-        - go get github.com/Masterminds/glide
         - go get github.com/mitchellh/gox
-      install:
-        - glide install
       script:
         - true
       before_deploy:
