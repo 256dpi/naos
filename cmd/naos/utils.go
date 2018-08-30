@@ -20,7 +20,7 @@ func exitWithError(str string) {
 	os.Exit(1)
 }
 
-func home() string {
+func workingDirectory() string {
 	wd, err := os.Getwd()
 	exitIfSet(err)
 
@@ -28,7 +28,7 @@ func home() string {
 }
 
 func getProject(cmd *command) *naos.Project {
-	p, err := naos.OpenProject(home())
+	p, err := naos.OpenProject(workingDirectory())
 	exitIfSet(err)
 
 	return p
