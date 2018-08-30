@@ -12,7 +12,7 @@ Devices will subscribe to the global `naos/collect` topic and publish to the glo
 
 ## Heartbeat
 
-Devices will periodically publish to the local `naos/heartbeat` topic. The published data has the following format: `device_type,firmware_version,device_name,free_heap,up_time,running_partition`.
+Devices will periodically publish to the local `naos/heartbeat` topic. The published data has the following format: `device_type,firmware_version,device_name,free_heap_size,up_time,running_partition,battery_level,signal_strength`.
 
 ## Configuration
 
