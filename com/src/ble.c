@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "ble.h"
+#include "naos.h"
 #include "utils.h"
 
 #define NAOS_BLE_INITIALIZED_BIT (1 << 0)
@@ -53,8 +54,6 @@ static struct {
   esp_gatt_if_t interface;
   esp_gatt_srvc_id_t service_id;
   uint16_t service_handle;
-  bool client_connected;
-  uint16_t client_handle;
 } naos_ble_gatts_profile = {
     .uuid = {0xB5, 0x33, 0x50, 0x9D, 0xEE, 0xFF, 0x03, 0x81, 0x4F, 0x4E, 0x61, 0x48, 0x1B, 0xBA, 0x2F, 0x63}};
 
@@ -164,15 +163,34 @@ static naos_ble_gatts_char_t naos_ble_char_params_value = {
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_length = 128};
 
-#define NAOS_BLE_NUM_CHARS 16
+static naos_ble_gatts_char_t naos_ble_char_lock_status = {
+    .uuid = {0x94, 0x32, 0x60, 0xa2, 0x13, 0xfb, 0xf5, 0xa8, 0xef, 0x43, 0x33, 0xa0, 0xd6, 0x1b, 0x8a, 0x5d},
+    .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE,
+    .max_length = 32};
+
+static naos_ble_gatts_char_t naos_ble_char_unlock = {
+    .uuid = {0xff, 0x3a, 0x17, 0xf6, 0x57, 0x44, 0xa3, 0xb5, 0x99, 0x44, 0x98, 0x2e, 0xff, 0x29, 0xde, 0xc7},
+    .prop = ESP_GATT_CHAR_PROP_BIT_WRITE,
+    .max_length = 64};
+
+#define NAOS_BLE_NUM_CHARS 18
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
-    &naos_ble_char_wifi_ssid,      &naos_ble_char_wifi_password,     &naos_ble_char_mqtt_host,
-    &naos_ble_char_mqtt_port,      &naos_ble_char_mqtt_client_id,    &naos_ble_char_mqtt_username,
-    &naos_ble_char_mqtt_password,  &naos_ble_char_device_type,       &naos_ble_char_device_name,
-    &naos_ble_char_base_topic,     &naos_ble_char_connection_status, &naos_ble_char_battery_level,
-    &naos_ble_char_params_value};
-    &naos_ble_char_command,        &naos_ble_char_params_list,       &naos_ble_char_params_select,
+    &naos_ble_char_wifi_ssid,     &naos_ble_char_wifi_password,     &naos_ble_char_mqtt_host,
+    &naos_ble_char_mqtt_port,     &naos_ble_char_mqtt_client_id,    &naos_ble_char_mqtt_username,
+    &naos_ble_char_mqtt_password, &naos_ble_char_device_type,       &naos_ble_char_device_name,
+    &naos_ble_char_base_topic,    &naos_ble_char_connection_status, &naos_ble_char_battery_level,
+    &naos_ble_char_command,       &naos_ble_char_params_list,       &naos_ble_char_params_select,
+    &naos_ble_char_params_value,  &naos_ble_char_lock_status,       &naos_ble_char_unlock};
+
+typedef struct {
+  bool connected;
+  bool locked;
+} naos_ble_connection_t;
+
+#define NAOS_BLE_MAX_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
+
+static naos_ble_connection_t naos_ble_connections[NAOS_BLE_MAX_CONNECTIONS];
 
 static void naos_ble_gap_event_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
   switch (e) {
@@ -340,9 +358,9 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
 
     // handle client connect event
     case ESP_GATTS_CONNECT_EVT: {
-      // save connection handle
-      naos_ble_gatts_profile.client_connected = true;
-      naos_ble_gatts_profile.client_handle = p->connect.conn_id;
+      // mark connection
+      naos_ble_connections[p->connect.conn_id].connected = true;
+      naos_ble_connections[p->connect.conn_id].locked = naos_config()->password != NULL;
 
       break;
     }
@@ -353,6 +371,9 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
       if (!p->read.need_rsp) {
         break;
       }
+
+      // get connection
+      naos_ble_connection_t *conn = &naos_ble_connections[p->read.conn_id];
 
       // iterate through all characteristics
       for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
@@ -380,10 +401,20 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         // set handle
         rsp.attr_value.handle = c->handle;
 
-        // call callback
-        NAOS_UNLOCK(naos_ble_mutex);
-        char *value = naos_ble_read_callback(c->ch);
-        NAOS_LOCK(naos_ble_mutex);
+        // prepare value
+        char *value = NULL;
+
+        // return lock status or reject all reads except device type, device name ands lock status
+        if (c == &naos_ble_char_lock_status) {
+          value = strdup(conn->locked ? "locked" : "unlocked");
+        } else if (conn->locked && c != &naos_ble_char_device_type && c != &naos_ble_char_device_name) {
+          value = strdup("");
+        } else {
+          // call callback
+          NAOS_UNLOCK(naos_ble_mutex);
+          value = naos_ble_read_callback(c->ch);
+          NAOS_LOCK(naos_ble_mutex);
+        }
 
         // TODO: Check offset
 
@@ -422,6 +453,9 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
 
     // handle characteristic write event
     case ESP_GATTS_WRITE_EVT: {
+      // get connection
+      naos_ble_connection_t *conn = &naos_ble_connections[p->write.conn_id];
+
       // iterate through all characteristics
       for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
         // get pointer of current characteristic
@@ -457,10 +491,21 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         memcpy(value, (char *)p->write.value, p->write.len);
         value[p->write.len] = '\0';
 
-        // call callback
-        NAOS_UNLOCK(naos_ble_mutex);
-        naos_ble_write_callback(c->ch, value);
-        NAOS_LOCK(naos_ble_mutex);
+        // prepare flag
+        bool indicate_unlock = false;
+
+        // handle unlocks directly
+        if (c == &naos_ble_char_unlock) {
+          if (conn->locked && strcmp(value, naos_config()->password) == 0) {
+            conn->locked = false;
+            indicate_unlock = true;
+          }
+        } else {
+          // otherwise call callback
+          NAOS_UNLOCK(naos_ble_mutex);
+          naos_ble_write_callback(c->ch, value);
+          NAOS_LOCK(naos_ble_mutex);
+        }
 
         // free value
         free(value);
@@ -468,6 +513,13 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         // send response if requested
         if (p->write.need_rsp) {
           ESP_ERROR_CHECK(esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, ESP_GATT_OK, NULL));
+        }
+
+        // check lock indication
+        if (indicate_unlock) {
+          ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, p->write.conn_id,
+                                                      naos_ble_char_lock_status.handle, 8, (uint8_t *)"unlocked",
+                                                      false));
         }
 
         // exit loop
@@ -479,9 +531,8 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
 
     // handle client disconnect event
     case ESP_GATTS_DISCONNECT_EVT: {
-      // reset connection handle
-      naos_ble_gatts_profile.client_connected = false;
-      naos_ble_gatts_profile.client_handle = 0;
+      // mark connection
+      naos_ble_connections[p->disconnect.conn_id].connected = false;
 
       // restart advertisement
       ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
@@ -572,11 +623,17 @@ void naos_ble_notify(naos_ble_char_t ch, const char *value) {
       continue;
     }
 
-    // send indicate if indicate is supported and client is connected
-    if (c->prop & ESP_GATT_CHAR_PROP_BIT_INDICATE && naos_ble_gatts_profile.client_connected) {
-      ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface,
-                                                  naos_ble_gatts_profile.client_handle, c->handle,
-                                                  (uint16_t)strlen(value), (uint8_t *)value, false));
+    // check if indicate is supported
+    if (!(c->prop & ESP_GATT_CHAR_PROP_BIT_INDICATE)) {
+      break;
+    }
+
+    // send indicate if indicate to all connections
+    for (int j = 0; j < NAOS_BLE_MAX_CONNECTIONS; j++) {
+      if (naos_ble_connections[j].connected) {
+        ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, j, c->handle,
+                                                    (uint16_t)strlen(value), (uint8_t *)value, false));
+      }
     }
 
     break;

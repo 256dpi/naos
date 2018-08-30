@@ -223,6 +223,11 @@ typedef struct {
   float (*battery_level)();
 
   /**
+   * A password to protect Bluetooth access.
+   */
+  const char *password;
+
+  /**
    * If set, the device will randomly (up to 5s) delay startup to overcome WiFi and MQTT congestion issues if many
    * devices restart at the same time.
    */

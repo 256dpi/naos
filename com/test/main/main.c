@@ -107,7 +107,8 @@ static naos_config_t config = {.device_type = "naos-test",
                                .loop_interval = 1000,
                                .battery_level = battery,
                                .offline_callback = offline,
-                               .status_callback = status};
+                               .status_callback = status,
+                               .password = "secret"};
 
 void app_main() {
   // initialize naos
