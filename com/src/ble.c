@@ -510,9 +510,9 @@ void naos_ble_init(naos_ble_read_callback_t rcb, naos_ble_write_callback_t wcb) 
   naos_ble_init_event_group = xEventGroupCreate();
 
   // iterate through all characteristics
-  for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
+  for (int i = 0; i < NAOS_BLE_NUM_CHARS; i++) {
     // get pointer of current characteristic
-    naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
+    naos_ble_gatts_char_t *c = naos_ble_gatts_chars[i];
 
     // setup uuid
     c->_uuid.len = ESP_UUID_LEN_128;
@@ -563,9 +563,9 @@ void naos_ble_notify(naos_ble_char_t ch, const char *value) {
   NAOS_LOCK(naos_ble_mutex);
 
   // iterate through all characteristics
-  for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
+  for (int i = 0; i < NAOS_BLE_NUM_CHARS; i++) {
     // get pointer of current characteristic
-    naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
+    naos_ble_gatts_char_t *c = naos_ble_gatts_chars[i];
 
     // continue if it does not match
     if (c->ch != ch) {
