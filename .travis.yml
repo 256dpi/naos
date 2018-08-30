@@ -3,13 +3,14 @@ jobs:
 
     - stage: test pkgs and cli
       language: go
-      go: 1.9
+      go: 1.11
       git:
         submodules: false
-      before_install:
-        - go get github.com/mitchellh/gox
+      install: true
       script:
-        - make test
+        - env GO111MODULE=on go build
+        - env GO111MODULE=on go test ./cmd/...
+        - env GO111MODULE=on go test ./pkg/...
 
     - stage: test com
       language: cpp
@@ -26,13 +27,13 @@ jobs:
     - stage: deploy cli
       if: tag =~ ^v.*
       language: go
-      go: 1.9
+      go: 1.11
       git:
         submodules: false
-      before_install:
-        - go get github.com/mitchellh/gox
+      install: true
       script:
-        - true
+        - go get github.com/mitchellh/gox
+        - env GO111MODULE=on go build
       before_deploy:
         - gox -osarch="darwin/amd64 linux/amd64" -output="./release/naos-{{.OS}}-{{.Arch}}" github.com/shiftr-io/naos/cmd/naos
         - gzip ./release/*
