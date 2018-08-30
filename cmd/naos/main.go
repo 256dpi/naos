@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 
 	"code.cloudfoundry.org/bytefmt"
@@ -258,7 +259,7 @@ func monitor(cmd *command, p *naos.Project) {
 	}()
 
 	// prepare table
-	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION")
+	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION", "BATTERY")
 
 	// prepare list
 	list := make(map[*naos.Device]*fleet.Heartbeat)
@@ -273,7 +274,17 @@ func monitor(cmd *command, p *naos.Project) {
 
 		// add rows
 		for device, heartbeat := range list {
-			tbl.add(device.Name, device.Type, device.FirmwareVersion, bytefmt.ByteSize(uint64(heartbeat.FreeHeapSize)), heartbeat.UpTime.String(), heartbeat.StartPartition)
+			// prepare free heap size
+			freeHeapSize := bytefmt.ByteSize(uint64(heartbeat.FreeHeapSize))
+
+			// prepare battery level
+			var batteryLevel string
+			if heartbeat.BatteryLevel >= 0 {
+				batteryLevel = strconv.FormatFloat(heartbeat.BatteryLevel * 100, 'f', 0, 64) + "%"
+			}
+
+			// add entry
+			tbl.add(device.Name, device.Type, device.FirmwareVersion, freeHeapSize, heartbeat.UpTime.String(), heartbeat.StartPartition, batteryLevel)
 		}
 
 		// show table
