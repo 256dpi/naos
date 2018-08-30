@@ -140,7 +140,7 @@ static naos_ble_gatts_char_t naos_ble_char_battery_level = {
     .prop = ESP_GATT_CHAR_PROP_BIT_READ,
     .max_length = 32};
 
-static naos_ble_gatts_char_t naos_ble_char_system_command = {
+static naos_ble_gatts_char_t naos_ble_char_command = {
     .ch = NAOS_BLE_CHAR_COMMAND,
     .uuid = {0xAB, 0xD0, 0x76, 0xBD, 0x81, 0x29, 0x77, 0xA2, 0x0F, 0x45, 0x8E, 0x5A, 0x64, 0x18, 0xCF, 0x37},
     .prop = ESP_GATT_CHAR_PROP_BIT_WRITE,
@@ -171,8 +171,8 @@ static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
     &naos_ble_char_mqtt_port,      &naos_ble_char_mqtt_client_id,    &naos_ble_char_mqtt_username,
     &naos_ble_char_mqtt_password,  &naos_ble_char_device_type,       &naos_ble_char_device_name,
     &naos_ble_char_base_topic,     &naos_ble_char_connection_status, &naos_ble_char_battery_level,
-    &naos_ble_char_system_command, &naos_ble_char_params_list,       &naos_ble_char_params_select,
     &naos_ble_char_params_value};
+    &naos_ble_char_command,        &naos_ble_char_params_list,       &naos_ble_char_params_select,
 
 static void naos_ble_gap_event_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
   switch (e) {
