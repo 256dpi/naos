@@ -30,43 +30,43 @@ func main() {
 	if cmd.cCreate {
 		create(cmd)
 	} else if cmd.cInstall {
-		install(cmd, getProject(cmd))
+		install(cmd, getProject())
 	} else if cmd.cBuild {
-		build(cmd, getProject(cmd))
+		build(cmd, getProject())
 	} else if cmd.cFlash {
-		flash(cmd, getProject(cmd))
+		flash(cmd, getProject())
 	} else if cmd.cAttach {
-		attach(cmd, getProject(cmd))
+		attach(cmd, getProject())
 	} else if cmd.cRun {
-		run(cmd, getProject(cmd))
+		run(cmd, getProject())
 	} else if cmd.cFormat {
-		format(cmd, getProject(cmd))
+		format(cmd, getProject())
 	} else if cmd.cList {
-		list(cmd, getProject(cmd))
+		list(cmd, getProject())
 	} else if cmd.cCollect {
-		collect(cmd, getProject(cmd))
+		collect(cmd, getProject())
 	} else if cmd.cPing {
-		ping(cmd, getProject(cmd))
+		ping(cmd, getProject())
 	} else if cmd.cSend {
-		send(cmd, getProject(cmd))
+		send(cmd, getProject())
 	} else if cmd.cDiscover {
-		discover(cmd, getProject(cmd))
+		discover(cmd, getProject())
 	} else if cmd.cGet {
-		get(cmd, getProject(cmd))
+		get(cmd, getProject())
 	} else if cmd.cSet {
-		set(cmd, getProject(cmd))
+		set(cmd, getProject())
 	} else if cmd.cUnset {
-		unset(cmd, getProject(cmd))
+		unset(cmd, getProject())
 	} else if cmd.cMonitor {
-		monitor(cmd, getProject(cmd))
+		monitor(cmd, getProject())
 	} else if cmd.cRecord {
-		record(cmd, getProject(cmd))
+		record(cmd, getProject())
 	} else if cmd.cDebug {
-		debug(cmd, getProject(cmd))
+		debug(cmd, getProject())
 	} else if cmd.cUpdate {
-		update(cmd, getProject(cmd))
+		update(cmd, getProject())
 	} else if cmd.cHelp {
-		fmt.Println(usage)
+		fmt.Print(usage)
 	}
 }
 

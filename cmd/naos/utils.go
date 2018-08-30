@@ -27,7 +27,7 @@ func workingDirectory() string {
 	return wd
 }
 
-func getProject(cmd *command) *naos.Project {
+func getProject() *naos.Project {
 	p, err := naos.OpenProject(workingDirectory())
 	exitIfSet(err)
 
