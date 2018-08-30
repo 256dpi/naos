@@ -31,10 +31,10 @@ jobs:
         submodules: false
       install: true
       script:
-        - go get github.com/mitchellh/gox
         - env GO111MODULE=on go build github.com/shiftr-io/naos/cmd/naos
       before_deploy:
-        - gox -osarch="darwin/amd64 linux/amd64" -output="./release/naos-{{.OS}}-{{.Arch}}" github.com/shiftr-io/naos/cmd/naos
+        - env GO111MODULE=on GOARCH=amd64 GOOS=darwin go build -o ./release/naos-darwin-amd64 github.com/shiftr-io/naos/cmd/naos
+        - env GO111MODULE=on GOARCH=amd64 GOOS=linux go build -o ./release/naos-linux-amd64 github.com/shiftr-io/naos/cmd/naos
         - gzip ./release/*
       deploy:
         provider: releases
