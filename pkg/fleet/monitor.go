@@ -17,10 +17,11 @@ type Heartbeat struct {
 	DeviceName      string
 	DeviceType      string
 	FirmwareVersion string
-	FreeHeapSize    int
+	FreeHeapSize    int64
 	UpTime          time.Duration
 	StartPartition  string
-	BatteryLevel    float64
+	BatteryLevel    float64 // -1, 0 - 1
+	SignalStrength  int64   // -50 - -100
 }
 
 // Monitor will connect to the specified MQTT broker and listen on the passed
@@ -57,8 +58,8 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, timeout time.D
 		}
 
 		// convert integers
-		freeHeapSize, _ := strconv.Atoi(data[3])
-		upTime, _ := strconv.Atoi(data[4])
+		freeHeapSize, _ := strconv.ParseInt(data[3], 10, 64)
+		upTime, _ := strconv.ParseInt(data[4], 10, 64)
 
 		// create heartbeat
 		hb := &Heartbeat{
@@ -75,6 +76,11 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, timeout time.D
 		// check battery level
 		if len(data) >= 7 {
 			hb.BatteryLevel, _ = strconv.ParseFloat(data[6], 64)
+		}
+
+		// check signal strength
+		if len(data) >= 8 {
+			hb.SignalStrength, _ = strconv.ParseInt(data[7], 10, 64)
 		}
 
 		// set base topic

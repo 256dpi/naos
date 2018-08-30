@@ -259,7 +259,7 @@ func monitor(cmd *command, p *naos.Project) {
 	}()
 
 	// prepare table
-	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION", "BATTERY")
+	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION", "BATTERY", "SIGNAL STRENGTH")
 
 	// prepare list
 	list := make(map[*naos.Device]*fleet.Heartbeat)
@@ -280,11 +280,26 @@ func monitor(cmd *command, p *naos.Project) {
 			// prepare battery level
 			var batteryLevel string
 			if heartbeat.BatteryLevel >= 0 {
-				batteryLevel = strconv.FormatFloat(heartbeat.BatteryLevel * 100, 'f', 0, 64) + "%"
+				batteryLevel = strconv.FormatInt(int64(heartbeat.BatteryLevel*100), 10) + "%"
+			}
+
+			// prepare signal strength
+			var signalStrength string
+			if heartbeat.SignalStrength < 0 {
+				// map signal strength to percentage
+				ss := (100 - (heartbeat.SignalStrength * -1)) * 2
+				if ss > 100 {
+					ss = 100
+				} else if ss < 0 {
+					ss = 0
+				}
+
+				// format strength
+				signalStrength = strconv.FormatInt(ss, 10) + "%"
 			}
 
 			// add entry
-			tbl.add(device.Name, device.Type, device.FirmwareVersion, freeHeapSize, heartbeat.UpTime.String(), heartbeat.StartPartition, batteryLevel)
+			tbl.add(device.Name, device.Type, device.FirmwareVersion, freeHeapSize, heartbeat.UpTime.String(), heartbeat.StartPartition, batteryLevel, signalStrength)
 		}
 
 		// show table

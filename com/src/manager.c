@@ -1,6 +1,7 @@
 #include <esp_log.h>
 #include <esp_ota_ops.h>
 #include <esp_system.h>
+#include <esp_wifi.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
@@ -36,10 +37,15 @@ static void naos_manager_send_heartbeat() {
     battery_level = naos_config()->battery_level();
   }
 
+  // get signal strength
+  wifi_ap_record_t record = {0};
+  esp_wifi_sta_get_ap_info(&record);
+
   // send heartbeat
   char buf[64];
-  snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s,%.2f", naos_config()->device_type, naos_config()->firmware_version,
-           device_name, esp_get_free_heap_size(), naos_millis(), esp_ota_get_running_partition()->label, battery_level);
+  snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s,%.2f,%d", naos_config()->device_type, naos_config()->firmware_version,
+           device_name, esp_get_free_heap_size(), naos_millis(), esp_ota_get_running_partition()->label, battery_level,
+           record.rssi);
   naos_publish("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
 
   // free string
