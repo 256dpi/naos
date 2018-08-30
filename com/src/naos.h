@@ -1,6 +1,8 @@
 #ifndef _NAOS_H
 #define _NAOS_H
 
+#include <naos.h>
+
 /**
  * Will return the config passed to naos_init().
  *

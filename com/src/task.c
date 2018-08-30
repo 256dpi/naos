@@ -3,8 +3,6 @@
 #include <freertos/semphr.h>
 #include <freertos/task.h>
 
-#include <naos.h>
-
 #include "naos.h"
 #include "task.h"
 #include "utils.h"

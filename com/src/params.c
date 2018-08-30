@@ -1,5 +1,4 @@
 #include <esp_log.h>
-#include <naos.h>
 #include <nvs.h>
 #include <stdlib.h>
 #include <string.h>
