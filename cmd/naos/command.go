@@ -32,7 +32,7 @@ Fleet Management:
   monitor  Monitor heartbeats from devices.
   record   Record log messages from devices.
   debug    Gather debug information from devices.
-  update   Send the previously built binary to devices.
+  update   Update devices over the air.
 
 Usage:
   naos create [--cmake --force]
@@ -53,7 +53,7 @@ Usage:
   naos monitor [<pattern>] [--timeout=<time>]
   naos record [<pattern>] [--timeout=<time>]
   naos debug [<pattern>] [--delete --duration=<time>]
-  naos update [<pattern>] [--jobs=<count> --timeout=<time>]
+  naos update <version> [<pattern>] [--jobs=<count> --timeout=<time>]
   naos help
 
 Options:
@@ -100,6 +100,7 @@ type command struct {
 	aTopic   string
 	aMessage string
 	aValue   string
+	aVersion string
 
 	// options
 	oForce    bool
@@ -149,6 +150,7 @@ func parseCommand() *command {
 		aMessage: getString(a["<message>"]),
 		aParam:   getString(a["<param>"]),
 		aValue:   getString(a["<value>"]),
+		aVersion: getString(a["<version>"]),
 
 		// options
 		oForce:    getBool(a["--force"]),
