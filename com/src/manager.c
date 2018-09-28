@@ -420,8 +420,14 @@ void naos_log(const char *fmt, ...) {
     naos_publish("naos/log", buf, 0, false, NAOS_LOCAL);
   }
 
+  // get device type
+  const char * device_type = "unknown";
+  if (naos_config() != NULL) {
+    device_type = naos_config()->device_type;
+  }
+
   // print log message esp like
-  printf("N (%d) %s: %s\n", naos_millis(), naos_config()->device_type, buf);
+  printf("N (%d) %s: %s\n", naos_millis(), device_type, buf);
 
   // free list
   va_end(args);

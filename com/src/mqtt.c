@@ -46,6 +46,9 @@ void naos_mqtt_init(esp_mqtt_status_callback_t scb, naos_mqtt_message_callback_t
   // save message callback
   naos_mqtt_message_callback = mcb;
 
+  // initialize base topic
+  naos_mqtt_base_topic_prefix = strdup("");
+
   // call init
   esp_mqtt_init(scb, naos_mqtt_message_handler, CONFIG_NAOS_MQTT_BUFFER_SIZE, CONFIG_NAOS_MQTT_COMMAND_TIMEOUT);
 }
