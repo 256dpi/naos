@@ -26,6 +26,17 @@ func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
 		"erase_flash",
 	}
 
+	// prepare erase ota command
+	eraseOTA := []string{
+		espTool,
+		"--chip", "esp32",
+		"--port", port,
+		"--baud", "921600",
+		"--before", "default_reset",
+		"--after", "hard_reset",
+		"erase_region", "53248", "8192",
+	}
+
 	// prepare flash all command
 	flashAll := []string{
 		espTool,
@@ -77,6 +88,15 @@ func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
 			return err
 		}
 
+		// erase ota if not already erased
+		if !erase {
+			utils.Log(out, "Erasing OTA config...")
+			err := Exec(naosPath, out, nil, "python", eraseOTA...)
+			if err != nil {
+				return err
+			}
+		}
+
 		return nil
 	}
 
@@ -85,6 +105,15 @@ func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
 	err := Exec(naosPath, out, nil, "python", flashAll...)
 	if err != nil {
 		return err
+	}
+
+	// erase ota if not already erased
+	if !erase {
+		utils.Log(out, "Erasing OTA config...")
+		err := Exec(naosPath, out, nil, "python", eraseOTA...)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
