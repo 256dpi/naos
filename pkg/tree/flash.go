@@ -34,7 +34,7 @@ func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
 		"--baud", "921600",
 		"--before", "default_reset",
 		"--after", "hard_reset",
-		"erase_region", "53248", "8192",
+		"erase_region", "0xd000", "0x2000",
 	}
 
 	// prepare flash all command
@@ -51,8 +51,8 @@ func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
 		"--flash_freq", "40m",
 		"--flash_size", "detect",
 		"0x1000", bootLoaderBinary,
-		"0x10000", projectBinary,
 		"0x8000", partitionsBinary,
+		"0x10000", projectBinary,
 	}
 
 	// prepare flash app command
