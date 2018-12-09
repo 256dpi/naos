@@ -88,15 +88,6 @@ func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
 			return err
 		}
 
-		// erase ota if not already erased
-		if !erase {
-			utils.Log(out, "Erasing OTA config...")
-			err := Exec(naosPath, out, nil, "python", eraseOTA...)
-			if err != nil {
-				return err
-			}
-		}
-
 		return nil
 	}
 
