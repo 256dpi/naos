@@ -421,7 +421,7 @@ void naos_log(const char *fmt, ...) {
   }
 
   // get device type
-  const char * device_type = "unknown";
+  const char *device_type = "unknown";
   if (naos_config() != NULL) {
     device_type = naos_config()->device_type;
   }
