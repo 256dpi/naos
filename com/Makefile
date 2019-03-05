@@ -31,6 +31,10 @@ update:
 	cd test/components/esp-mqtt; git fetch; git checkout $(ESP_MQTT_VERSION)
 	cd test/components/esp-mqtt; git submodule update --recursive
 
+sync:
+	cp ../tree/partitions.csv ./test/partitions.csv
+	cp ../tree/sdkconfig ./test/sdkconfig
+
 clean: test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
 	export PATH=$(shell pwd)/test/xtensa-esp32-elf/bin:$$PATH; cd ./test; make clean
 

@@ -2,7 +2,6 @@
 nvs,      data, nvs,      0x9000,  0x4000
 otadata,  data, ota,      0xd000,  0x2000
 phy_init, data, phy,      0xf000,  0x1000
-factory,  0,    0,        0x10000, 1250K
-ota_0,    0,    ota_0,    ,        1250K
-ota_1,    0,    ota_1,    ,        1250K
+alpha,    app,  ota_0,    0x10000, 1856K
+beta,     app,  ota_1,    ,        1856K
 coredump, data, coredump, ,        64K
