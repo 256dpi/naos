@@ -18,3 +18,9 @@ test:
 
 install:
 	go install github.com/shiftr-io/naos/cmd/naos
+
+update_tree:
+	cd tree/esp-idf; git fetch; git checkout $(shell cat ./tree/esp-idf.version)
+	cd tree/esp-idf; git submodule update --recursive
+	cd tree/components/esp-mqtt; git fetch; git checkout $(shell cat ./tree/esp-mqtt.version)
+	cd tree/components/esp-mqtt; git submodule update --recursive
