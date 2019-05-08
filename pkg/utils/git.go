@@ -32,7 +32,7 @@ func Clone(repo, path, commit string, out io.Writer) error {
 	}
 
 	// construct update command
-	cmd = exec.Command("git", "submodule", "update", "--recursive")
+	cmd = exec.Command("git", "submodule", "update", "--recursive", "--init")
 	cmd.Stderr = out
 	cmd.Stdout = out
 	cmd.Dir = path
@@ -74,7 +74,7 @@ func Fetch(path, commit string, out io.Writer) error {
 	}
 
 	// construct update command
-	cmd = exec.Command("git", "submodule", "update", "--recursive")
+	cmd = exec.Command("git", "submodule", "update", "--recursive", "--init")
 	cmd.Stderr = out
 	cmd.Stdout = out
 	cmd.Dir = path
