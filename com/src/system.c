@@ -66,7 +66,7 @@ static void naos_system_set_status(naos_status_t status) {
     naos_release();
   }
 
-  ESP_LOGI(NAOS_LOG_TAG, "naos_system_set_status: %s", name)
+  ESP_LOGI(NAOS_LOG_TAG, "naos_system_set_status: %s", name);
 }
 
 static void naos_system_configure_wifi() {
