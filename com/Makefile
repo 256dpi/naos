@@ -18,18 +18,18 @@ test/xtensa-esp32-elf:
 test/esp-idf:
 	git clone --recursive  https://github.com/espressif/esp-idf.git test/esp-idf
 	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
-	cd test/esp-idf; git submodule update --recursive
+	cd test/esp-idf; git submodule update --recursive --init
 
 test/components/esp-mqtt:
 	git clone --recursive  https://github.com/256dpi/esp-mqtt.git test/components/esp-mqtt
 	cd test/components/esp-mqtt; git fetch; git checkout $(ESP_MQTT_VERSION)
-	cd test/components/esp-mqtt; git submodule update --recursive
+	cd test/components/esp-mqtt; git submodule update --recursive --init
 
 update:
 	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
-	cd test/esp-idf; git submodule update --recursive
+	cd test/esp-idf; git submodule update --recursive --init
 	cd test/components/esp-mqtt; git fetch; git checkout $(ESP_MQTT_VERSION)
-	cd test/components/esp-mqtt; git submodule update --recursive
+	cd test/components/esp-mqtt; git submodule update --recursive --init
 
 sync:
 	cp ../tree/partitions.csv ./test/partitions.csv

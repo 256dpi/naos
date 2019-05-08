@@ -21,6 +21,6 @@ install:
 
 update_tree:
 	cd tree/esp-idf; git fetch; git checkout $(shell cat ./tree/esp-idf.version)
-	cd tree/esp-idf; git submodule update --recursive
+	cd tree/esp-idf; git submodule update --recursive --init
 	cd tree/components/esp-mqtt; git fetch; git checkout $(shell cat ./tree/esp-mqtt.version)
-	cd tree/components/esp-mqtt; git submodule update --recursive
+	cd tree/components/esp-mqtt; git submodule update --recursive --init
