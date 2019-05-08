@@ -2,7 +2,7 @@
 
 ## SDK Versions
 
-The versions of the various SDK used are managed in the `tree` directory. If the version files are updated the git modules needs to be updated with `make tree_update`. Additionally, the test components needs to be updated with `make update`.
+The versions of the various SDK used are managed in the `tree` directory. If the version files are updated the git modules needs to be updated with `make update_tree`. Additionally, the test components needs to be updated with `make update`.
 
 ## Partition Table & SDK Config
 
