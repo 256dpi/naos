@@ -3,7 +3,7 @@ jobs:
 
     - stage: test pkgs and cli
       language: go
-      go: 1.11
+      go: "1.13"
       git:
         submodules: false
       install: true
@@ -26,7 +26,7 @@ jobs:
     - stage: deploy cli
       if: tag =~ ^v.*
       language: go
-      go: 1.11
+      go: "1.13"
       git:
         submodules: false
       install: true
