@@ -21,3 +21,5 @@ require (
 	golang.org/x/net v0.0.0-20160126033523-f315505cf334
 	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637
 )
+
+go 1.13
