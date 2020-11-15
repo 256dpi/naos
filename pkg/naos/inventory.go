@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ryanuber/go-glob"
+
 	"github.com/256dpi/naos/pkg/fleet"
 )
 
