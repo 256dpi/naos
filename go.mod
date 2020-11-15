@@ -1,4 +1,4 @@
-module github.com/shiftr-io/naos
+module github.com/256dpi/naos
 
 require (
 	code.cloudfoundry.org/bytefmt v0.0.0-20180108190415-b31f603f5e1e

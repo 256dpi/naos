@@ -4,7 +4,7 @@ title: Build Tree
 
 # Build Tree
 
-You can use this build tree to easily build a project that uses the naos component, but using the [naos](https://github.com/shiftr-io/naos) command line utility is recommended.
+You can use this build tree to easily build a project that uses the naos component, but using the [naos](https://github.com/256dpi/naos) command line utility is recommended.
 
 ## Usage
 

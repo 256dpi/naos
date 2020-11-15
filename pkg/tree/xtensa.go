@@ -9,7 +9,8 @@ import (
 	"runtime"
 
 	"github.com/mholt/archiver"
-	"github.com/shiftr-io/naos/pkg/utils"
+
+	"github.com/256dpi/naos/pkg/utils"
 )
 
 // InstallToolchain will install the xtensa toolchain. An existing toolchain will

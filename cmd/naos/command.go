@@ -8,8 +8,8 @@ import (
 )
 
 var usage = `Networked Artifacts Operating System
-Created by Joël Gähwiler © shiftr.io
-https://github.com/shiftr-io/naos
+© Joël Gähwiler
+https://github.com/256dpi/naos
 
 Project Management:
   create   Create a new naos project in the current directory.

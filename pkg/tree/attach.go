@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	"github.com/kr/pty"
-	"github.com/shiftr-io/naos/pkg/utils"
+
+	"github.com/256dpi/naos/pkg/utils"
 )
 
 // Attach will attach to the specified serial port using either miniterm in simple

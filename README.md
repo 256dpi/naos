@@ -1,8 +1,8 @@
 # naos
 
-[![Build Status](https://travis-ci.org/shiftr-io/naos.svg?branch=master)](https://travis-ci.org/shiftr-io/naos)
-[![GoDoc](https://godoc.org/github.com/shiftr-io/naos?status.svg)](http://godoc.org/github.com/shiftr-io/naos)
-[![Release](https://img.shields.io/github/release/shiftr-io/naos.svg)](https://github.com/shiftr-io/naos/releases)
+[![Build Status](https://travis-ci.org/256dpi/naos.svg?branch=master)](https://travis-ci.org/256dpi/naos)
+[![GoDoc](https://godoc.org/github.com/256dpi/naos?status.svg)](http://godoc.org/github.com/256dpi/naos)
+[![Release](https://img.shields.io/github/release/256dpi/naos.svg)](https://github.com/256dpi/naos/releases)
 
 **The Networked Artifacts Operating System.**
 

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/ryanuber/go-glob"
-	"github.com/shiftr-io/naos/pkg/fleet"
+	"github.com/256dpi/naos/pkg/fleet"
 )
 
 // A Device represents a single device in an Inventory.

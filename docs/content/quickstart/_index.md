@@ -11,10 +11,10 @@ The following steps illustrate how you can get started with NAOS. We will guide 
 First, you need to install the latest version of the `naos` command line utility (CLI):
 
 ```
-curl -L https://naos.shiftr.io/install.sh | bash
+curl -L https://naos.256dpi.com/install.sh | bash
 ```
 
-*You can also download the binary manually from <https://github.com/shiftr-io/naos/releases> if you don't want to run the above shell script.*
+*You can also download the binary manually from <https://github.com/256dpi/naos/releases> if you don't want to run the above shell script.*
 
 After the installation you can verify that `naos` is available:
 

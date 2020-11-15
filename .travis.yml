@@ -26,15 +26,15 @@ jobs:
     - stage: deploy cli
       if: tag =~ ^v.*
       language: go
-      go: "1.13"
+      go: "1.15"
       git:
         submodules: false
       install: true
       script:
-        - env GO111MODULE=on go build github.com/shiftr-io/naos/cmd/naos
+        - env GO111MODULE=on go build github.com/256dpi/naos/cmd/naos
       before_deploy:
-        - env GO111MODULE=on GOARCH=amd64 GOOS=darwin go build -o ./release/naos-darwin-amd64 github.com/shiftr-io/naos/cmd/naos
-        - env GO111MODULE=on GOARCH=amd64 GOOS=linux go build -o ./release/naos-linux-amd64 github.com/shiftr-io/naos/cmd/naos
+        - env GO111MODULE=on GOARCH=amd64 GOOS=darwin go build -o ./release/naos-darwin-amd64 github.com/256dpi/naos/cmd/naos
+        - env GO111MODULE=on GOARCH=amd64 GOOS=linux go build -o ./release/naos-linux-amd64 github.com/256dpi/naos/cmd/naos
         - gzip ./release/*
       deploy:
         provider: releases
@@ -45,5 +45,5 @@ jobs:
           - ./release/naos-darwin-amd64.gz
           - ./release/naos-linux-amd64.gz
         on:
-          repo: shiftr-io/naos
+          repo: 256dpi/naos
           tags: true

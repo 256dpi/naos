@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/shiftr-io/naos/pkg/utils"
+	"github.com/256dpi/naos/pkg/utils"
 )
 
 // Build will build the project.

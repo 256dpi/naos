@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/shiftr-io/naos/pkg/utils"
+	"github.com/256dpi/naos/pkg/utils"
 )
 
 // Install will install the NAOS repo to the specified path and link the source
@@ -33,7 +33,7 @@ func Install(naosPath, sourcePath, version string, force bool, out io.Writer) er
 	if !ok {
 		// perform initial repo clone
 		utils.Log(out, fmt.Sprintf("Installing NAOS '%s'...", version))
-		err = utils.Clone("https://github.com/shiftr-io/naos.git", naosPath, version, out)
+		err = utils.Clone("https://github.com/256dpi/naos.git", naosPath, version, out)
 		if err != nil {
 			return err
 

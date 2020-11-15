@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/bytefmt"
-	"github.com/shiftr-io/naos/pkg/fleet"
-	"github.com/shiftr-io/naos/pkg/naos"
+
+	"github.com/256dpi/naos/pkg/fleet"
+	"github.com/256dpi/naos/pkg/naos"
 )
 
 func main() {

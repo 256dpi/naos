@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/shiftr-io/naos/pkg/naos"
+	"github.com/256dpi/naos/pkg/naos"
 )
 
 func exitIfSet(errs ...error) {

@@ -17,7 +17,7 @@ test:
 	go test ./pkg/...
 
 install:
-	go install github.com/shiftr-io/naos/cmd/naos
+	go install github.com/256dpi/naos/cmd/naos
 
 update_tree:
 	cd tree/esp-idf; git fetch; git checkout $(shell cat ./tree/esp-idf.version)

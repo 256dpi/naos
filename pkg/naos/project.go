@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/shiftr-io/naos/pkg/fleet"
-	"github.com/shiftr-io/naos/pkg/tree"
-	"github.com/shiftr-io/naos/pkg/utils"
+	"github.com/256dpi/naos/pkg/fleet"
+	"github.com/256dpi/naos/pkg/tree"
+	"github.com/256dpi/naos/pkg/utils"
 )
 
 // A Project is a project available on disk.

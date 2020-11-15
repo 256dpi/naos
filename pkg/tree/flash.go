@@ -4,7 +4,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/shiftr-io/naos/pkg/utils"
+	"github.com/256dpi/naos/pkg/utils"
 )
 
 // Flash will flash the project using the specified serial port.
