@@ -1,0 +1,384 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		52BD19B92561EA93006D3507 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19B82561EA93006D3507 /* AppDelegate.swift */; };
+		52BD19BD2561EA95006D3507 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 52BD19BC2561EA95006D3507 /* Assets.xcassets */; };
+		52BD19C02561EA95006D3507 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 52BD19BE2561EA95006D3507 /* Main.storyboard */; };
+		52BD19C92561EB20006D3507 /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19C82561EB20006D3507 /* BluetoothManager.swift */; };
+		52BD19CB2561EB27006D3507 /* LoadingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CA2561EB27006D3507 /* LoadingViewController.swift */; };
+		52BD19D62561EB2E006D3507 /* NAOSManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CC2561EB2D006D3507 /* NAOSManager.swift */; };
+		52BD19D72561EB2E006D3507 /* NAOSDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CD2561EB2D006D3507 /* NAOSDevice.swift */; };
+		52BD19D82561EB2E006D3507 /* NAOSDeviceProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CE2561EB2D006D3507 /* NAOSDeviceProxy.swift */; };
+		52BD19D92561EB2E006D3507 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CF2561EB2D006D3507 /* SettingsWindowController.swift */; };
+		52BD19DB2561EB2E006D3507 /* NetworkUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19D12561EB2D006D3507 /* NetworkUtilities.swift */; };
+		52BD19DC2561EB2E006D3507 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19D22561EB2D006D3507 /* SettingsViewController.swift */; };
+		52BD19DD2561EB2E006D3507 /* UnlockViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19D32561EB2D006D3507 /* UnlockViewController.swift */; };
+		52BD19DE2561EB2E006D3507 /* SettingsParameterValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19D42561EB2D006D3507 /* SettingsParameterValue.swift */; };
+		52BD19DF2561EB2E006D3507 /* NAOSManagerProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19D52561EB2E006D3507 /* NAOSManagerProxy.swift */; };
+		52BD19E22561EB48006D3507 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52BD19E12561EB48006D3507 /* CoreBluetooth.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		52BD19B52561EA93006D3507 /* NAOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NAOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		52BD19B82561EA93006D3507 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		52BD19BC2561EA95006D3507 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		52BD19BF2561EA95006D3507 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		52BD19C12561EA95006D3507 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		52BD19C22561EA95006D3507 /* NAOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NAOS.entitlements; sourceTree = "<group>"; };
+		52BD19C82561EB20006D3507 /* BluetoothManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
+		52BD19CA2561EB27006D3507 /* LoadingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoadingViewController.swift; sourceTree = "<group>"; };
+		52BD19CC2561EB2D006D3507 /* NAOSManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NAOSManager.swift; sourceTree = "<group>"; };
+		52BD19CD2561EB2D006D3507 /* NAOSDevice.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NAOSDevice.swift; sourceTree = "<group>"; };
+		52BD19CE2561EB2D006D3507 /* NAOSDeviceProxy.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NAOSDeviceProxy.swift; sourceTree = "<group>"; };
+		52BD19CF2561EB2D006D3507 /* SettingsWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
+		52BD19D12561EB2D006D3507 /* NetworkUtilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkUtilities.swift; sourceTree = "<group>"; };
+		52BD19D22561EB2D006D3507 /* SettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
+		52BD19D32561EB2D006D3507 /* UnlockViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnlockViewController.swift; sourceTree = "<group>"; };
+		52BD19D42561EB2D006D3507 /* SettingsParameterValue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsParameterValue.swift; sourceTree = "<group>"; };
+		52BD19D52561EB2E006D3507 /* NAOSManagerProxy.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NAOSManagerProxy.swift; sourceTree = "<group>"; };
+		52BD19E12561EB48006D3507 /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = System/Library/Frameworks/CoreBluetooth.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		52BD19B22561EA93006D3507 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				52BD19E22561EB48006D3507 /* CoreBluetooth.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		52BD19AC2561EA93006D3507 = {
+			isa = PBXGroup;
+			children = (
+				52BD19B72561EA93006D3507 /* NAOS */,
+				52BD19B62561EA93006D3507 /* Products */,
+				52BD19E02561EB48006D3507 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		52BD19B62561EA93006D3507 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				52BD19B52561EA93006D3507 /* NAOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		52BD19B72561EA93006D3507 /* NAOS */ = {
+			isa = PBXGroup;
+			children = (
+				52BD19B82561EA93006D3507 /* AppDelegate.swift */,
+				52BD19C82561EB20006D3507 /* BluetoothManager.swift */,
+				52BD19CA2561EB27006D3507 /* LoadingViewController.swift */,
+				52BD19D32561EB2D006D3507 /* UnlockViewController.swift */,
+				52BD19D42561EB2D006D3507 /* SettingsParameterValue.swift */,
+				52BD19D22561EB2D006D3507 /* SettingsViewController.swift */,
+				52BD19CF2561EB2D006D3507 /* SettingsWindowController.swift */,
+				52BD19D12561EB2D006D3507 /* NetworkUtilities.swift */,
+				52BD19CD2561EB2D006D3507 /* NAOSDevice.swift */,
+				52BD19CE2561EB2D006D3507 /* NAOSDeviceProxy.swift */,
+				52BD19CC2561EB2D006D3507 /* NAOSManager.swift */,
+				52BD19D52561EB2E006D3507 /* NAOSManagerProxy.swift */,
+				52BD19BC2561EA95006D3507 /* Assets.xcassets */,
+				52BD19BE2561EA95006D3507 /* Main.storyboard */,
+				52BD19C12561EA95006D3507 /* Info.plist */,
+				52BD19C22561EA95006D3507 /* NAOS.entitlements */,
+			);
+			path = NAOS;
+			sourceTree = "<group>";
+		};
+		52BD19E02561EB48006D3507 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				52BD19E12561EB48006D3507 /* CoreBluetooth.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		52BD19B42561EA93006D3507 /* NAOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 52BD19C52561EA95006D3507 /* Build configuration list for PBXNativeTarget "NAOS" */;
+			buildPhases = (
+				52BD19B12561EA93006D3507 /* Sources */,
+				52BD19B22561EA93006D3507 /* Frameworks */,
+				52BD19B32561EA93006D3507 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NAOS;
+			productName = NAOS;
+			productReference = 52BD19B52561EA93006D3507 /* NAOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		52BD19AD2561EA93006D3507 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1150;
+				LastUpgradeCheck = 1150;
+				ORGANIZATIONNAME = "Joël Gähwiler";
+				TargetAttributes = {
+					52BD19B42561EA93006D3507 = {
+						CreatedOnToolsVersion = 11.5;
+					};
+				};
+			};
+			buildConfigurationList = 52BD19B02561EA93006D3507 /* Build configuration list for PBXProject "NAOS" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 52BD19AC2561EA93006D3507;
+			productRefGroup = 52BD19B62561EA93006D3507 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				52BD19B42561EA93006D3507 /* NAOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		52BD19B32561EA93006D3507 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				52BD19BD2561EA95006D3507 /* Assets.xcassets in Resources */,
+				52BD19C02561EA95006D3507 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		52BD19B12561EA93006D3507 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				52BD19DD2561EB2E006D3507 /* UnlockViewController.swift in Sources */,
+				52BD19DE2561EB2E006D3507 /* SettingsParameterValue.swift in Sources */,
+				52BD19C92561EB20006D3507 /* BluetoothManager.swift in Sources */,
+				52BD19DC2561EB2E006D3507 /* SettingsViewController.swift in Sources */,
+				52BD19D62561EB2E006D3507 /* NAOSManager.swift in Sources */,
+				52BD19B92561EA93006D3507 /* AppDelegate.swift in Sources */,
+				52BD19D82561EB2E006D3507 /* NAOSDeviceProxy.swift in Sources */,
+				52BD19D72561EB2E006D3507 /* NAOSDevice.swift in Sources */,
+				52BD19DB2561EB2E006D3507 /* NetworkUtilities.swift in Sources */,
+				52BD19DF2561EB2E006D3507 /* NAOSManagerProxy.swift in Sources */,
+				52BD19D92561EB2E006D3507 /* SettingsWindowController.swift in Sources */,
+				52BD19CB2561EB27006D3507 /* LoadingViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		52BD19BE2561EA95006D3507 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				52BD19BF2561EA95006D3507 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		52BD19C32561EA95006D3507 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		52BD19C42561EA95006D3507 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		52BD19C62561EA95006D3507 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = NAOS/NAOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = TU3UR5MTVQ;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = NAOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ch.256dpi.NAOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		52BD19C72561EA95006D3507 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = NAOS/NAOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = TU3UR5MTVQ;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = NAOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ch.256dpi.NAOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		52BD19B02561EA93006D3507 /* Build configuration list for PBXProject "NAOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				52BD19C32561EA95006D3507 /* Debug */,
+				52BD19C42561EA95006D3507 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		52BD19C52561EA95006D3507 /* Build configuration list for PBXNativeTarget "NAOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				52BD19C62561EA95006D3507 /* Debug */,
+				52BD19C72561EA95006D3507 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 52BD19AD2561EA93006D3507 /* Project object */;
+}
