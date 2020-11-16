@@ -324,14 +324,14 @@
 				CODE_SIGN_ENTITLEMENTS = NAOS/NAOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = TU3UR5MTVQ;
+				DEVELOPMENT_TEAM = W34GXY8GHC;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = NAOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ch.256dpi.NAOS;
+				PRODUCT_BUNDLE_IDENTIFIER = com.256dpi.NAOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -344,14 +344,14 @@
 				CODE_SIGN_ENTITLEMENTS = NAOS/NAOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = TU3UR5MTVQ;
+				DEVELOPMENT_TEAM = W34GXY8GHC;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = NAOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ch.256dpi.NAOS;
+				PRODUCT_BUNDLE_IDENTIFIER = com.256dpi.NAOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
