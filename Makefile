@@ -1,14 +1,8 @@
-all: fmt vet lint test
-
-fmt:
+check:
 	go fmt ./cmd/...
 	go fmt ./pkg/...
-
-vet:
 	go vet ./cmd/...
 	go vet ./pkg/...
-
-lint:
 	golint ./cmd/...
 	golint ./pkg/...
 
@@ -17,7 +11,7 @@ test:
 	go test ./pkg/...
 
 install:
-	go install github.com/256dpi/naos/cmd/naos
+	go install ./cmd/naos
 
 update_tree:
 	cd tree/esp-idf; git fetch; git checkout $(shell cat ./tree/esp-idf.version)
