@@ -7,7 +7,7 @@ ESP_MQTT_VERSION := $(shell cat ../tree/esp-mqtt.version)
 XTENSA_TOOLCHAIN := "xtensa-esp32-elf-linux64-$(TOOLCHAIN_VERSION).tar.gz"
 
 ifeq ($(UNAME), Darwin)
-XTENSA_TOOLCHAIN := "xtensa-esp32-elf-osx-$(TOOLCHAIN_VERSION).tar.gz"
+XTENSA_TOOLCHAIN := "xtensa-esp32-elf-macos-$(TOOLCHAIN_VERSION).tar.gz"
 endif
 
 test/xtensa-esp32-elf:

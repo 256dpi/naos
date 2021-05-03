@@ -2,8 +2,9 @@ jobs:
   include:
 
     - stage: test pkgs and cli
+      dist: focal
       language: go
-      go: "1.13"
+      go: "1.15"
       git:
         submodules: false
       install: true
@@ -12,19 +13,23 @@ jobs:
         - env GO111MODULE=on go test ./pkg/...
 
     - stage: test com
+      dist: focal
       language: cpp
       git:
         submodules: false
       addons:
         apt:
           packages:
-          - gperf
+            - python-is-python3
+            - gperf
       script:
-        - pip install pyserial
+        - cd com; make test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
+        - cd com; /usr/bin/python -m pip install --user -r test/esp-idf/requirements.txt
         - cd com; make build
 
     - stage: deploy cli
       if: tag =~ ^v.*
+      dist: focal
       language: go
       go: "1.15"
       git:
