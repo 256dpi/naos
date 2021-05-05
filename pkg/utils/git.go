@@ -3,6 +3,7 @@ package utils
 import (
 	"io"
 	"os/exec"
+	"strings"
 )
 
 // Clone will checkout the provided repository set it to the specified version
@@ -61,8 +62,13 @@ func Fetch(path, commit string, out io.Writer) error {
 		return err
 	}
 
+	// prepend origin if not tag
+	if !strings.HasPrefix(commit, "v") {
+		commit = "origin/" + commit
+	}
+
 	// construct reset command
-	cmd = exec.Command("git", "reset", "--hard", "origin/"+commit)
+	cmd = exec.Command("git", "reset", "--hard", commit)
 	cmd.Stderr = out
 	cmd.Stdout = out
 	cmd.Dir = path
