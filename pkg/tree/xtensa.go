@@ -21,7 +21,7 @@ func InstallToolchain(naosPath, version string, force bool, out io.Writer) error
 	var url string
 	switch runtime.GOOS {
 	case "darwin":
-		url = "https://dl.espressif.com/dl/xtensa-esp32-elf-osx-" + version + ".tar.gz"
+		url = "https://dl.espressif.com/dl/xtensa-esp32-elf-macos-" + version + ".tar.gz"
 	case "linux":
 		url = "https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-" + version + ".tar.gz"
 	default:
