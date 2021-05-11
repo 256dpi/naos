@@ -40,6 +40,8 @@ func main() {
 		attach(cmd, getProject())
 	} else if cmd.cRun {
 		run(cmd, getProject())
+	} else if cmd.cConfig {
+		config(cmd, getProject())
 	} else if cmd.cFormat {
 		format(cmd, getProject())
 	} else if cmd.cList {
@@ -109,6 +111,11 @@ func run(cmd *command, p *naos.Project) {
 
 	// attach to device
 	exitIfSet(p.Attach(cmd.aDevice, cmd.oSimple, os.Stdout, os.Stdin))
+}
+
+func config(cmd *command, p *naos.Project) {
+	// configure device
+	exitIfSet(p.Config(cmd.aFile, cmd.aDevice, os.Stdout))
 }
 
 func format(_ *command, p *naos.Project) {

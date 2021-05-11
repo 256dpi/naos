@@ -25,6 +25,7 @@ require (
 	github.com/ulikunitz/xz v0.5.8 // indirect
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637 // indirect
+	gopkg.in/yaml.v2 v2.3.0
 )
 
 go 1.13

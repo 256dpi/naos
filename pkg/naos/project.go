@@ -11,6 +11,7 @@ import (
 	"github.com/256dpi/naos/pkg/fleet"
 	"github.com/256dpi/naos/pkg/tree"
 	"github.com/256dpi/naos/pkg/utils"
+	"gopkg.in/yaml.v2"
 )
 
 // A Project is a project available on disk.
@@ -168,6 +169,24 @@ func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) 
 // Attach will attach to the attached device.
 func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader) error {
 	return tree.Attach(p.Tree(), device, simple, out, in)
+}
+
+// Config will write settings and parameters to an attached device.
+func (p *Project) Config(file, device string, out io.Writer) error {
+	// load file
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	// unmarshal values
+	var values map[string]string
+	err = yaml.Unmarshal(data, &values)
+	if err != nil {
+		return err
+	}
+
+	return tree.Config(p.Tree(), values, device, out)
 }
 
 // Format will format all source files in the project if 'clang-format' is
