@@ -12,10 +12,11 @@ jobs:
         uses: actions/checkout@v2
       - name: Test Component
         run: |
+          cd com
           sudo apt-get install python-is-python3 gperf -y
-          cd com; make test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
-          cd com; /usr/bin/python -m pip install --user -r test/esp-idf/requirements.txt
-          cd com; make build
+          make test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
+          /usr/bin/python -m pip install --user -r test/esp-idf/requirements.txt
+          make build
       - name: Test CLI
         run: go test ./...
       - name: Build CLI
