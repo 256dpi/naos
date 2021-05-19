@@ -1,6 +1,6 @@
 # naos
 
-[![Build Status](https://travis-ci.org/256dpi/naos.svg?branch=master)](https://travis-ci.org/256dpi/naos)
+[![Test](https://github.com/256dpi/naos/actions/workflows/test.yml/badge.svg)](https://github.com/256dpi/naos/actions/workflows/test.yml)
 [![GoDoc](https://godoc.org/github.com/256dpi/naos?status.svg)](http://godoc.org/github.com/256dpi/naos)
 [![Release](https://img.shields.io/github/release/256dpi/naos.svg)](https://github.com/256dpi/naos/releases)
 
