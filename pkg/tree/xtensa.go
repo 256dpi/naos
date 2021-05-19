@@ -70,7 +70,7 @@ func InstallToolchain(naosPath, version string, force bool, out io.Writer) error
 
 	// unpack toolchain
 	utils.Log(out, "Unpacking xtensa toolchain...")
-	err = archiver.TarGz.Open(tmp.Name(), dir)
+	err = archiver.DefaultTarGz.Unarchive(tmp.Name(), dir)
 	if err != nil {
 		return err
 	}
