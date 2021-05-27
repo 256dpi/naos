@@ -163,11 +163,21 @@ func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
 
 // Flash will flash the project to the attached device.
 func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) error {
+	// set missing device
+	if device == "" {
+		device = utils.FindPort(out)
+	}
+
 	return tree.Flash(p.Tree(), device, erase, appOnly, out)
 }
 
 // Attach will attach to the attached device.
 func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader) error {
+	// set missing device
+	if device == "" {
+		device = utils.FindPort(out)
+	}
+
 	return tree.Attach(p.Tree(), device, simple, out, in)
 }
 
@@ -184,6 +194,11 @@ func (p *Project) Config(file, device string, out io.Writer) error {
 	err = yaml.Unmarshal(data, &values)
 	if err != nil {
 		return err
+	}
+
+	// set missing device
+	if device == "" {
+		device = utils.FindPort(out)
 	}
 
 	return tree.Config(p.Tree(), values, device, out)

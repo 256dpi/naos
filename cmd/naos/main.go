@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/bytefmt"
-
 	"github.com/256dpi/naos/pkg/fleet"
 	"github.com/256dpi/naos/pkg/naos"
 )
@@ -20,11 +19,6 @@ func main() {
 	// set default pattern
 	if cmd.aPattern == "" {
 		cmd.aPattern = "*"
-	}
-
-	// set default device
-	if cmd.aDevice == "" {
-		cmd.aDevice = "/dev/cu.SLAB_USBtoUART"
 	}
 
 	// run desired command
