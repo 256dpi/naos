@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
