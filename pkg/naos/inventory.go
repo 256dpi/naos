@@ -40,7 +40,7 @@ func NewInventory() *Inventory {
 	return &Inventory{
 		Version:    "master",
 		Components: make(map[string]*Component),
-		Broker:     "mqtts://key:secret@broker.shiftr.io",
+		Broker:     "mqtts://key:secret@example.org",
 		Devices:    make(map[string]*Device),
 	}
 }
