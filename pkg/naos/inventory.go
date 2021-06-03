@@ -30,6 +30,7 @@ type Component struct {
 // A Inventory represents the contents of the inventory file.
 type Inventory struct {
 	Version    string                `json:"version"`
+	Embeds     []string              `json:"embeds"`
 	Overrides  map[string]string     `json:"overrides"`
 	Components map[string]*Component `json:"components"`
 	Broker     string                `json:"broker"`

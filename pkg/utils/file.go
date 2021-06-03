@@ -9,7 +9,7 @@ import (
 // Exists will check if the provided file or directory exists.
 func Exists(path string) (bool, error) {
 	// get file info
-	_, err := os.Stat(path)
+	_, err := os.Lstat(path)
 	if err == nil {
 		return true, nil
 	}

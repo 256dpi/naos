@@ -3,17 +3,32 @@ package tree
 import (
 	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
 
 // Build will build the project.
-func Build(naosPath string, clean, appOnly bool, out io.Writer) error {
+func Build(naosPath string, files []string, clean, appOnly bool, out io.Writer) error {
+	// prepare files content
+	var filesContent = "COMPONENT_EMBED_FILES :="
+	for _, file := range files {
+		filesContent += " data/" + file
+	}
+	filesContent += "\n"
+
+	// update files
+	utils.Log(out, "Updating files...")
+	err := os.WriteFile(filepath.Join(Directory(naosPath), "main", "files.mk"), []byte(filesContent), 0644)
+	if err != nil {
+		return err
+	}
+
 	// clean project if requested
 	if clean {
 		utils.Log(out, "Cleaning project...")
-		err := Exec(naosPath, out, nil, "make", "clean")
+		err = Exec(naosPath, out, nil, "make", "clean")
 		if err != nil {
 			return err
 		}
@@ -22,7 +37,7 @@ func Build(naosPath string, clean, appOnly bool, out io.Writer) error {
 	// build project (app only)
 	if appOnly {
 		utils.Log(out, "Building project (app only)...")
-		err := Exec(naosPath, out, nil, "make", "app")
+		err = Exec(naosPath, out, nil, "make", "app")
 		if err != nil {
 			return err
 		}
@@ -32,7 +47,7 @@ func Build(naosPath string, clean, appOnly bool, out io.Writer) error {
 
 	// build project
 	utils.Log(out, "Building project...")
-	err := Exec(naosPath, out, nil, "make", "all")
+	err = Exec(naosPath, out, nil, "make", "all")
 	if err != nil {
 		return err
 	}

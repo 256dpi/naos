@@ -14,7 +14,7 @@ import (
 
 // Install will install the NAOS repo to the specified path and link the source
 // path into the build tree.
-func Install(naosPath, sourcePath, version string, overrides map[string]string, force bool, out io.Writer) error {
+func Install(naosPath, sourcePath, dataPath, version string, overrides map[string]string, force bool, out io.Writer) error {
 	// remove existing directory if existing or force has been set
 	if force {
 		utils.Log(out, "Removing existing NAOS installation (forced).")
@@ -60,16 +60,25 @@ func Install(naosPath, sourcePath, version string, overrides map[string]string, 
 		return err
 	}
 
-	// check source directory
+	// link source directory if missing
 	ok, err = utils.Exists(filepath.Join(Directory(naosPath), "main", "src"))
 	if err != nil {
 		return err
-	}
-
-	// link source directory if missing
-	if !ok {
+	} else if !ok {
 		utils.Log(out, "Linking source directory.")
 		err = os.Symlink(sourcePath, filepath.Join(Directory(naosPath), "main", "src"))
+		if err != nil {
+			return err
+		}
+	}
+
+	// link data directory if missing
+	ok, err = utils.Exists(filepath.Join(Directory(naosPath), "main", "data"))
+	if err != nil {
+		return err
+	} else if !ok {
+		utils.Log(out, "Linking data directory.")
+		err = os.Symlink(dataPath, filepath.Join(Directory(naosPath), "main", "data"))
 		if err != nil {
 			return err
 		}

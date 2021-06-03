@@ -134,7 +134,7 @@ func (p *Project) Tree() string {
 // information about the process.
 func (p *Project) Install(force bool, out io.Writer) error {
 	// install tree
-	err := tree.Install(p.Tree(), filepath.Join(p.Location, "src"), p.Inventory.Version, p.Inventory.Overrides, force, out)
+	err := tree.Install(p.Tree(), filepath.Join(p.Location, "src"), p.Location, p.Inventory.Version, p.Inventory.Overrides, force, out)
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func (p *Project) Install(force bool, out io.Writer) error {
 
 // Build will build the project.
 func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
-	return tree.Build(p.Tree(), clean, appOnly, out)
+	return tree.Build(p.Tree(), p.Inventory.Embeds, clean, appOnly, out)
 }
 
 // Flash will flash the project to the attached device.
