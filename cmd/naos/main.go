@@ -268,7 +268,7 @@ func monitor(cmd *command, p *naos.Project) {
 
 	// monitor devices
 	exitIfSet(p.Inventory.Monitor(cmd.aPattern, quit, cmd.oTimeout, func(d *naos.Device, hb *fleet.Heartbeat) {
-		// set latest heartbeat for device
+		// set the latest heartbeat for device
 		list[d] = hb
 
 		// clear previously printed table

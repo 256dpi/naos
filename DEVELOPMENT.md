@@ -10,4 +10,4 @@ Changes to the partition table and SDK config need to be synced from the tree to
 
 ## Release
 
-Tag release on GitHub. The naos cli will checkout the repo and automatically update all dependencies.
+Tag release on GitHub. The naos cli will check out the repo and automatically update all dependencies.

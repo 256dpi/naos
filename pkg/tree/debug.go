@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 )
 
-// ParseCoredump will parse the provided raw coredump data and return a human
-// readable representation.
+// ParseCoredump will parse the provided raw coredump data and return a
+// human-readable representation.
 func ParseCoredump(naosPath string, coredump []byte) ([]byte, error) {
 	// get paths
 	espCoredump := filepath.Join(IDFDirectory(naosPath), "components", "espcoredump", "espcoredump.py")

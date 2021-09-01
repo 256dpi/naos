@@ -27,7 +27,7 @@ type Component struct {
 	Version    string `json:"version"`
 }
 
-// A Inventory represents the contents of the inventory file.
+// An Inventory represents the contents of the inventory file.
 type Inventory struct {
 	Version    string                `json:"version"`
 	Embeds     []string              `json:"embeds"`

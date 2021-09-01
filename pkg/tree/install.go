@@ -1,4 +1,4 @@
-// Package tree provides utility functions to manage the the NAOS build tree.
+// Package tree provides utility functions to manage the NAOS build tree.
 package tree
 
 import (

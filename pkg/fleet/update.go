@@ -119,7 +119,7 @@ func updateOne(url, baseTopic string, firmware []byte, timeout time.Duration, pr
 			return nil
 		}
 
-		// otherwise convert the chunk request
+		// otherwise, convert the chunk request
 		n, err := strconv.ParseInt(string(msg.Payload), 10, 0)
 		if err != nil {
 			errs <- err

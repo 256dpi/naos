@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Clone will checkout the provided repository set it to the specified version
+// Clone will check out the provided repository set it to the specified version
 // and properly checkout all submodules.
 func Clone(repo, path, commit string, out io.Writer) error {
 	// construct clone command
@@ -47,7 +47,7 @@ func Clone(repo, path, commit string, out io.Writer) error {
 	return nil
 }
 
-// Fetch will updates to the remote repository and update all submodules
+// Fetch will update the remote repository and update all submodules
 // accordingly.
 func Fetch(path, commit string, out io.Writer) error {
 	// construct fetch command

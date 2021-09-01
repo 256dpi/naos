@@ -49,7 +49,7 @@ func RequiredToolchain(naosPath string) (string, error) {
 		return "", errors.New("malformed version")
 	}
 
-	return string(version), nil
+	return version, nil
 }
 
 // SourceAndHeaderFiles will return a list of source and header files.
