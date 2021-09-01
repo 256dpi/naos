@@ -1,0 +1,18 @@
+{
+  "version": "master",
+  "embeds": [
+    "foo.txt"
+  ],
+  "overrides": {},
+  "components": {},
+  "broker": "mqtt://public:public@public.cloud.shiftr.io",
+  "devices": {
+    "test": {
+      "base_topic": "test",
+      "name": "test",
+      "type": "naos-test",
+      "firmware_version": "0.0.1",
+      "parameters": {}
+    }
+  }
+}

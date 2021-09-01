@@ -1,0 +1,12 @@
+wifi-ssid: WS
+wifi-password: WP
+mqtt-host: cool.io
+mqtt-port: 1234
+mqtt-username: MU
+mqtt-password: MP
+mqtt-client-id: MCI
+device-name: hello-world
+base-topic: /cool
+
+foo: bar
+bar: baz
