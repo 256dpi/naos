@@ -25,6 +25,15 @@ func Build(naosPath string, files []string, clean, appOnly bool, out io.Writer) 
 		return err
 	}
 
+	// sync partitions
+	utils.Log(out,"Sync partitions...")
+	partSrc := filepath.Join(Directory(naosPath), "main", "data", "partitions.csv")
+	partDst := filepath.Join(Directory(naosPath), "partitions.csv")
+	err = utils.Sync(partSrc, partDst)
+	if err != nil {
+		return err
+	}
+
 	// clean project if requested
 	if clean {
 		utils.Log(out, "Cleaning project...")

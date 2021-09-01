@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"os"
@@ -50,6 +51,53 @@ func Download(destination, source string) error {
 
 	// properly close file
 	err = file.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Sync will synchronize the two files. It will only copy if the destination is
+// absent or differs.
+func Sync(src, dst string) error {
+	// check existence
+	srcExists, err := Exists(src)
+	if err != nil {
+		return err
+	}
+	dstExists, err := Exists(dst)
+	if err != nil {
+		return err
+	}
+
+	// skip if source is missing
+	if !srcExists {
+		return nil
+	}
+
+	// read source
+	srcData, err := os.ReadFile(src)
+	if err != nil {
+		return err
+	}
+
+	// check similarity if destination exists
+	if dstExists {
+		// read destination
+		dstData, err := os.ReadFile(dst)
+		if err != nil {
+			return err
+		}
+
+		// check similarity
+		if bytes.Compare(srcData, dstData) == 0 {
+			return nil
+		}
+	}
+
+	// write file
+	err = os.WriteFile(dst, srcData, 0644)
 	if err != nil {
 		return err
 	}
