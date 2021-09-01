@@ -8,12 +8,13 @@ include_directories(
         test/xtensa-esp32-elf/xtensa-esp32-elf/include
         test/esp-idf/components/app_update/include
         test/esp-idf/components/bt/bluedroid/include
-        test/esp-idf/components/bt/bluedroid/api/include
+        test/esp-idf/components/bt/bluedroid/api/include/api
         test/esp-idf/components/bt/bluedroid/bta/include
         test/esp-idf/components/bt/bluedroid/btc/include
         test/esp-idf/components/bt/bluedroid/btcore/include
         test/esp-idf/components/bt/include
         test/esp-idf/components/esp32/include
+        test/esp-idf/components/esp_event/include
         test/esp-idf/components/freertos/include
         test/esp-idf/components/log/include
         test/esp-idf/components/nvs_flash/include
