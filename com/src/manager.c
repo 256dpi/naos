@@ -9,6 +9,7 @@
 
 #include "coredump.h"
 #include "manager.h"
+#include "monitor.h"
 #include "naos.h"
 #include "params.h"
 #include "settings.h"
@@ -40,11 +41,14 @@ static void naos_manager_send_heartbeat() {
   wifi_ap_record_t record = {0};
   esp_wifi_sta_get_ap_info(&record);
 
+  // get CPU usage
+  naos_cpu_usage_t usage = naos_monitor_get();
+
   // send heartbeat
   char buf[64];
-  snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s,%.2f,%d", naos_config()->device_type, naos_config()->firmware_version,
-           device_name, esp_get_free_heap_size(), naos_millis(), esp_ota_get_running_partition()->label, battery_level,
-           record.rssi);
+  snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s,%.2f,%d,%.2f,%.2f", naos_config()->device_type,
+           naos_config()->firmware_version, device_name, esp_get_free_heap_size(), naos_millis(),
+           esp_ota_get_running_partition()->label, battery_level, record.rssi, usage.cpu0, usage.cpu1);
   naos_publish("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
 
   // free string

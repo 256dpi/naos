@@ -8,6 +8,7 @@
 
 #include "ble.h"
 #include "manager.h"
+#include "monitor.h"
 #include "mqtt.h"
 #include "naos.h"
 #include "params.h"
@@ -400,6 +401,9 @@ void naos_system_init() {
 
   // initialize flash memory
   ESP_ERROR_CHECK(nvs_flash_init());
+
+  // init monitor
+  naos_monitor_init();
 
   // init settings
   naos_settings_init();

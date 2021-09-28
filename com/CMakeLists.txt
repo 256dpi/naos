@@ -36,6 +36,8 @@ set(SOURCE_FILES
         src/coredump.h
         src/manager.c
         src/manager.h
+        src/monitor.c
+        src/monitor.h
         src/mqtt.c
         src/mqtt.h
         src/naos.c
