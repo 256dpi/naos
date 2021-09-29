@@ -52,8 +52,12 @@ static void naos_monitor_task() {
     }
 
     // calculate usage
-    naos_cpu_usage0 = 1.f - idle0 / NAOS_MAX_IDLE_CALLS;
-    naos_cpu_usage1 = 1.f - idle1 / NAOS_MAX_IDLE_CALLS;
+    float cpu_usage0 = 1.f - idle0 / NAOS_MAX_IDLE_CALLS;
+    float cpu_usage1 = 1.f - idle1 / NAOS_MAX_IDLE_CALLS;
+
+    // add to usage
+    naos_cpu_usage0 = (naos_cpu_usage0 * 4 + cpu_usage0) / 5;
+    naos_cpu_usage1 = (naos_cpu_usage1 * 4 + cpu_usage1) / 5;
 
     // wait a second
     naos_delay(1000);
