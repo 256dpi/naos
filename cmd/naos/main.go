@@ -261,7 +261,7 @@ func monitor(cmd *command, p *naos.Project) {
 	}()
 
 	// prepare table
-	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION", "BATTERY", "SIGNAL STRENGTH")
+	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION", "BATTERY", "SIGNAL STRENGTH", "CPU0 USAGE (PROTO)", "CPU1 USAGE (APP)")
 
 	// prepare list
 	list := make(map[*naos.Device]*fleet.Heartbeat)
@@ -280,13 +280,13 @@ func monitor(cmd *command, p *naos.Project) {
 			freeHeapSize := bytefmt.ByteSize(uint64(heartbeat.FreeHeapSize))
 
 			// prepare battery level
-			var batteryLevel string
+			batteryLevel := "n/a"
 			if heartbeat.BatteryLevel >= 0 {
 				batteryLevel = strconv.FormatInt(int64(heartbeat.BatteryLevel*100), 10) + "%"
 			}
 
 			// prepare signal strength
-			var signalStrength string
+			signalStrength := "n/a"
 			if heartbeat.SignalStrength < 0 {
 				// map signal strength to percentage
 				ss := (100 - (heartbeat.SignalStrength * -1)) * 2
@@ -300,8 +300,12 @@ func monitor(cmd *command, p *naos.Project) {
 				signalStrength = strconv.FormatInt(ss, 10) + "%"
 			}
 
+			// prepare cpu usages
+			cpu0Usage := strconv.FormatFloat(heartbeat.CPU0Usage*100, 'f', -1, 64) + "%"
+			cpu1Usage := strconv.FormatFloat(heartbeat.CPU1Usage*100, 'f', -1, 64) + "%"
+
 			// add entry
-			tbl.add(device.Name, device.Type, device.FirmwareVersion, freeHeapSize, heartbeat.UpTime.String(), heartbeat.StartPartition, batteryLevel, signalStrength)
+			tbl.add(device.Name, device.Type, device.FirmwareVersion, freeHeapSize, heartbeat.UpTime.String(), heartbeat.StartPartition, batteryLevel, signalStrength, cpu0Usage, cpu1Usage)
 		}
 
 		// show table

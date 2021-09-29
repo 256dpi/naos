@@ -22,6 +22,8 @@ type Heartbeat struct {
 	StartPartition  string
 	BatteryLevel    float64 // -1, 0 - 1
 	SignalStrength  int64   // -50 - -100
+	CPU0Usage       float64 // 0 - 1
+	CPU1Usage       float64 // 0 - 1
 }
 
 // Monitor will connect to the specified MQTT broker and listen on the passed
@@ -81,6 +83,14 @@ func Monitor(url string, baseTopics []string, quit chan struct{}, timeout time.D
 		// check signal strength
 		if len(data) >= 8 {
 			hb.SignalStrength, _ = strconv.ParseInt(data[7], 10, 64)
+		}
+
+		// check cpu usage
+		if len(data) >= 9 {
+			hb.CPU0Usage, _ = strconv.ParseFloat(data[8], 64)
+		}
+		if len(data) >= 10 {
+			hb.CPU1Usage, _ = strconv.ParseFloat(data[9], 64)
 		}
 
 		// set base topic
