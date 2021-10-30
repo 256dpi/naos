@@ -3,12 +3,13 @@ package utils
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"go.bug.st/serial"
 )
 
-var usbPrefixes = []string{"cu.usbserial"}
+var usbPrefixes = []string{"cu.SLAB", "cu.usbserial"}
 
 // FindPort will return the fist known USB serial port or an empty string.
 func FindPort(out io.Writer) string {
@@ -18,6 +19,9 @@ func FindPort(out io.Writer) string {
 		_, _ = fmt.Fprintf(out, "usb: %s\n", err.Error())
 		return ""
 	}
+
+	// sort list
+	sort.Strings(list)
 
 	// check names and prefixes
 	for _, name := range list {
