@@ -162,13 +162,13 @@ func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
 }
 
 // Flash will flash the project to the attached device.
-func (p *Project) Flash(device string, erase bool, appOnly bool, out io.Writer) error {
+func (p *Project) Flash(device, baudRate string, erase bool, appOnly bool, out io.Writer) error {
 	// set missing device
 	if device == "" {
 		device = utils.FindPort(out)
 	}
 
-	return tree.Flash(p.Tree(), device, erase, appOnly, out)
+	return tree.Flash(p.Tree(), device, baudRate, erase, appOnly, out)
 }
 
 // Attach will attach to the attached device.

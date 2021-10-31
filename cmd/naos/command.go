@@ -39,7 +39,7 @@ Usage:
   naos create [--cmake --force]
   naos install [--force]
   naos build [--clean --app-only]
-  naos flash [<device>] [--erase --app-only]
+  naos flash [<device>] [--baud=<rate> --erase --app-only]
   naos attach [<device>] [--simple]
   naos run [<device>] [--clean --app-only --erase --simple]
   naos config <file> [<device>]
@@ -67,6 +67,7 @@ Options:
   --simple              Use simple serial tool.
   --clear               Remove not available devices from inventory.
   --delete              Delete loaded coredumps from the devices.
+  -b --baud=<rate>      The baud rate [default: 921600].
   -d --duration=<time>  Operation duration [default: 2s].
   -t --timeout=<time>   Operation timeout [default: 5s].
   -j --jobs=<count>     Number of simultaneous update jobs [default: 10].
@@ -108,6 +109,7 @@ type command struct {
 
 	// options
 	oForce    bool
+	oBaudRate string
 	oCMake    bool
 	oClean    bool
 	oErase    bool
@@ -162,6 +164,7 @@ func parseCommand() *command {
 		oForce:    getBool(a["--force"]),
 		oCMake:    getBool(a["--cmake"]),
 		oClean:    getBool(a["--clean"]),
+		oBaudRate: getString(a["--baud"]),
 		oErase:    getBool(a["--erase"]),
 		oAppOnly:  getBool(a["--app-only"]),
 		oSimple:   getBool(a["--simple"]),

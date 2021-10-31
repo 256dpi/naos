@@ -8,7 +8,7 @@ import (
 )
 
 // Flash will flash the project using the specified serial port.
-func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
+func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) error {
 	// calculate paths
 	espTool := filepath.Join(IDFDirectory(naosPath), "components", "esptool_py", "esptool", "esptool.py")
 	bootLoaderBinary := filepath.Join(Directory(naosPath), "build", "bootloader", "bootloader.bin")
@@ -20,7 +20,7 @@ func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
 		espTool,
 		"--chip", "esp32",
 		"--port", port,
-		"--baud", "921600",
+		"--baud", baudRate,
 		"--before", "default_reset",
 		"--after", "hard_reset",
 		"erase_flash",
@@ -31,7 +31,7 @@ func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
 		espTool,
 		"--chip", "esp32",
 		"--port", port,
-		"--baud", "921600",
+		"--baud", baudRate,
 		"--before", "default_reset",
 		"--after", "hard_reset",
 		"erase_region", "0xd000", "0x2000",
@@ -42,7 +42,7 @@ func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
 		espTool,
 		"--chip", "esp32",
 		"--port", port,
-		"--baud", "921600",
+		"--baud", baudRate,
 		"--before", "default_reset",
 		"--after", "hard_reset",
 		"write_flash",
@@ -60,7 +60,7 @@ func Flash(naosPath, port string, erase, appOnly bool, out io.Writer) error {
 		espTool,
 		"--chip", "esp32",
 		"--port", port,
-		"--baud", "921600",
+		"--baud", baudRate,
 		"--before", "default_reset",
 		"--after", "hard_reset",
 		"write_flash",
