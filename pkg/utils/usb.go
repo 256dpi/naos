@@ -9,7 +9,7 @@ import (
 	"go.bug.st/serial"
 )
 
-var usbPrefixes = []string{"cu.SLAB", "cu.usbserial"}
+var usbPrefixes = []string{"cu.SLAB", "cu.usbserial", "ttyUSB"}
 
 // FindPort will return the fist known USB serial port or an empty string.
 func FindPort(out io.Writer) string {
