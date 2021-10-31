@@ -1,11 +1,14 @@
 package tree
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/256dpi/naos/pkg/utils"
 )
 
 // IDFDirectory returns the assumed location of the esp-idf directory.
@@ -18,6 +21,9 @@ func IDFDirectory(naosPath string) string {
 // Exec runs a named command in the build tree. All xtensa toolchain binaries are
 // made available in the path transparently.
 func Exec(naosPath string, out io.Writer, in io.Reader, name string, arg ...string) error {
+	// print command
+	utils.Log(out, fmt.Sprintf("%s %s", name, strings.Join(arg, " ")))
+
 	// construct command
 	cmd := exec.Command(name, arg...)
 
