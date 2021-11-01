@@ -139,6 +139,14 @@ func Link(path, target string) error {
 		return nil
 	}
 
+	// remove link
+	if tgt != "" {
+		err = os.Remove(path)
+		if err != nil {
+			return err
+		}
+	}
+
 	// make link
 	err = os.Symlink(target, path)
 	if err != nil {
