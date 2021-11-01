@@ -7,14 +7,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
 
 // Install will install the NAOS repo to the specified path and link the source
 // path into the build tree.
-func Install(naosPath, sourcePath, dataPath, version string, overrides map[string]string, force bool, out io.Writer) error {
+func Install(naosPath, sourcePath, dataPath, version string, force bool, out io.Writer) error {
 	// remove existing directory if existing or force has been set
 	if force {
 		utils.Log(out, "Removing existing NAOS installation (forced).")
@@ -79,42 +78,6 @@ func Install(naosPath, sourcePath, dataPath, version string, overrides map[strin
 	} else if !ok {
 		utils.Log(out, "Linking data directory.")
 		err = os.Symlink(dataPath, filepath.Join(Directory(naosPath), "main", "data"))
-		if err != nil {
-			return err
-		}
-	}
-
-	// apply overrides
-	if len(overrides) > 0 {
-		utils.Log(out, "Overriding sdkconfig...")
-
-		// determine path
-		configPath := filepath.Join(Directory(naosPath), "sdkconfig")
-
-		// read config
-		data, err := os.ReadFile(configPath)
-		if err != nil {
-			return err
-		}
-
-		// get config
-		sdkconfig := string(data)
-
-		// append comments
-		sdkconfig += "\n#\n# OVERRIDES\n#\n"
-
-		// replace lines
-		for key, value := range overrides {
-			re := regexp.MustCompile("(?m)^(" + regexp.QuoteMeta(key) + ")=(.*)$")
-			if re.MatchString(sdkconfig) {
-				sdkconfig = re.ReplaceAllString(sdkconfig, key+"="+value)
-			} else {
-				sdkconfig += key + "=" + value + "\n"
-			}
-		}
-
-		// write config
-		err = os.WriteFile(configPath, []byte(sdkconfig), 0644)
 		if err != nil {
 			return err
 		}
