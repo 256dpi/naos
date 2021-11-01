@@ -435,3 +435,8 @@ void naos_system_init() {
   // initially configure wifi
   naos_system_configure_wifi();
 }
+
+naos_status_t naos_status() {
+  // return current status
+  return naos_system_status;
+}

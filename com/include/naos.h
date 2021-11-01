@@ -501,6 +501,11 @@ bool naos_publish_d(const char *topic, double payload, int qos, bool retained, n
 bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool retained, naos_scope_t scope);
 
 /**
+ * Returns the current status.
+ */
+naos_status_t naos_status();
+
+/**
  * Returns the elapsed milliseconds since the start.
  *
  * @return The elapsed milliseconds.
