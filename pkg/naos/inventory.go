@@ -23,6 +23,7 @@ type Device struct {
 
 // A Component represents an installable naos component.
 type Component struct {
+	Path       string `json:"path"`
 	Repository string `json:"repository"`
 	Version    string `json:"version"`
 }

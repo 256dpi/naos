@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 // Exists will check if the provided file or directory exists.
@@ -21,6 +22,26 @@ func Exists(path string) (bool, error) {
 	}
 
 	return true, err
+}
+
+// Resolve will resolve a path and us the provided base for relative paths.
+func Resolve(path, base string) (string, error) {
+	// only clean already absolute paths
+	if filepath.IsAbs(path) {
+		return filepath.Clean(path), nil
+	}
+
+	// ensure base
+	if base == "" {
+		var err error
+		base, err = os.Getwd()
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// return path joined with base
+	return filepath.Join(base, path), nil
 }
 
 // Download will download the specified source to the specified destination.
@@ -98,6 +119,28 @@ func Sync(src, dst string) error {
 
 	// write file
 	err = os.WriteFile(dst, srcData, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Link will ensure a link with the specified target at the provided path.
+func Link(path, target string) error {
+	// check path
+	tgt, err := os.Readlink(path)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	// check target
+	if tgt == target {
+		return nil
+	}
+
+	// make link
+	err = os.Symlink(target, path)
 	if err != nil {
 		return err
 	}

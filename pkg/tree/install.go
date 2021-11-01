@@ -124,7 +124,7 @@ func Install(naosPath, sourcePath, dataPath, version string, overrides map[strin
 }
 
 // InstallComponent will install the specified component in the build tree.
-func InstallComponent(naosPath, name, repository, version string, force bool, out io.Writer) error {
+func InstallComponent(projectPath, naosPath, name, path, repository, version string, force bool, out io.Writer) error {
 	// check component name
 	if name == "esp-mqtt" || name == "naos" {
 		return errors.New("illegal component name")
@@ -140,6 +140,23 @@ func InstallComponent(naosPath, name, repository, version string, force bool, ou
 		if err != nil {
 			return err
 		}
+	}
+
+	// handle local links
+	if path != "" {
+		// resolve target
+		target, err := utils.Resolve(path, projectPath)
+		if err != nil {
+			return err
+		}
+
+		// ensure link
+		err = utils.Link(comPath, target)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	// check if component already exists

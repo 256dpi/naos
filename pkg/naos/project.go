@@ -141,7 +141,7 @@ func (p *Project) Install(force bool, out io.Writer) error {
 
 	// install components
 	for name, com := range p.Inventory.Components {
-		err = tree.InstallComponent(p.Tree(), name, com.Repository, com.Version, force, out)
+		err = tree.InstallComponent(p.Location, p.Tree(), name, com.Path, com.Repository, com.Version, force, out)
 		if err != nil {
 			return err
 		}
