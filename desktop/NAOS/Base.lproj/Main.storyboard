@@ -1176,7 +1176,7 @@ DQ
                                                         <rect key="frame" x="1" y="1" width="480" height="198"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>
-                                                            <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnSelection="YES" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" headerView="smq-WZ-VDy" viewBased="YES" id="R4Z-Qg-sbl">
+                                                            <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" columnSelection="YES" multipleSelection="NO" autosaveColumns="NO" usesAutomaticRowHeights="YES" headerView="smq-WZ-VDy" viewBased="YES" id="R4Z-Qg-sbl">
                                                                 <rect key="frame" x="0.0" y="0.0" width="480" height="175"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <size key="intercellSpacing" width="3" height="2"/>
@@ -1210,8 +1210,9 @@ DQ
                                                                                 </subviews>
                                                                                 <constraints>
                                                                                     <constraint firstItem="zKU-wT-nyo" firstAttribute="leading" secondItem="cRK-GD-m4C" secondAttribute="leading" constant="2" id="9HD-zO-Los"/>
-                                                                                    <constraint firstItem="zKU-wT-nyo" firstAttribute="centerY" secondItem="cRK-GD-m4C" secondAttribute="centerY" id="Ssh-Zg-9T2"/>
-                                                                                    <constraint firstItem="zKU-wT-nyo" firstAttribute="centerX" secondItem="cRK-GD-m4C" secondAttribute="centerX" id="gVo-bb-tCx"/>
+                                                                                    <constraint firstAttribute="bottom" secondItem="zKU-wT-nyo" secondAttribute="bottom" constant="1" id="aXQ-WJ-I9g"/>
+                                                                                    <constraint firstItem="zKU-wT-nyo" firstAttribute="top" secondItem="cRK-GD-m4C" secondAttribute="top" id="qw2-vk-4Z9"/>
+                                                                                    <constraint firstAttribute="trailing" secondItem="zKU-wT-nyo" secondAttribute="trailing" constant="2" id="tg2-VM-Azf"/>
                                                                                 </constraints>
                                                                                 <connections>
                                                                                     <outlet property="textField" destination="zKU-wT-nyo" id="aYf-HG-Ipw"/>
@@ -1260,9 +1261,10 @@ DQ
                                                                                 <constraints>
                                                                                     <constraint firstItem="KSd-I5-g1u" firstAttribute="leading" secondItem="Cfr-F8-oKl" secondAttribute="leading" constant="2" id="69P-1g-Lgq"/>
                                                                                     <constraint firstItem="KSd-I5-g1u" firstAttribute="centerX" secondItem="Cfr-F8-oKl" secondAttribute="centerX" id="DnN-yf-g7e"/>
-                                                                                    <constraint firstItem="bMb-U6-w9r" firstAttribute="centerY" secondItem="Cfr-F8-oKl" secondAttribute="centerY" id="gz6-qT-Qtm"/>
+                                                                                    <constraint firstAttribute="trailing" secondItem="bMb-U6-w9r" secondAttribute="trailing" constant="2" id="GWS-Hw-m3B"/>
+                                                                                    <constraint firstAttribute="bottom" secondItem="bMb-U6-w9r" secondAttribute="bottom" constant="1" id="R1j-oz-hxJ"/>
+                                                                                    <constraint firstItem="bMb-U6-w9r" firstAttribute="top" secondItem="Cfr-F8-oKl" secondAttribute="top" id="YyS-2S-YNM"/>
                                                                                     <constraint firstItem="bMb-U6-w9r" firstAttribute="leading" secondItem="Cfr-F8-oKl" secondAttribute="leading" constant="2" id="ie4-a8-zhw"/>
-                                                                                    <constraint firstItem="bMb-U6-w9r" firstAttribute="centerX" secondItem="Cfr-F8-oKl" secondAttribute="centerX" id="kHe-Fa-5se"/>
                                                                                     <constraint firstItem="KSd-I5-g1u" firstAttribute="centerY" secondItem="Cfr-F8-oKl" secondAttribute="centerY" id="sku-0U-ybM"/>
                                                                                 </constraints>
                                                                                 <connections>
@@ -1298,9 +1300,10 @@ DQ
                                                                                     </textField>
                                                                                 </subviews>
                                                                                 <constraints>
+                                                                                    <constraint firstItem="LiI-bR-s9u" firstAttribute="top" secondItem="Cjz-gG-Z9g" secondAttribute="top" id="ARM-wN-YZ3"/>
+                                                                                    <constraint firstAttribute="trailing" secondItem="LiI-bR-s9u" secondAttribute="trailing" constant="2" id="Ips-rh-HEV"/>
                                                                                     <constraint firstItem="LiI-bR-s9u" firstAttribute="leading" secondItem="Cjz-gG-Z9g" secondAttribute="leading" constant="2" id="PA0-Pa-uxQ"/>
-                                                                                    <constraint firstItem="LiI-bR-s9u" firstAttribute="centerX" secondItem="Cjz-gG-Z9g" secondAttribute="centerX" id="RPK-x6-73a"/>
-                                                                                    <constraint firstItem="LiI-bR-s9u" firstAttribute="centerY" secondItem="Cjz-gG-Z9g" secondAttribute="centerY" id="wop-eu-fZd"/>
+                                                                                    <constraint firstAttribute="bottom" secondItem="LiI-bR-s9u" secondAttribute="bottom" constant="1" id="ahY-Ou-6pe"/>
                                                                                 </constraints>
                                                                                 <connections>
                                                                                     <outlet property="textField" destination="LiI-bR-s9u" id="BTi-um-ScW"/>
