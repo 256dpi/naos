@@ -548,6 +548,14 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
             finishRefresh()
         }
     }
+    
+    internal func peripheralDidWriteValueFor(characteristic: CBCharacteristic, error: Error?) {
+        // check error
+        if let e = error {
+            raiseError(error: e)
+            return
+        }
+    }
 
     // Helpers
 
