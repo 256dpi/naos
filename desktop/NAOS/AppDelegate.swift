@@ -42,6 +42,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // show dock icon if that is the first
         if openWindows == 1 {
             NSApp.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.windows[0].orderFrontRegardless()
+            NSApp.windows[0].makeKey()
         }
     }
 

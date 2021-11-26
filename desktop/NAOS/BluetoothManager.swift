@@ -47,6 +47,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
         // configure window
         controller.window!.title = device.name()
         controller.window!.orderFrontRegardless()
+        controller.window!.makeKey()
 
         // send notification
         NotificationCenter.default.post(name: .open, object: nil)
