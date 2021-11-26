@@ -188,10 +188,12 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
             // setup controls
             if p.type == .bool {
+                v.checkbox!.isHidden = false
                 v.textField!.isHidden = true
                 v.checkbox.state = device.parameters[p]! == "1" ? .on : .off
             } else {
                 v.checkbox!.isHidden = true
+                v.textField!.isHidden = false
                 v.textField!.stringValue = device.parameters[p]!
 
                 // set appropriate number formatters
