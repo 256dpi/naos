@@ -241,6 +241,28 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
         return nil
     }
+    
+    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+        // get parameter
+        let p = device.availableParameters[row]
+        
+        // handle non strings
+        if p.type != .string {
+            return 17
+        }
+        
+        // get string
+        let str = device.parameters[p] ?? ""
+        
+        // count lines
+        let lines = str.reduce(into: 1) { (count, letter) in
+             if letter == "\n" {
+                count += 1
+             }
+        }
+        
+        return CGFloat(lines * 17)
+    }
 
     // SettingsParameterValueDelegate
 
