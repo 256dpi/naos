@@ -272,6 +272,9 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
         // write parameter
         device.write(parameter: parameter)
+        
+        // recalcualte row height
+        tableView.noteHeightOfRows(withIndexesChanged: IndexSet.init(integer: device.availableParameters.firstIndex(of: parameter)!))
     }
 
     func didClickCheckbox(parameter: NAOSDeviceParameter, value: Bool) {
