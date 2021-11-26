@@ -55,6 +55,9 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
         // set label
         loadingViewController!.message = "Refreshing..."
+        
+        // set size
+        loadingViewController!.preferredContentSize = CGSize(width: 200, height: 200)
 
         // present refresh controller as sheet
         presentAsSheet(loadingViewController!)
