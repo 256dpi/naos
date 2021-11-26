@@ -90,15 +90,27 @@ static void status(naos_status_t status) {
   naos_log("status changed to %s", naos_status_str(status));
 }
 
+static void fun_s(char *str) { naos_log("fun_s: %s", str); }
+
+static void fun_l(int32_t num) { naos_log("fun_l: %d", num); }
+
+static void fun_d(double num) { naos_log("fun_d: %f", num); }
+
+static void fun_b(bool ok) { naos_log("fun_b: %s", ok ? "true" : "false"); }
+
 static naos_param_t params[] = {{.name = "var_s", .type = NAOS_STRING, .default_s = "", .sync_s = &var_s},
                                 {.name = "var_l", .type = NAOS_LONG, .default_l = 0, .sync_l = &var_l},
                                 {.name = "var_d", .type = NAOS_DOUBLE, .default_d = 0, .sync_d = &var_d},
-                                {.name = "var_b", .type = NAOS_BOOL, .default_b = true, .sync_b = &var_b}};
+                                {.name = "var_b", .type = NAOS_BOOL, .default_b = true, .sync_b = &var_b},
+                                {.name = "fun_s", .type = NAOS_STRING, .default_s = "", .func_s = fun_s},
+                                {.name = "fun_l", .type = NAOS_LONG, .default_l = 0, .func_l = &fun_l},
+                                {.name = "fun_d", .type = NAOS_DOUBLE, .default_d = 0, .func_d = &fun_d},
+                                {.name = "fun_b", .type = NAOS_BOOL, .default_b = true, .func_b = &fun_b}};
 
 static naos_config_t config = {.device_type = "naos-test",
                                .firmware_version = "0.0.1",
                                .parameters = params,
-                               .num_parameters = 4,
+                               .num_parameters = 8,
                                .ping_callback = ping,
                                .online_callback = online,
                                .message_callback = handle,

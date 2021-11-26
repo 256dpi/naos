@@ -10,6 +10,7 @@ typedef struct {
   naos_type_t type;
   const char *param;
   void *pointer;
+  void(*func);
 } naos_params_sync_item_t;
 
 static naos_params_sync_item_t naos_params_sync_registry[CONFIG_NAOS_SYNC_REGISTRY_SIZE];
@@ -50,46 +51,80 @@ static void naos_params_update_sync(const char *param) {
       continue;
     }
 
-    // check type
+    // update pointer
     switch (item.type) {
       case NAOS_STRING: {
-        // get pointer
-        char **pointer = item.pointer;
+        // get value
+        char *value = naos_get(param);
 
-        // free existing value if pointer is set
-        if (*pointer != NULL) {
-          free(*pointer);
+        // update pointer
+        if (item.pointer != NULL) {
+          char **pointer = (char **)item.pointer;
+          if (*pointer != NULL) {
+            free(*pointer);
+          }
+          *pointer = strdup(value);
         }
 
-        // set new value
-        *pointer = strdup(naos_get(param));
+        // yield value
+        if (item.func != NULL) {
+          void (*func)(char *) = item.func;
+          func(value);
+        }
 
         break;
       }
       case NAOS_BOOL: {
-        // get pointer
-        bool *pointer = item.pointer;
+        // get value
+        bool value = naos_get_b(param);
 
-        // set new value
-        *pointer = naos_get_b(param);
+        // update pointer
+        if (item.pointer != NULL) {
+          bool *pointer = (bool *)item.pointer;
+          *pointer = value;
+        }
+
+        // yield value
+        if (item.func != NULL) {
+          void (*func)(bool) = item.func;
+          func(value);
+        }
 
         break;
       }
       case NAOS_LONG: {
-        // get pointer
-        int32_t *pointer = item.pointer;
+        // get value
+        int32_t value = naos_get_l(param);
 
-        // set new value
-        *pointer = naos_get_l(param);
+        // update pointer
+        if (item.pointer != NULL) {
+          int32_t *pointer = (int32_t *)item.pointer;
+          *pointer = value;
+        }
+
+        // yield value
+        if (item.func != NULL) {
+          void (*func)(int32_t) = item.func;
+          func(value);
+        }
 
         break;
       }
       case NAOS_DOUBLE: {
-        // get pointer
-        double *pointer = item.pointer;
+        // get value
+        double value = naos_get_d(param);
 
-        // set new value
-        *pointer = naos_get_d(param);
+        // update pointer
+        if (item.pointer != NULL) {
+          double *pointer = (double *)item.pointer;
+          *pointer = value;
+        }
+
+        // yield value
+        if (item.func != NULL) {
+          void (*func)(double) = item.func;
+          func(value);
+        }
 
         break;
       }
@@ -133,23 +168,23 @@ void naos_params_init() {
     // check_type
     switch (param.type) {
       case NAOS_STRING:
-        if (param.sync_s != NULL) {
-          naos_sync(param.name, param.sync_s);
+        if (param.sync_s != NULL || param.func_s != NULL) {
+          naos_sync(param.name, param.sync_s, param.func_s);
         }
         break;
       case NAOS_BOOL:
-        if (param.sync_b != NULL) {
-          naos_sync_b(param.name, param.sync_b);
+        if (param.sync_b != NULL || param.func_b != NULL) {
+          naos_sync_b(param.name, param.sync_b, param.func_b);
         }
         break;
       case NAOS_LONG:
-        if (param.sync_l != NULL) {
-          naos_sync_l(param.name, param.sync_l);
+        if (param.sync_l != NULL || param.func_l != NULL) {
+          naos_sync_l(param.name, param.sync_l, param.func_l);
         }
         break;
       case NAOS_DOUBLE:
-        if (param.sync_d != NULL) {
-          naos_sync_d(param.name, param.sync_d);
+        if (param.sync_d != NULL || param.func_d != NULL) {
+          naos_sync_d(param.name, param.sync_d, param.func_d);
         }
         break;
     }
@@ -296,70 +331,114 @@ bool naos_unset(const char *param) {
   return true;
 }
 
-bool naos_sync(const char *param, char **pointer) {
+bool naos_sync(const char *param, char **pointer, void (*func)(char *)) {
   // prepare item
   naos_params_sync_item_t item = {
       .type = NAOS_STRING,
       .param = param,
-      .pointer = pointer,
+      .pointer = (void *)pointer,
+      .func = func,
   };
 
   // add sync item
   bool ret = naos_params_add_sync(param, item);
 
-  // read current value
-  *pointer = strdup(naos_get(param));
+  // get value
+  char *value = naos_get(param);
+
+  // set value
+  if (pointer != NULL) {
+    *pointer = strdup(value);
+  }
+
+  // yield value
+  if (func != NULL) {
+    func(value);
+  }
 
   return ret;
 }
 
-bool naos_sync_b(const char *param, bool *pointer) {
+bool naos_sync_b(const char *param, bool *pointer, void (*func)(bool)) {
   // prepare item
   naos_params_sync_item_t item = {
       .type = NAOS_BOOL,
       .param = param,
-      .pointer = pointer,
+      .pointer = (void *)pointer,
+      .func = func,
   };
 
   // add sync item
   bool ret = naos_params_add_sync(param, item);
 
-  // read current value
-  *pointer = naos_get_b(param);
+  // get value
+  bool value = naos_get_b(param);
+
+  // set value
+  if (pointer != NULL) {
+    *pointer = value;
+  }
+
+  // yield value
+  if (func != NULL) {
+    func(value);
+  }
 
   return ret;
 }
 
-bool naos_sync_l(const char *param, int32_t *pointer) {
+bool naos_sync_l(const char *param, int32_t *pointer, void (*func)(int32_t)) {
   // prepare item
   naos_params_sync_item_t item = {
       .type = NAOS_LONG,
       .param = param,
-      .pointer = pointer,
+      .pointer = (void *)pointer,
+      .func = func,
   };
 
   // add sync item
   bool ret = naos_params_add_sync(param, item);
 
-  // read current value
-  *pointer = naos_get_l(param);
+  // get value
+  int32_t value = naos_get_l(param);
+
+  // set value
+  if (pointer != NULL) {
+    *pointer = value;
+  }
+
+  // yield value
+  if (func != NULL) {
+    func(value);
+  }
 
   return ret;
 }
 
-bool naos_sync_d(const char *param, double *pointer) {
+bool naos_sync_d(const char *param, double *pointer, void (*func)(double)) {
   // prepare item
   naos_params_sync_item_t item = {
       .type = NAOS_DOUBLE,
       .param = param,
-      .pointer = pointer,
+      .pointer = (void *)pointer,
+      .func = func,
   };
 
   // add sync item
   bool ret = naos_params_add_sync(param, item);
 
-  // read current value
-  *pointer = naos_get_d(param);
+  // get value
+  double value = naos_get_d(param);
+
+  // set value
+  if (pointer != NULL) {
+    *pointer = value;
+  }
+
+  // yield value
+  if (func != NULL) {
+    func(value);
+  }
 
   return ret;
 }

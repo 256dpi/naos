@@ -135,6 +135,26 @@ typedef struct {
    * The synchronized double variable.
    */
   double *sync_d;
+
+  /**
+   * The string synchronization function.
+   */
+  void (*func_s)(char *);
+
+  /**
+   * The boolean synchronization function.
+   */
+  void (*func_b)(bool);
+
+  /**
+   * The long synchronization function.
+   */
+  void (*func_l)(int32_t);
+
+  /**
+   * The double synchronization function.
+   */
+  void (*func_d)(double);
 } naos_param_t;
 
 /**
@@ -363,55 +383,63 @@ bool naos_unset(const char *param);
 
 /**
  * Will automatically apply parameter modifications and set the specified pointer to a buffer that contains the set
- * value or an empty string if unset. It will read and set the currently stored value when invoked.
+ * value or an empty string if unset. Alternatively, it may just call the provided function with the new value or a
+ * combination if both mechanisms. It will read, set and yield the currently stored value when invoked.
  *
  * @note This function should only be called from app_main() to ensure only one synchronization is registered per
  * parameter.
  *
  * @param param The parameter.
  * @param pointer The pointer.
+ * @param func The function.
  * @return Whether the registration was successful.
  */
-bool naos_sync(const char *param, char **pointer);
+bool naos_sync(const char *param, char **pointer, void (*func)(char *));
 
 /**
- * Will automatically apply parameter modifications and set the specified pointer to the set value. It will read and
- * set the currently stored value when invoked.
+ * Will automatically apply parameter modifications and set the specified pointer to a buffer that contains the set
+ * value or an empty string if unset. Alternatively, it may just call the provided function with the new value or a
+ * combination if both mechanisms. It will read, set and yield the currently stored value when invoked.
  *
  * @note This function should only be called from app_main() to ensure only one synchronization is registered per
  * parameter.
  *
  * @param param The parameter.
  * @param pointer The pointer.
+ * @param func The function.
  * @return Whether the registration was successful.
  */
-bool naos_sync_b(const char *param, bool *pointer);
+bool naos_sync_b(const char *param, bool *pointer, void (*func)(bool));
 
 /**
- * Will automatically apply parameter modifications and set the specified pointer to the set value. It will read and
- * set the currently stored value when invoked.
+ * Will automatically apply parameter modifications and set the specified pointer to a buffer that contains the set
+ * value or an empty string if unset. Alternatively, it may just call the provided function with the new value or a
+ * combination if both mechanisms. It will read, set and yield the currently stored value when invoked.
  *
  * @note This function should only be called from app_main() to ensure only one synchronization is registered per
  * parameter.
  *
  * @param param The parameter.
  * @param pointer The pointer.
+ * @param func The function.
  * @return Whether the registration was successful.
  */
-bool naos_sync_l(const char *param, int32_t *pointer);
+bool naos_sync_l(const char *param, int32_t *pointer, void (*func)(int32_t));
 
 /**
- * Will automatically apply parameter modifications and set the specified pointer to the set value. It will read and
- * set the currently stored value when invoked.
+ * Will automatically apply parameter modifications and set the specified pointer to a buffer that contains the set
+ * value or an empty string if unset. Alternatively, it may just call the provided function with the new value or a
+ * combination if both mechanisms. It will read, set and yield the currently stored value when invoked.
  *
  * @note This function should only be called from app_main() to ensure only one synchronization is registered per
  * parameter.
  *
  * @param param The parameter.
  * @param pointer The pointer.
+ * @param func The function.
  * @return Whether the registration was successful.
  */
-bool naos_sync_d(const char *param, double *pointer);
+bool naos_sync_d(const char *param, double *pointer, void (*func)(double));
 
 /**
  * Subscribe to specified topic. The topic is automatically prefixed with the configured base topic if the scope is
