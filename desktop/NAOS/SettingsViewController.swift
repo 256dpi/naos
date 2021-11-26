@@ -87,8 +87,10 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
     @IBAction
     func useShiftrIO(_: AnyObject) {
         // set settings
-        mqttHostTextField.stringValue = "broker.shiftr.io"
+        mqttHostTextField.stringValue = "public.cloud.shiftr.io"
         mqttPortTextField.stringValue = "1883"
+        mqttUsernameTextField.stringValue = "public"
+        mqttPasswordTextField.stringValue = "public"
     }
 
     @IBAction
