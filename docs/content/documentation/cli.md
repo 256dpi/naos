@@ -18,6 +18,7 @@ Project Management:
   flash    Flash the previously built binary to an attached device.
   attach   Open a serial communication with an attached device.
   run      Run 'build', 'flash' and 'attach' sequentially.
+  config   Write settings and parameters to an attached device.
   format   Format all source files in the 'src' subdirectory.
 
 Fleet Management:
@@ -32,15 +33,16 @@ Fleet Management:
   monitor  Monitor heartbeats from devices.
   record   Record log messages from devices.
   debug    Gather debug information from devices.
-  update   Send the previously built binary to devices.
+  update   Update devices over the air.
 
 Usage:
   naos create [--cmake --force]
   naos install [--force]
   naos build [--clean --app-only]
-  naos flash [<device>] [--erase --app-only]
+  naos flash [<device>] [--baud=<rate> --erase --app-only]
   naos attach [<device>] [--simple]
   naos run [<device>] [--clean --app-only --erase --simple]
+  naos config <file> [<device>]
   naos format
   naos list
   naos collect [--clear --duration=<time>]
@@ -53,7 +55,7 @@ Usage:
   naos monitor [<pattern>] [--timeout=<time>]
   naos record [<pattern>] [--timeout=<time>]
   naos debug [<pattern>] [--delete --duration=<time>]
-  naos update [<pattern>] [--jobs=<count> --timeout=<time>]
+  naos update <version> [<pattern>] [--jobs=<count> --timeout=<time>]
   naos help
 
 Options:
@@ -65,6 +67,7 @@ Options:
   --simple              Use simple serial tool.
   --clear               Remove not available devices from inventory.
   --delete              Delete loaded coredumps from the devices.
+  -b --baud=<rate>      The baud rate [default: 921600].
   -d --duration=<time>  Operation duration [default: 2s].
   -t --timeout=<time>   Operation timeout [default: 5s].
   -j --jobs=<count>     Number of simultaneous update jobs [default: 10].
