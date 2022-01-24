@@ -8,13 +8,10 @@ The following steps illustrate how you can get started with NAOS. We will guide 
 
 ## Installation
 
-First, you need to install the latest version of the `naos` command line utility (CLI):
+First, you need to install the latest version of the `naos` command line utility (CLI).
 
-```
-curl -L https://naos.256dpi.com/install.sh | bash
-```
-
-*You can also download the binary manually from <https://github.com/256dpi/naos/releases> if you don't want to run the above shell script.*
+1. Download the binary from <https://github.com/256dpi/naos/releases>.
+2. Move the binary to directory available through `$PATH`.
 
 After the installation you can verify that `naos` is available:
 

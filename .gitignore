@@ -1,2 +1,2 @@
-# ignore generated files
+.idea/
 CMakeLists.txt
