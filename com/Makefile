@@ -64,6 +64,6 @@ info:
 run: build flash monitor
 
 fmt:
-	clang-format -i ./src/*.c ./src/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120}"
-	clang-format -i ./include/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120}"
-	clang-format -i ./test/main/*.c -style="{BasedOnStyle: Google, ColumnLimit: 120}"
+	clang-format -i ./src/*.c ./src/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}"
+	clang-format -i ./include/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}"
+	clang-format -i ./test/main/*.c -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}"
