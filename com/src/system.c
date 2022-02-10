@@ -16,7 +16,7 @@
 #include "task.h"
 #include "update.h"
 #include "utils.h"
-#include "wifi.h"
+#include "net.h"
 
 SemaphoreHandle_t naos_system_mutex;
 
@@ -293,12 +293,12 @@ static void naos_system_write_callback(naos_ble_char_t ch, const char *value) {
   }
 }
 
-static void naos_system_wifi_callback(naos_wifi_status_t status) {
+static void naos_system_net_callback(naos_net_status_t status) {
   // acquire mutex
   NAOS_LOCK(naos_system_mutex);
 
   switch (status) {
-    case NAOS_WIFI_STATUS_CONNECTED: {
+    case NAOS_NET_STATUS_CONNECTED: {
       ESP_LOGI(NAOS_LOG_TAG, "naos_system_wifi_callback: connected");
 
       // check if connection is new
@@ -313,7 +313,7 @@ static void naos_system_wifi_callback(naos_wifi_status_t status) {
       break;
     }
 
-    case NAOS_WIFI_STATUS_DISCONNECTED: {
+    case NAOS_NET_STATUS_DISCONNECTED: {
       ESP_LOGI(NAOS_LOG_TAG, "naos_system_wifi_callback: disconnected");
 
       // check if we have been networked
@@ -420,8 +420,8 @@ void naos_system_init() {
   // initialize bluetooth stack
   naos_ble_init(naos_system_read_callback, naos_system_write_callback);
 
-  // initialize wifi stack
-  naos_wifi_init(naos_system_wifi_callback);
+  // initialize network stack
+  naos_net_init(naos_system_net_callback);
 
   // initialize mqtt client
   naos_mqtt_init(naos_system_mqtt_callback, naos_manager_handle);

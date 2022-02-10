@@ -4,20 +4,20 @@
 #include <string.h>
 
 #include "utils.h"
-#include "wifi.h"
+#include "net.h"
 
-static SemaphoreHandle_t naos_wifi_mutex;
+static SemaphoreHandle_t naos_net_mutex;
 
 static bool naos_wifi_connected = false;
 static bool naos_wifi_started = false;
 
-static naos_wifi_status_callback_t naos_wifi_callback = NULL;
+static naos_net_status_callback_t naos_net_callback = NULL;
 
 static wifi_config_t naos_wifi_config;
 
-static esp_err_t naos_wifi_event_handler(void *ctx, system_event_t *e) {
+static esp_err_t naos_net_event_handler(void *ctx, system_event_t *e) {
   // acquire mutex
-  NAOS_LOCK(naos_wifi_mutex);
+  NAOS_LOCK(naos_net_mutex);
 
   switch (e->event_id) {
     case SYSTEM_EVENT_STA_START: {
@@ -33,11 +33,11 @@ static esp_err_t naos_wifi_event_handler(void *ctx, system_event_t *e) {
         naos_wifi_connected = true;
 
         // release mutex
-        NAOS_UNLOCK(naos_wifi_mutex);
+        NAOS_UNLOCK(naos_net_mutex);
 
         // call callback if present
-        if (naos_wifi_callback) {
-          naos_wifi_callback(NAOS_WIFI_STATUS_CONNECTED);
+        if (naos_net_callback) {
+          naos_net_callback(NAOS_NET_STATUS_CONNECTED);
         }
 
         return ESP_OK;
@@ -47,7 +47,7 @@ static esp_err_t naos_wifi_event_handler(void *ctx, system_event_t *e) {
     }
 
     case SYSTEM_EVENT_STA_DISCONNECTED: {
-      // attempt reconnect if station is not down
+      // attempt to reconnect if station is not down
       if (naos_wifi_started) {
         ESP_ERROR_CHECK(esp_wifi_connect());
       }
@@ -57,11 +57,11 @@ static esp_err_t naos_wifi_event_handler(void *ctx, system_event_t *e) {
         naos_wifi_connected = false;
 
         // release mutex
-        NAOS_UNLOCK(naos_wifi_mutex);
+        NAOS_UNLOCK(naos_net_mutex);
 
         // call callback if present
-        if (naos_wifi_callback) {
-          naos_wifi_callback(NAOS_WIFI_STATUS_DISCONNECTED);
+        if (naos_net_callback) {
+          naos_net_callback(NAOS_NET_STATUS_DISCONNECTED);
         }
 
         return ESP_OK;
@@ -76,34 +76,34 @@ static esp_err_t naos_wifi_event_handler(void *ctx, system_event_t *e) {
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_wifi_mutex);
+  NAOS_UNLOCK(naos_net_mutex);
 
   return ESP_OK;
 }
 
-void naos_wifi_init(naos_wifi_status_callback_t callback) {
+void naos_net_init(naos_net_status_callback_t callback) {
   // store callback
-  naos_wifi_callback = callback;
+  naos_net_callback = callback;
 
   // create mutex
-  naos_wifi_mutex = xSemaphoreCreateMutex();
+  naos_net_mutex = xSemaphoreCreateMutex();
 
-  // init tcpip adapter
+  // initialize TCP/IP adapter
   tcpip_adapter_init();
 
   // start event loop
-  ESP_ERROR_CHECK(esp_event_loop_init(naos_wifi_event_handler, NULL));
+  ESP_ERROR_CHECK(esp_event_loop_init(naos_net_event_handler, NULL));
 
   // get default wifi initialization config
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 
-  // initialize wifi
+  // initialize Wi-Fi
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-  // use RAM storage
+  // use RAM storage for Wi-Fi config
   ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
 
-  // disable auto connect
+  // disable Wi-Fi auto connect
   esp_wifi_set_auto_connect(false);
 }
 
@@ -114,7 +114,7 @@ void naos_wifi_configure(const char *ssid, const char *password) {
   }
 
   // acquire mutex
-  NAOS_LOCK(naos_wifi_mutex);
+  NAOS_LOCK(naos_net_mutex);
 
   // stop station if already started
   if (naos_wifi_started) {
@@ -135,12 +135,12 @@ void naos_wifi_configure(const char *ssid, const char *password) {
   // assign configuration
   ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &naos_wifi_config));
 
-  // update local flag
+  // update flag
   naos_wifi_started = true;
 
-  // start wifi
+  // start Wi-Fi
   ESP_ERROR_CHECK(esp_wifi_start());
 
   // release mutex
-  NAOS_UNLOCK(naos_wifi_mutex);
+  NAOS_UNLOCK(naos_net_mutex);
 }

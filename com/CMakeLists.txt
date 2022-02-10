@@ -42,6 +42,8 @@ set(SOURCE_FILES
         src/mqtt.h
         src/naos.c
         src/naos.h
+        src/net.c
+        src/net.h
         src/params.c
         src/params.h
         src/settings.c
@@ -54,8 +56,6 @@ set(SOURCE_FILES
         src/update.h
         src/utils.c
         src/utils.h
-        src/wifi.c
-        src/wifi.h
         test/main/main.c)
 
 add_library(naos ${SOURCE_FILES})
