@@ -306,7 +306,7 @@ static void naos_system_net_callback(naos_net_status_t status) {
         // change sate
         naos_system_set_status(NAOS_CONNECTED);
 
-        // start Wi-Fi
+        // start MQTT
         naos_system_start_mqtt();
       }
 
@@ -327,7 +327,7 @@ static void naos_system_net_callback(naos_net_status_t status) {
 
       // check if we have been connected
       if (naos_system_status >= NAOS_CONNECTED) {
-        // stop mqtt
+        // stop MQTT
         naos_mqtt_stop();
 
         // change state
