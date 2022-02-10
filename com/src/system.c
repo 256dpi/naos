@@ -299,7 +299,7 @@ static void naos_system_net_callback(naos_net_status_t status) {
 
   switch (status) {
     case NAOS_NET_STATUS_CONNECTED: {
-      ESP_LOGI(NAOS_LOG_TAG, "naos_system_wifi_callback: connected");
+      ESP_LOGI(NAOS_LOG_TAG, "naos_system_net_callback: connected");
 
       // check if connection is new
       if (naos_system_status == NAOS_DISCONNECTED) {
@@ -314,7 +314,7 @@ static void naos_system_net_callback(naos_net_status_t status) {
     }
 
     case NAOS_NET_STATUS_DISCONNECTED: {
-      ESP_LOGI(NAOS_LOG_TAG, "naos_system_wifi_callback: disconnected");
+      ESP_LOGI(NAOS_LOG_TAG, "naos_system_net_callback: disconnected");
 
       // check if we have been networked
       if (naos_system_status == NAOS_NETWORKED) {
