@@ -75,7 +75,7 @@ static void naos_system_configure_wifi() {
   char *wifi_ssid = naos_settings_read(NAOS_SETTING_WIFI_SSID);
   char *wifi_password = naos_settings_read(NAOS_SETTING_WIFI_PASSWORD);
 
-  // configure wifi
+  // configure Wi-Fi
   naos_wifi_configure(wifi_ssid, wifi_password);
 
   // free strings
@@ -131,9 +131,9 @@ static void naos_system_handle_command(const char *command) {
     esp_restart();
   }
 
-  // handle wifi restart
+  // handle Wi-Fi restart
   else if (restart_wifi) {
-    ESP_LOGI(NAOS_LOG_TAG, "naos_system_ble_callback: restart wifi");
+    ESP_LOGI(NAOS_LOG_TAG, "naos_system_ble_callback: restart Wi-Fi");
 
     switch (naos_system_status) {
       case NAOS_NETWORKED: {
@@ -157,7 +157,7 @@ static void naos_system_handle_command(const char *command) {
       }
 
       case NAOS_DISCONNECTED: {
-        // restart wifi
+        // restart Wi-Fi
         naos_system_configure_wifi();
       }
     }
@@ -306,7 +306,7 @@ static void naos_system_net_callback(naos_net_status_t status) {
         // change sate
         naos_system_set_status(NAOS_CONNECTED);
 
-        // start wifi
+        // start Wi-Fi
         naos_system_start_mqtt();
       }
 
@@ -432,7 +432,7 @@ void naos_system_init() {
   // set initial state
   naos_system_set_status(NAOS_DISCONNECTED);
 
-  // initially configure wifi
+  // initially configure Wi-Fi
   naos_system_configure_wifi();
 }
 

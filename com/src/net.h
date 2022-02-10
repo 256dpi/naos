@@ -21,12 +21,12 @@ typedef void (*naos_net_status_callback_t)(naos_net_status_t);
 void naos_net_init(naos_net_status_callback_t callback);
 
 /**
- * Configure the WiFi connection.
+ * Configure the Wi-Fi connection.
  *
  * @note Will automatically disconnect if already connected.
  *
- * @param ssid The WiFi AP SSID.
- * @param password The WiFi AP password.
+ * @param ssid The Wi-Fi AP SSID.
+ * @param password The Wi-Fi AP password.
  */
 void naos_wifi_configure(const char *ssid, const char *password);
 

@@ -71,7 +71,7 @@ static esp_err_t naos_net_event_handler(void *ctx, system_event_t *e) {
     }
 
     default: {
-      // ESP_LOGI(NAOS_LOG_TAG, "Unhandled WiFi Event: %d", e->event_id);
+      // ESP_LOGI(NAOS_LOG_TAG, "Unhandled Event: %d", e->event_id);
     }
   }
 
@@ -94,7 +94,7 @@ void naos_net_init(naos_net_status_callback_t callback) {
   // start event loop
   ESP_ERROR_CHECK(esp_event_loop_init(naos_net_event_handler, NULL));
 
-  // get default wifi initialization config
+  // get default Wi-Fi initialization config
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 
   // initialize Wi-Fi
@@ -121,7 +121,7 @@ void naos_wifi_configure(const char *ssid, const char *password) {
     // update local flag
     naos_wifi_started = false;
 
-    // stop wifi
+    // stop Wi-Fi
     ESP_ERROR_CHECK(esp_wifi_stop());
   }
 
