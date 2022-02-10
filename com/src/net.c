@@ -111,7 +111,7 @@ void naos_net_init(naos_net_status_callback_t callback) {
   esp_wifi_set_auto_connect(false);
 }
 
-void naos_wifi_configure(const char *ssid, const char *password) {
+void naos_net_configure_wifi(const char *ssid, const char *password) {
   // immediately return if ssid is not set
   if (strlen(ssid) == 0) {
     return;

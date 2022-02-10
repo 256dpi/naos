@@ -76,7 +76,7 @@ static void naos_system_configure_wifi() {
   char *wifi_password = naos_settings_read(NAOS_SETTING_WIFI_PASSWORD);
 
   // configure Wi-Fi
-  naos_wifi_configure(wifi_ssid, wifi_password);
+  naos_net_configure_wifi(wifi_ssid, wifi_password);
 
   // free strings
   free(wifi_ssid);

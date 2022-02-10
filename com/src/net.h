@@ -28,6 +28,6 @@ void naos_net_init(naos_net_status_callback_t callback);
  * @param ssid The Wi-Fi AP SSID.
  * @param password The Wi-Fi AP password.
  */
-void naos_wifi_configure(const char *ssid, const char *password);
+void naos_net_configure_wifi(const char *ssid, const char *password);
 
 #endif  // _NAOS_NET_H
