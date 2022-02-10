@@ -41,7 +41,7 @@ Usage:
   naos build [--clean --app-only]
   naos flash [<device>] [--baud=<rate> --erase --app-only]
   naos attach [<device>] [--simple]
-  naos run [<device>] [--clean --app-only --erase --simple]
+  naos run [<device>] [--clean --app-only --baud=<rate> --erase --simple]
   naos config <file> [<device>]
   naos format
   naos list
