@@ -24,7 +24,7 @@ static esp_err_t naos_net_event_handler(void *ctx, system_event_t *e) {
   switch (e->event_id) {
     case SYSTEM_EVENT_STA_START: {
       // connect to access point if station has started
-      ESP_ERROR_CHECK(esp_wifi_connect());
+      ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
 
       break;
     }
@@ -42,7 +42,7 @@ static esp_err_t naos_net_event_handler(void *ctx, system_event_t *e) {
 
       // attempt to reconnect if station is not down
       if (naos_wifi_started) {
-        ESP_ERROR_CHECK(esp_wifi_connect());
+        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
       }
 
       break;
