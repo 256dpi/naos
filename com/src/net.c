@@ -71,6 +71,9 @@ static esp_err_t naos_net_event_handler(void *ctx, system_event_t *e) {
   bool connected = naos_wifi_connected || naos_eth_connected;
   bool changed = naos_net_connected != connected;
 
+  // update status
+  naos_net_connected = connected;
+
   // release mutex
   NAOS_UNLOCK(naos_net_mutex);
 
