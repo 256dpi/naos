@@ -8,8 +8,10 @@
 
 static SemaphoreHandle_t naos_net_mutex;
 
-static bool naos_wifi_connected = false;
 static bool naos_wifi_started = false;
+static bool naos_wifi_connected = false;
+static bool naos_eth_connected = false;
+static bool naos_net_connected = false;
 
 static naos_net_status_callback_t naos_net_callback = NULL;
 
@@ -28,44 +30,34 @@ static esp_err_t naos_net_event_handler(void *ctx, system_event_t *e) {
     }
 
     case SYSTEM_EVENT_STA_GOT_IP: {
-      // update local flag if changed
-      if (!naos_wifi_connected) {
-        naos_wifi_connected = true;
-
-        // release mutex
-        NAOS_UNLOCK(naos_net_mutex);
-
-        // call callback if present
-        if (naos_net_callback) {
-          naos_net_callback(NAOS_NET_STATUS_CONNECTED);
-        }
-
-        return ESP_OK;
-      }
+      // set flag
+      naos_wifi_connected = true;
 
       break;
     }
 
     case SYSTEM_EVENT_STA_DISCONNECTED: {
+      // set flag
+      naos_wifi_connected = false;
+
       // attempt to reconnect if station is not down
       if (naos_wifi_started) {
         ESP_ERROR_CHECK(esp_wifi_connect());
       }
 
-      // update local flag if changed
-      if (naos_wifi_connected) {
-        naos_wifi_connected = false;
+      break;
+    }
 
-        // release mutex
-        NAOS_UNLOCK(naos_net_mutex);
+    case SYSTEM_EVENT_ETH_GOT_IP: {
+      // set flag
+      naos_eth_connected = true;
 
-        // call callback if present
-        if (naos_net_callback) {
-          naos_net_callback(NAOS_NET_STATUS_DISCONNECTED);
-        }
+      break;
+    }
 
-        return ESP_OK;
-      }
+    case SYSTEM_EVENT_ETH_DISCONNECTED: {
+      // set flag
+      naos_eth_connected = false;
 
       break;
     }
@@ -75,8 +67,17 @@ static esp_err_t naos_net_event_handler(void *ctx, system_event_t *e) {
     }
   }
 
+  // determine status
+  bool connected = naos_wifi_connected || naos_eth_connected;
+  bool changed = naos_net_connected != connected;
+
   // release mutex
   NAOS_UNLOCK(naos_net_mutex);
+
+  // call callback if changed and present
+  if (naos_net_callback && changed) {
+    naos_net_callback(connected ? NAOS_NET_STATUS_CONNECTED : NAOS_NET_STATUS_DISCONNECTED);
+  }
 
   return ESP_OK;
 }
@@ -118,10 +119,6 @@ void naos_wifi_configure(const char *ssid, const char *password) {
 
   // stop station if already started
   if (naos_wifi_started) {
-    // update local flag
-    naos_wifi_started = false;
-
-    // stop Wi-Fi
     ESP_ERROR_CHECK(esp_wifi_stop());
   }
 

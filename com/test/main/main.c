@@ -4,6 +4,10 @@
 
 #include <naos.h>
 
+#include "eth.h"
+
+#define ETHERNET false
+
 static int counter = 0;
 
 static char *message = NULL;
@@ -125,4 +129,9 @@ static naos_config_t config = {.device_type = "naos-test",
 void app_main() {
   // initialize naos
   naos_init(&config);
+
+  // initialize ethernet
+  if (ETHERNET) {
+    eth_init();
+  }
 }

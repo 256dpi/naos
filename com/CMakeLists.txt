@@ -15,14 +15,15 @@ include_directories(
         test/esp-idf/components/bt/bluedroid/common/include/common
         test/esp-idf/components/esp32/include
         test/esp-idf/components/esp_event/include
+        test/esp-idf/components/ethernet/include
         test/esp-idf/components/freertos/include
         test/esp-idf/components/log/include
         test/esp-idf/components/nvs_flash/include
         test/esp-idf/components/driver/include
         test/esp-idf/components/spi_flash/include
         test/esp-idf/components/tcpip_adapter/include
-        test/esp-idf/components/lwip/include/lwip/port
-        test/esp-idf/components/lwip/include/lwip
+        test/esp-idf/components/lwip/lwip/src/include
+        test/esp-idf/components/lwip/port/esp32/include
         test/esp-idf/components/soc/esp32/include
         test/esp-idf/components/soc/include
         test/components/esp-mqtt
@@ -56,6 +57,7 @@ set(SOURCE_FILES
         src/update.h
         src/utils.c
         src/utils.h
-        test/main/main.c)
+        test/main/main.c
+        test/main/eth.c)
 
 add_library(naos ${SOURCE_FILES})
