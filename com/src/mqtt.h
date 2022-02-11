@@ -5,6 +5,11 @@
 
 #include <naos.h>
 
+typedef struct {
+  bool connected;
+  bool running;
+} naos_mqtt_status_t;
+
 /**
  * The message callback.
  */
@@ -15,10 +20,9 @@ typedef void (*naos_mqtt_message_callback_t)(const char *topic, uint8_t *payload
  *
  * @note Should only be called once on boot.
  *
- * @param scb The status callback.
  * @param mcb The message callback.
  */
-void naos_mqtt_init(esp_mqtt_status_callback_t scb, naos_mqtt_message_callback_t mcb);
+void naos_mqtt_init(naos_mqtt_message_callback_t mcb);
 
 /**
  * Start the MQTT process.
@@ -32,6 +36,13 @@ void naos_mqtt_init(esp_mqtt_status_callback_t scb, naos_mqtt_message_callback_t
  */
 void naos_mqtt_start(const char *host, char *port, const char *client_id, const char *username, const char *password,
                      const char *base_topic);
+
+/**
+ * Retrieve the current status of the MQTT subsystem.
+ *
+ * @return The current status.
+ */
+naos_mqtt_status_t naos_mqtt_check();
 
 /**
  * Stop the MQTT process.

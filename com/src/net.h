@@ -1,24 +1,18 @@
 #ifndef _NAOS_NET_H
 #define _NAOS_NET_H
 
-/**
- * The connection status emitted by the callback.
- */
-typedef enum { NAOS_NET_STATUS_DISCONNECTED, NAOS_NET_STATUS_CONNECTED } naos_net_status_t;
-
-/**
- * The status change callback.
- */
-typedef void (*naos_net_status_callback_t)(naos_net_status_t);
+typedef struct {
+  bool connected_any;
+  bool connected_wifi;
+  bool connected_eth;
+} naos_net_status_t;
 
 /**
  * Initialize the network subsystem.
  *
  * @note Should only be called once on boot.
- *
- * @param callback The status callback.
  */
-void naos_net_init(naos_net_status_callback_t callback);
+void naos_net_init();
 
 /**
  * Configure the Wi-Fi connection.
@@ -29,5 +23,12 @@ void naos_net_init(naos_net_status_callback_t callback);
  * @param password The Wi-Fi AP password.
  */
 void naos_net_configure_wifi(const char *ssid, const char *password);
+
+/**
+ * Obtain the status of the network subsystem.
+ *
+ * @return Whether network connectivity is available.
+ */
+naos_net_status_t naos_net_check();
 
 #endif  // _NAOS_NET_H
