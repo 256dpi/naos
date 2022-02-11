@@ -20,9 +20,9 @@ const char *naos_scope_str(naos_scope_t scope) {
       return "local";
     case NAOS_GLOBAL:
       return "global";
+    default:
+      return "";
   }
-
-  return "";
 }
 
 const char *naos_status_str(naos_status_t status) {
@@ -33,7 +33,7 @@ const char *naos_status_str(naos_status_t status) {
       return "connected";
     case NAOS_NETWORKED:
       return "networked";
+    default:
+      return "";
   }
-
-  return "";
 }

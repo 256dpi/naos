@@ -23,31 +23,16 @@ SemaphoreHandle_t naos_system_mutex;
 static naos_status_t naos_system_status;
 
 static const char *naos_system_status_string(naos_status_t status) {
-  // default state name
-  const char *name = "Unknown";
-
-  // triage status
   switch (status) {
-    // handle disconnected state
-    case NAOS_DISCONNECTED: {
-      name = "Disconnected";
-      break;
-    }
-
-      // handle connected state
-    case NAOS_CONNECTED: {
-      name = "Connected";
-      break;
-    }
-
-      // handle networked state
-    case NAOS_NETWORKED: {
-      name = "Networked";
-      break;
-    }
+    case NAOS_DISCONNECTED:
+      return "Disconnected";
+    case NAOS_CONNECTED:
+      return "Connected";
+    case NAOS_NETWORKED:
+      return "Networked";
+    default:
+      return "Unknown";
   }
-
-  return name;
 }
 
 static void naos_system_set_status(naos_status_t status) {

@@ -13,7 +13,6 @@
 #include "naos.h"
 #include "params.h"
 #include "settings.h"
-#include "task.h"
 #include "update.h"
 #include "utils.h"
 
@@ -71,7 +70,7 @@ static void naos_manager_send_announcement() {
   free(base_topic);
 }
 
-static void naos_manager_process(void *p) {
+static void naos_manager_process() {
   for (;;) {
     // acquire mutex
     NAOS_LOCK(naos_manager_mutex);

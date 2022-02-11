@@ -28,9 +28,9 @@ static const char* naos_settings_key(naos_setting_t setting) {
       return "device-name";
     case NAOS_SETTING_BASE_TOPIC:
       return "base-topic";
+    default:
+      return "";
   }
-
-  return "";
 }
 
 void naos_settings_init() {

@@ -13,7 +13,7 @@ static TaskHandle_t naos_task_ref;
 
 static bool naos_task_started = false;
 
-static void naos_task_process(void *p) {
+static void naos_task_process() {
   for (;;) {
     // acquire mutex
     NAOS_LOCK(naos_task_mutex);
