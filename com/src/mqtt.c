@@ -75,11 +75,20 @@ void naos_mqtt_init(naos_mqtt_message_callback_t mcb) {
 
 void naos_mqtt_start(const char *host, char *port, const char *client_id, const char *username, const char *password,
                      const char *base_topic) {
+  // acquire mutex
+  NAOS_LOCK(naos_mqtt_mutex);
+
+  // set flag
+  naos_mqtt_status.running = true;
+
   // free base topic prefix if set
   if (naos_mqtt_base_topic_prefix != NULL) free(naos_mqtt_base_topic_prefix);
 
   // set base topic prefix
   naos_mqtt_base_topic_prefix = naos_str_concat(base_topic, "/");
+
+  // release mutex
+  NAOS_UNLOCK(naos_mqtt_mutex);
 
   // start the MQTT process
   esp_mqtt_start(host, port, client_id, username, password);
@@ -166,6 +175,15 @@ bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool 
 }
 
 void naos_mqtt_stop() {
+  // acquire mutex
+  NAOS_LOCK(naos_mqtt_mutex);
+
+  // set flag
+  naos_mqtt_status.running = false;
+
+  // release mutex
+  NAOS_UNLOCK(naos_mqtt_mutex);
+
   // stop the mqtt process
   esp_mqtt_stop();
 }

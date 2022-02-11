@@ -238,6 +238,9 @@ static void naos_system_write_callback(naos_ble_char_t ch, const char *value) {
 
 void naos_system_task() {
   for (;;) {
+    // wait some time
+    naos_delay(100);
+
     // get old status
     naos_status_t old_status = naos_system_status;
 
@@ -253,7 +256,7 @@ void naos_system_task() {
       new_status = NAOS_CONNECTED;
     }
 
-    // check status
+    // handle status change
     if (naos_system_status != new_status) {
       // set status
       naos_system_set_status(new_status);
@@ -274,8 +277,14 @@ void naos_system_task() {
       }
     }
 
-    // wait some time
-    naos_delay(100);
+    // manage mqtt
+    if (mqtt.running && new_status == NAOS_DISCONNECTED) {
+      // stop mqtt
+      naos_mqtt_stop();
+    } else if (!mqtt.running && new_status != NAOS_DISCONNECTED) {
+      // start mqtt
+      naos_system_configure_mqtt();
+    }
   }
 }
 

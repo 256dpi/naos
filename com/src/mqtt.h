@@ -6,8 +6,8 @@
 #include <naos.h>
 
 typedef struct {
-  bool connected;
   bool running;
+  bool connected;
 } naos_mqtt_status_t;
 
 /**
