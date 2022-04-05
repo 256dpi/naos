@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 
-TOOLCHAIN_VERSION=$(cat ./tree/toolchain.version)
 ESP_IDF_VERSION=$(cat ./tree/esp-idf.version)
 ESP_MQTT_VERSION=$(cat ./tree/esp-mqtt.version)
 
 printf "\nCurrent Versions:\n"
-printf "==> toolchain: ${TOOLCHAIN_VERSION}\n"
 printf "==> esp-idf: ${ESP_IDF_VERSION}\n"
 printf "==> esp-mqtt: ${ESP_MQTT_VERSION}\n"
 

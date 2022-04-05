@@ -87,9 +87,6 @@ void naos_net_init() {
 
   // use RAM storage for Wi-Fi config
   ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-
-  // disable Wi-Fi auto connect
-  esp_wifi_set_auto_connect(false);
 }
 
 void naos_net_configure_wifi(const char *ssid, const char *password) {

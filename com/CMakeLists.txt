@@ -5,18 +5,23 @@ set(CMAKE_C_STANDARD 99)
 
 include_directories(
         test/build/include
-        test/xtensa-esp32-elf/xtensa-esp32-elf/include
         test/esp-idf/components/app_update/include
-        test/esp-idf/components/bt/include
-        test/esp-idf/components/bt/bluedroid/include
-        test/esp-idf/components/bt/bluedroid/api/include/api
-        test/esp-idf/components/bt/bluedroid/bta/include/bta
-        test/esp-idf/components/bt/bluedroid/btc/include/btc
-        test/esp-idf/components/bt/bluedroid/common/include/common
+        test/esp-idf/components/bt/include/esp32/include
+        test/esp-idf/components/bt/host/bluedroid/api/include/api
+        test/esp-idf/components/bt/host/bluedroid/bta/include/bta
+        test/esp-idf/components/bt/host/bluedroid/btc/include/btc
+        test/esp-idf/components/bt/host/bluedroid/common/include/common
+        test/esp-idf/components/bt/host/bluedroid/hci/include/hci
         test/esp-idf/components/esp32/include
+        test/esp-idf/components/esp_common/include
         test/esp-idf/components/esp_event/include
-        test/esp-idf/components/ethernet/include
+        test/esp-idf/components/esp_eth/include
+        test/esp-idf/components/esp_hw_support/include
+        test/esp-idf/components/esp_system/include
+        test/esp-idf/components/esp_wifi/include
         test/esp-idf/components/freertos/include
+        test/esp-idf/components/freertos/port/xtensa/include
+        test/esp-idf/components/freertos/include/esp_additions/freertos
         test/esp-idf/components/log/include
         test/esp-idf/components/nvs_flash/include
         test/esp-idf/components/driver/include

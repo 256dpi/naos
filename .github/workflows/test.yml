@@ -14,8 +14,7 @@ jobs:
         run: |
           cd com
           sudo apt-get install python-is-python3 gperf -y
-          make test/xtensa-esp32-elf test/esp-idf test/components/esp-mqtt
-          /usr/bin/python -m pip install --user -r test/esp-idf/requirements.txt
+          make prepare install
           make build
       - name: Test CLI
         run: go test ./...
