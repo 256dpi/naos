@@ -17,7 +17,15 @@ static int32_t var_l = 0;
 static double var_d = 0;
 static bool var_b = true;
 
-static void ping() { naos_log("ping received!"); }
+static void setup() {
+  // log info
+  naos_log("setup called!");
+}
+
+static void ping() {
+  // log info
+  naos_log("ping received!");
+}
 
 static void online() {
   // log info
@@ -82,7 +90,10 @@ static void loop() {
   naos_set("counter", buf);
 }
 
-static float battery() { return 0.42; }
+static float battery() {
+  // return level
+  return 0.42f;
+}
 
 static void offline() {
   // log info
@@ -94,13 +105,25 @@ static void status(naos_status_t status) {
   naos_log("status changed to %s", naos_status_str(status));
 }
 
-static void fun_s(char *str) { naos_log("fun_s: %s", str); }
+static void fun_s(char *str) {
+  // log info
+  naos_log("fun_s: %s", str);
+}
 
-static void fun_l(int32_t num) { naos_log("fun_l: %d", num); }
+static void fun_l(int32_t num) {
+  // log info
+  naos_log("fun_l: %d", num);
+}
 
-static void fun_d(double num) { naos_log("fun_d: %f", num); }
+static void fun_d(double num) {
+  // log info
+  naos_log("fun_d: %f", num);
+}
 
-static void fun_b(bool ok) { naos_log("fun_b: %s", ok ? "true" : "false"); }
+static void fun_b(bool ok) {
+  // log info
+  naos_log("fun_b: %s", ok ? "true" : "false");
+}
 
 static naos_param_t params[] = {{.name = "var_s", .type = NAOS_STRING, .default_s = "", .sync_s = &var_s},
                                 {.name = "var_l", .type = NAOS_LONG, .default_l = 0, .sync_l = &var_l},
@@ -115,6 +138,7 @@ static naos_config_t config = {.device_type = "naos-test",
                                .firmware_version = "0.0.1",
                                .parameters = params,
                                .num_parameters = 8,
+                               .setup_callback = setup,
                                .ping_callback = ping,
                                .online_callback = online,
                                .message_callback = handle,

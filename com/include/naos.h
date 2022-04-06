@@ -182,6 +182,14 @@ typedef struct {
   size_t num_parameters;
 
   /**
+   * The callback that is called after initialization on the application core (1).
+   *
+   * Note: The esp-idf `app_main` function is called on the protocol core (0). Therefore, interrupts created from its
+   * context are assigned to the protocol core and might conflict with interrupts used by the WiFi and BLE stack.
+   */
+  void (*setup_callback)();
+
+  /**
    *  The callback that is called when a ping is received.
    */
   void (*ping_callback)();

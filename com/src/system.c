@@ -236,7 +236,7 @@ static void naos_system_write_callback(naos_ble_char_t ch, const char *value) {
   }
 }
 
-void naos_system_task() {
+static void naos_system_task() {
   for (;;) {
     // wait some time
     naos_delay(100);
@@ -286,6 +286,14 @@ void naos_system_task() {
       naos_system_configure_mqtt();
     }
   }
+}
+
+static void naos_setup_task() {
+  // run callback
+  naos_config()->setup_callback();
+
+  // delete itself
+  vTaskDelete(NULL);
 }
 
 void naos_system_init() {
@@ -338,8 +346,13 @@ void naos_system_init() {
   // initially configure MQTT
   naos_system_configure_mqtt();
 
-  // run task
+  // run system task
   xTaskCreatePinnedToCore(naos_system_task, "naos-system", 4096, NULL, 2, NULL, 1);
+
+  // run setup task if provided
+  if (naos_config()->setup_callback) {
+    xTaskCreatePinnedToCore(naos_setup_task, "naos-setup", 8192, NULL, 2, NULL, 1);
+  }
 }
 
 naos_status_t naos_status() {
