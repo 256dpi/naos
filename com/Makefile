@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 ESP_IDF_VERSION := $(shell cat ../tree/esp-idf.version)
 ESP_MQTT_VERSION := $(shell cat ../tree/esp-mqtt.version)
 

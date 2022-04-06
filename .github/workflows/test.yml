@@ -10,10 +10,11 @@ jobs:
           go-version: 1.17.x
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Prepare
+        run: sudo apt-get install python-is-python3 gperf -y
       - name: Test Component
         run: |
           cd com
-          sudo apt-get install python-is-python3 gperf -y
           make prepare install
           make build
       - name: Test CLI
