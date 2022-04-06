@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/bytefmt"
+
 	"github.com/256dpi/naos/pkg/fleet"
 	"github.com/256dpi/naos/pkg/naos"
 )
@@ -254,7 +255,7 @@ func monitor(cmd *command, p *naos.Project) {
 
 	// close channel on interrupt
 	go func() {
-		exit := make(chan os.Signal)
+		exit := make(chan os.Signal, 1)
 		signal.Notify(exit, os.Interrupt)
 		<-exit
 		close(quit)
@@ -322,7 +323,7 @@ func record(cmd *command, p *naos.Project) {
 
 	// close channel on interrupt
 	go func() {
-		exit := make(chan os.Signal)
+		exit := make(chan os.Signal, 1)
 		signal.Notify(exit, os.Interrupt)
 		<-exit
 		close(quit)
