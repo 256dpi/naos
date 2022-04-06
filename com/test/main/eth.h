@@ -1,1 +1,0 @@
-void eth_init();

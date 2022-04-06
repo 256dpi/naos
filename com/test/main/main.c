@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <esp_eth.h>
+#include <esp_eth_phy.h>
 
 #include <naos.h>
-
-#include "eth.h"
 
 #define ETHERNET false
 
@@ -123,6 +123,24 @@ static void fun_d(double num) {
 static void fun_b(bool ok) {
   // log info
   naos_log("fun_b: %s", ok ? "true" : "false");
+}
+
+static void eth_init() {
+  // prepare mac
+  eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+  esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+
+  // prepare phy
+  eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+  esp_eth_phy_t *phy = esp_eth_phy_new_lan87xx(&phy_config);
+
+  // install driver
+  esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
+  esp_eth_handle_t eth_handle = NULL;
+  ESP_ERROR_CHECK(esp_eth_driver_install(&config, &eth_handle));
+
+  // start ethernet driver
+  ESP_ERROR_CHECK(esp_eth_start(eth_handle));
 }
 
 static naos_param_t params[] = {{.name = "var_s", .type = NAOS_STRING, .default_s = "", .sync_s = &var_s},

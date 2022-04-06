@@ -1,5 +1,4 @@
 #include <esp_event.h>
-#include <esp_event_loop.h>
 #include <esp_wifi.h>
 #include <string.h>
 
@@ -12,51 +11,73 @@ static naos_net_status_t naos_net_status = {0};
 
 static wifi_config_t naos_wifi_config;
 
-static esp_err_t naos_net_event_handler(void *ctx, system_event_t *e) {
+static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+                                        void *event_data) {
   // acquire mutex
   NAOS_LOCK(naos_net_mutex);
 
-  switch (e->event_id) {
-    case SYSTEM_EVENT_STA_START: {
-      // initial connection
-      ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
+  // handle Wi-Fi events
+  if (event_base == WIFI_EVENT) {
+    switch (event_id) {
+      case WIFI_EVENT_STA_START: {
+        // initial connection
+        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
 
-      break;
+        break;
+      }
+
+      case WIFI_EVENT_STA_DISCONNECTED: {
+        // set status
+        naos_net_status.connected_wifi = false;
+
+        // attempt to reconnect
+        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
+
+        break;
+      }
+
+      default: {
+        // ESP_LOGI(NAOS_LOG_TAG, "Unhandled Event: %d", event_id);
+      }
     }
+  }
 
-    case SYSTEM_EVENT_STA_GOT_IP: {
-      // set status
-      naos_net_status.connected_wifi = true;
+  // handle ethernet events
+  if (event_base == ETH_EVENT) {
+    switch (event_id) {
+      case ETHERNET_EVENT_DISCONNECTED: {
+        // set status
+        naos_net_status.connected_eth = false;
 
-      break;
+        break;
+      }
+
+      default: {
+        // ESP_LOGI(NAOS_LOG_TAG, "Unhandled Event: %d", event_id);
+      }
     }
+  }
 
-    case SYSTEM_EVENT_STA_DISCONNECTED: {
-      // set status
-      naos_net_status.connected_wifi = false;
+  // handle IP events
+  if (event_base == IP_EVENT) {
+    switch(event_id) {
+      case IP_EVENT_STA_GOT_IP: {
+        // set status
+        naos_net_status.connected_wifi = true;
 
-      // attempt to reconnect
-      ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
+        break;
+      }
 
-      break;
-    }
+      case IP_EVENT_ETH_GOT_IP: {
+        // set status
+        naos_net_status.connected_eth = true;
 
-    case SYSTEM_EVENT_ETH_GOT_IP: {
-      // set status
-      naos_net_status.connected_eth = true;
+        break;
+      }
 
-      break;
-    }
-
-    case SYSTEM_EVENT_ETH_DISCONNECTED: {
-      // set status
-      naos_net_status.connected_eth = false;
-
-      break;
-    }
-
-    default: {
-      // ESP_LOGI(NAOS_LOG_TAG, "Unhandled Event: %d", e->event_id);
+      default: {
+        // ESP_LOGI(NAOS_LOG_TAG, "Unhandled Event: %d", event_id);
+      }
     }
   }
 
@@ -65,28 +86,32 @@ static esp_err_t naos_net_event_handler(void *ctx, system_event_t *e) {
 
   // release mutex
   NAOS_UNLOCK(naos_net_mutex);
-
-  return ESP_OK;
 }
 
 void naos_net_init() {
   // create mutex
   naos_net_mutex = xSemaphoreCreateMutex();
 
-  // initialize TCP/IP adapter
-  tcpip_adapter_init();
+  // initialize networking
+  ESP_ERROR_CHECK(esp_netif_init());
 
-  // start event loop
-  ESP_ERROR_CHECK(esp_event_loop_init(naos_net_event_handler, NULL));
+  // create default event loop
+  ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-  // get default Wi-Fi initialization config
-  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  // enable Wi-Fi
+  esp_netif_create_default_wifi_sta();
 
   // initialize Wi-Fi
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-  // use RAM storage for Wi-Fi config
+  // set Wi-Fi storage to ram
   ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+
+  // register event handlers
+  ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &naos_net_event_handler, NULL, NULL));
+  ESP_ERROR_CHECK(esp_event_handler_instance_register(ETH_EVENT, ESP_EVENT_ANY_ID, &naos_net_event_handler, NULL, NULL));
+  ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &naos_net_event_handler, NULL, NULL));
 }
 
 void naos_net_configure_wifi(const char *ssid, const char *password) {
@@ -113,7 +138,7 @@ void naos_net_configure_wifi(const char *ssid, const char *password) {
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
   // assign configuration
-  ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &naos_wifi_config));
+  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &naos_wifi_config));
 
   // update flag
   started = true;
