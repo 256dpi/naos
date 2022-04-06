@@ -31,6 +31,7 @@ type Component struct {
 // An Inventory represents the contents of the inventory file.
 type Inventory struct {
 	Version    string                `json:"version"`
+	FixSerial  bool                  `json:"fix_serial"`
 	Embeds     []string              `json:"embeds"`
 	Overrides  map[string]string     `json:"overrides"`
 	Components map[string]*Component `json:"components"`
@@ -42,6 +43,7 @@ type Inventory struct {
 func NewInventory() *Inventory {
 	return &Inventory{
 		Version:    "master",
+		FixSerial:  true,
 		Overrides:  nil,
 		Components: make(map[string]*Component),
 		Broker:     "mqtts://key:secret@example.org",

@@ -8,10 +8,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/256dpi/naos/pkg/fleet"
 	"github.com/256dpi/naos/pkg/tree"
 	"github.com/256dpi/naos/pkg/utils"
-	"gopkg.in/yaml.v2"
 )
 
 // A Project is a project available on disk.
@@ -134,7 +135,7 @@ func (p *Project) Tree() string {
 // information about the process.
 func (p *Project) Install(force bool, out io.Writer) error {
 	// install tree
-	err := tree.Install(p.Tree(), filepath.Join(p.Location, "src"), p.Location, p.Inventory.Version, force, out)
+	err := tree.Install(p.Tree(), filepath.Join(p.Location, "src"), p.Location, p.Inventory.Version, force, p.Inventory.FixSerial, out)
 	if err != nil {
 		return err
 	}

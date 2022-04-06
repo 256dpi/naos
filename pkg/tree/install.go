@@ -13,7 +13,7 @@ import (
 
 // Install will install the NAOS repo to the specified path and link the source
 // path into the build tree.
-func Install(naosPath, sourcePath, dataPath, version string, force bool, out io.Writer) error {
+func Install(naosPath, sourcePath, dataPath, version string, force, fixSerial bool, out io.Writer) error {
 	// remove existing directory if existing or force has been set
 	if force {
 		utils.Log(out, "Removing existing NAOS installation (forced).")
@@ -95,6 +95,16 @@ func Install(naosPath, sourcePath, dataPath, version string, force bool, out io.
 	} else if !ok {
 		utils.Log(out, "Linking data directory.")
 		err = os.Symlink(dataPath, filepath.Join(Directory(naosPath), "main", "data"))
+		if err != nil {
+			return err
+		}
+	}
+
+	// fix serial if requested
+	if fixSerial {
+		utils.Log(out, "Fixing serial.")
+		esptoolPath := filepath.Join(Directory(naosPath), "esp-idf", "components", "esptool_py", "esptool")
+		err = utils.Replace(esptoolPath, "https://github.com/256dpi/esptool.git", "fork", "dtr-rts-fix", out)
 		if err != nil {
 			return err
 		}

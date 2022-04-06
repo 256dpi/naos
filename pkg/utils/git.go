@@ -93,3 +93,49 @@ func Fetch(path, commit string, out io.Writer) error {
 
 	return nil
 }
+
+// Replace will replace the specified git repository with the specified branch
+// of the provided remote repository.
+func Replace(path, remote, name, branch string, out io.Writer) error {
+	// list remotes
+	cmd := exec.Command("git", "remote")
+	cmd.Dir = path
+	buf, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+
+	// add remote
+	if !strings.Contains(string(buf), "fork") {
+		cmd = exec.Command("git", "remote", "add", name, remote)
+		cmd.Stdout = out
+		cmd.Stderr = out
+		cmd.Dir = path
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+	}
+
+	// fetch remote
+	cmd = exec.Command("git", "fetch", name)
+	cmd.Stdout = out
+	cmd.Stderr = out
+	cmd.Dir = path
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	// checkout branch
+	cmd = exec.Command("git", "checkout", name+"/"+branch)
+	cmd.Stdout = out
+	cmd.Stderr = out
+	cmd.Dir = path
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
