@@ -22,6 +22,7 @@ include_directories(
         test/esp-idf/components/freertos/include
         test/esp-idf/components/freertos/port/xtensa/include
         test/esp-idf/components/freertos/include/esp_additions/freertos
+        test/esp-idf/components/hal/include
         test/esp-idf/components/log/include
         test/esp-idf/components/nvs_flash/include
         test/esp-idf/components/driver/include

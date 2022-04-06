@@ -155,7 +155,7 @@ void app_main() {
   naos_init(&config);
 
   // initialize ethernet
-//  if (ETHERNET) {
-//    eth_init();
-//  }
+  if (ETHERNET) {
+    eth_init();
+  }
 }

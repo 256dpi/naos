@@ -1,1 +1,1 @@
-//void eth_init();
+void eth_init();
