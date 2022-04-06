@@ -14,18 +14,32 @@ import (
 
 // TODO: Compare against original sdkconfig.
 
+// TODO: Changing embeds in a v4 projects requires a clean.
+
 // Build will build the project.
 func Build(naosPath string, overrides map[string]string, files []string, clean, appOnly bool, out io.Writer) error {
-	// prepare files content
+	// get idf major version
+	idfMajorVersion, err := IDFMajorVersion(naosPath)
+	if err != nil {
+		return err
+	}
+
+	// prepare files contents
 	var filesContent = "COMPONENT_EMBED_FILES :="
+	var filesContent2 string
 	for _, file := range files {
 		filesContent += " data/" + file
+		filesContent2 += "data/" + file
 	}
 	filesContent += "\n"
 
 	// update files
 	utils.Log(out, "Updating files...")
-	err := os.WriteFile(filepath.Join(Directory(naosPath), "main", "files.mk"), []byte(filesContent), 0644)
+	err = os.WriteFile(filepath.Join(Directory(naosPath), "main", "files.mk"), []byte(filesContent), 0644)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filepath.Join(Directory(naosPath), "main", "files.list"), []byte(filesContent2), 0644)
 	if err != nil {
 		return err
 	}
@@ -98,7 +112,11 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 	// clean project if requested
 	if clean {
 		utils.Log(out, "Cleaning project...")
-		err = Exec(naosPath, out, nil, "make", "clean")
+		if idfMajorVersion == 4 {
+			err = Exec(naosPath, out, nil, "idf.py", "clean")
+		} else {
+			err = Exec(naosPath, out, nil, "make", "clean")
+		}
 		if err != nil {
 			return err
 		}
@@ -107,7 +125,11 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 	// build project (app only)
 	if appOnly {
 		utils.Log(out, "Building project (app only)...")
-		err = Exec(naosPath, out, nil, "make", "app")
+		if idfMajorVersion == 4 {
+			err = Exec(naosPath, out, nil, "idf.py", "build", "app")
+		} else {
+			err = Exec(naosPath, out, nil, "make", "app")
+		}
 		if err != nil {
 			return err
 		}
@@ -117,7 +139,11 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 
 	// build project
 	utils.Log(out, "Building project...")
-	err = Exec(naosPath, out, nil, "make", "all")
+	if idfMajorVersion == 4 {
+		err = Exec(naosPath, out, nil, "idf.py", "build")
+	} else {
+		err = Exec(naosPath, out, nil, "make", "all")
+	}
 	if err != nil {
 		return err
 	}
