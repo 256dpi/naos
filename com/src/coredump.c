@@ -1,5 +1,4 @@
 #include <esp_partition.h>
-#include <stdlib.h>
 
 static const esp_partition_t* naos_coredump_partition() {
   // track the found partition
