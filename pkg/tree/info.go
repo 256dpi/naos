@@ -2,11 +2,31 @@ package tree
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 )
+
+// IDFMajorVersion will detect and return the major IDF version from the
+// specified path.
+func IDFMajorVersion(naosPath string) (int, error) {
+	// read version
+	bytes, err := ioutil.ReadFile(filepath.Join(Directory(naosPath), "esp-idf.version"))
+	if err != nil {
+		return 0, err
+	}
+
+	// parse version
+	if strings.HasPrefix(string(bytes), "v3.") {
+		return 3, nil
+	} else if strings.HasPrefix(string(bytes), "v4.") {
+		return 4, nil
+	}
+
+	return 0, fmt.Errorf("unknown version")
+}
 
 // IncludeDirectories returns a list of directories that will be included in the
 // build process.

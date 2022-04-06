@@ -47,16 +47,33 @@ func Install(naosPath, sourcePath, dataPath, version string, force bool, out io.
 		}
 	}
 
-	// get required toolchain
-	toolchainVersion, err := RequiredToolchain(naosPath)
+	// get major IDF version
+	idfMajorVersion, err := IDFMajorVersion(naosPath)
 	if err != nil {
 		return err
 	}
 
-	// install xtensa toolchain
-	err = InstallToolchain(naosPath, toolchainVersion, force, out)
-	if err != nil {
-		return err
+	// install toolchain for v3 projects
+	if idfMajorVersion == 3 {
+		// get required toolchain
+		toolchainVersion, err := RequiredToolchain(naosPath)
+		if err != nil {
+			return err
+		}
+
+		// install toolchain
+		err = InstallToolchain3(naosPath, toolchainVersion, force, out)
+		if err != nil {
+			return err
+		}
+	}
+
+	// install toolchain for v4 projects
+	if idfMajorVersion == 4 {
+		err = InstallToolchain4(naosPath, force, out)
+		if err != nil {
+			return err
+		}
 	}
 
 	// link source directory if missing
