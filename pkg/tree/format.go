@@ -12,7 +12,7 @@ func Format(naosPath string, out io.Writer) error {
 	}
 
 	// prepare arguments
-	arguments := []string{"-style", "{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}", "-i"}
+	arguments := []string{"-style", "'{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}'", "-i"}
 	arguments = append(arguments, sourceFiles...)
 	arguments = append(arguments, headerFiles...)
 
