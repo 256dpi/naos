@@ -42,7 +42,6 @@ func Exec(naosPath string, out io.Writer, in io.Reader, name string, arg ...stri
 	if idfMajorVersion == 4 {
 		source := filepath.Join(IDFDirectory(naosPath), "export.sh")
 		cmd = exec.Command("bash", "-c", fmt.Sprintf("source %s; %s %s", source, name, strings.Join(arg, " ")))
-		println(fmt.Sprintf("source %s; %s %s", source, name, strings.Join(arg, " ")))
 	}
 
 	// set working directory
