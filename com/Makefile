@@ -50,6 +50,9 @@ info:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py size-components
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py size
 
+debug:
+	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; ./esp-idf/components/espcoredump/espcoredump.py -p /dev/cu.SLAB_USBtoUART info_corefile ./build/naos.elf
+
 run: build flash monitor
 
 fmt:
