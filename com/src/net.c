@@ -117,17 +117,19 @@ void naos_net_init() {
 void naos_net_configure_wifi(const char *ssid, const char *password) {
   static bool started = false;
 
-  // immediately return if ssid is not set
-  if (strlen(ssid) == 0) {
-    return;
-  }
-
   // acquire mutex
   NAOS_LOCK(naos_net_mutex);
 
   // stop station if already started
   if (started) {
     ESP_ERROR_CHECK(esp_wifi_stop());
+    started = false;
+  }
+
+  // return if ssid is not set
+  if (strlen(ssid) == 0) {
+    NAOS_UNLOCK(naos_net_mutex);
+    return;
   }
 
   // assign ssid and password
