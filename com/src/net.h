@@ -6,6 +6,8 @@ typedef struct {
   bool connected_any;
   bool connected_wifi;
   bool connected_eth;
+  char ip_wifi[16];
+  char ip_eth[16];
 } naos_net_status_t;
 
 /**

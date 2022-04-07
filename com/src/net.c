@@ -30,6 +30,9 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
         // set status
         naos_net_status.connected_wifi = false;
 
+        // clear ip
+        memset(naos_net_status.ip_wifi, 0, 16);
+
         // attempt to reconnect if started
         if (naos_net_status.started_wifi) {
           ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
@@ -51,6 +54,9 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
         // set status
         naos_net_status.connected_eth = false;
 
+        // clear ip
+        memset(naos_net_status.ip_eth, 0, 16);
+
         break;
       }
 
@@ -67,12 +73,20 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
         // set status
         naos_net_status.connected_wifi = true;
 
+        // set ip addr
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+        sprintf(naos_net_status.ip_wifi, IPSTR, IP2STR(&event->ip_info.ip));
+
         break;
       }
 
       case IP_EVENT_ETH_GOT_IP: {
         // set status
         naos_net_status.connected_eth = true;
+
+        // set ip addr
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+        sprintf(naos_net_status.ip_eth, IPSTR, IP2STR(&event->ip_info.ip));
 
         break;
       }
