@@ -30,8 +30,10 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
         // set status
         naos_net_status.connected_wifi = false;
 
-        // attempt to reconnect
-        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
+        // attempt to reconnect if started
+        if (naos_net_status.started_wifi) {
+          ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
+        }
 
         break;
       }
@@ -115,15 +117,13 @@ void naos_net_init() {
 }
 
 void naos_net_configure_wifi(const char *ssid, const char *password) {
-  static bool started = false;
-
   // acquire mutex
   NAOS_LOCK(naos_net_mutex);
 
   // stop station if already started
-  if (started) {
+  if (naos_net_status.started_wifi) {
     ESP_ERROR_CHECK(esp_wifi_stop());
-    started = false;
+    naos_net_status.started_wifi = false;
   }
 
   // return if ssid is not set
@@ -143,7 +143,7 @@ void naos_net_configure_wifi(const char *ssid, const char *password) {
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &naos_wifi_config));
 
   // update flag
-  started = true;
+  naos_net_status.started_wifi = true;
 
   // start Wi-Fi
   ESP_ERROR_CHECK(esp_wifi_start());

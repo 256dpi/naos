@@ -2,6 +2,7 @@
 #define _NAOS_NET_H
 
 typedef struct {
+  bool started_wifi;
   bool connected_any;
   bool connected_wifi;
   bool connected_eth;
