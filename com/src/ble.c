@@ -210,7 +210,7 @@ static void naos_ble_gap_event_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_
     }
 
     default: {
-      // ESP_LOGI(NAOS_LOG_TAG, "Unhandled GAP Event: %d", e);
+      // ESP_LOGI(NAOS_LOG_TAG, "unhandled GAP event: %d", e);
     }
   }
 }
@@ -540,7 +540,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
     }
 
     default: {
-      // ESP_LOGI(NAOS_LOG_TAG, "Unhandled GATTS Event: %d", e);
+      // ESP_LOGI(NAOS_LOG_TAG, "unhandled GATTS event: %d", e);
     }
   }
 
