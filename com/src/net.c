@@ -39,7 +39,7 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
       }
 
       default: {
-        // ESP_LOGI(NAOS_LOG_TAG, "Unhandled Event: %d", event_id);
+        // ESP_LOGI(NAOS_LOG_TAG, "unhandled wifi event: %d", event_id);
       }
     }
   }
@@ -55,7 +55,7 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
       }
 
       default: {
-        // ESP_LOGI(NAOS_LOG_TAG, "Unhandled Event: %d", event_id);
+        // ESP_LOGI(NAOS_LOG_TAG, "unhandled ethernet event: %d", event_id);
       }
     }
   }
@@ -78,7 +78,7 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
       }
 
       default: {
-        // ESP_LOGI(NAOS_LOG_TAG, "Unhandled Event: %d", event_id);
+        // ESP_LOGI(NAOS_LOG_TAG, "unhandled IP event: %d", event_id);
       }
     }
   }
@@ -116,7 +116,7 @@ void naos_net_init() {
   ESP_ERROR_CHECK(
       esp_event_handler_instance_register(ETH_EVENT, ESP_EVENT_ANY_ID, &naos_net_event_handler, NULL, NULL));
   ESP_ERROR_CHECK(
-      esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &naos_net_event_handler, NULL, NULL));
+      esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &naos_net_event_handler, NULL, NULL));
 }
 
 void naos_net_configure_wifi(const char *ssid, const char *password) {

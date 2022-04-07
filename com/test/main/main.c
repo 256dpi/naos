@@ -3,6 +3,7 @@
 #include <string.h>
 #include <esp_eth.h>
 #include <esp_eth_phy.h>
+#include <esp_netif.h>
 
 #include <naos.h>
 
@@ -141,6 +142,13 @@ static void eth_init() {
   esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
   esp_eth_handle_t eth_handle = NULL;
   ESP_ERROR_CHECK(esp_eth_driver_install(&config, &eth_handle));
+
+  // create interface
+  esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
+  esp_netif_t *eth_netif = esp_netif_new(&cfg);
+
+  // attach ethernet
+  ESP_ERROR_CHECK(esp_netif_attach(eth_netif, esp_eth_new_netif_glue(eth_handle)));
 
   // start ethernet driver
   ESP_ERROR_CHECK(esp_eth_start(eth_handle));
