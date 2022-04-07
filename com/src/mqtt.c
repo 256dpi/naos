@@ -175,15 +175,16 @@ bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool 
 }
 
 void naos_mqtt_stop() {
+  // stop the mqtt process
+  esp_mqtt_stop();
+
   // acquire mutex
   NAOS_LOCK(naos_mqtt_mutex);
 
   // set flag
   naos_mqtt_status.running = false;
+  naos_mqtt_status.connected = false;
 
   // release mutex
   NAOS_UNLOCK(naos_mqtt_mutex);
-
-  // stop the mqtt process
-  esp_mqtt_stop();
 }
