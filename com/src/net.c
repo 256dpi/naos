@@ -12,7 +12,7 @@ static naos_net_status_t naos_net_status = {0};
 static wifi_config_t naos_wifi_config;
 
 static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
-                                        void *event_data) {
+                                   void *event_data) {
   // acquire mutex
   NAOS_LOCK(naos_net_mutex);
 
@@ -62,7 +62,7 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
 
   // handle IP events
   if (event_base == IP_EVENT) {
-    switch(event_id) {
+    switch (event_id) {
       case IP_EVENT_STA_GOT_IP: {
         // set status
         naos_net_status.connected_wifi = true;
@@ -111,9 +111,12 @@ void naos_net_init() {
   ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
 
   // register event handlers
-  ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &naos_net_event_handler, NULL, NULL));
-  ESP_ERROR_CHECK(esp_event_handler_instance_register(ETH_EVENT, ESP_EVENT_ANY_ID, &naos_net_event_handler, NULL, NULL));
-  ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &naos_net_event_handler, NULL, NULL));
+  ESP_ERROR_CHECK(
+      esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &naos_net_event_handler, NULL, NULL));
+  ESP_ERROR_CHECK(
+      esp_event_handler_instance_register(ETH_EVENT, ESP_EVENT_ANY_ID, &naos_net_event_handler, NULL, NULL));
+  ESP_ERROR_CHECK(
+      esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &naos_net_event_handler, NULL, NULL));
 }
 
 void naos_net_configure_wifi(const char *ssid, const char *password) {
