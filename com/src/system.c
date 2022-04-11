@@ -97,6 +97,8 @@ static void naos_system_handle_command(const char *command) {
   // acquire mutex
   NAOS_LOCK(naos_system_mutex);
 
+  // TODO: Replace "boot-factory" with "boot-alpha" and "boot-beta"?
+
   // detect command
   bool ping = strcmp(command, "ping") == 0;
   bool restart_mqtt = strcmp(command, "restart-mqtt") == 0;
