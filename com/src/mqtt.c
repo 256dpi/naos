@@ -76,7 +76,7 @@ void naos_mqtt_init(naos_mqtt_message_callback_t mcb) {
 void naos_mqtt_start(const char *host, char *port, const char *client_id, const char *username, const char *password,
                      const char *base_topic) {
   // return if host is empty
-  if (strlen(host) == 0){
+  if (strlen(host) == 0) {
     return;
   }
 

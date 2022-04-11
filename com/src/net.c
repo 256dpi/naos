@@ -74,7 +74,7 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
         naos_net_status.connected_wifi = true;
 
         // set ip addr
-        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         sprintf(naos_net_status.ip_wifi, IPSTR, IP2STR(&event->ip_info.ip));
 
         break;
@@ -85,7 +85,7 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
         naos_net_status.connected_eth = true;
 
         // set ip addr
-        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         sprintf(naos_net_status.ip_eth, IPSTR, IP2STR(&event->ip_info.ip));
 
         break;
@@ -129,8 +129,7 @@ void naos_net_init() {
       esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &naos_net_event_handler, NULL, NULL));
   ESP_ERROR_CHECK(
       esp_event_handler_instance_register(ETH_EVENT, ESP_EVENT_ANY_ID, &naos_net_event_handler, NULL, NULL));
-  ESP_ERROR_CHECK(
-      esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &naos_net_event_handler, NULL, NULL));
+  ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &naos_net_event_handler, NULL, NULL));
 }
 
 void naos_net_configure_wifi(const char *ssid, const char *password) {
