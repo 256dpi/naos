@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"time"
 
 	"code.cloudfoundry.org/bytefmt"
 
@@ -280,6 +281,9 @@ func monitor(cmd *command, p *naos.Project) {
 			// prepare free heap size
 			freeHeapSize := bytefmt.ByteSize(uint64(heartbeat.FreeHeapSize))
 
+			// prepare uptime
+			uptime := heartbeat.UpTime.Truncate(time.Second).String()
+
 			// prepare battery level
 			batteryLevel := "n/a"
 			if heartbeat.BatteryLevel >= 0 {
@@ -302,11 +306,11 @@ func monitor(cmd *command, p *naos.Project) {
 			}
 
 			// prepare cpu usages
-			cpu0Usage := strconv.FormatFloat(heartbeat.CPU0Usage*100, 'f', -1, 64) + "%"
-			cpu1Usage := strconv.FormatFloat(heartbeat.CPU1Usage*100, 'f', -1, 64) + "%"
+			cpu0Usage := strconv.FormatFloat(heartbeat.CPU0Usage*100, 'f', 0, 64) + "%"
+			cpu1Usage := strconv.FormatFloat(heartbeat.CPU1Usage*100, 'f', 0, 64) + "%"
 
 			// add entry
-			tbl.add(device.Name, device.Type, device.FirmwareVersion, freeHeapSize, heartbeat.UpTime.String(), heartbeat.StartPartition, batteryLevel, signalStrength, cpu0Usage, cpu1Usage)
+			tbl.add(device.Name, device.Type, device.FirmwareVersion, freeHeapSize, uptime, heartbeat.StartPartition, batteryLevel, signalStrength, cpu0Usage, cpu1Usage)
 		}
 
 		// show table
