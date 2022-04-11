@@ -316,11 +316,11 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
   // check update begin
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/update/begin") == 0) {
     // get update size
-    long long int total = strtoll((const char *)payload, NULL, 10);
-    ESP_LOGI(NAOS_LOG_TAG, "naos_manager_handle: begin update with size %lld", total);
+    size_t total = (size_t)strtol((const char *)payload, NULL, 10);
+    ESP_LOGI(NAOS_LOG_TAG, "naos_manager_handle: begin update with size %zu", total);
 
     // begin update
-    naos_update_begin((uint16_t)total);
+    naos_update_begin(total);
 
     // request first chunk
     naos_publish("naos/update/request", naos_i2str(CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE), 0, false, NAOS_LOCAL);
@@ -334,7 +334,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
   // check update write
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/update/write") == 0) {
     // write chunk (very time expensive)
-    naos_update_write(payload, (uint16_t)len);
+    naos_update_write(payload, len);
     ESP_LOGI(NAOS_LOG_TAG, "naos_manager_handle: wrote chunk of %zu bytes", len);
 
     // request next chunk

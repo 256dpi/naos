@@ -18,13 +18,13 @@ void naos_update_init() {
   naos_update_mutex = xSemaphoreCreateMutex();
 }
 
-void naos_update_begin(uint16_t size) {
+void naos_update_begin(size_t size) {
   // acquire mutex
   NAOS_LOCK(naos_update_mutex);
 
-  // end a previous update and discard its result
+  // abort a previous update and discard its result
   if (naos_update_handle != 0) {
-    esp_ota_end(naos_update_handle);
+    esp_ota_abort(naos_update_handle);
     naos_update_handle = 0;
   }
 
@@ -42,7 +42,7 @@ void naos_update_begin(uint16_t size) {
   NAOS_UNLOCK(naos_update_mutex);
 }
 
-void naos_update_write(uint8_t *chunk, uint16_t len) {
+void naos_update_write(uint8_t *chunk, size_t len) {
   // acquire mutex
   NAOS_LOCK(naos_update_mutex);
 

@@ -15,7 +15,7 @@ void naos_update_init();
  *
  * @param size Total size of the update.
  */
-void naos_update_begin(uint16_t size);
+void naos_update_begin(size_t size);
 
 /**
  * Write an incoming chunk of the new firmware image.
@@ -23,7 +23,7 @@ void naos_update_begin(uint16_t size);
  * @param chunk The data chunk.
  * @param len Length of the data chunk.
  */
-void naos_update_write(uint8_t *chunk, uint16_t len);
+void naos_update_write(uint8_t *chunk, size_t len);
 
 /**
  * Finish the firmware update.
