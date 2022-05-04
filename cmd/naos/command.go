@@ -18,6 +18,7 @@ Project Management:
   flash    Flash the previously built binary to an attached device.
   attach   Open a serial communication with an attached device.
   run      Run 'build', 'flash' and 'attach' sequentially.
+  exec     Run a command in the tree. 
   config   Write settings and parameters to an attached device.
   format   Format all source files in the 'src' subdirectory.
 
@@ -42,6 +43,7 @@ Usage:
   naos flash [<device>] [--baud=<rate> --erase --app-only]
   naos attach [<device>] [--simple]
   naos run [<device>] [--clean --app-only --baud=<rate> --erase --simple]
+  naos exec <command>
   naos config <file> [<device>]
   naos format
   naos list
@@ -81,6 +83,7 @@ type command struct {
 	cFlash    bool
 	cAttach   bool
 	cRun      bool
+	cExec     bool
 	cConfig   bool
 	cFormat   bool
 	cList     bool
@@ -100,6 +103,7 @@ type command struct {
 	// arguments
 	aDevice  string
 	aFile    string
+	aCommand string
 	aParam   string
 	aPattern string
 	aTopic   string
@@ -134,6 +138,7 @@ func parseCommand() *command {
 		cFlash:    getBool(a["flash"]),
 		cAttach:   getBool(a["attach"]),
 		cRun:      getBool(a["run"]),
+		cExec:     getBool(a["exec"]),
 		cConfig:   getBool(a["config"]),
 		cFormat:   getBool(a["format"]),
 		cList:     getBool(a["list"]),
@@ -153,6 +158,7 @@ func parseCommand() *command {
 		// arguments
 		aDevice:  getString(a["<device>"]),
 		aFile:    getString(a["<file>"]),
+		aCommand: getString(a["<command>"]),
 		aPattern: getString(a["<pattern>"]),
 		aTopic:   getString(a["<topic>"]),
 		aMessage: getString(a["<message>"]),

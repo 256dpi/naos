@@ -182,6 +182,11 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 	return tree.Attach(p.Tree(), device, simple, out, in)
 }
 
+func (p *Project) Exec(cmd string, out io.Writer, in io.Reader) error {
+	// execute command
+	return tree.Exec(p.Tree(), out, in, cmd)
+}
+
 // Config will write settings and parameters to an attached device.
 func (p *Project) Config(file, device string, out io.Writer) error {
 	// load file
