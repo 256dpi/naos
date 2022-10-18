@@ -145,7 +145,7 @@ static void naos_system_handle_command(const char *command) {
   NAOS_UNLOCK(naos_system_mutex);
 }
 
-static char *naos_system_read_callback(naos_ble_char_t ch) {
+static char *naos_system_read_callback(naos_ble_conn_t *conn, naos_ble_char_t ch) {
   switch (ch) {
     case NAOS_BLE_CHAR_WIFI_SSID:
       return naos_settings_read(NAOS_SETTING_WIFI_SSID);
@@ -188,7 +188,7 @@ static char *naos_system_read_callback(naos_ble_char_t ch) {
   }
 }
 
-static void naos_system_write_callback(naos_ble_char_t ch, const char *value) {
+static void naos_system_write_callback(naos_ble_conn_t *conn, naos_ble_char_t ch, const char *value) {
   switch (ch) {
     case NAOS_BLE_CHAR_WIFI_SSID:
       naos_settings_write(NAOS_SETTING_WIFI_SSID, value);

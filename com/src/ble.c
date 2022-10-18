@@ -182,14 +182,7 @@ static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
     &naos_ble_char_command,       &naos_ble_char_params_list,       &naos_ble_char_params_select,
     &naos_ble_char_params_value,  &naos_ble_char_lock_status,       &naos_ble_char_unlock};
 
-typedef struct {
-  bool connected;
-  bool locked;
-} naos_ble_connection_t;
-
-#define NAOS_BLE_MAX_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
-
-static naos_ble_connection_t naos_ble_connections[NAOS_BLE_MAX_CONNECTIONS];
+static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
 
 static void naos_ble_gap_event_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
   switch (e) {
@@ -358,8 +351,9 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
     // handle client connect event
     case ESP_GATTS_CONNECT_EVT: {
       // mark connection
-      naos_ble_connections[p->connect.conn_id].connected = true;
-      naos_ble_connections[p->connect.conn_id].locked = naos_config()->password != NULL;
+      naos_ble_conns[p->connect.conn_id].id = p->connect.conn_id;
+      naos_ble_conns[p->connect.conn_id].connected = true;
+      naos_ble_conns[p->connect.conn_id].locked = naos_config()->password != NULL;
 
       break;
     }
@@ -372,7 +366,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
       }
 
       // get connection
-      naos_ble_connection_t *conn = &naos_ble_connections[p->read.conn_id];
+      naos_ble_conn_t *conn = &naos_ble_conns[p->read.conn_id];
 
       // iterate through all characteristics
       for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
@@ -411,7 +405,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         } else {
           // call callback
           NAOS_UNLOCK(naos_ble_mutex);
-          value = naos_ble_read_callback(c->ch);
+          value = naos_ble_read_callback(conn, c->ch);
           NAOS_LOCK(naos_ble_mutex);
         }
 
@@ -453,7 +447,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
     // handle characteristic write event
     case ESP_GATTS_WRITE_EVT: {
       // get connection
-      naos_ble_connection_t *conn = &naos_ble_connections[p->write.conn_id];
+      naos_ble_conn_t *conn = &naos_ble_conns[p->write.conn_id];
 
       // iterate through all characteristics
       for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
@@ -502,7 +496,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         } else {
           // otherwise call callback
           NAOS_UNLOCK(naos_ble_mutex);
-          naos_ble_write_callback(c->ch, value);
+          naos_ble_write_callback(conn, c->ch, value);
           NAOS_LOCK(naos_ble_mutex);
         }
 
@@ -531,7 +525,9 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
     // handle client disconnect event
     case ESP_GATTS_DISCONNECT_EVT: {
       // mark connection
-      naos_ble_connections[p->disconnect.conn_id].connected = false;
+      naos_ble_conns[p->disconnect.conn_id].id = 0;
+      naos_ble_conns[p->disconnect.conn_id].connected = false;
+      naos_ble_conns[p->connect.conn_id].locked = false;
 
       // restart advertisement
       ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
@@ -629,7 +625,7 @@ void naos_ble_notify(naos_ble_char_t ch, const char *value) {
 
     // send indicate if indicate to all connections
     for (int j = 0; j < NAOS_BLE_MAX_CONNECTIONS; j++) {
-      if (naos_ble_connections[j].connected) {
+      if (naos_ble_conns[j].connected) {
         ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, j, c->handle,
                                                     (uint16_t)strlen(value), (uint8_t *)value, false));
       }

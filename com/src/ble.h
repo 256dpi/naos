@@ -2,6 +2,20 @@
 #define _NAOS_BLE_H
 
 /**
+ * The maximum number of supported connections.
+ */
+#define NAOS_BLE_MAX_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
+
+/**
+ * A single BLE connection.
+ */
+typedef struct {
+  uint16_t id;
+  bool connected;
+  bool locked;
+} naos_ble_conn_t;
+
+/**
  * The available BLE characteristics.
  */
 typedef enum {
@@ -30,7 +44,7 @@ typedef enum {
  *
  * @param ch The characteristic.
  */
-typedef char *(*naos_ble_read_callback_t)(naos_ble_char_t ch);
+typedef char *(*naos_ble_read_callback_t)(naos_ble_conn_t *conn, naos_ble_char_t ch);
 
 /**
  * The write callback.
@@ -38,7 +52,7 @@ typedef char *(*naos_ble_read_callback_t)(naos_ble_char_t ch);
  * @param ch The characteristic.
  * @param value The value.
  */
-typedef void (*naos_ble_write_callback_t)(naos_ble_char_t ch, const char *value);
+typedef void (*naos_ble_write_callback_t)(naos_ble_conn_t *conn, naos_ble_char_t ch, const char *value);
 
 /**
  * Initialize the BLE subsystem.
@@ -51,7 +65,7 @@ typedef void (*naos_ble_write_callback_t)(naos_ble_char_t ch, const char *value)
 void naos_ble_init(naos_ble_read_callback_t rcb, naos_ble_write_callback_t wcb);
 
 /**
- * Notify connected clients about changed values
+ * Notify connected clients about changed values.
  *
  * @param ch The characteristic.
  * @param value The value.
