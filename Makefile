@@ -12,4 +12,3 @@ test:
 
 install:
 	go install ./cmd/naos
-

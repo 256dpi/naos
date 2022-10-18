@@ -1,5 +1,5 @@
 # ignore development files
-cmake-build-debug/
+cmake-build-*/
 test/esp-idf/
 test/tools
 test/components/esp-mqtt/

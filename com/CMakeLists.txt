@@ -1,6 +1,144 @@
-file(GLOB srcs ./src/*.c)
-
-idf_component_register(SRCS ${srcs}
-    INCLUDE_DIRS "include"
-    REQUIRES bt esp-mqtt app_update
-)
+IF(DEFINED ENV{IDF_PATH})
+    # ESP-IDF component setup
+    file(GLOB srcs ./src/*.c)
+    idf_component_register(SRCS ${srcs}
+        INCLUDE_DIRS "include"
+        REQUIRES bt esp-mqtt app_update
+    )
+ELSE()
+    # CLion compatible development setup
+    cmake_minimum_required(VERSION 3.7)
+    project(naos-com)
+    set(CMAKE_C_STANDARD 99)
+    file(GLOB SOURCE_FILES ./src/*.h ./src/*.c ./test/main/*.c)
+    add_library(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
+    target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
+        ./include
+        ./test/build/config
+        ./test/components/esp-mqtt
+        ./test/components/esp-mqtt/lwmqtt/include
+        ./test/esp-idf/components/app_trace/include
+        ./test/esp-idf/components/app_update/include
+        ./test/esp-idf/components/asio/asio/asio/include
+        ./test/esp-idf/components/asio/port/include
+        ./test/esp-idf/components/bootloader_support/include
+        ./test/esp-idf/components/bt/include
+        ./test/esp-idf/components/bt/include/esp32/include
+        ./test/esp-idf/components/bt/common/api/include/api
+        ./test/esp-idf/components/bt/common/btc/profile/esp/blufi/include
+        ./test/esp-idf/components/bt/common/btc/profile/esp/include
+        ./test/esp-idf/components/bt/common/osi/include
+        ./test/esp-idf/components/bt/host/bluedroid/api/include/api
+        ./test/esp-idf/components/cbor/port/include
+        ./test/esp-idf/components/cmock/include
+        ./test/esp-idf/components/coap/port/include
+        ./test/esp-idf/components/coap/port/include
+        ./test/esp-idf/components/coap/libcoap/include
+        ./test/esp-idf/components/console
+        ./test/esp-idf/components/driver/include
+        ./test/esp-idf/components/driver/esp32/include
+        ./test/esp-idf/components/driver/esp32/include/driver
+        ./test/esp-idf/components/efuse/include
+        ./test/esp-idf/components/efuse/esp32/include
+        ./test/esp-idf/components/esp-tls
+        ./test/esp-idf/components/esp-tls/esp-tls-crypto
+        ./test/esp-idf/components/esp-tls/private_include
+        ./test/esp-idf/components/esp32/include
+        ./test/esp-idf/components/esp_adc_cal/include
+        ./test/esp-idf/components/esp_common/include
+        ./test/esp-idf/components/esp_eth/include
+        ./test/esp-idf/components/esp_event/include
+        ./test/esp-idf/components/esp_gdbstub/include
+        ./test/esp-idf/components/esp_hid/include
+        ./test/esp-idf/components/esp_http_client/include
+        ./test/esp-idf/components/esp_http_server/include
+        ./test/esp-idf/components/esp_https_ota/include
+        ./test/esp-idf/components/esp_hw_support
+        ./test/esp-idf/components/esp_hw_support/include
+        ./test/esp-idf/components/esp_hw_support/port/esp32
+        ./test/esp-idf/components/esp_hw_support/include/soc
+        ./test/esp-idf/components/esp_hw_support/include/soc/esp32
+        ./test/esp-idf/components/esp_hw_support/port/esp32/private_include
+        ./test/esp-idf/components/esp_ipc/include
+        ./test/esp-idf/components/esp_lcd/include
+        ./test/esp-idf/components/esp_local_ctrl/include
+        ./test/esp-idf/components/esp_netif/include
+        ./test/esp-idf/components/esp_phy/include
+        ./test/esp-idf/components/esp_phy/esp32/include
+        ./test/esp-idf/components/esp_pm/include
+        ./test/esp-idf/components/esp_ringbuf/include
+        ./test/esp-idf/components/esp_rom/include
+        ./test/esp-idf/components/esp_rom/esp32
+        ./test/esp-idf/components/esp_rom/include/esp32
+        ./test/esp-idf/components/esp_serial_slave_link/include
+        ./test/esp-idf/components/esp_system/include
+        ./test/esp-idf/components/esp_system/port/public_compat
+        ./test/esp-idf/components/esp_timer/include
+        ./test/esp-idf/components/esp_websocket_client/include
+        ./test/esp-idf/components/esp_wifi/include
+        ./test/esp-idf/components/espcoredump/include
+        ./test/esp-idf/components/espcoredump/include/port/xtensa
+        ./test/esp-idf/components/expat/expat/expat/lib
+        ./test/esp-idf/components/expat/port/include
+        ./test/esp-idf/components/fatfs/diskio
+        ./test/esp-idf/components/fatfs/vfs
+        ./test/esp-idf/components/fatfs/src
+        ./test/esp-idf/components/freemodbus/common/include
+        ./test/esp-idf/components/freertos/include
+        ./test/esp-idf/components/freertos/include/esp_additions
+        ./test/esp-idf/components/freertos/include/esp_additions/freertos
+        ./test/esp-idf/components/freertos/port/xtensa/include
+        ./test/esp-idf/components/hal/esp32/include
+        ./test/esp-idf/components/hal/include
+        ./test/esp-idf/components/hal/platform_port/include
+        ./test/esp-idf/components/heap/include
+        ./test/esp-idf/components/idf_test/include
+        ./test/esp-idf/components/idf_test/include/esp32
+        ./test/esp-idf/components/jsmn/include
+        ./test/esp-idf/components/json/cJSON
+        ./test/esp-idf/components/libsodium/libsodium/src/libsodium/include
+        ./test/esp-idf/components/libsodium/port_include
+        ./test/esp-idf/components/log/include
+        ./test/esp-idf/components/lwip/include/apps
+        ./test/esp-idf/components/lwip/include/apps/sntp
+        ./test/esp-idf/components/lwip/lwip/src/include
+        ./test/esp-idf/components/lwip/port/esp32/include
+        ./test/esp-idf/components/lwip/port/esp32/include/arch
+        ./test/esp-idf/components/mbedtls/port/include
+        ./test/esp-idf/components/mbedtls/mbedtls/include
+        ./test/esp-idf/components/mbedtls/esp_crt_bundle/include
+        ./test/esp-idf/components/mdns/include
+        ./test/esp-idf/components/mqtt/esp-mqtt/include
+        ./test/esp-idf/components/newlib/platform_include
+        ./test/esp-idf/components/nghttp/port/include
+        ./test/esp-idf/components/nghttp/nghttp2/lib/includes
+        ./test/esp-idf/components/nvs_flash/include
+        ./test/esp-idf/components/openssl/include
+        ./test/esp-idf/components/openthread/include
+        ./test/esp-idf/components/perfmon/include
+        ./test/esp-idf/components/protobuf-c/protobuf-c
+        ./test/esp-idf/components/protocomm/include/common
+        ./test/esp-idf/components/protocomm/include/security
+        ./test/esp-idf/components/protocomm/include/transports
+        ./test/esp-idf/components/pthread/include
+        ./test/esp-idf/components/sdmmc/include
+        ./test/esp-idf/components/soc/include
+        ./test/esp-idf/components/soc/esp32
+        ./test/esp-idf/components/soc/esp32/include
+        ./test/esp-idf/components/spi_flash/include
+        ./test/esp-idf/components/spiffs/include
+        ./test/esp-idf/components/tcp_transport/include
+        ./test/esp-idf/components/tcpip_adapter/include
+        ./test/esp-idf/components/ulp/include
+        ./test/esp-idf/components/unity/include
+        ./test/esp-idf/components/unity/unity/src
+        ./test/esp-idf/components/vfs/include
+        ./test/esp-idf/components/wear_levelling/include
+        ./test/esp-idf/components/wifi_provisioning/include
+        ./test/esp-idf/components/wpa_supplicant/include
+        ./test/esp-idf/components/wpa_supplicant/port/include
+        ./test/esp-idf/components/wpa_supplicant/esp_supplicant/include
+        ./test/esp-idf/components/wpa_supplicant/src/utils
+        ./test/esp-idf/components/xtensa/include
+        ./test/esp-idf/components/xtensa/esp32/include)
+ENDIF()
