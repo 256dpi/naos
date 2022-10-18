@@ -28,7 +28,7 @@ void naos_manager_start();
 void naos_manager_handle(const char* topic, uint8_t* payload, size_t len, naos_scope_t scope);
 
 /**
- * Select a parameter for reading and writing.
+ * Find a parameter for reading and writing.
  *
  * @param param The name.
  * @return The number or -1 if not found.
@@ -36,7 +36,7 @@ void naos_manager_handle(const char* topic, uint8_t* payload, size_t len, naos_s
 int8_t naos_manager_find_param(const char* param);
 
 /**
- * Read the previously selected parameter.
+ * Read the specified parameter.
  *
  * @param num The number.
  * @return The value.
@@ -44,7 +44,7 @@ int8_t naos_manager_find_param(const char* param);
 char* naos_manager_read_param(int8_t num);
 
 /**
- * Write the previously selected parameter.
+ * Write the specified parameter.
  *
  * @param num The number.
  * @param value The value.
