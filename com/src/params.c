@@ -442,3 +442,15 @@ bool naos_sync_d(const char *param, double *pointer, void (*func)(double)) {
 
   return ret;
 }
+
+naos_param_t *naos_lookup(const char *name) {
+  // find param
+  for (size_t i = 0; i < naos_config()->num_parameters; i++) {
+    naos_param_t *p = &naos_config()->parameters[i];
+    if (strcmp(name, p->name) == 0) {
+      return p;
+    }
+  }
+
+  return NULL;
+}

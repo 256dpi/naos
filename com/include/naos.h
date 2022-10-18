@@ -450,6 +450,13 @@ bool naos_sync_l(const char *param, int32_t *pointer, void (*func)(int32_t));
 bool naos_sync_d(const char *param, double *pointer, void (*func)(double));
 
 /**
+ * Will lookup the specified parameter.
+ * @param name The parameter.
+ * @return A reference of NULL if not found.
+ */
+naos_param_t *naos_lookup(const char *name);
+
+/**
  * Subscribe to specified topic. The topic is automatically prefixed with the configured base topic if the scope is
  * local.
  *

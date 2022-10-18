@@ -366,50 +366,32 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
   NAOS_UNLOCK(naos_manager_mutex);
 }
 
-int8_t naos_manager_find_param(const char *param) {
-  // find param
-  for (int8_t i = 0; i < naos_config()->num_parameters; i++) {
-    naos_param_t p = naos_config()->parameters[i];
-    if (strcmp(param, p.name) == 0) {
-      return i;
-    }
-  }
-
-  return -1;
-}
-
-char *naos_manager_read_param(int8_t num) {
-  // check number
-  if (num < 0) {
+char *naos_manager_read_param(naos_param_t *param) {
+  // check param
+  if (param == NULL) {
     return NULL;
   }
 
-  // find param
-  naos_param_t *p = &naos_config()->parameters[num];
-
   // get param
-  return strdup(naos_get(p->name));
+  return strdup(naos_get(param->name));
 }
 
-void naos_manager_write_param(int8_t num, const char *value) {
+void naos_manager_write_param(naos_param_t *param, const char *value) {
   // check number
-  if (num < 0) {
+  if (param == NULL) {
     return;
   }
 
   // acquire mutex
   NAOS_LOCK(naos_manager_mutex);
 
-  // find param
-  naos_param_t *p = &naos_config()->parameters[num];
-
   // save param
-  naos_set(p->name, value);
+  naos_set(param->name, value);
 
   // call update callback if present
   if (naos_config()->update_callback != NULL) {
     naos_acquire();
-    naos_config()->update_callback(p->name, value);
+    naos_config()->update_callback(param->name, value);
     naos_release();
   }
 

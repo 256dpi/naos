@@ -18,12 +18,13 @@
 #include "update.h"
 #include "utils.h"
 #include "net.h"
+#include "http.h"
 
 SemaphoreHandle_t naos_system_mutex;
 
 static naos_status_t naos_system_status;
 
-static int8_t naos_system_selected_params[NAOS_BLE_MAX_CONNECTIONS] = {0};
+static naos_param_t *naos_system_selected_params[NAOS_BLE_MAX_CONNECTIONS] = {0};
 
 static const char *naos_system_status_string(naos_status_t status) {
   switch (status) {
@@ -230,7 +231,7 @@ static void naos_system_write_callback(naos_ble_conn_t *conn, naos_ble_char_t ch
     case NAOS_BLE_CHAR_PARAMS_LIST:
       return;
     case NAOS_BLE_CHAR_PARAMS_SELECT:
-      naos_system_selected_params[conn->id] = naos_manager_find_param(value);
+      naos_system_selected_params[conn->id] = naos_lookup(value);
       return;
     case NAOS_BLE_CHAR_PARAMS_VALUE:
       naos_manager_write_param(naos_system_selected_params[conn->id], value);
