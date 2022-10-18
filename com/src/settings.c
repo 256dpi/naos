@@ -4,33 +4,36 @@
 
 #include "settings.h"
 
-static nvs_handle naos_settings_nvs_handle;
-
 // TODO: Rename NVS namespace in a major release.
 
-static const char* naos_settings_key(naos_setting_t setting) {
-  switch (setting) {
-    case NAOS_SETTING_WIFI_SSID:
-      return "wifi-ssid";
-    case NAOS_SETTING_WIFI_PASSWORD:
-      return "wifi-password";
-    case NAOS_SETTING_MQTT_HOST:
-      return "mqtt-host";
-    case NAOS_SETTING_MQTT_PORT:
-      return "mqtt-port";
-    case NAOS_SETTING_MQTT_CLIENT_ID:
-      return "mqtt-client-id";
-    case NAOS_SETTING_MQTT_USERNAME:
-      return "mqtt-username";
-    case NAOS_SETTING_MQTT_PASSWORD:
-      return "mqtt-password";
-    case NAOS_SETTING_DEVICE_NAME:
-      return "device-name";
-    case NAOS_SETTING_BASE_TOPIC:
-      return "base-topic";
-    default:
-      return "";
+static const char* naos_setting_keys[] = {
+    [NAOS_SETTING_WIFI_SSID] = "wifi-ssid",           [NAOS_SETTING_WIFI_PASSWORD] = "wifi-password",
+    [NAOS_SETTING_MQTT_HOST] = "mqtt-host",           [NAOS_SETTING_MQTT_PORT] = "mqtt-port",
+    [NAOS_SETTING_MQTT_CLIENT_ID] = "mqtt-client-id", [NAOS_SETTING_MQTT_USERNAME] = "mqtt-username",
+    [NAOS_SETTING_MQTT_PASSWORD] = "mqtt-password",   [NAOS_SETTING_DEVICE_NAME] = "device-name",
+    [NAOS_SETTING_BASE_TOPIC] = "base-topic",
+};
+
+static nvs_handle naos_settings_nvs_handle;
+
+const char* naos_setting2key(naos_setting_t setting) {
+  // check setting and return key
+  if (setting >= 0 && setting < NAOS_SETTING_MAX) {
+    return naos_setting_keys[setting];
+  } else {
+    return NULL;
   }
+}
+
+naos_setting_t naos_key2setting(const char* key) {
+  // find setting
+  for (size_t i = 0; i < NAOS_SETTING_MAX; i++) {
+    if (strcmp(naos_setting_keys[i], key) == 0) {
+      return i;
+    }
+  }
+
+  return NAOS_SETTING_UNKNOWN;
 }
 
 void naos_settings_init() {
@@ -40,7 +43,7 @@ void naos_settings_init() {
 
 char* naos_settings_read(naos_setting_t setting) {
   // get key for setting
-  const char* key = naos_settings_key(setting);
+  const char* key = naos_setting2key(setting);
 
   // get value size
   size_t required_size = 0;
@@ -60,7 +63,7 @@ char* naos_settings_read(naos_setting_t setting) {
 
 void naos_settings_write(naos_setting_t setting, const char* value) {
   // get key for setting
-  const char* key = naos_settings_key(setting);
+  const char* key = naos_setting2key(setting);
 
   // save value
   ESP_ERROR_CHECK(nvs_set_str(naos_settings_nvs_handle, key, value));

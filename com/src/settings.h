@@ -11,7 +11,25 @@ typedef enum {
   NAOS_SETTING_MQTT_PASSWORD,
   NAOS_SETTING_DEVICE_NAME,
   NAOS_SETTING_BASE_TOPIC,
+  NAOS_SETTING_MAX,
+  NAOS_SETTING_UNKNOWN = -1
 } naos_setting_t;
+
+/**
+ * Get the common key for a setting.
+ *
+ * @param setting The setting.
+ * @return The key string.
+ */
+const char* naos_setting2key(naos_setting_t setting);
+
+/**
+ * Get the setting for a common key.
+ *
+ * @param key The key.
+ * @return The setting.
+ */
+naos_setting_t naos_key2setting(const char* key);
 
 /**
  * Will initialize the settings subsystem.
