@@ -69,3 +69,31 @@ void naos_settings_write(naos_setting_t setting, const char* value) {
   ESP_ERROR_CHECK(nvs_set_str(naos_settings_nvs_handle, key, value));
   ESP_ERROR_CHECK(nvs_commit(naos_settings_nvs_handle));
 }
+
+char* naos_settings_list() {
+  // determine list length
+  size_t length = 0;
+  for (int i = 0; i < NAOS_SETTING_MAX; i++) {
+    length += strlen(naos_setting_keys[i]) + 1;
+  }
+
+  // allocate buffer
+  char* buf = malloc(length);
+
+  // write names
+  size_t pos = 0;
+  for (int i = 0; i < NAOS_SETTING_MAX; i++) {
+    // get param
+    const char* name = naos_setting_keys[i];
+
+    // copy name
+    strcpy(buf + pos, name);
+    pos += strlen(name);
+
+    // write comma or zero
+    buf[pos] = (char)((i == NAOS_SETTING_MAX - 1) ? '\0' : ',');
+    pos++;
+  }
+
+  return buf;
+}

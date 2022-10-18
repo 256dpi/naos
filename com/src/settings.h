@@ -51,3 +51,12 @@ char* naos_settings_read(naos_setting_t setting);
  * @param value The value.
  */
 void naos_settings_write(naos_setting_t setting, const char* value);
+
+/**
+ * Create a comma separated list of settings.
+ *
+ * @note Returned pointer must be freed after usage.
+ *
+ * @return Pointer to list.
+ */
+char* naos_settings_list();
