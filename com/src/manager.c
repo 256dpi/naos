@@ -24,8 +24,6 @@ static bool naos_manager_process_started = false;
 
 static bool naos_manager_recording = false;
 
-static naos_param_t *naos_manager_selected_param = NULL;
-
 static void naos_manager_send_heartbeat() {
   // get device name
   char *device_name = naos_settings_read(NAOS_SETTING_DEVICE_NAME);
@@ -368,38 +366,50 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
   NAOS_UNLOCK(naos_manager_mutex);
 }
 
-void naos_manager_select_param(const char *param) {
-  // check params
-  for (int i = 0; i < naos_config()->num_parameters; i++) {
-    // get param
+int8_t naos_manager_find_param(const char *param) {
+  // find param
+  for (int8_t i = 0; i < naos_config()->num_parameters; i++) {
     naos_param_t p = naos_config()->parameters[i];
-
-    // continue if not matching
-    if (strcmp(param, p.name) != 0) {
-      continue;
+    if (strcmp(param, p.name) == 0) {
+      return i;
     }
-
-    // set selected param
-    naos_manager_selected_param = naos_config()->parameters + i;
   }
+
+  return -1;
 }
 
-char *naos_manager_read_param() {
+char *naos_manager_read_param(int8_t num) {
+  // check number
+  if (num < 0) {
+    return NULL;
+  }
+
+  // find param
+  naos_param_t *p = &naos_config()->parameters[num];
+
   // get param
-  return strdup(naos_get(naos_manager_selected_param->name));
+  return strdup(naos_get(p->name));
 }
 
-void naos_manager_write_param(const char *value) {
+void naos_manager_write_param(int8_t num, const char *value) {
+  // check number
+  if (num < 0) {
+    return;
+  }
+
   // acquire mutex
   NAOS_LOCK(naos_manager_mutex);
 
+  // find param
+  naos_param_t *p = &naos_config()->parameters[num];
+
   // save param
-  naos_set(naos_manager_selected_param->name, value);
+  naos_set(p->name, value);
 
   // call update callback if present
   if (naos_config()->update_callback != NULL) {
     naos_acquire();
-    naos_config()->update_callback(naos_manager_selected_param->name, value);
+    naos_config()->update_callback(p->name, value);
     naos_release();
   }
 
