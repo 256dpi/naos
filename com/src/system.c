@@ -119,8 +119,14 @@ static void naos_system_handle_command(const char *command) {
   // handle boot factory
   else if (boot_factory) {
     // select factory partition
-    ESP_ERROR_CHECK(esp_ota_set_boot_partition(
-        esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL)));
+    const esp_partition_t *part =
+        esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+    if (part == NULL) {
+      part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_0, NULL);
+    }
+    if (part != NULL) {
+      ESP_ERROR_CHECK(esp_ota_set_boot_partition(part));
+    }
 
     // restart chip
     esp_restart();
