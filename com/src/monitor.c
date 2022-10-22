@@ -3,7 +3,6 @@
 #include <esp_freertos_hooks.h>
 #include <freertos/task.h>
 #include <naos.h>
-#include <sdkconfig.h>
 
 #include "monitor.h"
 

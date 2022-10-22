@@ -3,7 +3,6 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
-#include <freertos/task.h>
 #include <string.h>
 
 #ifndef CONFIG_NAOS_WIFI_DISABLE

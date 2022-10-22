@@ -3,7 +3,6 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
-#include <freertos/task.h>
 #include <nvs_flash.h>
 #include <string.h>
 

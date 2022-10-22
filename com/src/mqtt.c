@@ -5,7 +5,6 @@
 #include <freertos/semphr.h>
 
 #include "mqtt.h"
-#include "naos.h"
 #include "utils.h"
 
 static SemaphoreHandle_t naos_mqtt_mutex;
