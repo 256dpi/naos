@@ -18,7 +18,6 @@
 #include "update.h"
 #include "utils.h"
 #include "net.h"
-#include "http.h"
 
 SemaphoreHandle_t naos_system_mutex;
 
