@@ -139,6 +139,13 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
   // acquire mutex
   NAOS_LOCK(naos_manager_mutex);
 
+  // call message callback if present for non system messages
+  if (strncmp(topic, "naos/", 5) != 0 && naos_config()->message_callback != NULL) {
+    naos_acquire();
+    naos_config()->message_callback(topic, payload, len, scope);
+    naos_release();
+  }
+
   // check collect
   if (scope == NAOS_GLOBAL && strcmp(topic, "naos/collect") == 0) {
     // send announcement
@@ -359,13 +366,6 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     NAOS_UNLOCK(naos_manager_mutex);
 
     return;
-  }
-
-  // call message callback if present
-  if (naos_config()->message_callback != NULL) {
-    naos_acquire();
-    naos_config()->message_callback(topic, payload, len, scope);
-    naos_release();
   }
 
   // release mutex
