@@ -1,15 +1,18 @@
+#include <freertos/FreeRTOS.h>
+
+#include "ble.h"
+
+#ifndef CONFIG_NAOS_BLE_DISABLE
 #include <esp_bt.h>
 #include <esp_bt_defs.h>
 #include <esp_bt_main.h>
 #include <esp_gap_ble_api.h>
 #include <esp_gatt_defs.h>
 #include <esp_gatts_api.h>
-#include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <freertos/semphr.h>
 #include <string.h>
 
-#include "ble.h"
 #include "naos.h"
 #include "utils.h"
 
@@ -637,3 +640,7 @@ void naos_ble_notify(naos_ble_char_t ch, const char *value) {
   // release mutex
   NAOS_UNLOCK(naos_ble_mutex);
 }
+#else
+void naos_ble_init(naos_ble_read_callback_t rcb, naos_ble_write_callback_t wcb){}
+void naos_ble_notify(naos_ble_char_t ch, const char *value) {}
+#endif
