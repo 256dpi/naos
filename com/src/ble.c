@@ -496,7 +496,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
             conn->locked = false;
             indicate_unlock = true;
           }
-        } else {
+        } else if (!conn->locked) {
           // otherwise call callback
           NAOS_UNLOCK(naos_ble_mutex);
           naos_ble_write_callback(conn, c->ch, value);
