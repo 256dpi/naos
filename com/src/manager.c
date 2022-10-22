@@ -1,11 +1,14 @@
 #include <esp_log.h>
 #include <esp_ota_ops.h>
 #include <esp_system.h>
-#include <esp_wifi.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
 #include <string.h>
+
+#ifndef CONFIG_NAOS_WIFI_DISABLE
+#include <esp_wifi.h>
+#endif
 
 #include "coredump.h"
 #include "manager.h"
@@ -35,8 +38,12 @@ static void naos_manager_send_heartbeat() {
   }
 
   // get signal strength
+  int8_t rssi = -1;
+#ifndef CONFIG_NAOS_WIFI_DISABLE
   wifi_ap_record_t record = {0};
   esp_wifi_sta_get_ap_info(&record);
+  rssi = record.rssi;
+#endif
 
   // get CPU usage
   naos_cpu_usage_t usage = naos_monitor_get();
@@ -45,7 +52,7 @@ static void naos_manager_send_heartbeat() {
   char buf[64];
   snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s,%.2f,%d,%.2f,%.2f", naos_config()->device_type,
            naos_config()->firmware_version, device_name, esp_get_free_heap_size(), naos_millis(),
-           esp_ota_get_running_partition()->label, battery_level, record.rssi, usage.cpu0, usage.cpu1);
+           esp_ota_get_running_partition()->label, battery_level, rssi, usage.cpu0, usage.cpu1);
   naos_publish("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
 
   // free string

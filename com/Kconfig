@@ -1,5 +1,9 @@
 menu "naos"
 
+config NAOS_WIFI_DISABLE
+    bool "Disable WiFi support"
+    default false
+
 config NAOS_MQTT_BUFFER_SIZE
     int "The MQTT read and write buffer size"
     default 10000

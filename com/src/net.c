@@ -1,6 +1,9 @@
 #include <esp_event.h>
-#include <esp_wifi.h>
 #include <string.h>
+
+#ifndef CONFIG_NAOS_WIFI_DISABLE
+#include <esp_wifi.h>
+#endif
 
 #include "utils.h"
 #include "net.h"
@@ -9,7 +12,9 @@ static SemaphoreHandle_t naos_net_mutex;
 
 static naos_net_status_t naos_net_status = {0};
 
+#ifndef CONFIG_NAOS_WIFI_DISABLE
 static wifi_config_t naos_wifi_config;
+#endif
 
 static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
                                    void *event_data) {
@@ -17,6 +22,7 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
   NAOS_LOCK(naos_net_mutex);
 
   // handle Wi-Fi events
+#ifndef CONFIG_NAOS_WIFI_DISABLE
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
       case WIFI_EVENT_STA_START: {
@@ -46,6 +52,7 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
       }
     }
   }
+#endif
 
   // handle ethernet events
   if (event_base == ETH_EVENT) {
@@ -114,6 +121,7 @@ void naos_net_init() {
   // create default event loop
   ESP_ERROR_CHECK(esp_event_loop_create_default());
 
+#ifndef CONFIG_NAOS_WIFI_DISABLE
   // enable Wi-Fi
   esp_netif_create_default_wifi_sta();
 
@@ -123,6 +131,7 @@ void naos_net_init() {
 
   // set Wi-Fi storage to ram
   ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+#endif
 
   // register event handlers
   ESP_ERROR_CHECK(
@@ -133,6 +142,7 @@ void naos_net_init() {
 }
 
 void naos_net_configure_wifi(const char *ssid, const char *password) {
+#ifndef CONFIG_NAOS_WIFI_DISABLE
   // acquire mutex
   NAOS_LOCK(naos_net_mutex);
 
@@ -166,6 +176,7 @@ void naos_net_configure_wifi(const char *ssid, const char *password) {
 
   // release mutex
   NAOS_UNLOCK(naos_net_mutex);
+#endif
 }
 
 naos_net_status_t naos_net_check() {
