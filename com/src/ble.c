@@ -626,9 +626,9 @@ void naos_ble_notify(naos_ble_char_t ch, const char *value) {
       break;
     }
 
-    // send indicate if indicate to all connections
+    // send indicate to all unlocked connections
     for (int j = 0; j < NAOS_BLE_MAX_CONNECTIONS; j++) {
-      if (naos_ble_conns[j].connected) {
+      if (naos_ble_conns[j].connected && !naos_ble_conns[j].locked) {
         ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, j, c->handle,
                                                     (uint16_t)strlen(value), (uint8_t *)value, false));
       }
@@ -641,6 +641,6 @@ void naos_ble_notify(naos_ble_char_t ch, const char *value) {
   NAOS_UNLOCK(naos_ble_mutex);
 }
 #else
-void naos_ble_init(naos_ble_read_callback_t rcb, naos_ble_write_callback_t wcb){}
+void naos_ble_init(naos_ble_read_callback_t rcb, naos_ble_write_callback_t wcb) {}
 void naos_ble_notify(naos_ble_char_t ch, const char *value) {}
 #endif
