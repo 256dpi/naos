@@ -4,8 +4,6 @@
 
 #include "settings.h"
 
-// TODO: Rename NVS namespace in a major release.
-
 static const char* naos_setting_keys[] = {
     [NAOS_SETTING_WIFI_SSID] = "wifi-ssid",           [NAOS_SETTING_WIFI_PASSWORD] = "wifi-password",
     [NAOS_SETTING_MQTT_HOST] = "mqtt-host",           [NAOS_SETTING_MQTT_PORT] = "mqtt-port",
@@ -38,7 +36,7 @@ naos_setting_t naos_key2setting(const char* key) {
 
 void naos_settings_init() {
   // open nvs namespace
-  ESP_ERROR_CHECK(nvs_open("naos-ble", NVS_READWRITE, &naos_settings_nvs_handle));
+  ESP_ERROR_CHECK(nvs_open("naos-sys", NVS_READWRITE, &naos_settings_nvs_handle));
 }
 
 char* naos_settings_read(naos_setting_t setting) {

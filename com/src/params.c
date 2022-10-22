@@ -6,8 +6,6 @@
 #include "naos.h"
 #include "utils.h"
 
-// TODO: Rename NVS namespace in a major release.
-
 typedef struct {
   naos_type_t type;
   const char *param;
@@ -136,7 +134,7 @@ static void naos_params_update_sync(const char *param) {
 
 void naos_params_init() {
   // open nvs namespace
-  ESP_ERROR_CHECK(nvs_open("naos-manager", NVS_READWRITE, &naos_params_nvs_handle));
+  ESP_ERROR_CHECK(nvs_open("naos-app", NVS_READWRITE, &naos_params_nvs_handle));
 
   // initialize params
   for (int i = 0; i < naos_config()->num_parameters; i++) {
