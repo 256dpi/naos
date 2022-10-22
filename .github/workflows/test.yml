@@ -17,6 +17,8 @@ jobs:
           cd com
           make prepare install
           make build
+          make disable
+          make build
       - name: Test CLI
         run: go test ./...
       - name: Build CLI
