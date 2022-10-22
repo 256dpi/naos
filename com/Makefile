@@ -55,6 +55,11 @@ debug:
 
 run: build flash monitor
 
+disable:
+	sed -i.bak "s/.*CONFIG_NAOS_WIFI_DISABLE.*/CONFIG_NAOS_WIFI_DISABLE=y/g" ./test/sdkconfig
+	sed -i.bak "s/.*CONFIG_NAOS_BLE_DISABLE.*/CONFIG_NAOS_BLE_DISABLE=y/g" ./test/sdkconfig
+	rm ./test/sdkconfig.bak
+
 fmt:
 	clang-format -i ./src/*.c ./src/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}"
 	clang-format -i ./include/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}"
