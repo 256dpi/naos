@@ -198,7 +198,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     char *value = naos_get(param);
 
     // construct topic
-    char *t = naos_str_concat("naos/value/", param);
+    char *t = naos_concat("naos/value/", param);
 
     // send value
     naos_publish(t, value, 0, false, NAOS_LOCAL);
@@ -228,7 +228,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     }
 
     // construct topic
-    char *t = naos_str_concat("naos/value/", param);
+    char *t = naos_concat("naos/value/", param);
 
     // send value
     naos_publish(t, naos_get(param), 0, false, NAOS_LOCAL);

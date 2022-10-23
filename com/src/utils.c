@@ -50,7 +50,7 @@ char *naos_format(char *fmt, ...) {
   return buf;
 }
 
-char *naos_str_concat(const char *str1, const char *str2) {
+char *naos_concat(const char *str1, const char *str2) {
   // allocate new buffer
   char *str = malloc(strlen(str1) + strlen(str2) + 1);
 

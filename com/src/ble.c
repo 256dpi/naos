@@ -1,7 +1,5 @@
 #include <freertos/FreeRTOS.h>
 
-#include "ble.h"
-
 #ifndef CONFIG_NAOS_BLE_DISABLE
 #include <esp_bt.h>
 #include <esp_bt_defs.h>

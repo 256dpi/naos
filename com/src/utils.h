@@ -29,6 +29,6 @@
 const char *naos_i2str(int32_t num);
 const char *naos_d2str(double num);
 char *naos_format(char *fmt, ...);
-char *naos_str_concat(const char *str1, const char *str2);
+char *naos_concat(const char *str1, const char *str2);
 
 #endif  // NAOS_UTILS_H

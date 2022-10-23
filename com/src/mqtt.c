@@ -18,7 +18,7 @@ static naos_mqtt_status_t naos_mqtt_status = {0};
 
 // returned topics must be freed after use
 static char *naos_mqtt_with_base_topic(const char *topic) {
-  return naos_str_concat(naos_mqtt_base_topic_prefix, topic);
+  return naos_concat(naos_mqtt_base_topic_prefix, topic);
 }
 
 static naos_scope_t naos_mqtt_scope_from_topic(const char *topic) {
@@ -90,7 +90,7 @@ void naos_mqtt_start(const char *host, char *port, const char *client_id, const 
   if (naos_mqtt_base_topic_prefix != NULL) free(naos_mqtt_base_topic_prefix);
 
   // set base topic prefix
-  naos_mqtt_base_topic_prefix = naos_str_concat(base_topic, "/");
+  naos_mqtt_base_topic_prefix = naos_concat(base_topic, "/");
 
   // release mutex
   NAOS_UNLOCK(naos_mqtt_mutex);
