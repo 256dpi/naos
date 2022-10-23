@@ -66,70 +66,60 @@ static struct {
 typedef struct {
   uint8_t uuid[16];
   esp_gatt_char_prop_t prop;
-  uint16_t max_length;
+  uint16_t max_write_len;
   // ---
   uint16_t handle;
   esp_bt_uuid_t _uuid;
 } naos_ble_gatts_char_t;
 
-static naos_ble_gatts_char_t naos_ble_char_identity = {
-    .uuid = {0x45, 0x9e, 0xef, 0x54, 0xd6, 0x67, 0x4f, 0xca, 0xbb, 0xdd, 0x08, 0x10, 0xd7, 0x12, 0x6a, 0x27},
-    .prop = ESP_GATT_CHAR_PROP_BIT_READ,
-    .max_length = 32};
+static naos_ble_gatts_char_t naos_ble_char_description = {
+    .uuid = {0x26, 0x17, 0x8c, 0xbc, 0x61, 0x7a, 0x4a, 0x9c, 0xa2, 0x22, 0x04, 0x07, 0xcf, 0xfd, 0xbf, 0x87},
+    .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE};
 
 static naos_ble_gatts_char_t naos_ble_char_lock = {
     .uuid = {0x91, 0xb5, 0x2e, 0x90, 0xd5, 0x07, 0x4d, 0x68, 0x9b, 0x23, 0x84, 0x40, 0xa4, 0xfb, 0xa5, 0xf7},
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_INDICATE,
-    .max_length = 32};
-
-static naos_ble_gatts_char_t naos_ble_char_description = {
-    .uuid = {0x26, 0x17, 0x8c, 0xbc, 0x61, 0x7a, 0x4a, 0x9c, 0xa2, 0x22, 0x04, 0x07, 0xcf, 0xfd, 0xbf, 0x87},
-    .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE,
-    .max_length = 32};
+    .max_write_len = 32};
 
 static naos_ble_gatts_char_t naos_ble_char_settings_list = {
     .uuid = {0x5d, 0x28, 0x5f, 0xe5, 0x88, 0x5c, 0x4c, 0xbb, 0xa9, 0x80, 0xeb, 0xb5, 0x2c, 0xe4, 0xae, 0xde},
-    .prop = ESP_GATT_CHAR_PROP_BIT_READ,
-    .max_length = 128};
+    .prop = ESP_GATT_CHAR_PROP_BIT_READ};
 
 static naos_ble_gatts_char_t naos_ble_char_settings_select = {
     .uuid = {0x7b, 0xf3, 0xcc, 0x62, 0x7a, 0x2d, 0x48, 0xb8, 0xbd, 0x87, 0x9b, 0x33, 0xbb, 0x99, 0x7f, 0xa9},
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_length = 64};
+    .max_write_len = 64};
 
 static naos_ble_gatts_char_t naos_ble_char_settings_value = {
     .uuid = {0x7e, 0x94, 0xc9, 0x25, 0xff, 0x0a, 0x4a, 0x61, 0xa0, 0x50, 0xe1, 0xe7, 0xcb, 0xbe, 0xbe, 0xc8},
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_length = 64};
+    .max_write_len = 128};
 
 static naos_ble_gatts_char_t naos_ble_char_command = {
     .uuid = {0x29, 0x92, 0x52, 0xd1, 0xe5, 0xba, 0x40, 0xb4, 0x91, 0x88, 0x82, 0x7f, 0x43, 0x4d, 0x63, 0xf1},
     .prop = ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_length = 16};
+    .max_write_len = 32};
 
 static naos_ble_gatts_char_t naos_ble_char_params_list = {
     .uuid = {0x65, 0xa6, 0x6e, 0x1a, 0x95, 0x7d, 0x48, 0xdf, 0x8b, 0xb7, 0x1b, 0x23, 0xd1, 0x89, 0x22, 0xac},
-    .prop = ESP_GATT_CHAR_PROP_BIT_READ,
-    .max_length = 128};
+    .prop = ESP_GATT_CHAR_PROP_BIT_READ};
 
 static naos_ble_gatts_char_t naos_ble_char_params_select = {
     .uuid = {0xcd, 0xba, 0xd4, 0x6e, 0x8d, 0xf8, 0x40, 0x42, 0xbe, 0xcc, 0x6f, 0x40, 0x6d, 0x70, 0xc9, 0xcf},
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_length = 64};
+    .max_write_len = 64};
 
 static naos_ble_gatts_char_t naos_ble_char_params_value = {
     .uuid = {0xb3, 0x71, 0x1e, 0xb0, 0x84, 0x68, 0x41, 0x20, 0x99, 0x7e, 0xe1, 0x8e, 0x46, 0x54, 0xca, 0x01},
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_length = 128};
+    .max_write_len = 128};
 
-#define NAOS_BLE_NUM_CHARS 10
+#define NAOS_BLE_NUM_CHARS 9
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
-    &naos_ble_char_identity,        &naos_ble_char_lock,
-    &naos_ble_char_description,     &naos_ble_char_settings_list,
-    &naos_ble_char_settings_select, &naos_ble_char_settings_value,
-    &naos_ble_char_command,         &naos_ble_char_params_list,
-    &naos_ble_char_params_select,   &naos_ble_char_params_value};
+    &naos_ble_char_description,     &naos_ble_char_lock,           &naos_ble_char_settings_list,
+    &naos_ble_char_settings_select, &naos_ble_char_settings_value, &naos_ble_char_command,
+    &naos_ble_char_params_list,     &naos_ble_char_params_select,  &naos_ble_char_params_value};
 
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
 
@@ -347,14 +337,12 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         char *value = NULL;
 
         // handle characteristic
-        if (c == &naos_ble_char_identity) {
-          value = naos_config_identify();
+        if (c == &naos_ble_char_description) {
+          value = naos_config_describe(conn->locked);
         } else if (c == &naos_ble_char_lock) {
           value = strdup(conn->locked ? "locked" : "unlocked");
         } else if (!conn->locked) {
-          if (c == &naos_ble_char_description) {
-            value = naos_config_describe();
-          } else if (c == &naos_ble_char_settings_list) {
+          if (c == &naos_ble_char_settings_list) {
             value = naos_config_list_settings();
           } else if (c == &naos_ble_char_settings_select) {
             if (conn->setting != 0) {
@@ -439,7 +427,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         }
 
         // check attribute length and return if it exceeds
-        if (p->write.len > c->max_length) {
+        if (p->write.len > c->max_write_len) {
           // send error response
           ESP_ERROR_CHECK(
               esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, ESP_GATT_INVALID_ATTR_LEN, NULL));
@@ -458,7 +446,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         bool indicate_unlock = false;
 
         // handle unlocks directly
-        if (c == &naos_ble_char_identity) {
+        if (c == &naos_ble_char_description) {
           // ignore
         } else if (c == &naos_ble_char_lock) {
           if (conn->locked && strcmp(value, naos_config()->password) == 0) {
@@ -466,9 +454,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
             indicate_unlock = true;
           }
         } else if (!conn->locked) {
-          if (c == &naos_ble_char_description) {
-            // ignore
-          } else if (c == &naos_ble_char_settings_list) {
+          if (c == &naos_ble_char_settings_list) {
             // ignore
           } else if (c == &naos_ble_char_settings_select) {
             conn->setting = naos_setting_from_key(value);
@@ -532,28 +518,20 @@ void naos_ble_notification_handler(naos_config_notification_t notification) {
   // acquire mutex
   NAOS_LOCK(naos_ble_mutex);
 
-  // get description
-  char *value = NULL;
-  switch (notification) {
-    case NAOS_CONFIG_NOTIFICATION_DESCRIPTION:
-      value = naos_config_describe();
-  }
-
   // send indicate to all unlocked connections
   for (int j = 0; j < NAOS_BLE_MAX_CONNECTIONS; j++) {
     if (naos_ble_conns[j].connected && !naos_ble_conns[j].locked) {
+      naos_ble_conn_t *conn = &naos_ble_conns[j];
       switch (notification) {
-        case NAOS_CONFIG_NOTIFICATION_DESCRIPTION:
+        case NAOS_CONFIG_NOTIFICATION_DESCRIPTION: {
+          char *value = naos_config_describe(conn->locked);
           ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, j,
                                                       naos_ble_char_description.handle, (uint16_t)strlen(value),
                                                       (uint8_t *)value, false));
+          free(value);
+        }
       }
     }
-  }
-
-  // free value
-  if (value != NULL) {
-    free(value);
   }
 
   // release mutex

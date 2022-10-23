@@ -31,7 +31,19 @@ char* naos_config_identify() {
   return str;
 }
 
-char* naos_config_describe() {
+char* naos_config_describe(bool locked) {
+  // collect data
+  const char* type = naos_config()->device_type;
+  char* name = naos_settings_read(NAOS_SETTING_DEVICE_NAME);
+  const char* firmware = naos_config()->firmware_version;
+
+  // handle locked
+  if (locked) {
+    char* str = naos_format("device_type=%s,device_name=%s,firmware_version=%s", type, name, firmware);
+    free(name);
+    return str;
+  }
+
   // get status
   const char* status = naos_status_str(naos_status());
 
@@ -52,9 +64,14 @@ char* naos_config_describe() {
 
   // assemble string
   char* str = naos_format(
-      "connection_status=%s,battery_level=%.2f,uptime=%d,free_heap=%d,running_partition=%s,wifi_rssi=%d,cpu0_usage=%."
+      "device_type=%s,device_name=%s,firmware_version=%s,connection_status=%s,battery_level=%.2f,uptime=%d,free_heap=%"
+      "d,running_partition=%s,wifi_rssi=%d,cpu0_usage=%."
       "2f,cpu1_usage=%.2f",
-      status, battery, naos_millis(), esp_get_free_heap_size(), partition, rssi, usage.cpu0, usage.cpu1);
+      type, name, firmware, status, battery, naos_millis(), esp_get_free_heap_size(), partition, rssi, usage.cpu0,
+      usage.cpu1);
+
+  // free strings
+  free(name);
 
   return str;
 }

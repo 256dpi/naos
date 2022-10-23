@@ -45,7 +45,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		controller.showWindow(self)
 
 		// configure window
-		controller.window!.title = device.name()
+		controller.window!.title = device.title()
 		controller.window!.orderFrontRegardless()
 		controller.window!.makeKey()
 
@@ -78,7 +78,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 	func naosManagerDidPrepareDevice(manager _: NAOSManager, device: NAOSDevice) {
 		// add menu item for new device
 		let item = NSMenuItem()
-		item.title = device.name()
+		item.title = device.title()
 		item.representedObject = device
 		item.target = self
 		item.action = #selector(open(_:))
@@ -104,10 +104,10 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 
 	func naosManagerDidUpdateDevice(manager _: NAOSManager, device: NAOSDevice) {
 		// update menu item title
-		devices[device]?.title = device.name()
+		devices[device]?.title = device.title()
 
 		// update eventual window titles
-		controllers[device]?.window!.title = device.name()
+		controllers[device]?.window!.title = device.title()
 	}
 
 	func naosManagerDidReset(manager _: NAOSManager) {

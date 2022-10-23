@@ -7,15 +7,11 @@ typedef enum {
 
 typedef void (*naos_config_handler_t)(naos_config_notification_t notification);
 
-char* naos_config_identify();
-char* naos_config_describe();
-
+char* naos_config_describe(bool locked);
 char* naos_config_list_settings();
 char* naos_config_read_setting(const char* key);
 void naos_config_write_setting(const char* key, const char* value);
-
 void naos_config_execute(const char* command);
-
 char* naos_config_list_params();
 char* naos_config_read_param(const char* key);
 void naos_config_write_parm(const char* key, const char* value);

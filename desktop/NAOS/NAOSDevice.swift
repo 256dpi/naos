@@ -9,9 +9,8 @@ import CoreBluetooth
 internal let NAOSDeviceService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
 
 internal enum NAOSDeviceCharacteristic: String {
-	case identity = "276A12D7-1008-DDBB-CA4F-67D654EF9E45"
-	case lock = "F7A5FBA4-4084-239B-684D-07D5902EB591"
 	case description = "87BFFDCF-0704-22A2-9C4A-7A61BC8C1726"
+	case lock = "F7A5FBA4-4084-239B-684D-07D5902EB591"
 	case settingsList = "DEAEE42C-B5EB-80A9-BB4C-5C88E55F285D"
 	case settingsSelect = "A97F99BB-339B-87BD-B848-2D7A62CCF37B"
 	case settingsValue = "C8BEBECB-E7E1-50A0-614A-0AFF25C9947E"
@@ -25,7 +24,7 @@ internal enum NAOSDeviceCharacteristic: String {
 	}
 
 	static let refreshable = [
-		identity, lock, description, settingsList, paramsList,
+		description, lock, settingsList, paramsList,
 	]
 
 	static let all = refreshable + [settingsSelect, settingsValue, command, paramsSelect, paramsValue]
@@ -42,6 +41,9 @@ public struct NAOSDeviceDescriptor: Hashable {
 		return lhs.name == rhs.name
 	}
 
+	public static let deviceType = NAOSDeviceDescriptor(name: "device_type")
+	public static let deviceName = NAOSDeviceDescriptor(name: "device_name")
+	public static let firmwareVersion = NAOSDeviceDescriptor(name: "firmware_version")
 	public static let conenctionStatus = NAOSDeviceDescriptor(name: "connection_status")
 	public static let batteryLevel = NAOSDeviceDescriptor(name: "battery_level")
 	public static let uptime = NAOSDeviceDescriptor(name: "uptime")
@@ -59,7 +61,7 @@ public struct NAOSDeviceDescriptor: Hashable {
 		let num = Double(value) ?? 0
 		switch self {
 		case .conenctionStatus:
-			return value
+			return value.capitalized
 		case .batteryLevel:
 			return String(format: "%.0f%%", num * 100)
 		case .uptime:
@@ -78,11 +80,11 @@ public struct NAOSDeviceDescriptor: Hashable {
 			} else if signal < 0 {
 				signal = 0
 			}
-			return String(format: "WiFi Signal: %.0f%%", signal)
+			return String(format: "%.0f%%", signal)
 		case .cp0Usage:
-			return String(format: "CPU0/Sys Usage: %.0f%%", num * 100)
+			return String(format: "%.0f%% (Sys)", num * 100)
 		case .cpu1Usage:
-			return String(format: "CPU0/App Usage: %.0f%%", num * 100)
+			return String(format: "%.0f%% (App)", num * 100)
 		default:
 			return value
 		}
@@ -167,9 +169,6 @@ public protocol NAOSDeviceDelegate {
 }
 
 public class NAOSDevice: NSObject, CBPeripheralDelegate {
-	public private(set) var deviceType: String = ""
-	public private(set) var deviceName: String = ""
-	public private(set) var firmwareVersion: String = ""
 	public private(set) var descriptors: [NAOSDeviceDescriptor: String] = [:]
 	public private(set) var protected: Bool = false
 	public private(set) var locked: Bool = false
@@ -268,8 +267,8 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 		}
 	}
 
-	public func name() -> String {
-		return deviceType + " (" + (settings[.deviceName] ?? deviceName) + ")"
+	public func title() -> String {
+		return (descriptors[.deviceType] ?? "") + " (" + (settings[.deviceName] ?? (descriptors[.deviceName] ?? "")) + ")"
 	}
 
 	public func unlock(password: String) {
@@ -462,12 +461,18 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 		}
 
 		// handle characteristic
-		if rawChar.uuid == NAOSDeviceCharacteristic.identity.cbuuid() {
-			// set device type and name
-			let kv = parseKeyValue(value: value)
-			deviceType = kv["device_type"] ?? ""
-			deviceName = kv["device_name"] ?? ""
-			firmwareVersion = kv["firmware_version"] ?? ""
+		if rawChar.uuid == NAOSDeviceCharacteristic.description.cbuuid() {
+			// set descriptors
+			for (key, value) in parseKeyValue(value: value) {
+				descriptors[NAOSDeviceDescriptor(name: key)] = value
+			}
+
+			// notify delegate and return immediately if not refreshing
+			if !refreshing {
+				if let d = delegate {
+					d.naosDeviceDidUpdateConnectionStatus(device: self)
+				}
+			}
 
 		} else if rawChar.uuid == NAOSDeviceCharacteristic.lock.cbuuid() {
 			// save lock status
@@ -482,19 +487,6 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 			if !refreshing, !locked {
 				if let d = delegate {
 					d.naosDeviceDidUnlock(device: self)
-				}
-			}
-
-		} else if rawChar.uuid == NAOSDeviceCharacteristic.description.cbuuid() {
-			// set descriptors
-			for (key, value) in parseKeyValue(value: value) {
-				descriptors[NAOSDeviceDescriptor(name: key)] = value
-			}
-
-			// notify delegate and return immediately if not refreshing
-			if !refreshing {
-				if let d = delegate {
-					d.naosDeviceDidUpdateConnectionStatus(device: self)
 				}
 			}
 
