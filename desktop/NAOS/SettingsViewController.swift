@@ -135,7 +135,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		}
 
 		// update connection status
-		connectionStatusLabel.stringValue = device.connectionStatus
+		connectionStatusLabel.stringValue = device.connectionStatus.capitalized
 
 		// update battery level
 		if device.batteryLevel >= 0 {
@@ -164,7 +164,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 	func didUpdateConnectionStatus() {
 		// update connection status
-		connectionStatusLabel.stringValue = device.connectionStatus
+		connectionStatusLabel.stringValue = device.connectionStatus.capitalized
 	}
 
 	// NSTableView
