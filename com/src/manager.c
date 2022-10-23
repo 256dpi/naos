@@ -5,10 +5,6 @@
 #include <freertos/semphr.h>
 #include <string.h>
 
-#ifndef CONFIG_NAOS_WIFI_DISABLE
-#include <esp_wifi.h>
-#endif
-
 #include "coredump.h"
 #include "manager.h"
 #include "monitor.h"
@@ -17,6 +13,7 @@
 #include "settings.h"
 #include "update.h"
 #include "utils.h"
+#include "net.h"
 
 static SemaphoreHandle_t naos_manager_mutex;
 
@@ -36,13 +33,8 @@ static void naos_manager_send_heartbeat() {
     battery_level = naos_config()->battery_callback();
   }
 
-  // get signal strength
-  int8_t rssi = -1;
-#ifndef CONFIG_NAOS_WIFI_DISABLE
-  wifi_ap_record_t record = {0};
-  esp_wifi_sta_get_ap_info(&record);
-  rssi = record.rssi;
-#endif
+  // get WiFi RSSI
+  int8_t rssi = naos_net_wifi_rssi();
 
   // get CPU usage
   naos_cpu_usage_t usage = naos_monitor_get();

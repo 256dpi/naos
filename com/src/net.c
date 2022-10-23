@@ -191,3 +191,13 @@ naos_net_status_t naos_net_check() {
 
   return status;
 }
+
+int8_t naos_net_wifi_rssi() {
+#ifndef CONFIG_NAOS_WIFI_DISABLE
+  wifi_ap_record_t record = {0};
+  esp_wifi_sta_get_ap_info(&record);
+  return record.rssi;
+#elif
+  return -1;
+#endif
+}

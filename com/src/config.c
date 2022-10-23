@@ -12,10 +12,7 @@
 #include "system.h"
 #include "utils.h"
 #include "naos.h"
-
-#ifndef CONFIG_NAOS_WIFI_DISABLE
-#include <esp_wifi.h>
-#endif
+#include "net.h"
 
 #define NAOS_CONFIG_MAX_HANDLERS 8
 static naos_config_handler_t naos_config_handlers[NAOS_CONFIG_MAX_HANDLERS] = {0};
@@ -44,13 +41,8 @@ char* naos_config_describe() {
     battery = naos_config()->battery_callback();
   }
 
-  // get signal strength
-  int8_t rssi = -1;
-#ifndef CONFIG_NAOS_WIFI_DISABLE
-  wifi_ap_record_t record = {0};
-  esp_wifi_sta_get_ap_info(&record);
-  rssi = record.rssi;
-#endif
+  // get WiFi RSSI
+  int8_t rssi = naos_net_wifi_rssi();
 
   // get CPU usage
   naos_cpu_usage_t usage = naos_monitor_get();
