@@ -31,6 +31,64 @@ internal enum NAOSDeviceCharacteristic: String {
 	static let all = refreshable + [settingsSelect, settingsValue, command, paramsSelect, paramsValue]
 }
 
+public struct NAOSDeviceDescriptor: Hashable {
+	public var name: String
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(name)
+	}
+
+	public static func == (lhs: NAOSDeviceDescriptor, rhs: NAOSDeviceDescriptor) -> Bool {
+		return lhs.name == rhs.name
+	}
+
+	public static let conenctionStatus = NAOSDeviceDescriptor(name: "connection_status")
+	public static let batteryLevel = NAOSDeviceDescriptor(name: "battery_level")
+	public static let uptime = NAOSDeviceDescriptor(name: "uptime")
+	public static let freeHeap = NAOSDeviceDescriptor(name: "free_heap")
+	public static let runningPartition = NAOSDeviceDescriptor(name: "running_partition")
+	public static let wifiRSSI = NAOSDeviceDescriptor(name: "wifi_rssi")
+	public static let cp0Usage = NAOSDeviceDescriptor(name: "cpu0_usage")
+	public static let cpu1Usage = NAOSDeviceDescriptor(name: "cpu1_usage")
+
+	public func title() -> String {
+		return name.split(separator: "_").map { str in str.capitalized }.joined(separator: " ")
+	}
+
+	public func format(value: String) -> String {
+		let num = Double(value) ?? 0
+		switch self {
+		case .conenctionStatus:
+			return value
+		case .batteryLevel:
+			return String(format: "%.0f%%", num * 100)
+		case .uptime:
+			let formatter = DateComponentsFormatter()
+			formatter.allowedUnits = [.hour, .minute, .second]
+			formatter.unitsStyle = .abbreviated
+			return formatter.string(from: num / 1000) ?? ""
+		case .freeHeap:
+			return ByteCountFormatter.string(from: Measurement(value: num, unit: .bytes), countStyle: .memory)
+		case .runningPartition:
+			return value
+		case .wifiRSSI:
+			var signal = (100 - (num * -1)) * 2
+			if signal > 100 {
+				signal = 100
+			} else if signal < 0 {
+				signal = 0
+			}
+			return String(format: "WiFi Signal: %.0f%%", signal)
+		case .cp0Usage:
+			return String(format: "CPU0/Sys Usage: %.0f%%", num * 100)
+		case .cpu1Usage:
+			return String(format: "CPU0/App Usage: %.0f%%", num * 100)
+		default:
+			return value
+		}
+	}
+}
+
 public struct NAOSDeviceSetting: Hashable {
 	public var name: String
 
@@ -112,15 +170,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 	public private(set) var deviceType: String = ""
 	public private(set) var deviceName: String = ""
 	public private(set) var firmwareVersion: String = ""
-	public private(set) var connectionStatus: String = ""
-	public private(set) var batteryLevel: Float = -1
-	public private(set) var uptime: Int = 0
-	public private(set) var freeHeap: Int = 0
-	public private(set) var runningPartition: String = ""
-	public private(set) var wifiRSSI: Float = -1
-	public private(set) var cpu0Usage: Float = -1
-	public private(set) var cpu1Usage: Float = -1
-
+	public private(set) var descriptors: [NAOSDeviceDescriptor: String] = [:]
 	public private(set) var protected: Bool = false
 	public private(set) var locked: Bool = false
 	public private(set) var availableSettings: [NAOSDeviceSetting] = []
@@ -413,10 +463,8 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 
 		// handle characteristic
 		if rawChar.uuid == NAOSDeviceCharacteristic.identity.cbuuid() {
-			// parse key-value
-			let kv = parseKeyValue(value: value)
-
 			// set device type and name
+			let kv = parseKeyValue(value: value)
 			deviceType = kv["device_type"] ?? ""
 			deviceName = kv["device_name"] ?? ""
 			firmwareVersion = kv["firmware_version"] ?? ""
@@ -438,18 +486,10 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 			}
 
 		} else if rawChar.uuid == NAOSDeviceCharacteristic.description.cbuuid() {
-			// parse key-value
-			let kv = parseKeyValue(value: value)
-
-			// set connection status and battery level
-			connectionStatus = kv["connection_status"] ?? ""
-			batteryLevel = Float(kv["battery_level"] ?? "-1") ?? -1
-			uptime = Int(kv["uptime"] ?? "") ?? -1
-			freeHeap = Int(kv["free_heap"] ?? "") ?? -1
-			runningPartition = kv["running_partition"] ?? ""
-			wifiRSSI = Float(kv["wifi_rssi"] ?? "-1") ?? -1
-			cpu0Usage = Float(kv["cpu0_usage"] ?? "-1") ?? -1
-			cpu1Usage = Float(kv["cpu1_usage"] ?? "-1") ?? -1
+			// set descriptors
+			for (key, value) in parseKeyValue(value: value) {
+				descriptors[NAOSDeviceDescriptor(name: key)] = value
+			}
 
 			// notify delegate and return immediately if not refreshing
 			if !refreshing {

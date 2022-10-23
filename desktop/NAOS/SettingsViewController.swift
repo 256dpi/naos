@@ -133,43 +133,14 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		}
 
 		// update connection status
-		connectionStatusLabel.stringValue = device.connectionStatus.capitalized
+		connectionStatusLabel.stringValue = (device.descriptors[.conenctionStatus] ?? "").capitalized
 
 		// update description
 		var info = [String]()
-		if device.batteryLevel >= 0 {
-			info.append(String(format: "Battery Level: %.0f%%", device.batteryLevel * 100))
+		for (descriptor, value) in device.descriptors {
+			info.append(descriptor.title() + ": " + descriptor.format(value: value))
 		}
-		if device.uptime != 0 {
-			let formatter = DateComponentsFormatter()
-			formatter.allowedUnits = [.hour, .minute, .second]
-			formatter.unitsStyle = .abbreviated
-			let time = formatter.string(from: TimeInterval(device.uptime) / 1000) ?? ""
-			info.append("Uptime: " + time)
-		}
-		if device.freeHeap != 0 {
-			let bytes = ByteCountFormatter.string(from: Measurement(value: Double(device.freeHeap), unit: .bytes), countStyle: .memory)
-			info.append("Free Heap: " + bytes)
-		}
-		if device.runningPartition != "" {
-			info.append("\nRunning Partition: " + device.runningPartition)
-		}
-		if device.wifiRSSI != -1 {
-			var signal = (100 - (device.wifiRSSI * -1)) * 2
-			if signal > 100 {
-				signal = 100
-			} else if signal < 0 {
-				signal = 0
-			}
-			info.append(String(format: "WiFi Signal: %.0f%%", signal))
-		}
-		if device.cpu0Usage != -1 {
-			info.append(String(format: "\nCPU0/Sys Usage: %.0f%%", device.cpu0Usage * 100))
-		}
-		if device.cpu1Usage != -1 {
-			info.append(String(format: "CPU0/App Usage: %.0f%%", device.cpu1Usage * 100))
-		}
-		descriptionLabel.stringValue = info.joined(separator: ", ")
+		descriptionLabel.stringValue = info.joined(separator: "\n")
 
 		// reload parameters
 		parameterTableView.reloadData()
@@ -188,7 +159,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 	func didUpdateConnectionStatus() {
 		// update connection status
-		connectionStatusLabel.stringValue = device.connectionStatus.capitalized
+		connectionStatusLabel.stringValue = (device.descriptors[.conenctionStatus] ?? "").capitalized
 	}
 
 	// NSTableView
