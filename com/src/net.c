@@ -20,8 +20,8 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
   // acquire mutex
   NAOS_LOCK(naos_net_mutex);
 
-  // handle Wi-Fi events
 #ifndef CONFIG_NAOS_WIFI_DISABLE
+  // handle Wi-Fi events
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
       case WIFI_EVENT_STA_START: {
