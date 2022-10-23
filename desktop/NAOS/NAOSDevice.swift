@@ -60,7 +60,7 @@ public struct NAOSDeviceSetting: Hashable {
 
 public enum NAOSDeviceCommand: String {
 	case ping
-	case bootFactory = "boot-factory"
+	case reboot
 	case restartWifi = "restart-wifi"
 	case restartMQTT = "restart-mqtt"
 }
@@ -253,7 +253,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 		manager.didUpdateDevice(device: self)
 	}
 
-	public func command(cmd: NAOSDeviceCommand) {
+	public func execute(cmd: NAOSDeviceCommand) {
 		// get characteristic
 		guard let c = towRawCharacteristic(property: .command) else {
 			raiseError(error: NAOSDeviceError.characteristicNotFound)

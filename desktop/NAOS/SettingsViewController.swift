@@ -67,15 +67,15 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 	}
 
 	@IBAction
-	func bootFactory(_: AnyObject) {
-		// send select factory command
-		device.command(cmd: .bootFactory)
+	func reboot(_: AnyObject) {
+		// send reboot command
+		device.execute(cmd: .reboot)
 	}
 
 	@IBAction
 	func ping(_: AnyObject) {
 		// send ping command
-		device.command(cmd: .ping)
+		device.execute(cmd: .ping)
 	}
 
 	@IBAction
@@ -84,7 +84,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		writeSettings(settings: [.wifiSSID, .wifiPassword])
 
 		// send restart command
-		device.command(cmd: .restartWifi)
+		device.execute(cmd: .restartWifi)
 	}
 
 	@IBAction
@@ -112,7 +112,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		])
 
 		// send restart command
-		device.command(cmd: .restartMQTT)
+		device.execute(cmd: .restartMQTT)
 	}
 
 	@IBAction
@@ -121,7 +121,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		writeSettings(settings: [.deviceName, .baseTopic])
 
 		// send restart command
-		device.command(cmd: .restartMQTT)
+		device.execute(cmd: .restartMQTT)
 	}
 
 	// SettingsWindowController

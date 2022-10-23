@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <esp_err.h>
+#include <esp_system.h>
 
 #include "config.h"
 #include "settings.h"
@@ -65,12 +66,12 @@ void naos_config_execute(const char* command) {
       naos_config()->ping_callback();
       naos_release();
     }
+  } else if (strcmp(command, "reboot") == 0) {
+    esp_restart();
   } else if (strcmp(command, "restart-wifi") == 0) {
     naos_system_configure_wifi();
   } else if (strcmp(command, "restart-mqtt") == 0) {
     naos_system_configure_mqtt();
-  } else if (strcmp(command, "boot-factory") == 0) {
-    naos_system_boot_factory();
   }
 }
 

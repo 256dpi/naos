@@ -222,26 +222,3 @@ void naos_system_configure_mqtt() {
   // release mutex
   NAOS_UNLOCK(naos_system_mutex);
 }
-
-void naos_system_boot_factory() {
-  // acquire mutex
-  NAOS_LOCK(naos_system_mutex);
-
-  // TODO: Replace "boot-factory" with "boot-alpha" and "boot-beta"?
-
-  // select factory partition
-  const esp_partition_t *part =
-      esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
-  if (part == NULL) {
-    part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_0, NULL);
-  }
-  if (part != NULL) {
-    ESP_ERROR_CHECK(esp_ota_set_boot_partition(part));
-  }
-
-  // restart chip
-  esp_restart();
-
-  // release mutex
-  NAOS_UNLOCK(naos_system_mutex);
-}
