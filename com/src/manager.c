@@ -27,10 +27,10 @@ static void naos_manager_send_heartbeat() {
   // get device name
   char *device_name = naos_settings_read(NAOS_SETTING_DEVICE_NAME);
 
-  // get battery level
-  float battery_level = -1;
+  // get battery
+  float battery = -1;
   if (naos_config()->battery_callback != NULL) {
-    battery_level = naos_config()->battery_callback();
+    battery = naos_config()->battery_callback();
   }
 
   // get WiFi RSSI
@@ -43,7 +43,7 @@ static void naos_manager_send_heartbeat() {
   char buf[64];
   snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s,%.2f,%d,%.2f,%.2f", naos_config()->device_type,
            naos_config()->firmware_version, device_name, esp_get_free_heap_size(), naos_millis(),
-           esp_ota_get_running_partition()->label, battery_level, rssi, usage.cpu0, usage.cpu1);
+           esp_ota_get_running_partition()->label, battery, rssi, usage.cpu0, usage.cpu1);
   naos_publish("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
 
   // free string
@@ -398,15 +398,12 @@ void naos_manager_write_param(naos_param_t *param, const char *value) {
 }
 
 void naos_log(const char *fmt, ...) {
-  // prepare args
-  va_list args;
-
-  // initialize list
-  va_start(args, fmt);
-
   // process input
+  va_list args;
+  va_start(args, fmt);
   char buf[128];
-  vsprintf(buf, fmt, args);
+  vsnprintf(buf, 128, fmt, args);
+  va_end(args);
 
   // publish log message if enabled
   if (naos_manager_recording) {
@@ -421,9 +418,6 @@ void naos_log(const char *fmt, ...) {
 
   // print log message esp like
   printf("N (%d) %s: %s\n", naos_millis(), device_type, buf);
-
-  // free list
-  va_end(args);
 }
 
 void naos_manager_stop() {
