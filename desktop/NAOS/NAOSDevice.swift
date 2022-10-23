@@ -211,7 +211,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 	}
 
 	public func name() -> String {
-		return deviceType + " (" + deviceName + ")"
+		return deviceType + " (" + (settings[.deviceName] ?? deviceName) + ")"
 	}
 
 	public func unlock(password: String) {
