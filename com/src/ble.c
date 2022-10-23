@@ -1,6 +1,5 @@
 #include <freertos/FreeRTOS.h>
 
-#ifndef CONFIG_NAOS_BLE_DISABLE
 #include <esp_bt.h>
 #include <esp_bt_defs.h>
 #include <esp_bt_main.h>
@@ -621,7 +620,3 @@ void naos_ble_init() {
   // register notification handler
   naos_config_register(naos_ble_notification_handler);
 }
-#else
-void naos_ble_init() {}
-void naos_ble_notify(naos_ble_char_t ch, const char *value) {}
-#endif

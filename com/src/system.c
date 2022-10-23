@@ -5,7 +5,6 @@
 #include <freertos/semphr.h>
 #include <nvs_flash.h>
 
-#include "ble.h"
 #include "config.h"
 #include "system.h"
 #include "manager.h"
@@ -18,6 +17,10 @@
 #include "task.h"
 #include "update.h"
 #include "utils.h"
+
+#ifndef CONFIG_NAOS_BLE_DISABLE
+#include "ble.h"
+#endif
 
 SemaphoreHandle_t naos_system_mutex;
 
@@ -134,7 +137,9 @@ void naos_system_init() {
   naos_manager_init();
 
   // initialize bluetooth stack
+#ifndef CONFIG_NAOS_BLE_DISABLE
   naos_ble_init();
+#endif
 
   // initialize network stack
   naos_net_init();
