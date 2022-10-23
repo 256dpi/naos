@@ -1,5 +1,5 @@
-#ifndef _NAOS_SETTINGS_H
-#define _NAOS_SETTINGS_H
+#ifndef NAOS_SETTINGS_H
+#define NAOS_SETTINGS_H
 
 typedef enum {
   NAOS_SETTING_WIFI_SSID,
@@ -23,4 +23,4 @@ char* naos_settings_read(naos_setting_t setting);
 void naos_settings_write(naos_setting_t setting, const char* value);
 char* naos_settings_list();
 
-#endif  // _NAOS_SETTINGS_H
+#endif  // NAOS_SETTINGS_H

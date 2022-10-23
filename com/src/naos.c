@@ -12,7 +12,10 @@ void naos_init(naos_config_t *config) {
   naos_system_init();
 }
 
-const naos_config_t *naos_config() { return naos_config_ref; }
+const naos_config_t *naos_config() {
+  // return config
+  return naos_config_ref;
+}
 
 const char *naos_scope_str(naos_scope_t scope) {
   switch (scope) {

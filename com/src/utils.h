@@ -1,5 +1,5 @@
-#ifndef _NAOS_UTILS_H
-#define _NAOS_UTILS_H
+#ifndef NAOS_UTILS_H
+#define NAOS_UTILS_H
 
 #include <esp_log.h>
 #include <stdint.h>
@@ -31,4 +31,4 @@ const char *naos_d2str(double num);
 char *naos_format(char *fmt, ...);
 char *naos_str_concat(const char *str1, const char *str2);
 
-#endif  // _NAOS_UTILS_H
+#endif  // NAOS_UTILS_H

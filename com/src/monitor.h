@@ -1,5 +1,5 @@
-#ifndef _NAOS_MONITOR_H
-#define _NAOS_MONITOR_H
+#ifndef NAOS_MONITOR_H
+#define NAOS_MONITOR_H
 
 typedef struct {
   float cpu0;
@@ -9,4 +9,4 @@ typedef struct {
 void naos_monitor_init();
 naos_cpu_usage_t naos_monitor_get();
 
-#endif  // _NAOS_MONITOR_H
+#endif  // NAOS_MONITOR_H

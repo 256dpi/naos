@@ -1,8 +1,8 @@
-#ifndef _NAOS_H
-#define _NAOS_H
+#ifndef NAOS_INTERNAL_H
+#define NAOS_INTERNAL_H
 
 #include <naos.h>
 
 const naos_config_t *naos_config();
 
-#endif  // _NAOS_H
+#endif  // NAOS_INTERNAL_H

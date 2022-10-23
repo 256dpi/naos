@@ -1,5 +1,5 @@
-#ifndef _NAOS_SETTINGS_H
-#define _NAOS_SETTINGS_H
+#ifndef NAOS_NET_H
+#define NAOS_NET_H
 
 typedef struct {
   bool started_wifi;
@@ -14,4 +14,4 @@ void naos_net_init();
 void naos_net_configure_wifi(const char *ssid, const char *password);
 naos_net_status_t naos_net_check();
 
-#endif  // _NAOS_SETTINGS_H
+#endif  // NAOS_NET_H

@@ -1,6 +1,6 @@
-#ifndef _NAOS_BLE_H
-#define _NAOS_BLE_H
+#ifndef NAOS_BLE_H
+#define NAOS_BLE_H
 
 void naos_ble_init();
 
-#endif  // _NAOS_BLE_H
+#endif  // NAOS_BLE_H

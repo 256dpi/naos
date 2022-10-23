@@ -1,5 +1,5 @@
-#ifndef _NAOS_CONFIG_H
-#define _NAOS_CONFIG_H
+#ifndef NAOS_CONFIG_H
+#define NAOS_CONFIG_H
 
 typedef enum {
   NAOS_CONFIG_NOTIFICATION_DESCRIPTION,
@@ -23,4 +23,4 @@ void naos_config_write_parm(const char* key, const char* value);
 void naos_config_register(naos_config_handler_t handler);
 void naos_config_notify(naos_config_notification_t notification);
 
-#endif  // _NAOS_CONFIG_H
+#endif  // NAOS_CONFIG_H

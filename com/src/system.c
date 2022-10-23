@@ -5,19 +5,19 @@
 #include <freertos/semphr.h>
 #include <nvs_flash.h>
 
-#include "system.h"
 #include "ble.h"
+#include "config.h"
+#include "system.h"
 #include "manager.h"
 #include "monitor.h"
 #include "mqtt.h"
 #include "naos.h"
+#include "net.h"
 #include "params.h"
 #include "settings.h"
 #include "task.h"
 #include "update.h"
 #include "utils.h"
-#include "net.h"
-#include "config.h"
 
 SemaphoreHandle_t naos_system_mutex;
 

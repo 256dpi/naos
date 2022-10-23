@@ -1,5 +1,5 @@
-#ifndef _NAOS_MQTT_H
-#define _NAOS_MQTT_H
+#ifndef NAOS_MQTT_H
+#define NAOS_MQTT_H
 
 #include <naos.h>
 
@@ -16,4 +16,4 @@ void naos_mqtt_start(const char *host, char *port, const char *client_id, const 
 naos_mqtt_status_t naos_mqtt_check();
 void naos_mqtt_stop();
 
-#endif  // _NAOS_MQTT_H
+#endif  // NAOS_MQTT_H

@@ -1,5 +1,5 @@
-#ifndef _NAOS_MANAGER_H
-#define _NAOS_MANAGER_H
+#ifndef NAOS_MANAGER_H
+#define NAOS_MANAGER_H
 
 #include <naos.h>
 
@@ -10,4 +10,4 @@ char* naos_manager_read_param(naos_param_t* param);
 void naos_manager_write_param(naos_param_t* param, const char* value);
 void naos_manager_stop();
 
-#endif  // _NAOS_MANAGER_H
+#endif  // NAOS_MANAGER_H
