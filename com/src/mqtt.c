@@ -3,6 +3,7 @@
 #include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+#include <esp_mqtt.h>
 
 #include "mqtt.h"
 #include "utils.h"

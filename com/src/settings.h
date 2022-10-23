@@ -1,6 +1,6 @@
-/**
- * The available settings.
- */
+#ifndef _NAOS_SETTINGS_H
+#define _NAOS_SETTINGS_H
+
 typedef enum {
   NAOS_SETTING_WIFI_SSID,
   NAOS_SETTING_WIFI_PASSWORD,
@@ -15,48 +15,12 @@ typedef enum {
   NAOS_SETTING_UNKNOWN = -1
 } naos_setting_t;
 
-/**
- * Get the common key for a setting.
- *
- * @param setting The setting.
- * @return The key string.
- */
 const char* naos_setting_to_key(naos_setting_t setting);
-
-/**
- * Get the setting for a common key.
- *
- * @param key The key.
- * @return The setting.
- */
 naos_setting_t naos_setting_from_key(const char* key);
 
-/**
- * Will initialize the settings subsystem.
- */
 void naos_settings_init();
-
-/**
- * Will read a setting form storage. The returned pointer must be freed after usage.
- *
- * @param setting The requested setting.
- * @return A pointer to the string value.
- */
 char* naos_settings_read(naos_setting_t setting);
-
-/**
- * Will write a setting to storage.
- *
- * @param setting The setting.
- * @param value The value.
- */
 void naos_settings_write(naos_setting_t setting, const char* value);
-
-/**
- * Create a comma separated list of settings.
- *
- * @note Returned pointer must be freed after usage.
- *
- * @return Pointer to list.
- */
 char* naos_settings_list();
+
+#endif  // _NAOS_SETTINGS_H

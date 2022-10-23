@@ -7,7 +7,6 @@ typedef struct {
 } naos_cpu_usage_t;
 
 void naos_monitor_init();
-
 naos_cpu_usage_t naos_monitor_get();
 
 #endif  // _NAOS_MONITOR_H

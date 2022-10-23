@@ -1,15 +1,7 @@
-/**
- * Initialize parameter management.
- *
- * @note Should only be called once on boot.
- */
-void naos_params_init();
+#ifndef _NAOS_SETTINGS_H
+#define _NAOS_PARAMS_H
 
-/**
- * Create a comma separated list of parameter:type pairs.
- *
- * @note Returned pointer must be freed after usage.
- *
- * @return Pointer to list.
- */
+void naos_params_init();
 char *naos_params_list();
+
+#endif  // _NAOS_SETTINGS_H

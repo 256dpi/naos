@@ -3,11 +3,6 @@
 
 #include <naos.h>
 
-/**
- * Will return the config passed to naos_init().
- *
- * @return
- */
 const naos_config_t *naos_config();
 
 #endif  // _NAOS_H
