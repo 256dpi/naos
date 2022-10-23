@@ -16,7 +16,6 @@
 #include "settings.h"
 
 #define NAOS_BLE_INITIALIZED_BIT (1 << 0)
-
 #define NAOS_BLE_MAX_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
 
 typedef struct {
@@ -27,9 +26,8 @@ typedef struct {
   naos_param_t *param;
 } naos_ble_conn_t;
 
-static EventGroupHandle_t naos_ble_init_event_group;
-
 static SemaphoreHandle_t naos_ble_mutex;
+static EventGroupHandle_t naos_ble_signal;
 
 static esp_ble_adv_params_t naos_ble_adv_params = {
     .adv_int_min = 0x20,
@@ -281,7 +279,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
 
         // set initialization bit if this is the last characteristic
         if (j + 1 == NAOS_BLE_NUM_CHARS) {
-          xEventGroupSetBits(naos_ble_init_event_group, NAOS_BLE_INITIALIZED_BIT);
+          xEventGroupSetBits(naos_ble_signal, NAOS_BLE_INITIALIZED_BIT);
         }
 
         // exit loop
@@ -567,7 +565,7 @@ void naos_ble_init() {
   naos_ble_mutex = xSemaphoreCreateMutex();
 
   // create even group
-  naos_ble_init_event_group = xEventGroupCreate();
+  naos_ble_signal = xEventGroupCreate();
 
   // iterate through all characteristics
   for (int i = 0; i < NAOS_BLE_NUM_CHARS; i++) {
@@ -615,7 +613,7 @@ void naos_ble_init() {
   esp_ble_gatts_app_register(0x55);
 
   // wait for initialization to complete
-  xEventGroupWaitBits(naos_ble_init_event_group, NAOS_BLE_INITIALIZED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
+  xEventGroupWaitBits(naos_ble_signal, NAOS_BLE_INITIALIZED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
 
   // register notification handler
   naos_config_register(naos_ble_notification_handler);

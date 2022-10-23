@@ -14,9 +14,7 @@ typedef struct {
 } naos_params_sync_item_t;
 
 static naos_params_sync_item_t naos_params_sync_registry[CONFIG_NAOS_SYNC_REGISTRY_SIZE];
-
 static size_t naos_params_sync_registry_count = 0;
-
 static nvs_handle naos_params_nvs_handle;
 
 static bool naos_params_add_sync(const char *param, naos_params_sync_item_t item) {

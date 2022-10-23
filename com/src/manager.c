@@ -16,11 +16,8 @@
 #include "net.h"
 
 static SemaphoreHandle_t naos_manager_mutex;
-
 static TaskHandle_t naos_manager_task;
-
 static bool naos_manager_process_started = false;
-
 static bool naos_manager_recording = false;
 
 static void naos_manager_send_heartbeat() {

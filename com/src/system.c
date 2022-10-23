@@ -26,7 +26,6 @@
 #endif
 
 SemaphoreHandle_t naos_system_mutex;
-
 static naos_status_t naos_system_status;
 
 static void naos_system_set_status(naos_status_t status) {

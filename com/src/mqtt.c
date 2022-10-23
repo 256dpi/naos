@@ -9,11 +9,8 @@
 #include "utils.h"
 
 static SemaphoreHandle_t naos_mqtt_mutex;
-
 static char *naos_mqtt_base_topic_prefix = NULL;
-
 static naos_mqtt_message_callback_t naos_mqtt_message_callback = NULL;
-
 static naos_mqtt_status_t naos_mqtt_status = {0};
 
 // returned topics must be freed after use

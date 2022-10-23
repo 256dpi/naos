@@ -9,7 +9,6 @@
 #include "net.h"
 
 static SemaphoreHandle_t naos_net_mutex;
-
 static naos_net_status_t naos_net_status = {0};
 
 #ifndef CONFIG_NAOS_WIFI_DISABLE

@@ -7,9 +7,7 @@
 #include "utils.h"
 
 static SemaphoreHandle_t naos_task_mutex;
-
 static TaskHandle_t naos_task_ref;
-
 static bool naos_task_started = false;
 
 static void naos_task_process() {
