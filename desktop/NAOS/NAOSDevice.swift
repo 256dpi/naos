@@ -111,8 +111,16 @@ public protocol NAOSDeviceDelegate {
 public class NAOSDevice: NSObject, CBPeripheralDelegate {
 	public private(set) var deviceType: String = ""
 	public private(set) var deviceName: String = ""
+	public private(set) var firmwareVersion: String = ""
 	public private(set) var connectionStatus: String = ""
 	public private(set) var batteryLevel: Float = -1
+	public private(set) var uptime: Int = 0
+	public private(set) var freeHeap: Int = 0
+	public private(set) var runningPartition: String = ""
+	public private(set) var wifiRSSI: Float = -1
+	public private(set) var cpu0Usage: Float = -1
+	public private(set) var cpu1Usage: Float = -1
+
 	public private(set) var protected: Bool = false
 	public private(set) var locked: Bool = false
 	public private(set) var availableSettings: [NAOSDeviceSetting] = []
@@ -411,6 +419,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 			// set device type and name
 			deviceType = kv["device_type"] ?? ""
 			deviceName = kv["device_name"] ?? ""
+			firmwareVersion = kv["firmware_version"] ?? ""
 
 		} else if rawChar.uuid == NAOSDeviceCharacteristic.lock.cbuuid() {
 			// save lock status
@@ -435,6 +444,12 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 			// set connection status and battery level
 			connectionStatus = kv["connection_status"] ?? ""
 			batteryLevel = Float(kv["battery_level"] ?? "-1") ?? -1
+			uptime = Int(kv["uptime"] ?? "") ?? -1
+			freeHeap = Int(kv["free_heap"] ?? "") ?? -1
+			runningPartition = kv["running_partition"] ?? ""
+			wifiRSSI = Float(kv["wifi_rssi"] ?? "-1") ?? -1
+			cpu0Usage = Float(kv["cpu0_usage"] ?? "-1") ?? -1
+			cpu1Usage = Float(kv["cpu1_usage"] ?? "-1") ?? -1
 
 			// notify delegate and return immediately if not refreshing
 			if !refreshing {

@@ -2,26 +2,33 @@
 #include <string.h>
 #include <esp_err.h>
 #include <esp_system.h>
+#include <esp_ota_ops.h>
 
 #include "config.h"
 #include "settings.h"
 #include "params.h"
 #include "manager.h"
+#include "monitor.h"
 #include "system.h"
 #include "utils.h"
 #include "naos.h"
+
+#ifndef CONFIG_NAOS_WIFI_DISABLE
+#include <esp_wifi.h>
+#endif
 
 #define NAOS_CONFIG_MAX_HANDLERS 8
 static naos_config_handler_t naos_config_handlers[NAOS_CONFIG_MAX_HANDLERS] = {0};
 static uint8_t naos_config_num_handlers = 0;
 
 char* naos_config_identify() {
-  // get type and name
+  // collect data
   const char* type = naos_config()->device_type;
   char* name = naos_settings_read(NAOS_SETTING_DEVICE_NAME);
+  const char* firmware = naos_config()->firmware_version;
 
   // assemble string
-  char* str = naos_format("device_type=%s,device_name=%s", type, name);
+  char* str = naos_format("device_type=%s,device_name=%s,firmware_version=%s", type, name, firmware);
   free(name);
 
   return str;
@@ -37,8 +44,23 @@ char* naos_config_describe() {
     battery = naos_config()->battery_level();
   }
 
+  // get signal strength
+  int8_t rssi = -1;
+#ifndef CONFIG_NAOS_WIFI_DISABLE
+  wifi_ap_record_t record = {0};
+  esp_wifi_sta_get_ap_info(&record);
+  rssi = record.rssi;
+#endif
+
+  // get CPU usage
+  naos_cpu_usage_t usage = naos_monitor_get();
+
   // assemble string
-  char* str = naos_format("connection_status=%s,battery_level=%.2f", status, battery);
+  char* str = naos_format(
+      "connection_status=%s,battery_level=%.2f,uptime=%d,free_heap=%d,running_partition=%s,wifi_rssi=%d,cpu0_usage=%."
+      "2f,cpu1_usage=%.2f",
+      status, battery, naos_millis(), esp_get_free_heap_size(), esp_ota_get_running_partition()->label, rssi,
+      usage.cpu0, usage.cpu1);
 
   return str;
 }
