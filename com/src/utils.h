@@ -60,6 +60,17 @@ const char *naos_i2str(int32_t num);
 const char *naos_d2str(double num);
 
 /**
+ * Format string with arguments.
+ *
+ * @note The caller is responsible to free the returned buffer.
+ *
+ * @param fmt The format.
+ * @param ... The arguments.
+ * @return The formatted string.
+ */
+char *naos_format(char *fmt, ...);
+
+/**
  * Will concatenate two strings and return a new one.
  *
  * @note The caller is responsible to free the returned buffer.

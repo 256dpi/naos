@@ -4,8 +4,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <nvs_flash.h>
-#include <string.h>
 
+#include "system.h"
 #include "ble.h"
 #include "manager.h"
 #include "monitor.h"
@@ -17,35 +17,21 @@
 #include "update.h"
 #include "utils.h"
 #include "net.h"
+#include "config.h"
 
 SemaphoreHandle_t naos_system_mutex;
 
 static naos_status_t naos_system_status;
 
-static naos_param_t *naos_system_selected_params[NAOS_BLE_MAX_CONNECTIONS] = {0};
-
-static const char *naos_system_status_string(naos_status_t status) {
-  switch (status) {
-    case NAOS_DISCONNECTED:
-      return "Disconnected";
-    case NAOS_CONNECTED:
-      return "Connected";
-    case NAOS_NETWORKED:
-      return "Networked";
-    default:
-      return "Unknown";
-  }
-}
-
 static void naos_system_set_status(naos_status_t status) {
   // get name
-  const char *name = naos_system_status_string(status);
+  const char *name = naos_status_str(status);
 
   // change state
   naos_system_status = status;
 
-  // update connection status
-  naos_ble_notify(NAOS_BLE_CHAR_CONNECTION_STATUS, (char *)name);
+  // notify connection status
+  naos_config_notify(NAOS_CONFIG_NOTIFICATION_DESCRIPTION);
 
   // call status callback if present
   if (naos_config()->status_callback != NULL) {
@@ -54,195 +40,8 @@ static void naos_system_set_status(naos_status_t status) {
     naos_release();
   }
 
+  // log new status
   ESP_LOGI(NAOS_LOG_TAG, "naos_system_set_status: %s", name);
-}
-
-static void naos_system_configure_wifi() {
-  // get ssid & password
-  char *wifi_ssid = naos_settings_read(NAOS_SETTING_WIFI_SSID);
-  char *wifi_password = naos_settings_read(NAOS_SETTING_WIFI_PASSWORD);
-
-  // configure Wi-Fi
-  naos_net_configure_wifi(wifi_ssid, wifi_password);
-
-  // free strings
-  free(wifi_ssid);
-  free(wifi_password);
-}
-
-static void naos_system_configure_mqtt() {
-  // get settings
-  char *mqtt_host = naos_settings_read(NAOS_SETTING_MQTT_HOST);
-  char *mqtt_port = naos_settings_read(NAOS_SETTING_MQTT_PORT);
-  char *mqtt_client_id = naos_settings_read(NAOS_SETTING_MQTT_CLIENT_ID);
-  char *mqtt_username = naos_settings_read(NAOS_SETTING_MQTT_USERNAME);
-  char *mqtt_password = naos_settings_read(NAOS_SETTING_MQTT_PASSWORD);
-  char *base_topic = naos_settings_read(NAOS_SETTING_BASE_TOPIC);
-
-  // stop MQTT
-  naos_mqtt_stop();
-
-  // start MQTT
-  naos_mqtt_start(mqtt_host, mqtt_port, mqtt_client_id, mqtt_username, mqtt_password, base_topic);
-
-  // free strings
-  free(mqtt_host);
-  free(mqtt_port);
-  free(mqtt_client_id);
-  free(mqtt_username);
-  free(mqtt_password);
-  free(base_topic);
-}
-
-static void naos_system_handle_command(const char *command) {
-  // acquire mutex
-  NAOS_LOCK(naos_system_mutex);
-
-  // TODO: Replace "boot-factory" with "boot-alpha" and "boot-beta"?
-
-  // detect command
-  bool ping = strcmp(command, "ping") == 0;
-  bool restart_mqtt = strcmp(command, "restart-mqtt") == 0;
-  bool restart_wifi = strcmp(command, "restart-wifi") == 0;
-  bool boot_factory = strcmp(command, "boot-factory") == 0;
-
-  // handle ping
-  if (ping) {
-    // call ping callback if present
-    if (naos_config()->ping_callback != NULL) {
-      naos_acquire();
-      naos_config()->ping_callback();
-      naos_release();
-    }
-  }
-
-  // handle boot factory
-  else if (boot_factory) {
-    // select factory partition
-    const esp_partition_t *part =
-        esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
-    if (part == NULL) {
-      part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_0, NULL);
-    }
-    if (part != NULL) {
-      ESP_ERROR_CHECK(esp_ota_set_boot_partition(part));
-    }
-
-    // restart chip
-    esp_restart();
-  }
-
-  // handle Wi-Fi restart
-  else if (restart_wifi) {
-    ESP_LOGI(NAOS_LOG_TAG, "naos_system_ble_callback: restart Wi-Fi");
-
-    // restart Wi-Fi
-    naos_system_configure_wifi();
-  }
-
-  // handle mqtt restart
-  else if (restart_mqtt) {
-    ESP_LOGI(NAOS_LOG_TAG, "naos_system_ble_callback: restart mqtt");
-
-    // restart MQTT
-    naos_system_configure_mqtt();
-  }
-
-  // release mutex
-  NAOS_UNLOCK(naos_system_mutex);
-}
-
-static char *naos_system_read_callback(naos_ble_conn_t *conn, naos_ble_char_t ch) {
-  switch (ch) {
-    case NAOS_BLE_CHAR_WIFI_SSID:
-      return naos_settings_read(NAOS_SETTING_WIFI_SSID);
-    case NAOS_BLE_CHAR_WIFI_PASSWORD:
-      return naos_settings_read(NAOS_SETTING_WIFI_PASSWORD);
-    case NAOS_BLE_CHAR_MQTT_HOST:
-      return naos_settings_read(NAOS_SETTING_MQTT_HOST);
-    case NAOS_BLE_CHAR_MQTT_PORT:
-      return naos_settings_read(NAOS_SETTING_MQTT_PORT);
-    case NAOS_BLE_CHAR_MQTT_CLIENT_ID:
-      return naos_settings_read(NAOS_SETTING_MQTT_CLIENT_ID);
-    case NAOS_BLE_CHAR_MQTT_USERNAME:
-      return naos_settings_read(NAOS_SETTING_MQTT_USERNAME);
-    case NAOS_BLE_CHAR_MQTT_PASSWORD:
-      return naos_settings_read(NAOS_SETTING_MQTT_PASSWORD);
-    case NAOS_BLE_CHAR_DEVICE_TYPE:
-      return strdup(naos_config()->device_type);
-    case NAOS_BLE_CHAR_DEVICE_NAME:
-      return naos_settings_read(NAOS_SETTING_DEVICE_NAME);
-    case NAOS_BLE_CHAR_BASE_TOPIC:
-      return naos_settings_read(NAOS_SETTING_BASE_TOPIC);
-    case NAOS_BLE_CHAR_CONNECTION_STATUS:
-      return strdup(naos_system_status_string(naos_system_status));
-    case NAOS_BLE_CHAR_BATTERY_LEVEL:
-      if (naos_config()->battery_level != NULL) {
-        return strdup(naos_d2str(naos_config()->battery_level()));
-      } else {
-        return strdup("-1");
-      }
-    case NAOS_BLE_CHAR_COMMAND:
-      return NULL;
-    case NAOS_BLE_CHAR_PARAMS_LIST:
-      return naos_params_list();
-    case NAOS_BLE_CHAR_PARAMS_SELECT:
-      return NULL;
-    case NAOS_BLE_CHAR_PARAMS_VALUE:
-      return naos_manager_read_param(naos_system_selected_params[conn->id]);
-    default:
-      return NULL;
-  }
-}
-
-static void naos_system_write_callback(naos_ble_conn_t *conn, naos_ble_char_t ch, const char *value) {
-  switch (ch) {
-    case NAOS_BLE_CHAR_WIFI_SSID:
-      naos_settings_write(NAOS_SETTING_WIFI_SSID, value);
-      return;
-    case NAOS_BLE_CHAR_WIFI_PASSWORD:
-      naos_settings_write(NAOS_SETTING_WIFI_PASSWORD, value);
-      return;
-    case NAOS_BLE_CHAR_MQTT_HOST:
-      naos_settings_write(NAOS_SETTING_MQTT_HOST, value);
-      return;
-    case NAOS_BLE_CHAR_MQTT_PORT:
-      naos_settings_write(NAOS_SETTING_MQTT_PORT, value);
-      return;
-    case NAOS_BLE_CHAR_MQTT_CLIENT_ID:
-      naos_settings_write(NAOS_SETTING_MQTT_CLIENT_ID, value);
-      return;
-    case NAOS_BLE_CHAR_MQTT_USERNAME:
-      naos_settings_write(NAOS_SETTING_MQTT_USERNAME, value);
-      return;
-    case NAOS_BLE_CHAR_MQTT_PASSWORD:
-      naos_settings_write(NAOS_SETTING_MQTT_PASSWORD, value);
-      return;
-    case NAOS_BLE_CHAR_DEVICE_TYPE:
-      return;
-    case NAOS_BLE_CHAR_DEVICE_NAME:
-      naos_settings_write(NAOS_SETTING_DEVICE_NAME, value);
-      return;
-    case NAOS_BLE_CHAR_BASE_TOPIC:
-      naos_settings_write(NAOS_SETTING_BASE_TOPIC, value);
-      return;
-    case NAOS_BLE_CHAR_CONNECTION_STATUS:
-    case NAOS_BLE_CHAR_BATTERY_LEVEL:
-      return;
-    case NAOS_BLE_CHAR_COMMAND:
-      naos_system_handle_command(value);
-      return;
-    case NAOS_BLE_CHAR_PARAMS_LIST:
-      return;
-    case NAOS_BLE_CHAR_PARAMS_SELECT:
-      naos_system_selected_params[conn->id] = naos_lookup(value);
-      return;
-    case NAOS_BLE_CHAR_PARAMS_VALUE:
-      naos_manager_write_param(naos_system_selected_params[conn->id], value);
-      return;
-    default:
-      return;
-  }
 }
 
 static void naos_system_task() {
@@ -335,7 +134,7 @@ void naos_system_init() {
   naos_manager_init();
 
   // initialize bluetooth stack
-  naos_ble_init(naos_system_read_callback, naos_system_write_callback);
+  naos_ble_init();
 
   // initialize network stack
   naos_net_init();
@@ -367,4 +166,82 @@ void naos_system_init() {
 naos_status_t naos_status() {
   // return current status
   return naos_system_status;
+}
+
+void naos_system_configure_wifi() {
+  // acquire mutex
+  NAOS_LOCK(naos_system_mutex);
+
+  // log call
+  ESP_LOGI(NAOS_LOG_TAG, "naos_system_configure_wifi");
+
+  // get settings
+  char *wifi_ssid = naos_settings_read(NAOS_SETTING_WIFI_SSID);
+  char *wifi_password = naos_settings_read(NAOS_SETTING_WIFI_PASSWORD);
+
+  // re-configure WiFi
+  naos_net_configure_wifi(wifi_ssid, wifi_password);
+
+  // free strings
+  free(wifi_ssid);
+  free(wifi_password);
+
+  // release mutex
+  NAOS_UNLOCK(naos_system_mutex);
+}
+
+void naos_system_configure_mqtt() {
+  // acquire mutex
+  NAOS_LOCK(naos_system_mutex);
+
+  // log call
+  ESP_LOGI(NAOS_LOG_TAG, "naos_system_configure_mqtt");
+
+  // get settings
+  char *mqtt_host = naos_settings_read(NAOS_SETTING_MQTT_HOST);
+  char *mqtt_port = naos_settings_read(NAOS_SETTING_MQTT_PORT);
+  char *mqtt_client_id = naos_settings_read(NAOS_SETTING_MQTT_CLIENT_ID);
+  char *mqtt_username = naos_settings_read(NAOS_SETTING_MQTT_USERNAME);
+  char *mqtt_password = naos_settings_read(NAOS_SETTING_MQTT_PASSWORD);
+  char *base_topic = naos_settings_read(NAOS_SETTING_BASE_TOPIC);
+
+  // stop MQTT
+  naos_mqtt_stop();
+
+  // start MQTT
+  naos_mqtt_start(mqtt_host, mqtt_port, mqtt_client_id, mqtt_username, mqtt_password, base_topic);
+
+  // free strings
+  free(mqtt_host);
+  free(mqtt_port);
+  free(mqtt_client_id);
+  free(mqtt_username);
+  free(mqtt_password);
+  free(base_topic);
+
+  // release mutex
+  NAOS_UNLOCK(naos_system_mutex);
+}
+
+void naos_system_boot_factory() {
+  // acquire mutex
+  NAOS_LOCK(naos_system_mutex);
+
+  // TODO: Replace "boot-factory" with "boot-alpha" and "boot-beta"?
+
+  // select factory partition
+  const esp_partition_t *part =
+      esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+  if (part == NULL) {
+    part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_0, NULL);
+  }
+  if (part != NULL) {
+    ESP_ERROR_CHECK(esp_ota_set_boot_partition(part));
+  }
+
+  // restart chip
+  esp_restart();
+
+  // release mutex
+  NAOS_UNLOCK(naos_system_mutex);
 }

@@ -23,10 +23,10 @@ public class NAOSDeviceProxy: NSObject, CBPeripheralDelegate {
 	}
 
 	public func peripheral(_: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-		parent.peripheralDidUpdateValueFor(characteristic: characteristic, error: error)
+		parent.peripheralDidUpdateValueFor(rawChar: characteristic, error: error)
 	}
 
 	public func peripheral(_: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
-		parent.peripheralDidWriteValueFor(characteristic: characteristic, error: error)
+		parent.peripheralDidWriteValueFor(rawChar: characteristic, error: error)
 	}
 }

@@ -129,7 +129,9 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 	func didRefresh() {
 		// update text fields
 		for (s, v) in device.settings {
-			textFieldForSetting(setting: s).stringValue = v
+			if let textField = textFieldForSetting(setting: s) {
+				textField.stringValue = v
+			}
 		}
 
 		// update connection status
@@ -288,12 +290,14 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 	func writeSettings(settings: [NAOSDeviceSetting]) {
 		for s in settings {
-			device.settings[s] = textFieldForSetting(setting: s).stringValue
-			device.write(setting: s)
+			if let textField = textFieldForSetting(setting: s) {
+				device.settings[s] = textField.stringValue
+				device.write(setting: s)
+			}
 		}
 	}
 
-	func textFieldForSetting(setting: NAOSDeviceSetting) -> NSTextField {
+	func textFieldForSetting(setting: NAOSDeviceSetting) -> NSTextField? {
 		switch setting {
 		case .wifiSSID:
 			return wifiSSIDTextField
@@ -313,6 +317,8 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 			return deviceNameTextField
 		case .baseTopic:
 			return baseTopicTextField
+		default:
+			return nil
 		}
 	}
 }

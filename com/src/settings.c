@@ -14,7 +14,7 @@ static const char* naos_setting_keys[] = {
 
 static nvs_handle naos_settings_nvs_handle;
 
-const char* naos_setting2key(naos_setting_t setting) {
+const char* naos_setting_to_key(naos_setting_t setting) {
   // check setting and return key
   if (setting >= 0 && setting < NAOS_SETTING_MAX) {
     return naos_setting_keys[setting];
@@ -23,7 +23,7 @@ const char* naos_setting2key(naos_setting_t setting) {
   }
 }
 
-naos_setting_t naos_key2setting(const char* key) {
+naos_setting_t naos_setting_from_key(const char* key) {
   // find setting
   for (size_t i = 0; i < NAOS_SETTING_MAX; i++) {
     if (strcmp(naos_setting_keys[i], key) == 0) {
@@ -40,8 +40,13 @@ void naos_settings_init() {
 }
 
 char* naos_settings_read(naos_setting_t setting) {
+  // check setting
+  if (setting < 0 || setting >= NAOS_SETTING_MAX) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
   // get key for setting
-  const char* key = naos_setting2key(setting);
+  const char* key = naos_setting_to_key(setting);
 
   // get value size
   size_t required_size = 0;
@@ -60,8 +65,13 @@ char* naos_settings_read(naos_setting_t setting) {
 }
 
 void naos_settings_write(naos_setting_t setting, const char* value) {
+  // check setting
+  if (setting < 0 || setting >= NAOS_SETTING_MAX) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
   // get key for setting
-  const char* key = naos_setting2key(setting);
+  const char* key = naos_setting_to_key(setting);
 
   // save value
   ESP_ERROR_CHECK(nvs_set_str(naos_settings_nvs_handle, key, value));

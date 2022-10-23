@@ -73,7 +73,7 @@ public class NAOSManager: NSObject {
 	internal func centralManagerDidUpdateState(state: CBManagerState) {
 		if state == .poweredOn {
 			// start scanning
-			centralManager.scanForPeripherals(withServices: [NAOSPrimaryServiceUUID], options: nil)
+			centralManager.scanForPeripherals(withServices: [NAOSDeviceService], options: nil)
 		} else if state == .poweredOff {
 			// clear all arrays
 			allDevices.removeAll()

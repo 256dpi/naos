@@ -21,7 +21,7 @@ typedef enum {
  * @param setting The setting.
  * @return The key string.
  */
-const char* naos_setting2key(naos_setting_t setting);
+const char* naos_setting_to_key(naos_setting_t setting);
 
 /**
  * Get the setting for a common key.
@@ -29,7 +29,7 @@ const char* naos_setting2key(naos_setting_t setting);
  * @param key The key.
  * @return The setting.
  */
-naos_setting_t naos_key2setting(const char* key);
+naos_setting_t naos_setting_from_key(const char* key);
 
 /**
  * Will initialize the settings subsystem.

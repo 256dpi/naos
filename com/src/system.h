@@ -1,11 +1,9 @@
 #ifndef _NAOS_SYSTEM_H
 #define _NAOS_SYSTEM_H
 
-/**
- * Initialize the main system.
- *
- * @note Should only be called once on boot.
- */
 void naos_system_init();
+void naos_system_configure_wifi();
+void naos_system_configure_mqtt();
+void naos_system_boot_factory();
 
 #endif  // _NAOS_SYSTEM_H

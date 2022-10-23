@@ -26,6 +26,30 @@ const char *naos_d2str(double num) {
   return str;
 }
 
+char *naos_format(char *fmt, ...) {
+  va_list va;
+
+  // get length
+  va_start(va, fmt);
+  int ret = vsnprintf(NULL, 0, fmt, va);
+  va_end(va);
+
+  // allocate
+  char *buf = malloc(ret + 1);
+
+  // format
+  va_start(va, fmt);
+  ret = vsnprintf(buf, ret + 1, fmt, va);
+  va_end(va);
+
+  // check ret
+  if (ret < 0) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  return buf;
+}
+
 char *naos_str_concat(const char *str1, const char *str2) {
   // allocate new buffer
   char *str = malloc(strlen(str1) + strlen(str2) + 1);
