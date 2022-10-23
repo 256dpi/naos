@@ -196,7 +196,7 @@ int8_t naos_net_wifi_rssi() {
   wifi_ap_record_t record = {0};
   esp_wifi_sta_get_ap_info(&record);
   return record.rssi;
-#elif
+#else
   return -1;
 #endif
 }
