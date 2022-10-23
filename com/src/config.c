@@ -40,8 +40,8 @@ char* naos_config_describe() {
 
   // get battery
   double battery = -1;
-  if (naos_config()->battery_level != NULL) {
-    battery = naos_config()->battery_level();
+  if (naos_config()->battery_callback != NULL) {
+    battery = naos_config()->battery_callback();
   }
 
   // get signal strength

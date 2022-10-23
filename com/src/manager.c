@@ -32,8 +32,8 @@ static void naos_manager_send_heartbeat() {
 
   // get battery level
   float battery_level = -1;
-  if (naos_config()->battery_level != NULL) {
-    battery_level = naos_config()->battery_level();
+  if (naos_config()->battery_callback != NULL) {
+    battery_level = naos_config()->battery_callback();
   }
 
   // get signal strength

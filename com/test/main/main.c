@@ -174,7 +174,7 @@ static naos_config_t config = {.device_type = "naos-test",
                                .update_callback = update,
                                .loop_callback = loop,
                                .loop_interval = 1000,
-                               .battery_level = battery,
+                               .battery_callback = battery,
                                .offline_callback = offline,
                                .status_callback = status,
                                .password = "secret"};

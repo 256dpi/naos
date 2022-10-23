@@ -243,12 +243,11 @@ typedef struct {
   void (*status_callback)(naos_status_t status);
 
   /**
-   * This callback is called to retrieve battery information. It should be provided if the device has a battery power
-   * source.
+   * This callback is called to retrieve battery information.
    *
    * @return A value between 0 and 1 indicating the battery charge level.
    */
-  float (*battery_level)();
+  float (*battery_callback)();
 
   /**
    * A password to protect Bluetooth access.
