@@ -55,12 +55,14 @@ char* naos_config_describe() {
   // get CPU usage
   naos_cpu_usage_t usage = naos_monitor_get();
 
+  // get running partition
+  const char* partition = esp_ota_get_running_partition()->label;
+
   // assemble string
   char* str = naos_format(
       "connection_status=%s,battery_level=%.2f,uptime=%d,free_heap=%d,running_partition=%s,wifi_rssi=%d,cpu0_usage=%."
       "2f,cpu1_usage=%.2f",
-      status, battery, naos_millis(), esp_get_free_heap_size(), esp_ota_get_running_partition()->label, rssi,
-      usage.cpu0, usage.cpu1);
+      status, battery, naos_millis(), esp_get_free_heap_size(), partition, rssi, usage.cpu0, usage.cpu1);
 
   return str;
 }
