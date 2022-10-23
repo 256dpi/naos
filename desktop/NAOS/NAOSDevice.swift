@@ -8,7 +8,7 @@ import CoreBluetooth
 
 internal let NAOSPrimaryServiceUUID = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
 
-internal enum NAOSDeviceProperty: String {
+internal enum NAOSDeviceCharacteristic: String {
     case wifiSSID = "802DD327-CA04-4C90-BE86-A3568275A510"
     case wifiPassword = "B3883261-F360-4CB7-9791-C3498FB2C151"
     case mqttHost = "193FFFF2-4542-4EBC-BE1F-4A355D40AC57"
@@ -57,15 +57,6 @@ internal enum NAOSDeviceProperty: String {
         }
     }
 
-    func optional() -> Bool {
-        switch self {
-        case .lockStatus, .unlock:
-            return true
-        default:
-            return false
-        }
-    }
-
     // these can be read out at all times
     static let readable = [
         wifiSSID, wifiPassword, mqttHost, mqttPort, mqttClientID, mqttUsername,
@@ -87,7 +78,7 @@ public enum NAOSDeviceSetting {
     case deviceName
     case baseTopic
 
-    internal func property() -> NAOSDeviceProperty {
+    internal func property() -> NAOSDeviceCharacteristic {
         switch self {
         case .wifiSSID:
             return .wifiSSID
@@ -175,7 +166,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
     private var primaryService: CBService?
     private var initialRefresh: Bool = true
     private var refreshing: Bool = false
-    private var tracker: [NAOSDeviceProperty: Bool] = [:]
+    private var tracker: [NAOSDeviceCharacteristic: Bool] = [:]
     private var currentParameter: Int = -1
     private var errorOccurred: Bool = false
 
@@ -190,7 +181,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
         }
 
         // initialize tracker
-        for c in NAOSDeviceProperty.all {
+        for c in NAOSDeviceCharacteristic.all {
             tracker[c] = false
         }
 
@@ -219,14 +210,10 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
         refreshing = true
 
         // iterate over all readable properties
-        for property in NAOSDeviceProperty.readable {
+        for property in NAOSDeviceCharacteristic.readable {
             // get characteristic
             guard let c = characteristicForProperty(property: property) else {
-                // raise error if not optional
-                if !property.optional() {
-                    raiseError(error: NAOSDeviceError.characteristicNotFound)
-                }
-
+				raiseError(error: NAOSDeviceError.characteristicNotFound)
                 return
             }
 
@@ -272,11 +259,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
     public func write(setting: NAOSDeviceSetting) {
         // get characteristic
         guard let c = characteristicForProperty(property: setting.property()) else {
-            // raise error if not optional
-            if !setting.property().optional() {
-                raiseError(error: NAOSDeviceError.characteristicNotFound)
-            }
-
+			raiseError(error: NAOSDeviceError.characteristicNotFound)
             return
         }
 
@@ -445,7 +428,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
         }
 
         // check if got an updated connection status
-        if characteristic.uuid == NAOSDeviceProperty.connectionStatus.cbuuid() {
+        if characteristic.uuid == NAOSDeviceCharacteristic.connectionStatus.cbuuid() {
             // set new connection status
             connectionStatus = value
 
@@ -455,13 +438,13 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
                     d.naosDeviceDidUpdateConnectionStatus(device: self)
                 }
             }
-        } else if characteristic.uuid == NAOSDeviceProperty.deviceType.cbuuid() {
+        } else if characteristic.uuid == NAOSDeviceCharacteristic.deviceType.cbuuid() {
             // save device type
             deviceType = value
-        } else if characteristic.uuid == NAOSDeviceProperty.batteryLevel.cbuuid() {
+        } else if characteristic.uuid == NAOSDeviceCharacteristic.batteryLevel.cbuuid() {
             // save battery level
             batteryLevel = Float(value) ?? -1
-        } else if characteristic.uuid == NAOSDeviceProperty.paramsList.cbuuid() {
+        } else if characteristic.uuid == NAOSDeviceCharacteristic.paramsList.cbuuid() {
             // reset list
             availableParameters = []
 
@@ -485,7 +468,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
                 // read parameter
                 peripheral.readValue(for: characteristicForProperty(property: .paramsValue)!)
             }
-        } else if characteristic.uuid == NAOSDeviceProperty.paramsValue.cbuuid() {
+        } else if characteristic.uuid == NAOSDeviceCharacteristic.paramsValue.cbuuid() {
             // update parameter
             parameters[availableParameters[currentParameter]] = value
 
@@ -502,7 +485,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
                 // read parameter
                 peripheral.readValue(for: characteristicForProperty(property: .paramsValue)!)
             }
-        } else if characteristic.uuid == NAOSDeviceProperty.lockStatus.cbuuid() {
+        } else if characteristic.uuid == NAOSDeviceCharacteristic.lockStatus.cbuuid() {
             // save lock status
             locked = value == "locked"
 
@@ -578,8 +561,8 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
         disconnect()
     }
 
-    private func propertyForCharacteristic(characteristic: CBCharacteristic) -> NAOSDeviceProperty? {
-        for property in NAOSDeviceProperty.all {
+    private func propertyForCharacteristic(characteristic: CBCharacteristic) -> NAOSDeviceCharacteristic? {
+        for property in NAOSDeviceCharacteristic.all {
             if property.cbuuid() == characteristic.uuid {
                 return property
             }
@@ -588,7 +571,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
         return nil
     }
 
-    private func characteristicForProperty(property: NAOSDeviceProperty) -> CBCharacteristic? {
+    private func characteristicForProperty(property: NAOSDeviceCharacteristic) -> CBCharacteristic? {
         if let s = primaryService {
             if let cs = s.characteristics {
                 for c in cs {
