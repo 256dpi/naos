@@ -17,9 +17,7 @@ static naos_mqtt_message_callback_t naos_mqtt_message_callback = NULL;
 static naos_mqtt_status_t naos_mqtt_status = {0};
 
 // returned topics must be freed after use
-static char *naos_mqtt_with_base_topic(const char *topic) {
-  return naos_concat(naos_mqtt_base_topic_prefix, topic);
-}
+static char *naos_mqtt_with_base_topic(const char *topic) { return naos_concat(naos_mqtt_base_topic_prefix, topic); }
 
 static naos_scope_t naos_mqtt_scope_from_topic(const char *topic) {
   if (strncmp(topic, naos_mqtt_base_topic_prefix, strlen(naos_mqtt_base_topic_prefix)) == 0) {
@@ -119,7 +117,10 @@ bool naos_subscribe(const char *topic, int qos, naos_scope_t scope) {
   }
 
   // subscribe
-  bool ret = esp_mqtt_subscribe(topic, qos);
+  bool ret = false;
+#ifndef CONFIG_NAOS_MQTT_DISABLE
+  ret = esp_mqtt_subscribe(topic, qos);
+#endif
 
   // free prefixed topic
   if (scope == NAOS_LOCAL) {
@@ -136,7 +137,10 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope) {
   }
 
   // unsubscribe
-  bool ret = esp_mqtt_unsubscribe(topic);
+  bool ret = false;
+#ifndef CONFIG_NAOS_MQTT_DISABLE
+  ret = esp_mqtt_unsubscribe(topic);
+#endif
 
   // free prefixed topic
   if (scope == NAOS_LOCAL) {
@@ -169,7 +173,10 @@ bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool 
   }
 
   // publish
-  bool ret = esp_mqtt_publish(topic, payload, len, qos, retained);
+  bool ret = false;
+#ifndef CONFIG_NAOS_MQTT_DISABLE
+  ret = esp_mqtt_publish(topic, payload, len, qos, retained);
+#endif
 
   // free prefixed topic
   if (scope == NAOS_LOCAL) {

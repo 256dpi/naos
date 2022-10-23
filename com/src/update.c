@@ -33,7 +33,7 @@ void naos_update_begin(size_t size) {
 
   // get update partition
   naos_update_partition = esp_ota_get_next_update_partition(NULL);
-  if(naos_update_partition != NULL) {
+  if (naos_update_partition != NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 

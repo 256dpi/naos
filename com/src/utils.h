@@ -6,7 +6,7 @@
 
 #define NAOS_LOG_TAG "naos"
 
-#define NAOS_LOCK(mutex) \
+#define NAOS_LOCK(mutex)                                    \
   ESP_LOGV(NAOS_LOG_TAG, "NAOS_LOCK: %s", __func__);        \
   do {                                                      \
   } while (xSemaphoreTake(mutex, portMAX_DELAY) != pdPASS); \

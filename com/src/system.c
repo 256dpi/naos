@@ -9,7 +9,6 @@
 #include "system.h"
 #include "manager.h"
 #include "monitor.h"
-#include "mqtt.h"
 #include "naos.h"
 #include "net.h"
 #include "params.h"
@@ -20,6 +19,10 @@
 
 #ifndef CONFIG_NAOS_BLE_DISABLE
 #include "ble.h"
+#endif
+
+#ifndef CONFIG_NAOS_MQTT_DISABLE
+#include "mqtt.h"
 #endif
 
 SemaphoreHandle_t naos_system_mutex;
@@ -55,17 +58,25 @@ static void naos_system_task() {
     // get old status
     naos_status_t old_status = naos_system_status;
 
-    // get statuses
+    // get net status
     naos_net_status_t net = naos_net_check();
-    naos_mqtt_status_t mqtt = naos_mqtt_check();
+
+#ifndef CONFIG_NAOS_MQTT_DISABLE
+    // get mqtt status
+    naos_mqtt_status_t mqtt = {0};
+    mqtt = naos_mqtt_check();
+#endif
 
     // calculate new status
     naos_status_t new_status = NAOS_DISCONNECTED;
-    if (net.connected_any && mqtt.connected) {
-      new_status = NAOS_NETWORKED;
-    } else if (net.connected_any) {
+    if (net.connected_any) {
       new_status = NAOS_CONNECTED;
     }
+#ifndef CONFIG_NAOS_MQTT_DISABLE
+    if (net.connected_any && mqtt.connected) {
+      new_status = NAOS_NETWORKED;
+    }
+#endif
 
     // handle status change
     if (naos_system_status != new_status) {
@@ -88,14 +99,17 @@ static void naos_system_task() {
       }
     }
 
+#ifndef CONFIG_NAOS_MQTT_DISABLE
     // manage mqtt
     if (mqtt.running && new_status == NAOS_DISCONNECTED) {
       // stop mqtt
       naos_mqtt_stop();
+
     } else if (!mqtt.running && new_status != NAOS_DISCONNECTED) {
       // start mqtt
       naos_system_configure_mqtt();
     }
+#endif
   }
 }
 
@@ -145,7 +159,9 @@ void naos_system_init() {
   naos_net_init();
 
   // initialize mqtt client
+#ifndef CONFIG_NAOS_MQTT_DISABLE
   naos_mqtt_init(naos_manager_handle);
+#endif
 
   // initialize OTA
   naos_update_init();
@@ -210,11 +226,13 @@ void naos_system_configure_mqtt() {
   char *mqtt_password = naos_settings_read(NAOS_SETTING_MQTT_PASSWORD);
   char *base_topic = naos_settings_read(NAOS_SETTING_BASE_TOPIC);
 
+#ifndef CONFIG_NAOS_MQTT_DISABLE
   // stop MQTT
   naos_mqtt_stop();
 
   // start MQTT
   naos_mqtt_start(mqtt_host, mqtt_port, mqtt_client_id, mqtt_username, mqtt_password, base_topic);
+#endif
 
   // free strings
   free(mqtt_host);
