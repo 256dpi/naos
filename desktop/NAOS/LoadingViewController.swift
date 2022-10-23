@@ -6,20 +6,20 @@
 import Cocoa
 
 class LoadingViewController: NSViewController {
-    @IBOutlet var progressIndicator: NSProgressIndicator!
-    @IBOutlet var label: NSTextField!
+	@IBOutlet var progressIndicator: NSProgressIndicator!
+	@IBOutlet var label: NSTextField!
 
-    var message: String = ""
+	var message: String = ""
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+	override func viewDidLoad() {
+		super.viewDidLoad()
 
-        // set message if available
-        if message != "" {
-            label.stringValue = message
-        }
+		// set message if available
+		if message != "" {
+			label.stringValue = message
+		}
 
-        // start spinning
-        progressIndicator.startAnimation(self)
-    }
+		// start spinning
+		progressIndicator.startAnimation(self)
+	}
 }

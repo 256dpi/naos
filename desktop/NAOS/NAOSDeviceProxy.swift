@@ -7,26 +7,26 @@ import Cocoa
 import CoreBluetooth
 
 public class NAOSDeviceProxy: NSObject, CBPeripheralDelegate {
-    var parent: NAOSDevice
+	var parent: NAOSDevice
 
-    init(parent: NAOSDevice) {
-        self.parent = parent
-        super.init()
-    }
+	init(parent: NAOSDevice) {
+		self.parent = parent
+		super.init()
+	}
 
-    public func peripheral(_: CBPeripheral, didDiscoverServices error: Error?) {
-        parent.peripheralDidDiscoverServices(error: error)
-    }
+	public func peripheral(_: CBPeripheral, didDiscoverServices error: Error?) {
+		parent.peripheralDidDiscoverServices(error: error)
+	}
 
-    public func peripheral(_: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        parent.peripheralDidDiscoverCharacteristicsFor(service: service, error: error)
-    }
+	public func peripheral(_: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+		parent.peripheralDidDiscoverCharacteristicsFor(service: service, error: error)
+	}
 
-    public func peripheral(_: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        parent.peripheralDidUpdateValueFor(characteristic: characteristic, error: error)
-    }
-    
-    public func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
-        parent.peripheralDidWriteValueFor(characteristic: characteristic, error: error)
-    }
+	public func peripheral(_: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+		parent.peripheralDidUpdateValueFor(characteristic: characteristic, error: error)
+	}
+
+	public func peripheral(_: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+		parent.peripheralDidWriteValueFor(characteristic: characteristic, error: error)
+	}
 }
