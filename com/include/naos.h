@@ -42,7 +42,12 @@ const char *naos_status_str(naos_status_t status);
 /**
  * The parameter types.
  */
-typedef enum { NAOS_STRING, NAOS_BOOL, NAOS_LONG, NAOS_DOUBLE } naos_type_t;
+typedef enum {
+  NAOS_STRING,
+  NAOS_BOOL,
+  NAOS_LONG,
+  NAOS_DOUBLE,
+} naos_type_t;
 
 /**
  * A single parameter.
@@ -104,7 +109,7 @@ typedef struct {
   const char *firmware_version;
 
   /**
-   * The managed parameters.
+   * The parameters to be registered during initialization.
    */
   naos_param_t *parameters;
   size_t num_parameters;

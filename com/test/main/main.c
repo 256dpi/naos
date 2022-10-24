@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <esp_eth.h>
-#include <esp_eth_phy.h>
 #include <esp_netif.h>
 
 #include <naos.h>

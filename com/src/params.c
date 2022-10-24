@@ -328,7 +328,7 @@ void naos_register(naos_param_t *param) {
 }
 
 naos_param_t *naos_lookup(const char *name) {
-  // find param
+  // find parameter
   for (size_t i = 0; i < naos_params_count; i++) {
     naos_param_t *param = naos_params[i];
     if (strcmp(name, param->name) == 0) {
@@ -348,11 +348,7 @@ char *naos_params_list() {
   // determine list length
   size_t length = 0;
   for (int i = 0; i < naos_params_count; i++) {
-    // get param
-    naos_param_t *param = naos_params[i];
-
-    // add length
-    length += strlen(param->name) + 3;
+    length += strlen(naos_params[i]->name) + 3;
   }
 
   // allocate buffer
