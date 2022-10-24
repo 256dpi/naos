@@ -61,26 +61,32 @@ typedef struct {
   /**
    * The default values set if the parameter is missing.
    */
-  const char *default_s;
-  bool default_b;
-  int32_t default_l;
-  double default_d;
+  union {
+    const char *default_s;
+    bool default_b;
+    int32_t default_l;
+    double default_d;
+  };
 
   /**
    * The synchronized variables.
    */
-  char **sync_s;
-  bool *sync_b;
-  int32_t *sync_l;
-  double *sync_d;
+  union {
+    char **sync_s;
+    bool *sync_b;
+    int32_t *sync_l;
+    double *sync_d;
+  };
 
   /**
    * The synchronization functions.
    */
-  void (*func_s)(char *);
-  void (*func_b)(bool);
-  void (*func_l)(int32_t);
-  void (*func_d)(double);
+  union {
+    void (*func_s)(char *);
+    void (*func_b)(bool);
+    void (*func_l)(int32_t);
+    void (*func_d)(double);
+  };
 } naos_param_t;
 
 /**
