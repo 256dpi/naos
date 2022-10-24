@@ -182,8 +182,13 @@ static naos_config_t config = {
     .password = "secret",
 };
 
-static naos_param_t param = {
-    .name = "dyn_s",
+static naos_param_t param_counter = {
+    .name = "counter",
+    .type = NAOS_STRING,
+};
+
+static naos_param_t param_message = {
+    .name = "message",
     .type = NAOS_STRING,
 };
 
@@ -192,7 +197,8 @@ void app_main() {
   naos_init(&config);
 
   // register parameter
-  naos_register(&param);
+  naos_register(&param_counter);
+  naos_register(&param_message);
 
   // initialize ethernet
   if (ETHERNET) {
