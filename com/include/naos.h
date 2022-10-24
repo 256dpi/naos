@@ -50,6 +50,13 @@ typedef enum {
 } naos_type_t;
 
 /**
+ * The parameter modes.
+ */
+typedef enum {
+  NAOS_VOLATILE = (1 << 0),
+} naos_mode_t;
+
+/**
  * A single parameter.
  */
 typedef struct {
@@ -62,6 +69,11 @@ typedef struct {
    * The parameter type.
    */
   naos_type_t type;
+
+  /**
+   * The parameter mode.
+   */
+  naos_mode_t mode;
 
   /**
    * The default values set if the parameter is missing.

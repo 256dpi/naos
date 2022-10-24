@@ -8,14 +8,12 @@
 
 #define ETHERNET false
 
-static int counter = 0;
-
-static char *message = NULL;
-
 static char *var_s = NULL;
 static int32_t var_l = 0;
 static double var_d = 0;
 static bool var_b = true;
+
+static int32_t counter = 0;
 
 static void setup() {
   // log info
@@ -34,10 +32,6 @@ static void online() {
   // subscribe to topic
   naos_subscribe("hello", 0, NAOS_LOCAL);
   naos_subscribe("fail", 0, NAOS_LOCAL);
-
-  // clear and update message
-  if (message != NULL) free(message);
-  message = strdup(naos_get("message"));
 }
 
 static void update(const char *param, const char *value) {
@@ -51,12 +45,6 @@ static void update(const char *param, const char *value) {
   // set counter
   if (strcmp(param, "counter") == 0) {
     counter = (int)strtol(value, NULL, 0);
-  }
-
-  // clear and update message
-  if (strcmp(param, "message") == 0) {
-    if (message != NULL) free(message);
-    message = strdup(value);
   }
 }
 
@@ -77,17 +65,13 @@ static void handle(const char *topic, uint8_t *payload, size_t len, naos_scope_t
 static void loop() {
   // increment counter
   counter++;
+  naos_set_l("counter", counter);
 
   // log info
   naos_log("loop callback called (%d)", counter);
 
   // publish message
-  naos_publish("hello", message, 0, false, NAOS_LOCAL);
-
-  // save counter
-  char buf[16];
-  snprintf(buf, 16, "%d", counter);
-  naos_set("counter", buf);
+  naos_publish("hello", naos_get("message"), 0, false, NAOS_LOCAL);
 }
 
 static float battery() {
@@ -185,6 +169,7 @@ static naos_config_t config = {
 static naos_param_t param_counter = {
     .name = "counter",
     .type = NAOS_STRING,
+    .mode = NAOS_VOLATILE,
 };
 
 static naos_param_t param_message = {
@@ -199,6 +184,9 @@ void app_main() {
   // register parameter
   naos_register(&param_counter);
   naos_register(&param_message);
+
+  // initialize counter
+  counter = naos_get_l("counter");
 
   // initialize ethernet
   if (ETHERNET) {

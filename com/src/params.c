@@ -103,8 +103,8 @@ void naos_register(naos_param_t *param) {
   // check parameter
   size_t required_size;
   esp_err_t err = nvs_get_str(naos_params_nvs_handle, param->name, NULL, &required_size);
-  if (err == ESP_ERR_NVS_NOT_FOUND) {
-    // set default value
+  if ((param->mode & NAOS_VOLATILE) != 0 || err == ESP_ERR_NVS_NOT_FOUND) {
+    // set default value if missing or volatile
     switch (param->type) {
       case NAOS_STRING:
         naos_set(param->name, param->default_s != NULL ? param->default_s : "");
@@ -120,7 +120,7 @@ void naos_register(naos_param_t *param) {
         break;
     }
   } else if (err == ESP_OK) {
-    // read stored value
+    // otherwise, read stored value
     char *buf = malloc(required_size);
     ESP_ERROR_CHECK(nvs_get_str(naos_params_nvs_handle, param->name, buf, &required_size));
     param->value = buf;
@@ -230,8 +230,10 @@ void naos_set(const char *name, const char *value) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
-  // set parameter
-  ESP_ERROR_CHECK(nvs_set_str(naos_params_nvs_handle, name, value));
+  // set parameter if not volatile
+  if ((param->mode & NAOS_VOLATILE) == 0) {
+    ESP_ERROR_CHECK(nvs_set_str(naos_params_nvs_handle, name, value));
+  }
 
   // update value
   free(param->value);
