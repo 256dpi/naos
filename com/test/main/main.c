@@ -154,34 +154,46 @@ static void eth_init() {
   ESP_ERROR_CHECK(esp_eth_start(eth_handle));
 }
 
-static naos_param_t params[] = {{.name = "var_s", .type = NAOS_STRING, .default_s = "", .sync_s = &var_s},
-                                {.name = "var_l", .type = NAOS_LONG, .default_l = 0, .sync_l = &var_l},
-                                {.name = "var_d", .type = NAOS_DOUBLE, .default_d = 0, .sync_d = &var_d},
-                                {.name = "var_b", .type = NAOS_BOOL, .default_b = true, .sync_b = &var_b},
-                                {.name = "fun_s", .type = NAOS_STRING, .default_s = "", .func_s = fun_s},
-                                {.name = "fun_l", .type = NAOS_LONG, .default_l = 0, .func_l = &fun_l},
-                                {.name = "fun_d", .type = NAOS_DOUBLE, .default_d = 0, .func_d = &fun_d},
-                                {.name = "fun_b", .type = NAOS_BOOL, .default_b = true, .func_b = &fun_b}};
+static naos_param_t params[] = {
+    {.name = "var_s", .type = NAOS_STRING, .default_s = "", .sync_s = &var_s},
+    {.name = "var_l", .type = NAOS_LONG, .default_l = 0, .sync_l = &var_l},
+    {.name = "var_d", .type = NAOS_DOUBLE, .default_d = 0, .sync_d = &var_d},
+    {.name = "var_b", .type = NAOS_BOOL, .default_b = true, .sync_b = &var_b},
+    {.name = "fun_s", .type = NAOS_STRING, .default_s = "", .func_s = fun_s},
+    {.name = "fun_l", .type = NAOS_LONG, .default_l = 0, .func_l = &fun_l},
+    {.name = "fun_d", .type = NAOS_DOUBLE, .default_d = 0, .func_d = &fun_d},
+    {.name = "fun_b", .type = NAOS_BOOL, .default_b = true, .func_b = &fun_b},
+};
 
-static naos_config_t config = {.device_type = "naos-test",
-                               .firmware_version = "0.0.1",
-                               .parameters = params,
-                               .num_parameters = 8,
-                               .setup_callback = setup,
-                               .ping_callback = ping,
-                               .online_callback = online,
-                               .message_callback = handle,
-                               .update_callback = update,
-                               .loop_callback = loop,
-                               .loop_interval = 1000,
-                               .battery_callback = battery,
-                               .offline_callback = offline,
-                               .status_callback = status,
-                               .password = "secret"};
+static naos_config_t config = {
+    .device_type = "naos-test",
+    .firmware_version = "0.0.1",
+    .parameters = params,
+    .num_parameters = 8,
+    .setup_callback = setup,
+    .ping_callback = ping,
+    .online_callback = online,
+    .message_callback = handle,
+    .update_callback = update,
+    .loop_callback = loop,
+    .loop_interval = 1000,
+    .battery_callback = battery,
+    .offline_callback = offline,
+    .status_callback = status,
+    .password = "secret",
+};
+
+static naos_param_t param = {
+    .name = "dyn_s",
+    .type = NAOS_STRING,
+};
 
 void app_main() {
   // initialize naos
   naos_init(&config);
+
+  // register parameter
+  naos_register(&param);
 
   // initialize ethernet
   if (ETHERNET) {

@@ -193,6 +193,11 @@ typedef struct {
 void naos_init(naos_config_t *config);
 
 /**
+ * Register a parameter.
+ */
+void naos_register(naos_param_t *param);
+
+/**
  * Will return the value of the requested parameter.
  *
  * @note A returned pointer is only valid until the next call.

@@ -6,6 +6,8 @@
 #include "naos.h"
 #include "utils.h"
 
+#define NAOS_PARAMS_SIZE 64
+
 typedef struct {
   naos_type_t type;
   const char *param;
@@ -13,9 +15,11 @@ typedef struct {
   void(*func);
 } naos_params_sync_item_t;
 
-static naos_params_sync_item_t naos_params_sync_registry[CONFIG_NAOS_SYNC_REGISTRY_SIZE];
-static size_t naos_params_sync_registry_count = 0;
 static nvs_handle naos_params_nvs_handle;
+static naos_param_t *naos_params[NAOS_PARAMS_SIZE] = {0};
+static size_t naos_params_count = 0;
+static naos_params_sync_item_t naos_params_sync_registry[CONFIG_NAOS_SYNC_REGISTRY_SIZE] = {0};
+static size_t naos_params_sync_registry_count = 0;
 
 static bool naos_params_add_sync(const char *param, naos_params_sync_item_t item) {
   // check param length
@@ -266,73 +270,89 @@ void naos_params_init() {
   // open nvs namespace
   ESP_ERROR_CHECK(nvs_open("naos-app", NVS_READWRITE, &naos_params_nvs_handle));
 
-  // initialize params
+  // register config parameters
   for (int i = 0; i < naos_config()->num_parameters; i++) {
-    // get param
-    naos_param_t param = naos_config()->parameters[i];
+    naos_register(&naos_config()->parameters[i]);
+  }
+}
 
-    // check_type
-    switch (param.type) {
-      case NAOS_STRING:
-        naos_ensure(param.name, param.default_s);
-        break;
-      case NAOS_BOOL:
-        naos_ensure_b(param.name, param.default_b);
-        break;
-      case NAOS_LONG:
-        naos_ensure_l(param.name, param.default_l);
-        break;
-      case NAOS_DOUBLE:
-        naos_ensure_d(param.name, param.default_d);
-        break;
-    }
+void naos_register(naos_param_t *param) {
+  // check size
+  if (naos_params_count >= NAOS_PARAMS_SIZE) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // store parameter
+  naos_params[naos_params_count] = param;
+  naos_params_count++;
+
+  // ensure parameter
+  switch (param->type) {
+    case NAOS_STRING:
+      naos_ensure(param->name, param->default_s != NULL ? param->default_s : "");
+      break;
+    case NAOS_BOOL:
+      naos_ensure_b(param->name, param->default_b);
+      break;
+    case NAOS_LONG:
+      naos_ensure_l(param->name, param->default_l);
+      break;
+    case NAOS_DOUBLE:
+      naos_ensure_d(param->name, param->default_d);
+      break;
   }
 
   // setup synchronization
-  for (int i = 0; i < naos_config()->num_parameters; i++) {
-    // get param
-    naos_param_t param = naos_config()->parameters[i];
+  switch (param->type) {
+    case NAOS_STRING:
+      if (param->sync_s != NULL || param->func_s != NULL) {
+        naos_sync(param->name, param->sync_s, param->func_s);
+      }
+      break;
+    case NAOS_BOOL:
+      if (param->sync_b != NULL || param->func_b != NULL) {
+        naos_sync_b(param->name, param->sync_b, param->func_b);
+      }
+      break;
+    case NAOS_LONG:
+      if (param->sync_l != NULL || param->func_l != NULL) {
+        naos_sync_l(param->name, param->sync_l, param->func_l);
+      }
+      break;
+    case NAOS_DOUBLE:
+      if (param->sync_d != NULL || param->func_d != NULL) {
+        naos_sync_d(param->name, param->sync_d, param->func_d);
+      }
+      break;
+  }
+}
 
-    // check_type
-    switch (param.type) {
-      case NAOS_STRING:
-        if (param.sync_s != NULL || param.func_s != NULL) {
-          naos_sync(param.name, param.sync_s, param.func_s);
-        }
-        break;
-      case NAOS_BOOL:
-        if (param.sync_b != NULL || param.func_b != NULL) {
-          naos_sync_b(param.name, param.sync_b, param.func_b);
-        }
-        break;
-      case NAOS_LONG:
-        if (param.sync_l != NULL || param.func_l != NULL) {
-          naos_sync_l(param.name, param.sync_l, param.func_l);
-        }
-        break;
-      case NAOS_DOUBLE:
-        if (param.sync_d != NULL || param.func_d != NULL) {
-          naos_sync_d(param.name, param.sync_d, param.func_d);
-        }
-        break;
+naos_param_t *naos_lookup(const char *name) {
+  // find param
+  for (size_t i = 0; i < naos_params_count; i++) {
+    naos_param_t *param = naos_params[i];
+    if (strcmp(name, param->name) == 0) {
+      return param;
     }
   }
+
+  return NULL;
 }
 
 char *naos_params_list() {
   // return empty string if there are no params
-  if (naos_config()->num_parameters == 0) {
+  if (naos_params_count == 0) {
     return strdup("");
   }
 
   // determine list length
   size_t length = 0;
-  for (int i = 0; i < naos_config()->num_parameters; i++) {
+  for (int i = 0; i < naos_params_count; i++) {
     // get param
-    naos_param_t param = naos_config()->parameters[i];
+    naos_param_t *param = naos_params[i];
 
     // add length
-    length += strlen(param.name) + 3;
+    length += strlen(param->name) + 3;
   }
 
   // allocate buffer
@@ -340,20 +360,20 @@ char *naos_params_list() {
 
   // write names
   size_t pos = 0;
-  for (int i = 0; i < naos_config()->num_parameters; i++) {
+  for (int i = 0; i < naos_params_count; i++) {
     // get param
-    naos_param_t param = naos_config()->parameters[i];
+    naos_param_t *param = naos_params[i];
 
     // copy name
-    strcpy(buf + pos, param.name);
-    pos += strlen(param.name);
+    strcpy(buf + pos, param->name);
+    pos += strlen(param->name);
 
     // write separator
     buf[pos] = ':';
     pos++;
 
     // write type
-    switch (param.type) {
+    switch (param->type) {
       case NAOS_STRING:
         buf[pos] = 's';
         break;
@@ -370,7 +390,7 @@ char *naos_params_list() {
     pos++;
 
     // write comma or zero
-    buf[pos] = (char)((i == naos_config()->num_parameters - 1) ? '\0' : ',');
+    buf[pos] = (char)((i == naos_params_count - 1) ? '\0' : ',');
     pos++;
   }
 
@@ -437,16 +457,4 @@ bool naos_unset(const char *param) {
   naos_params_update_sync(param);
 
   return true;
-}
-
-naos_param_t *naos_lookup(const char *name) {
-  // find param
-  for (size_t i = 0; i < naos_config()->num_parameters; i++) {
-    naos_param_t *p = &naos_config()->parameters[i];
-    if (strcmp(name, p->name) == 0) {
-      return p;
-    }
-  }
-
-  return NULL;
 }
