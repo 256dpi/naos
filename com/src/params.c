@@ -153,10 +153,10 @@ static bool naos_ensure_d(const char *param, double value) { return naos_ensure(
 static bool naos_sync(const char *param, char **pointer, void (*func)(char *)) {
   // prepare item
   naos_params_sync_item_t item = {
-          .type = NAOS_STRING,
-          .param = param,
-          .pointer = (void *)pointer,
-          .func = func,
+      .type = NAOS_STRING,
+      .param = param,
+      .pointer = (void *)pointer,
+      .func = func,
   };
 
   // add sync item
@@ -181,10 +181,10 @@ static bool naos_sync(const char *param, char **pointer, void (*func)(char *)) {
 static bool naos_sync_b(const char *param, bool *pointer, void (*func)(bool)) {
   // prepare item
   naos_params_sync_item_t item = {
-          .type = NAOS_BOOL,
-          .param = param,
-          .pointer = (void *)pointer,
-          .func = func,
+      .type = NAOS_BOOL,
+      .param = param,
+      .pointer = (void *)pointer,
+      .func = func,
   };
 
   // add sync item
@@ -209,10 +209,10 @@ static bool naos_sync_b(const char *param, bool *pointer, void (*func)(bool)) {
 static bool naos_sync_l(const char *param, int32_t *pointer, void (*func)(int32_t)) {
   // prepare item
   naos_params_sync_item_t item = {
-          .type = NAOS_LONG,
-          .param = param,
-          .pointer = (void *)pointer,
-          .func = func,
+      .type = NAOS_LONG,
+      .param = param,
+      .pointer = (void *)pointer,
+      .func = func,
   };
 
   // add sync item
@@ -237,10 +237,10 @@ static bool naos_sync_l(const char *param, int32_t *pointer, void (*func)(int32_
 static bool naos_sync_d(const char *param, double *pointer, void (*func)(double)) {
   // prepare item
   naos_params_sync_item_t item = {
-          .type = NAOS_DOUBLE,
-          .param = param,
-          .pointer = (void *)pointer,
-          .func = func,
+      .type = NAOS_DOUBLE,
+      .param = param,
+      .pointer = (void *)pointer,
+      .func = func,
   };
 
   // add sync item

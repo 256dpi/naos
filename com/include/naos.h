@@ -10,15 +10,8 @@
  * The messages scopes.
  */
 typedef enum {
-  /**
-   * The local scope denotes messages that are transferred under the configured base topic of the device.
-   */
-  NAOS_LOCAL,
-
-  /**
-   * The global scope denotes messages that are transferred on a global level.
-   */
-  NAOS_GLOBAL
+  NAOS_LOCAL, /** Messages are transferred under the configured base topic of the device. */
+  NAOS_GLOBAL /** Messages are transferred on a global level. */
 } naos_scope_t;
 
 /**
@@ -33,20 +26,9 @@ const char *naos_scope_str(naos_scope_t scope);
  * The system statuses.
  */
 typedef enum {
-  /**
-   * Device is disconnected.
-   */
-  NAOS_DISCONNECTED,
-
-  /**
-   * The device is connected to a WiFi access point.
-   */
-  NAOS_CONNECTED,
-
-  /**
-   * The device is networked with a MQTT broker.
-   */
-  NAOS_NETWORKED
+  NAOS_DISCONNECTED, /** Device is disconnected. */
+  NAOS_CONNECTED,    /** Device is connected to a WiFi access point. */
+  NAOS_NETWORKED     /** device is networked with a MQTT broker. */
 } naos_status_t;
 
 /**
@@ -60,27 +42,7 @@ const char *naos_status_str(naos_status_t status);
 /**
  * The parameter types.
  */
-typedef enum {
-  /**
-   * A string parameter.
-   */
-  NAOS_STRING,
-
-  /**
-   * A boolean parameter.
-   */
-  NAOS_BOOL,
-
-  /**
-   * A long parameter.
-   */
-  NAOS_LONG,
-
-  /**
-   * A double parameter.
-   */
-  NAOS_DOUBLE
-} naos_type_t;
+typedef enum { NAOS_STRING, NAOS_BOOL, NAOS_LONG, NAOS_DOUBLE } naos_type_t;
 
 /**
  * A single parameter.
@@ -139,10 +101,6 @@ typedef struct {
    * The managed parameters.
    */
   naos_param_t *parameters;
-
-  /**
-   * The number of managed parameters.
-   */
   size_t num_parameters;
 
   /**
@@ -243,37 +201,16 @@ void naos_init(naos_config_t *config);
 void naos_log(const char *fmt, ...);
 
 /**
- * Will return the value of the requested parameter. It will return an empty string for not set parameters.
+ * Will return the value of the requested parameter.
  *
- * @note The returned pointer is only valid until the next call.
+ * @note A returned pointer is only valid until the next call.
  *
  * @param param The parameter.
  * @return Pointer to value.
  */
 char *naos_get(const char *param);
-
-/**
- * Will return the value of the requested parameter.
- *
- * @param param The parameter.
- * @return The value.
- */
 bool naos_get_b(const char *param);
-
-/**
- * Will return the value of the requested parameter.
- *
- * @param param The parameter.
- * @return The value.
- */
 int32_t naos_get_l(const char *param);
-
-/**
- * Will return the value of the requested parameter.
- *
- * @param param The parameter.
- * @return The value.
- */
 double naos_get_d(const char *param);
 
 /**
@@ -283,29 +220,8 @@ double naos_get_d(const char *param);
  * @param value The value.
  */
 void naos_set(const char *param, const char *value);
-
-/**
- * Will set the value of the requested parameter. Synchronized parameters are automatically updated.
- *
- * @param param The parameter.
- * @param value The value.
- */
 void naos_set_b(const char *param, bool value);
-
-/**
- * Will set the value of the requested parameter. Synchronized parameters are automatically updated.
- *
- * @param param The parameter.
- * @param value The value.
- */
 void naos_set_l(const char *param, int32_t value);
-
-/**
- * Will set the value of the requested parameter. Synchronized parameters are automatically updated.
- *
- * @param param The parameter.
- * @param value The value.
- */
 void naos_set_d(const char *param, double value);
 
 /**
@@ -350,64 +266,16 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope);
  *
  * @param topic The topic.
  * @param payload The payload.
- * @param qos The QoS level.
- * @param retained The retained flag.
- * @param scope The scope.
- * @return Whether the command was successful.
- */
-bool naos_publish(const char *topic, const char *payload, int qos, bool retained, naos_scope_t scope);
-
-/**
- * Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is
- * local.
- *
- * @param topic The topic.
- * @param payload The payload.
- * @param qos The QoS level.
- * @param retained The retained flag.
- * @param scope The scope.
- * @return Whether the command was successful.
- */
-bool naos_publish_b(const char *topic, bool payload, int qos, bool retained, naos_scope_t scope);
-
-/**
- * Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is
- * local.
- *
- * @param topic The topic.
- * @param payload The payload.
- * @param qos The QoS level.
- * @param retained The retained flag.
- * @param scope The scope.
- * @return Whether the command was successful.
- */
-bool naos_publish_l(const char *topic, int32_t payload, int qos, bool retained, naos_scope_t scope);
-
-/**
- * Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is
- * local.
- *
- * @param topic The topic.
- * @param payload The payload.
- * @param qos The QoS level.
- * @param retained The retained flag.
- * @param scope The scope.
- * @return Whether the command was successful.
- */
-bool naos_publish_d(const char *topic, double payload, int qos, bool retained, naos_scope_t scope);
-
-/**
- * Publish to the specified topic. The topic is automatically prefixed with the configured base topic if the scope is
- * local.
- *
- * @param topic The topic.
- * @param payload The payload.
  * @param len The payload length.
  * @param qos The QoS level.
  * @param retained The retained flag.
  * @param scope The scope.
  * @return Whether the command was successful.
  */
+bool naos_publish(const char *topic, const char *payload, int qos, bool retained, naos_scope_t scope);
+bool naos_publish_b(const char *topic, bool payload, int qos, bool retained, naos_scope_t scope);
+bool naos_publish_l(const char *topic, int32_t payload, int qos, bool retained, naos_scope_t scope);
+bool naos_publish_d(const char *topic, double payload, int qos, bool retained, naos_scope_t scope);
 bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool retained, naos_scope_t scope);
 
 /**
