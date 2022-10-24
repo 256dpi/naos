@@ -193,14 +193,6 @@ typedef struct {
 void naos_init(naos_config_t *config);
 
 /**
- * The message will be printed to the serial port and published to the broker if logging is activated.
- *
- * @param fmt The message format.
- * @param ... The used arguments.
- */
-void naos_log(const char *fmt, ...);
-
-/**
  * Will return the value of the requested parameter.
  *
  * @note A returned pointer is only valid until the next call.
@@ -282,6 +274,14 @@ bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool 
  * Returns the current status.
  */
 naos_status_t naos_status();
+
+/**
+ * The message will be printed to the serial port and published to the broker if logging is activated.
+ *
+ * @param fmt The message format.
+ * @param ... The used arguments.
+ */
+void naos_log(const char *fmt, ...);
 
 /**
  * Returns the elapsed milliseconds since the start.
