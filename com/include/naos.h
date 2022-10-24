@@ -97,63 +97,27 @@ typedef struct {
   naos_type_t type;
 
   /**
-   * The default string value.
+   * The default values set if the parameter is missing.
    */
   const char *default_s;
-
-  /**
-   * The default boolean value.
-   */
   bool default_b;
-
-  /**
-   * The default long value.
-   */
   int32_t default_l;
-
-  /**
-   * The default double value.
-   */
   double default_d;
 
   /**
-   * The synchronized string variable.
+   * The synchronized variables.
    */
   char **sync_s;
-
-  /**
-   * The synchronized boolean variable.
-   */
   bool *sync_b;
-
-  /**
-   * The synchronized long variable.
-   */
   int32_t *sync_l;
-
-  /**
-   * The synchronized double variable.
-   */
   double *sync_d;
 
   /**
-   * The string synchronization function.
+   * The synchronization functions.
    */
   void (*func_s)(char *);
-
-  /**
-   * The boolean synchronization function.
-   */
   void (*func_b)(bool);
-
-  /**
-   * The long synchronization function.
-   */
   void (*func_l)(int32_t);
-
-  /**
-   * The double synchronization function.
-   */
   void (*func_d)(double);
 } naos_param_t;
 
@@ -345,108 +309,12 @@ void naos_set_l(const char *param, int32_t value);
 void naos_set_d(const char *param, double value);
 
 /**
- * Ensure a default value of a parameter if it is missing.
- *
- * @param param The parameter.
- * @param value The value.
- * @return Whether the parameter was set.
- */
-bool naos_ensure(const char *param, const char *value);
-
-/**
- * Ensure a default value of a parameter if it is missing.
- *
- * @param param The parameter.
- * @param value The value.
- * @return Whether the parameter was set.
- */
-bool naos_ensure_b(const char *param, bool value);
-
-/**
- * Ensure a default value of a parameter if it is missing.
- *
- * @param param The parameter.
- * @param value The value.
- * @return Whether the parameter was set.
- */
-bool naos_ensure_l(const char *param, int32_t value);
-
-/**
- * Ensure a default value of a parameter if it is missing.
- *
- * @param param The parameter.
- * @param value The value.
- * @return Whether the parameter was set.
- */
-bool naos_ensure_d(const char *param, double value);
-
-/**
  * Will unset the requested parameter. Synchronized parameters are automatically updated.
  *
  * @param param The parameter.
  * @return Whether the parameter was unset.
  */
 bool naos_unset(const char *param);
-
-/**
- * Will automatically apply parameter modifications and set the specified pointer to a buffer that contains the set
- * value or an empty string if unset. Alternatively, it may just call the provided function with the new value or a
- * combination if both mechanisms. It will read, set and yield the currently stored value when invoked.
- *
- * @note This function should only be called from app_main() to ensure only one synchronization is registered per
- * parameter.
- *
- * @param param The parameter.
- * @param pointer The pointer.
- * @param func The function.
- * @return Whether the registration was successful.
- */
-bool naos_sync(const char *param, char **pointer, void (*func)(char *));
-
-/**
- * Will automatically apply parameter modifications and set the specified pointer to a buffer that contains the set
- * value or an empty string if unset. Alternatively, it may just call the provided function with the new value or a
- * combination if both mechanisms. It will read, set and yield the currently stored value when invoked.
- *
- * @note This function should only be called from app_main() to ensure only one synchronization is registered per
- * parameter.
- *
- * @param param The parameter.
- * @param pointer The pointer.
- * @param func The function.
- * @return Whether the registration was successful.
- */
-bool naos_sync_b(const char *param, bool *pointer, void (*func)(bool));
-
-/**
- * Will automatically apply parameter modifications and set the specified pointer to a buffer that contains the set
- * value or an empty string if unset. Alternatively, it may just call the provided function with the new value or a
- * combination if both mechanisms. It will read, set and yield the currently stored value when invoked.
- *
- * @note This function should only be called from app_main() to ensure only one synchronization is registered per
- * parameter.
- *
- * @param param The parameter.
- * @param pointer The pointer.
- * @param func The function.
- * @return Whether the registration was successful.
- */
-bool naos_sync_l(const char *param, int32_t *pointer, void (*func)(int32_t));
-
-/**
- * Will automatically apply parameter modifications and set the specified pointer to a buffer that contains the set
- * value or an empty string if unset. Alternatively, it may just call the provided function with the new value or a
- * combination if both mechanisms. It will read, set and yield the currently stored value when invoked.
- *
- * @note This function should only be called from app_main() to ensure only one synchronization is registered per
- * parameter.
- *
- * @param param The parameter.
- * @param pointer The pointer.
- * @param func The function.
- * @return Whether the registration was successful.
- */
-bool naos_sync_d(const char *param, double *pointer, void (*func)(double));
 
 /**
  * Will lookup the specified parameter.

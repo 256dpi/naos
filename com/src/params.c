@@ -130,6 +130,138 @@ static void naos_params_update_sync(const char *param) {
   }
 }
 
+static bool naos_ensure(const char *param, const char *value) {
+  // check parameter
+  size_t required_size;
+  esp_err_t err = nvs_get_str(naos_params_nvs_handle, param, NULL, &required_size);
+  if (err == ESP_ERR_NVS_NOT_FOUND) {
+    naos_set(param, value);
+    return true;
+  } else {
+    ESP_ERROR_CHECK(err);
+  }
+
+  return false;
+}
+
+static bool naos_ensure_b(const char *param, bool value) { return naos_ensure(param, naos_i2str(value)); }
+
+static bool naos_ensure_l(const char *param, int32_t value) { return naos_ensure(param, naos_i2str(value)); }
+
+static bool naos_ensure_d(const char *param, double value) { return naos_ensure(param, naos_d2str(value)); }
+
+static bool naos_sync(const char *param, char **pointer, void (*func)(char *)) {
+  // prepare item
+  naos_params_sync_item_t item = {
+          .type = NAOS_STRING,
+          .param = param,
+          .pointer = (void *)pointer,
+          .func = func,
+  };
+
+  // add sync item
+  bool ret = naos_params_add_sync(param, item);
+
+  // get value
+  char *value = naos_get(param);
+
+  // set value
+  if (pointer != NULL) {
+    *pointer = strdup(value);
+  }
+
+  // yield value
+  if (func != NULL) {
+    func(value);
+  }
+
+  return ret;
+}
+
+static bool naos_sync_b(const char *param, bool *pointer, void (*func)(bool)) {
+  // prepare item
+  naos_params_sync_item_t item = {
+          .type = NAOS_BOOL,
+          .param = param,
+          .pointer = (void *)pointer,
+          .func = func,
+  };
+
+  // add sync item
+  bool ret = naos_params_add_sync(param, item);
+
+  // get value
+  bool value = naos_get_b(param);
+
+  // set value
+  if (pointer != NULL) {
+    *pointer = value;
+  }
+
+  // yield value
+  if (func != NULL) {
+    func(value);
+  }
+
+  return ret;
+}
+
+static bool naos_sync_l(const char *param, int32_t *pointer, void (*func)(int32_t)) {
+  // prepare item
+  naos_params_sync_item_t item = {
+          .type = NAOS_LONG,
+          .param = param,
+          .pointer = (void *)pointer,
+          .func = func,
+  };
+
+  // add sync item
+  bool ret = naos_params_add_sync(param, item);
+
+  // get value
+  int32_t value = naos_get_l(param);
+
+  // set value
+  if (pointer != NULL) {
+    *pointer = value;
+  }
+
+  // yield value
+  if (func != NULL) {
+    func(value);
+  }
+
+  return ret;
+}
+
+static bool naos_sync_d(const char *param, double *pointer, void (*func)(double)) {
+  // prepare item
+  naos_params_sync_item_t item = {
+          .type = NAOS_DOUBLE,
+          .param = param,
+          .pointer = (void *)pointer,
+          .func = func,
+  };
+
+  // add sync item
+  bool ret = naos_params_add_sync(param, item);
+
+  // get value
+  double value = naos_get_d(param);
+
+  // set value
+  if (pointer != NULL) {
+    *pointer = value;
+  }
+
+  // yield value
+  if (func != NULL) {
+    func(value);
+  }
+
+  return ret;
+}
+
 void naos_params_init() {
   // open nvs namespace
   ESP_ERROR_CHECK(nvs_open("naos-app", NVS_READWRITE, &naos_params_nvs_handle));
@@ -292,26 +424,6 @@ void naos_set_l(const char *param, int32_t value) { naos_set(param, naos_i2str(v
 
 void naos_set_d(const char *param, double value) { naos_set(param, naos_d2str(value)); }
 
-bool naos_ensure(const char *param, const char *value) {
-  // check parameter
-  size_t required_size;
-  esp_err_t err = nvs_get_str(naos_params_nvs_handle, param, NULL, &required_size);
-  if (err == ESP_ERR_NVS_NOT_FOUND) {
-    naos_set(param, value);
-    return true;
-  } else {
-    ESP_ERROR_CHECK(err);
-  }
-
-  return false;
-}
-
-bool naos_ensure_b(const char *param, bool value) { return naos_ensure(param, naos_i2str(value)); }
-
-bool naos_ensure_l(const char *param, int32_t value) { return naos_ensure(param, naos_i2str(value)); }
-
-bool naos_ensure_d(const char *param, double value) { return naos_ensure(param, naos_d2str(value)); }
-
 bool naos_unset(const char *param) {
   // erase parameter
   esp_err_t err = nvs_erase_key(naos_params_nvs_handle, param);
@@ -325,118 +437,6 @@ bool naos_unset(const char *param) {
   naos_params_update_sync(param);
 
   return true;
-}
-
-bool naos_sync(const char *param, char **pointer, void (*func)(char *)) {
-  // prepare item
-  naos_params_sync_item_t item = {
-      .type = NAOS_STRING,
-      .param = param,
-      .pointer = (void *)pointer,
-      .func = func,
-  };
-
-  // add sync item
-  bool ret = naos_params_add_sync(param, item);
-
-  // get value
-  char *value = naos_get(param);
-
-  // set value
-  if (pointer != NULL) {
-    *pointer = strdup(value);
-  }
-
-  // yield value
-  if (func != NULL) {
-    func(value);
-  }
-
-  return ret;
-}
-
-bool naos_sync_b(const char *param, bool *pointer, void (*func)(bool)) {
-  // prepare item
-  naos_params_sync_item_t item = {
-      .type = NAOS_BOOL,
-      .param = param,
-      .pointer = (void *)pointer,
-      .func = func,
-  };
-
-  // add sync item
-  bool ret = naos_params_add_sync(param, item);
-
-  // get value
-  bool value = naos_get_b(param);
-
-  // set value
-  if (pointer != NULL) {
-    *pointer = value;
-  }
-
-  // yield value
-  if (func != NULL) {
-    func(value);
-  }
-
-  return ret;
-}
-
-bool naos_sync_l(const char *param, int32_t *pointer, void (*func)(int32_t)) {
-  // prepare item
-  naos_params_sync_item_t item = {
-      .type = NAOS_LONG,
-      .param = param,
-      .pointer = (void *)pointer,
-      .func = func,
-  };
-
-  // add sync item
-  bool ret = naos_params_add_sync(param, item);
-
-  // get value
-  int32_t value = naos_get_l(param);
-
-  // set value
-  if (pointer != NULL) {
-    *pointer = value;
-  }
-
-  // yield value
-  if (func != NULL) {
-    func(value);
-  }
-
-  return ret;
-}
-
-bool naos_sync_d(const char *param, double *pointer, void (*func)(double)) {
-  // prepare item
-  naos_params_sync_item_t item = {
-      .type = NAOS_DOUBLE,
-      .param = param,
-      .pointer = (void *)pointer,
-      .func = func,
-  };
-
-  // add sync item
-  bool ret = naos_params_add_sync(param, item);
-
-  // get value
-  double value = naos_get_d(param);
-
-  // set value
-  if (pointer != NULL) {
-    *pointer = value;
-  }
-
-  // yield value
-  if (func != NULL) {
-    func(value);
-  }
-
-  return ret;
 }
 
 naos_param_t *naos_lookup(const char *name) {
