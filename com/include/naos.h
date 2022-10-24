@@ -92,6 +92,11 @@ typedef struct {
     void (*func_l)(int32_t);
     void (*func_d)(double);
   };
+
+  /**
+   * The current value.
+   */
+  char *value;
 } naos_param_t;
 
 /**

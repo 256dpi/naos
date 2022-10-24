@@ -14,27 +14,24 @@ static void naos_params_update(naos_param_t *param) {
   // update pointer
   switch (param->type) {
     case NAOS_STRING: {
-      // get value
-      const char *value = naos_get(param->name);
-
       // update pointer
       if (param->sync_s != NULL) {
         if (*param->sync_s != NULL) {
           free(*param->sync_s);
         }
-        *param->sync_s = strdup(value);
+        *param->sync_s = strdup(param->value);
       }
 
       // yield value
       if (param->func_s != NULL) {
-        param->func_s(value);
+        param->func_s(param->value);
       }
 
       break;
     }
     case NAOS_BOOL: {
       // get value
-      bool value = naos_get_b(param->name);
+      bool value = strtol(param->value, NULL, 10) == 1;
 
       // update pointer
       if (param->sync_b != NULL) {
@@ -50,7 +47,7 @@ static void naos_params_update(naos_param_t *param) {
     }
     case NAOS_LONG: {
       // get value
-      int32_t value = naos_get_l(param->name);
+      int32_t value = (int32_t)strtol(param->value, NULL, 10);
 
       // update pointer
       if (param->sync_l != NULL) {
@@ -66,7 +63,7 @@ static void naos_params_update(naos_param_t *param) {
     }
     case NAOS_DOUBLE: {
       // get value
-      double value = naos_get_d(param->name);
+      double value = strtod(param->name, NULL);
 
       // update pointer
       if (param->sync_d != NULL) {
@@ -103,10 +100,11 @@ void naos_register(naos_param_t *param) {
   naos_params_registry[naos_params_count] = param;
   naos_params_count++;
 
-  // ensure parameter
+  // check parameter
   size_t required_size;
   esp_err_t err = nvs_get_str(naos_params_nvs_handle, param->name, NULL, &required_size);
   if (err == ESP_ERR_NVS_NOT_FOUND) {
+    // set default value
     switch (param->type) {
       case NAOS_STRING:
         naos_set(param->name, param->default_s != NULL ? param->default_s : "");
@@ -121,6 +119,11 @@ void naos_register(naos_param_t *param) {
         naos_set_d(param->name, param->default_d);
         break;
     }
+  } else if (err == ESP_OK) {
+    // read stored value
+    char *buf = malloc(required_size);
+    ESP_ERROR_CHECK(nvs_get_str(naos_params_nvs_handle, param->name, buf, &required_size));
+    param->value = buf;
   } else {
     ESP_ERROR_CHECK(err);
   }
@@ -202,28 +205,7 @@ const char *naos_get(const char *name) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
-  // prepare static buffer
-  static char *buf;
-  if (buf != NULL) {
-    free(buf);
-    buf = NULL;
-  }
-
-  // get param size
-  size_t required_size;
-  esp_err_t err = nvs_get_str(naos_params_nvs_handle, name, NULL, &required_size);
-  if (err == ESP_ERR_NVS_NOT_FOUND) {
-    buf = strdup("");
-    return buf;
-  } else {
-    ESP_ERROR_CHECK(err);
-  }
-
-  // allocate size
-  buf = malloc(required_size);
-  ESP_ERROR_CHECK(nvs_get_str(naos_params_nvs_handle, name, buf, &required_size));
-
-  return buf;
+  return param->value;
 }
 
 bool naos_get_b(const char *param) {
@@ -250,6 +232,10 @@ void naos_set(const char *name, const char *value) {
 
   // set parameter
   ESP_ERROR_CHECK(nvs_set_str(naos_params_nvs_handle, name, value));
+
+  // update value
+  free(param->value);
+  param->value = strdup(value);
 
   // sync param
   naos_params_update(param);
