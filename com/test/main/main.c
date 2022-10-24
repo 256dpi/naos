@@ -105,7 +105,7 @@ static void status(naos_status_t status) {
   naos_log("status changed to %s", naos_status_str(status));
 }
 
-static void fun_s(char *str) {
+static void fun_s(const char *str) {
   // log info
   naos_log("fun_s: %s", str);
 }

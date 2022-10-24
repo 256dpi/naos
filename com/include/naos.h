@@ -87,7 +87,7 @@ typedef struct {
    * The synchronization functions.
    */
   union {
-    void (*func_s)(char *);
+    void (*func_s)(const char *);
     void (*func_b)(bool);
     void (*func_l)(int32_t);
     void (*func_d)(double);
@@ -216,7 +216,7 @@ void naos_register(naos_param_t *param);
  * @param param The parameter.
  * @return Pointer to value.
  */
-char *naos_get(const char *param);
+const char *naos_get(const char *param);
 bool naos_get_b(const char *param);
 int32_t naos_get_l(const char *param);
 double naos_get_d(const char *param);

@@ -184,7 +184,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     char *param = (char *)topic + 9;
 
     // get value
-    char *value = naos_get(param);
+    const char *value = naos_get(param);
 
     // construct topic
     char *t = naos_concat("naos/value/", param);

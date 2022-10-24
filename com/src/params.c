@@ -15,7 +15,7 @@ static void naos_params_update(naos_param_t *param) {
   switch (param->type) {
     case NAOS_STRING: {
       // get value
-      char *value = naos_get(param->name);
+      const char *value = naos_get(param->name);
 
       // update pointer
       if (param->sync_s != NULL) {
