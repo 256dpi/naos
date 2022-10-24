@@ -83,26 +83,6 @@ static void naos_params_update(naos_param_t *param) {
   }
 }
 
-static bool naos_ensure(const char *param, const char *value) {
-  // check parameter
-  size_t required_size;
-  esp_err_t err = nvs_get_str(naos_params_nvs_handle, param, NULL, &required_size);
-  if (err == ESP_ERR_NVS_NOT_FOUND) {
-    naos_set(param, value);
-    return true;
-  } else {
-    ESP_ERROR_CHECK(err);
-  }
-
-  return false;
-}
-
-static bool naos_ensure_b(const char *param, bool value) { return naos_ensure(param, naos_i2str(value)); }
-
-static bool naos_ensure_l(const char *param, int32_t value) { return naos_ensure(param, naos_i2str(value)); }
-
-static bool naos_ensure_d(const char *param, double value) { return naos_ensure(param, naos_d2str(value)); }
-
 void naos_params_init() {
   // open nvs namespace
   ESP_ERROR_CHECK(nvs_open("naos-app", NVS_READWRITE, &naos_params_nvs_handle));
@@ -124,19 +104,25 @@ void naos_register(naos_param_t *param) {
   naos_params_count++;
 
   // ensure parameter
-  switch (param->type) {
-    case NAOS_STRING:
-      naos_ensure(param->name, param->default_s != NULL ? param->default_s : "");
-      break;
-    case NAOS_BOOL:
-      naos_ensure_b(param->name, param->default_b);
-      break;
-    case NAOS_LONG:
-      naos_ensure_l(param->name, param->default_l);
-      break;
-    case NAOS_DOUBLE:
-      naos_ensure_d(param->name, param->default_d);
-      break;
+  size_t required_size;
+  esp_err_t err = nvs_get_str(naos_params_nvs_handle, param->name, NULL, &required_size);
+  if (err == ESP_ERR_NVS_NOT_FOUND) {
+    switch (param->type) {
+      case NAOS_STRING:
+        naos_set(param->name, param->default_s != NULL ? param->default_s : "");
+        break;
+      case NAOS_BOOL:
+        naos_set_b(param->name, param->default_b);
+        break;
+      case NAOS_LONG:
+        naos_set_l(param->name, param->default_l);
+        break;
+      case NAOS_DOUBLE:
+        naos_set_d(param->name, param->default_d);
+        break;
+    }
+  } else {
+    ESP_ERROR_CHECK(err);
   }
 
   // update parameter
