@@ -269,24 +269,3 @@ void naos_set_d(const char *param, double value) {
   // set parameter
   naos_set(param, naos_d2str(value));
 }
-
-bool naos_unset(const char *name) {
-  // lookup parameter
-  naos_param_t *param = naos_lookup(name);
-  if (param == NULL) {
-    ESP_ERROR_CHECK(ESP_FAIL);
-  }
-
-  // unset parameter
-  esp_err_t err = nvs_erase_key(naos_params_nvs_handle, name);
-  if (err == ESP_ERR_NVS_NOT_FOUND) {
-    return false;
-  } else {
-    ESP_ERROR_CHECK(err);
-  }
-
-  // sync param
-  naos_params_update(param);
-
-  return true;
-}

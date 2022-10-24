@@ -233,14 +233,6 @@ void naos_set_l(const char *param, int32_t value);
 void naos_set_d(const char *param, double value);
 
 /**
- * Will unset the requested parameter. Synchronized parameters are automatically updated.
- *
- * @param param The parameter.
- * @return Whether the parameter was unset.
- */
-bool naos_unset(const char *param);
-
-/**
  * Will lookup the specified parameter.
  * @param name The parameter.
  * @return A reference of NULL if not found.

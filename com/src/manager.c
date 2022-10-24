@@ -231,27 +231,6 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     return;
   }
 
-  // check unset
-  if (scope == NAOS_LOCAL && strncmp(topic, "naos/unset/", 11) == 0) {
-    // get param
-    char *param = (char *)topic + 11;
-
-    // unset param and update task if it existed
-    if (naos_unset(param)) {
-      // call update callback if present
-      if (naos_config()->update_callback != NULL) {
-        naos_acquire();
-        naos_config()->update_callback(param, NULL);
-        naos_release();
-      }
-    }
-
-    // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
-
-    return;
-  }
-
   // check log
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/record") == 0) {
     // enable or disable logging
