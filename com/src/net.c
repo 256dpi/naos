@@ -21,7 +21,7 @@ static void naos_net_event_handler(void *event_handler_arg, esp_event_base_t eve
   NAOS_LOCK(naos_net_mutex);
 
 #ifndef CONFIG_NAOS_WIFI_DISABLE
-  // handle Wi-Fi events
+  // handle WiFi events
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
       case WIFI_EVENT_STA_START: {
@@ -121,14 +121,14 @@ void naos_net_init() {
   ESP_ERROR_CHECK(esp_event_loop_create_default());
 
 #ifndef CONFIG_NAOS_WIFI_DISABLE
-  // enable Wi-Fi
+  // enable WiFi
   esp_netif_create_default_wifi_sta();
 
-  // initialize Wi-Fi
+  // initialize WiFi
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-  // set Wi-Fi storage to ram
+  // set WiFi storage to ram
   ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
 #endif
 
@@ -170,7 +170,7 @@ void naos_net_configure_wifi(const char *ssid, const char *password) {
   // update flag
   naos_net_status.started_wifi = true;
 
-  // start Wi-Fi
+  // start WiFi
   ESP_ERROR_CHECK(esp_wifi_start());
 
   // release mutex

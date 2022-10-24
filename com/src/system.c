@@ -168,7 +168,7 @@ void naos_system_init() {
   // set initial state
   naos_system_set_status(NAOS_DISCONNECTED);
 
-  // initially configure Wi-Fi
+  // initially configure WiFi
   naos_system_configure_wifi();
 
   // initially configure MQTT
