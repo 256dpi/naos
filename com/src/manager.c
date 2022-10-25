@@ -164,7 +164,7 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
   // check discover
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/discover") == 0) {
     // get list
-    char *list = naos_params_list();
+    char *list = naos_params_list(NAOS_APPLICATION);
 
     // send value
     naos_publish("naos/parameters", list, 0, false, NAOS_LOCAL);

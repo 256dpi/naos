@@ -97,7 +97,7 @@ void naos_config_execute(const char* command) {
 
 char* naos_config_list_params() {
   // list params
-  return naos_params_list();
+  return naos_params_list(NAOS_APPLICATION);
 }
 
 char* naos_config_read_param(const char* key) {

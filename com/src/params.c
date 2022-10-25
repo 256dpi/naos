@@ -120,6 +120,11 @@ void naos_register(naos_param_t *param) {
     param->mode |= NAOS_VOLATILE;
   }
 
+  // force application if not system
+  if ((param->mode & NAOS_SYSTEM) == 0) {
+    param->mode |= NAOS_APPLICATION;
+  }
+
   // store parameter
   naos_params_registry[naos_params_count] = param;
   naos_params_count++;
@@ -176,7 +181,7 @@ naos_param_t *naos_lookup(const char *name) {
   return NULL;
 }
 
-char *naos_params_list() {
+char *naos_params_list(naos_mode_t mode) {
   // return empty string if there are no params
   if (naos_params_count == 0) {
     return strdup("");
@@ -185,7 +190,10 @@ char *naos_params_list() {
   // determine list length
   size_t length = 0;
   for (int i = 0; i < naos_params_count; i++) {
-    length += strlen(naos_params_registry[i]->name) + 3;
+    naos_param_t *param = naos_params_registry[i];
+    if ((param->mode & mode) == mode) {
+      length += strlen(param->name) + 3;
+    }
   }
 
   // allocate buffer
@@ -196,6 +204,11 @@ char *naos_params_list() {
   for (int i = 0; i < naos_params_count; i++) {
     // get param
     naos_param_t *param = naos_params_registry[i];
+
+    // check mode
+    if ((param->mode & mode) != mode) {
+      continue;
+    }
 
     // copy name
     strcpy(buf + pos, param->name);
