@@ -79,11 +79,6 @@ static naos_ble_gatts_char_t naos_ble_char_lock = {
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_INDICATE,
     .max_write_len = 32};
 
-static naos_ble_gatts_char_t naos_ble_char_command = {
-    .uuid = {0x29, 0x92, 0x52, 0xd1, 0xe5, 0xba, 0x40, 0xb4, 0x91, 0x88, 0x82, 0x7f, 0x43, 0x4d, 0x63, 0xf1},
-    .prop = ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_write_len = 32};
-
 static naos_ble_gatts_char_t naos_ble_char_params_list = {
     .uuid = {0x65, 0xa6, 0x6e, 0x1a, 0x95, 0x7d, 0x48, 0xdf, 0x8b, 0xb7, 0x1b, 0x23, 0xd1, 0x89, 0x22, 0xac},
     .prop = ESP_GATT_CHAR_PROP_BIT_READ};
@@ -98,10 +93,10 @@ static naos_ble_gatts_char_t naos_ble_char_params_value = {
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_write_len = 128};
 
-#define NAOS_BLE_NUM_CHARS 6
+#define NAOS_BLE_NUM_CHARS 5
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
-    &naos_ble_char_description,     &naos_ble_char_lock, &naos_ble_char_command,
+    &naos_ble_char_description,     &naos_ble_char_lock,
     &naos_ble_char_params_list,     &naos_ble_char_params_select,  &naos_ble_char_params_value};
 
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
@@ -325,9 +320,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         } else if (c == &naos_ble_char_lock) {
           value = strdup(conn->locked ? "locked" : "unlocked");
         } else if (!conn->locked) {
-          if (c == &naos_ble_char_command) {
-            // ignore
-          } else if (c == &naos_ble_char_params_list) {
+          if (c == &naos_ble_char_params_list) {
             value = naos_config_list_params();
           } else if (c == &naos_ble_char_params_select) {
             if (conn->param != NULL) {
@@ -429,9 +422,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
             indicate_unlock = true;
           }
         } else if (!conn->locked) {
-          if (c == &naos_ble_char_command) {
-            naos_config_execute(value);
-          } else if (c == &naos_ble_char_params_list) {
+          if (c == &naos_ble_char_params_list) {
             // ignore
           } else if (c == &naos_ble_char_params_select) {
             conn->param = naos_lookup(value);

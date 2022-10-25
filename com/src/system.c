@@ -30,6 +30,7 @@ static naos_status_t naos_system_status;
 
 static naos_param_t naos_system_params[] = {
     {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = esp_restart},
     {.name = "wifi-ssid", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_system_configure_wifi},

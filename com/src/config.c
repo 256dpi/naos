@@ -8,7 +8,6 @@
 #include "params.h"
 #include "manager.h"
 #include "monitor.h"
-#include "system.h"
 #include "utils.h"
 #include "naos.h"
 #include "net.h"
@@ -60,23 +59,6 @@ char* naos_config_describe(bool locked) {
   free(name);
 
   return str;
-}
-
-void naos_config_execute(const char* command) {
-  // handle command
-  if (strcmp(command, "ping") == 0) {
-    if (naos_config()->ping_callback != NULL) {
-      naos_acquire();
-      naos_config()->ping_callback();
-      naos_release();
-    }
-  } else if (strcmp(command, "reboot") == 0) {
-    esp_restart();
-  } else if (strcmp(command, "restart-wifi") == 0) {
-    naos_system_configure_wifi();
-  } else if (strcmp(command, "restart-mqtt") == 0) {
-    naos_system_configure_mqtt();
-  }
 }
 
 char* naos_config_list_params() {
