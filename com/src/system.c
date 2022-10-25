@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <nvs_flash.h>
+#include <string.h>
 
 #include "config.h"
 #include "system.h"
@@ -12,7 +13,6 @@
 #include "naos.h"
 #include "net.h"
 #include "params.h"
-#include "settings.h"
 #include "task.h"
 #include "update.h"
 #include "utils.h"
@@ -27,6 +27,20 @@
 
 SemaphoreHandle_t naos_system_mutex;
 static naos_status_t naos_system_status;
+
+static naos_param_t naos_system_params[] = {
+    {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "wifi-ssid", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "wifi-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "wifi-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_system_configure_wifi},
+    {.name = "mqtt-host", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "mqtt-port", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "mqtt-client-id", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "mqtt-username", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "mqtt-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "mqtt-base-topic", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "mqtt-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_system_configure_mqtt},
+};
 
 static void naos_system_set_status(naos_status_t status) {
   // get name
@@ -137,11 +151,18 @@ void naos_system_init() {
   // init monitor
   naos_monitor_init();
 
-  // init settings
-  naos_settings_init();
-
   // init parameters
   naos_params_init();
+
+  // register system parameters
+  for (size_t i = 0; i < (sizeof(naos_system_params) / sizeof(naos_system_params[0])); i++) {
+    naos_register(&naos_system_params[i]);
+  }
+
+  // register application parameters
+  for (int i = 0; i < naos_config()->num_parameters; i++) {
+    naos_register(&naos_config()->parameters[i]);
+  }
 
   // init task
   naos_task_init();
@@ -196,8 +217,8 @@ void naos_system_configure_wifi() {
   ESP_LOGI(NAOS_LOG_TAG, "naos_system_configure_wifi");
 
   // get settings
-  char *wifi_ssid = naos_settings_read(NAOS_SETTING_WIFI_SSID);
-  char *wifi_password = naos_settings_read(NAOS_SETTING_WIFI_PASSWORD);
+  char *wifi_ssid = strdup(naos_get("wifi-ssid"));
+  char *wifi_password = strdup(naos_get("wifi-password"));
 
   // re-configure WiFi
   naos_net_configure_wifi(wifi_ssid, wifi_password);
@@ -218,27 +239,27 @@ void naos_system_configure_mqtt() {
   ESP_LOGI(NAOS_LOG_TAG, "naos_system_configure_mqtt");
 
   // get settings
-  char *mqtt_host = naos_settings_read(NAOS_SETTING_MQTT_HOST);
-  char *mqtt_port = naos_settings_read(NAOS_SETTING_MQTT_PORT);
-  char *mqtt_client_id = naos_settings_read(NAOS_SETTING_MQTT_CLIENT_ID);
-  char *mqtt_username = naos_settings_read(NAOS_SETTING_MQTT_USERNAME);
-  char *mqtt_password = naos_settings_read(NAOS_SETTING_MQTT_PASSWORD);
-  char *base_topic = naos_settings_read(NAOS_SETTING_BASE_TOPIC);
+  char *host = strdup(naos_get("mqtt-host"));
+  char *port = strdup(naos_get("mqtt-port"));
+  char *client_id = strdup(naos_get("mqtt-client-id"));
+  char *username = strdup(naos_get("mqtt-username"));
+  char *password = strdup(naos_get("mqtt-password"));
+  char *base_topic = strdup(naos_get("mqtt-base-topic"));
 
 #ifndef CONFIG_NAOS_MQTT_DISABLE
   // stop MQTT
   naos_mqtt_stop();
 
   // start MQTT
-  naos_mqtt_start(mqtt_host, mqtt_port, mqtt_client_id, mqtt_username, mqtt_password, base_topic);
+  naos_mqtt_start(host, port, client_id, username, password, base_topic);
 #endif
 
   // free strings
-  free(mqtt_host);
-  free(mqtt_port);
-  free(mqtt_client_id);
-  free(mqtt_username);
-  free(mqtt_password);
+  free(host);
+  free(port);
+  free(client_id);
+  free(username);
+  free(password);
   free(base_topic);
 
   // release mutex

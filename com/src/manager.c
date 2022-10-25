@@ -10,7 +10,6 @@
 #include "monitor.h"
 #include "naos.h"
 #include "params.h"
-#include "settings.h"
 #include "update.h"
 #include "utils.h"
 #include "net.h"
@@ -22,7 +21,7 @@ static bool naos_manager_recording = false;
 
 static void naos_manager_send_heartbeat() {
   // get device name
-  char *device_name = naos_settings_read(NAOS_SETTING_DEVICE_NAME);
+  char *device_name = strdup(naos_get("device-name"));
 
   // get battery
   float battery = -1;
@@ -49,8 +48,8 @@ static void naos_manager_send_heartbeat() {
 
 static void naos_manager_send_announcement() {
   // get device name & base topic
-  char *device_name = naos_settings_read(NAOS_SETTING_DEVICE_NAME);
-  char *base_topic = naos_settings_read(NAOS_SETTING_BASE_TOPIC);
+  char *device_name = strdup(naos_get("device-name"));
+  char *base_topic = strdup(naos_get("mqtt-base-topic"));
 
   // send announce
   char buf[64];

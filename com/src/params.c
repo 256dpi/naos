@@ -95,11 +95,6 @@ void naos_params_init() {
 
   // open nvs namespace
   ESP_ERROR_CHECK(nvs_open("naos", NVS_READWRITE, &naos_params_handle));
-
-  // register config parameters
-  for (int i = 0; i < naos_config()->num_parameters; i++) {
-    naos_register(&naos_config()->parameters[i]);
-  }
 }
 
 void naos_register(naos_param_t *param) {
@@ -154,7 +149,7 @@ void naos_register(naos_param_t *param) {
         naos_set_d(param->name, param->default_d);
         break;
       case NAOS_ACTION:
-        naos_set(param->name, "");
+        param->value = strdup("");
         break;
     }
     NAOS_LOCK(naos_params_mutex);
@@ -170,8 +165,10 @@ void naos_register(naos_param_t *param) {
   // release mutex
   NAOS_UNLOCK(naos_params_mutex);
 
-  // update parameter
-  naos_params_update(param);
+  // update parameter if not action
+  if (param->type != NAOS_ACTION) {
+    naos_params_update(param);
+  }
 }
 
 naos_param_t *naos_lookup(const char *name) {

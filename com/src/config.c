@@ -5,7 +5,6 @@
 #include <esp_ota_ops.h>
 
 #include "config.h"
-#include "settings.h"
 #include "params.h"
 #include "manager.h"
 #include "monitor.h"
@@ -21,7 +20,7 @@ static uint8_t naos_config_num_handlers = 0;
 char* naos_config_describe(bool locked) {
   // collect data
   const char* type = naos_config()->device_type;
-  char* name = naos_settings_read(NAOS_SETTING_DEVICE_NAME);
+  char* name = strdup(naos_get("device-name"));
   const char* firmware = naos_config()->firmware_version;
 
   // handle locked
@@ -63,21 +62,6 @@ char* naos_config_describe(bool locked) {
   return str;
 }
 
-char* naos_config_list_settings() {
-  // list settings
-  return naos_settings_list();
-}
-
-char* naos_config_read_setting(const char* key) {
-  // read setting
-  return naos_settings_read(naos_setting_from_key(key));
-}
-
-void naos_config_write_setting(const char* key, const char* value) {
-  // write setting
-  naos_settings_write(naos_setting_from_key(key), value);
-}
-
 void naos_config_execute(const char* command) {
   // handle command
   if (strcmp(command, "ping") == 0) {
@@ -97,7 +81,7 @@ void naos_config_execute(const char* command) {
 
 char* naos_config_list_params() {
   // list params
-  return naos_params_list(NAOS_APPLICATION);
+  return naos_params_list(0);
 }
 
 char* naos_config_read_param(const char* key) {

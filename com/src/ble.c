@@ -13,7 +13,6 @@
 #include "naos.h"
 #include "utils.h"
 #include "config.h"
-#include "settings.h"
 
 #define NAOS_BLE_INITIALIZED_BIT (1 << 0)
 #define NAOS_BLE_MAX_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
@@ -22,7 +21,6 @@ typedef struct {
   uint16_t id;
   bool connected;
   bool locked;
-  naos_setting_t setting;
   naos_param_t *param;
 } naos_ble_conn_t;
 
@@ -81,20 +79,6 @@ static naos_ble_gatts_char_t naos_ble_char_lock = {
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_INDICATE,
     .max_write_len = 32};
 
-static naos_ble_gatts_char_t naos_ble_char_settings_list = {
-    .uuid = {0x5d, 0x28, 0x5f, 0xe5, 0x88, 0x5c, 0x4c, 0xbb, 0xa9, 0x80, 0xeb, 0xb5, 0x2c, 0xe4, 0xae, 0xde},
-    .prop = ESP_GATT_CHAR_PROP_BIT_READ};
-
-static naos_ble_gatts_char_t naos_ble_char_settings_select = {
-    .uuid = {0x7b, 0xf3, 0xcc, 0x62, 0x7a, 0x2d, 0x48, 0xb8, 0xbd, 0x87, 0x9b, 0x33, 0xbb, 0x99, 0x7f, 0xa9},
-    .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_write_len = 64};
-
-static naos_ble_gatts_char_t naos_ble_char_settings_value = {
-    .uuid = {0x7e, 0x94, 0xc9, 0x25, 0xff, 0x0a, 0x4a, 0x61, 0xa0, 0x50, 0xe1, 0xe7, 0xcb, 0xbe, 0xbe, 0xc8},
-    .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_write_len = 128};
-
 static naos_ble_gatts_char_t naos_ble_char_command = {
     .uuid = {0x29, 0x92, 0x52, 0xd1, 0xe5, 0xba, 0x40, 0xb4, 0x91, 0x88, 0x82, 0x7f, 0x43, 0x4d, 0x63, 0xf1},
     .prop = ESP_GATT_CHAR_PROP_BIT_WRITE,
@@ -114,11 +98,10 @@ static naos_ble_gatts_char_t naos_ble_char_params_value = {
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_write_len = 128};
 
-#define NAOS_BLE_NUM_CHARS 9
+#define NAOS_BLE_NUM_CHARS 6
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
-    &naos_ble_char_description,     &naos_ble_char_lock,           &naos_ble_char_settings_list,
-    &naos_ble_char_settings_select, &naos_ble_char_settings_value, &naos_ble_char_command,
+    &naos_ble_char_description,     &naos_ble_char_lock, &naos_ble_char_command,
     &naos_ble_char_params_list,     &naos_ble_char_params_select,  &naos_ble_char_params_value};
 
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
@@ -342,15 +325,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         } else if (c == &naos_ble_char_lock) {
           value = strdup(conn->locked ? "locked" : "unlocked");
         } else if (!conn->locked) {
-          if (c == &naos_ble_char_settings_list) {
-            value = naos_config_list_settings();
-          } else if (c == &naos_ble_char_settings_select) {
-            if (conn->setting != 0) {
-              value = strdup(naos_setting_to_key(conn->setting));
-            }
-          } else if (c == &naos_ble_char_settings_value) {
-            value = naos_config_read_setting(naos_setting_to_key(conn->setting));
-          } else if (c == &naos_ble_char_command) {
+          if (c == &naos_ble_char_command) {
             // ignore
           } else if (c == &naos_ble_char_params_list) {
             value = naos_config_list_params();
@@ -454,13 +429,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
             indicate_unlock = true;
           }
         } else if (!conn->locked) {
-          if (c == &naos_ble_char_settings_list) {
-            // ignore
-          } else if (c == &naos_ble_char_settings_select) {
-            conn->setting = naos_setting_from_key(value);
-          } else if (c == &naos_ble_char_settings_value) {
-            naos_config_write_setting(naos_setting_to_key(conn->setting), value);
-          } else if (c == &naos_ble_char_command) {
+          if (c == &naos_ble_char_command) {
             naos_config_execute(value);
           } else if (c == &naos_ble_char_params_list) {
             // ignore
