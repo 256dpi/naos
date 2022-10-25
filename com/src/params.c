@@ -13,10 +13,6 @@ static SemaphoreHandle_t naos_params_mutex;
 static naos_param_t *naos_params_registry[CONFIG_NAOS_PARAM_REGISTRY_SIZE] = {0};
 static size_t naos_params_count = 0;
 
-static char naos_params_type_keys[] = {
-    [NAOS_STRING] = 's', [NAOS_BOOL] = 'b', [NAOS_LONG] = 'l', [NAOS_DOUBLE] = 'd', [NAOS_ACTION] = 'a',
-};
-
 static void naos_params_update(naos_param_t *param) {
   // update pointer
   switch (param->type) {
@@ -245,7 +241,27 @@ char *naos_params_list(naos_mode_t mode) {
     pos++;
 
     // write type
-    buf[pos] = naos_params_type_keys[param->type];
+    switch (param->type) {
+      case NAOS_STRING:
+        buf[pos] = 's';
+        break;
+      case NAOS_BOOL:
+        buf[pos] = 'b';
+        break;
+      case NAOS_LONG:
+        buf[pos] = 'l';
+        break;
+      case NAOS_DOUBLE:
+        buf[pos] = 'd';
+        break;
+      case NAOS_ACTION:
+        buf[pos] = 'a';
+        break;
+      default:
+        buf[pos] = '?';
+        break;
+    }
+    pos++;
     pos++;
 
     // write comma or zero
