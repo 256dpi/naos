@@ -205,7 +205,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				// set appropriate number formatters
 				switch p.type {
 				case .string, .bool, .action:
-					break
+					v.textField?.formatter = nil
 				case .long:
 					let f = NumberFormatter()
 					f.numberStyle = .decimal
