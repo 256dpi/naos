@@ -1,12 +1,15 @@
-#include <esp_log.h>
-#include <nvs.h>
 #include <stdlib.h>
 #include <string.h>
+#include <esp_log.h>
+#include <nvs.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 #include "naos.h"
 #include "utils.h"
 
-static nvs_handle naos_params_nvs_handle;
+static nvs_handle naos_params_handle;
+static SemaphoreHandle_t naos_params_mutex;
 static naos_param_t *naos_params_registry[CONFIG_NAOS_PARAM_REGISTRY_SIZE] = {0};
 static size_t naos_params_count = 0;
 
@@ -91,8 +94,11 @@ static void naos_params_update(naos_param_t *param) {
 }
 
 void naos_params_init() {
+  // create mutex
+  naos_params_mutex = xSemaphoreCreateMutex();
+
   // open nvs namespace
-  ESP_ERROR_CHECK(nvs_open("naos-app", NVS_READWRITE, &naos_params_nvs_handle));
+  ESP_ERROR_CHECK(nvs_open("naos-app", NVS_READWRITE, &naos_params_handle));
 
   // register config parameters
   for (int i = 0; i < naos_config()->num_parameters; i++) {
@@ -101,17 +107,20 @@ void naos_params_init() {
 }
 
 void naos_register(naos_param_t *param) {
-  // check size
-  if (naos_params_count >= CONFIG_NAOS_PARAM_REGISTRY_SIZE) {
-    ESP_ERROR_CHECK(ESP_FAIL);
-  }
-
   // check name and type
   if (strlen(param->name) == 0) {
     ESP_ERROR_CHECK(ESP_FAIL);
   } else if (naos_lookup(param->name) != NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   } else if (param->type < 0 || param->type > NAOS_ACTION) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // acquire mutex
+  NAOS_LOCK(naos_params_mutex);
+
+  // check size
+  if (naos_params_count >= CONFIG_NAOS_PARAM_REGISTRY_SIZE) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
@@ -131,9 +140,10 @@ void naos_register(naos_param_t *param) {
 
   // check parameter
   size_t required_size;
-  esp_err_t err = nvs_get_str(naos_params_nvs_handle, param->name, NULL, &required_size);
+  esp_err_t err = nvs_get_str(naos_params_handle, param->name, NULL, &required_size);
   if ((param->mode & NAOS_VOLATILE) != 0 || err == ESP_ERR_NVS_NOT_FOUND) {
     // set default value if missing or volatile
+    NAOS_UNLOCK(naos_params_mutex);
     switch (param->type) {
       case NAOS_STRING:
         naos_set(param->name, param->default_s != NULL ? param->default_s : "");
@@ -151,14 +161,18 @@ void naos_register(naos_param_t *param) {
         naos_set(param->name, "");
         break;
     }
+    NAOS_LOCK(naos_params_mutex);
   } else if (err == ESP_OK) {
     // otherwise, read stored value
     char *buf = malloc(required_size);
-    ESP_ERROR_CHECK(nvs_get_str(naos_params_nvs_handle, param->name, buf, &required_size));
+    ESP_ERROR_CHECK(nvs_get_str(naos_params_handle, param->name, buf, &required_size));
     param->value = buf;
   } else {
     ESP_ERROR_CHECK(err);
   }
+
+  // release mutex
+  NAOS_UNLOCK(naos_params_mutex);
 
   // update parameter
   naos_params_update(param);
@@ -170,20 +184,32 @@ naos_param_t *naos_lookup(const char *name) {
     return NULL;
   }
 
+  // acquire mutex
+  NAOS_LOCK(naos_params_mutex);
+
   // find parameter
+  naos_param_t *result = NULL;
   for (size_t i = 0; i < naos_params_count; i++) {
     naos_param_t *param = naos_params_registry[i];
     if (strcmp(name, param->name) == 0) {
-      return param;
+      result = param;
+      break;
     }
   }
 
-  return NULL;
+  // release mutex
+  NAOS_UNLOCK(naos_params_mutex);
+
+  return result;
 }
 
 char *naos_params_list(naos_mode_t mode) {
+  // acquire mutex
+  NAOS_LOCK(naos_params_mutex);
+
   // return empty string if there are no params
   if (naos_params_count == 0) {
+    NAOS_UNLOCK(naos_params_mutex);
     return strdup("");
   }
 
@@ -227,6 +253,9 @@ char *naos_params_list(naos_mode_t mode) {
     pos++;
   }
 
+  // release mutex
+  NAOS_UNLOCK(naos_params_mutex);
+
   return buf;
 }
 
@@ -262,6 +291,9 @@ void naos_set(const char *name, const char *value) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
+  // acquire mutex
+  NAOS_LOCK(naos_params_mutex);
+
   // check value
   if (value == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
@@ -269,14 +301,17 @@ void naos_set(const char *name, const char *value) {
 
   // set parameter if not volatile
   if ((param->mode & NAOS_VOLATILE) == 0) {
-    ESP_ERROR_CHECK(nvs_set_str(naos_params_nvs_handle, name, value));
+    ESP_ERROR_CHECK(nvs_set_str(naos_params_handle, name, value));
   }
 
   // update value
   free(param->value);
   param->value = strdup(value);
 
-  // sync param
+  // release mutex
+  NAOS_UNLOCK(naos_params_mutex);
+
+  // update parameter
   naos_params_update(param);
 }
 
