@@ -98,7 +98,7 @@ void naos_params_init() {
   naos_params_mutex = xSemaphoreCreateMutex();
 
   // open nvs namespace
-  ESP_ERROR_CHECK(nvs_open("naos-app", NVS_READWRITE, &naos_params_handle));
+  ESP_ERROR_CHECK(nvs_open("naos", NVS_READWRITE, &naos_params_handle));
 
   // register config parameters
   for (int i = 0; i < naos_config()->num_parameters; i++) {

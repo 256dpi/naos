@@ -40,7 +40,7 @@ func Config(naosPath string, values map[string]string, port string, out io.Write
 			buf.WriteString(fmt.Sprintf("%s,data,string,%s\n", key, value))
 		}
 	}
-	buf.WriteString("naos-app,namespace,,\n")
+	buf.WriteString("naos,namespace,,\n")
 	for key, value := range values {
 		if !settings[key] {
 			buf.WriteString(fmt.Sprintf("%s,data,string,%s\n", key, value))
