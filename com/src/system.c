@@ -27,13 +27,17 @@
 
 SemaphoreHandle_t naos_system_mutex;
 static naos_status_t naos_system_status;
+static uint32_t naos_system_updated = 0;
 
 static naos_param_t naos_system_params[] = {
+    {.name = "device-type", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM},     // TODO: Read only.
+    {.name = "device-version", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM},  // TODO: Read only.
     {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = esp_restart},
     {.name = "wifi-ssid", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_system_configure_wifi},
+    {.name = "wifi-rssi", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM},  // TODO: Read only.
     {.name = "mqtt-host", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "mqtt-port", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "mqtt-client-id", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
@@ -41,6 +45,11 @@ static naos_param_t naos_system_params[] = {
     {.name = "mqtt-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "mqtt-base-topic", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "mqtt-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_system_configure_mqtt},
+    {.name = "connection-status", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM},  // TODO: Read only.
+    {.name = "running-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM},  // TODO: Read only.
+    {.name = "uptime", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM},               // TODO: Read only.
+    {.name = "free-heap", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM},            // TODO: Read only.
+    // TODO: Add battery level.
 };
 
 static void naos_system_set_status(naos_status_t status) {
@@ -49,6 +58,9 @@ static void naos_system_set_status(naos_status_t status) {
 
   // change state
   naos_system_status = status;
+
+  // set status
+  naos_set("connection-status", name);
 
   // notify connection status
   naos_config_notify(NAOS_CONFIG_NOTIFICATION_DESCRIPTION);
@@ -124,6 +136,14 @@ static void naos_system_task() {
       naos_system_configure_mqtt();
     }
 #endif
+
+    // update parameters
+    if (naos_millis() > naos_system_updated + 1000) {
+      naos_set_l("wifi-rssi", naos_net_wifi_rssi());
+      naos_set_l("uptime", (int32_t)naos_millis());
+      naos_set_l("free-heap", (int32_t)esp_get_free_heap_size());
+      naos_system_updated = naos_millis();
+    }
   }
 }
 
@@ -149,9 +169,6 @@ void naos_system_init() {
   // initialize flash memory
   ESP_ERROR_CHECK(nvs_flash_init());
 
-  // init monitor
-  naos_monitor_init();
-
   // init parameters
   naos_params_init();
 
@@ -159,6 +176,14 @@ void naos_system_init() {
   for (size_t i = 0; i < (sizeof(naos_system_params) / sizeof(naos_system_params[0])); i++) {
     naos_register(&naos_system_params[i]);
   }
+
+  // initialize system parameters
+  naos_set("device-type", naos_config()->device_type);
+  naos_set("device-version", naos_config()->device_version);
+  naos_set("running-partition", esp_ota_get_running_partition()->label);
+
+  // init monitor
+  naos_monitor_init();
 
   // register application parameters
   for (int i = 0; i < naos_config()->num_parameters; i++) {

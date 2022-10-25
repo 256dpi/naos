@@ -1,65 +1,12 @@
-#include <stdlib.h>
-#include <string.h>
 #include <esp_err.h>
-#include <esp_system.h>
-#include <esp_ota_ops.h>
 
 #include "config.h"
 #include "params.h"
 #include "manager.h"
-#include "monitor.h"
-#include "utils.h"
-#include "naos.h"
-#include "net.h"
 
 #define NAOS_CONFIG_MAX_HANDLERS 8
 static naos_config_handler_t naos_config_handlers[NAOS_CONFIG_MAX_HANDLERS] = {0};
 static uint8_t naos_config_num_handlers = 0;
-
-char* naos_config_describe(bool locked) {
-  // collect data
-  const char *type = naos_config()->device_type;
-  char *name = strdup(naos_get("device-name"));
-  const char *firmware = naos_config()->firmware_version;
-
-  // handle locked
-  if (locked) {
-    char *str = naos_format("device_type=%s,device_name=%s,firmware_version=%s", type, name, firmware);
-    free(name);
-    return str;
-  }
-
-  // get status
-  const char *status = naos_status_str(naos_status());
-
-  // get battery
-  double battery = -1;
-  if (naos_config()->battery_callback != NULL) {
-    battery = naos_config()->battery_callback();
-  }
-
-  // get WiFi RSSI
-  int8_t rssi = naos_net_wifi_rssi();
-
-  // get CPU usage
-  naos_cpu_usage_t usage = naos_monitor_get();
-
-  // get running partition
-  const char *partition = esp_ota_get_running_partition()->label;
-
-  // assemble string
-  char *str = naos_format(
-          "device_type=%s,device_name=%s,firmware_version=%s,connection_status=%s,battery_level=%.2f,uptime=%d,free_heap=%"
-          "d,running_partition=%s,wifi_rssi=%d,cpu0_usage=%."
-          "2f,cpu1_usage=%.2f",
-          type, name, firmware, status, battery, naos_millis(), esp_get_free_heap_size(), partition, rssi, usage.cpu0,
-          usage.cpu1);
-
-  // free strings
-  free(name);
-
-  return str;
-}
 
 char* naos_config_list_params() {
   // list params

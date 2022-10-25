@@ -70,10 +70,6 @@ typedef struct {
   esp_bt_uuid_t _uuid;
 } naos_ble_gatts_char_t;
 
-static naos_ble_gatts_char_t naos_ble_char_description = {
-    .uuid = {0x26, 0x17, 0x8c, 0xbc, 0x61, 0x7a, 0x4a, 0x9c, 0xa2, 0x22, 0x04, 0x07, 0xcf, 0xfd, 0xbf, 0x87},
-    .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_INDICATE};
-
 static naos_ble_gatts_char_t naos_ble_char_lock = {
     .uuid = {0x91, 0xb5, 0x2e, 0x90, 0xd5, 0x07, 0x4d, 0x68, 0x9b, 0x23, 0x84, 0x40, 0xa4, 0xfb, 0xa5, 0xf7},
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_INDICATE,
@@ -93,11 +89,14 @@ static naos_ble_gatts_char_t naos_ble_char_params_value = {
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_write_len = 128};
 
-#define NAOS_BLE_NUM_CHARS 5
+#define NAOS_BLE_NUM_CHARS 4
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
-    &naos_ble_char_description,     &naos_ble_char_lock,
-    &naos_ble_char_params_list,     &naos_ble_char_params_select,  &naos_ble_char_params_value};
+    &naos_ble_char_lock,
+    &naos_ble_char_params_list,
+    &naos_ble_char_params_select,
+    &naos_ble_char_params_value,
+};
 
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
 
@@ -315,9 +314,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         char *value = NULL;
 
         // handle characteristic
-        if (c == &naos_ble_char_description) {
-          value = naos_config_describe(conn->locked);
-        } else if (c == &naos_ble_char_lock) {
+        if (c == &naos_ble_char_lock) {
           value = strdup(conn->locked ? "locked" : "unlocked");
         } else if (!conn->locked) {
           if (c == &naos_ble_char_params_list) {
@@ -414,9 +411,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         bool indicate_unlock = false;
 
         // handle unlocks directly
-        if (c == &naos_ble_char_description) {
-          // ignore
-        } else if (c == &naos_ble_char_lock) {
+        if (c == &naos_ble_char_lock) {
           if (conn->locked && strcmp(value, naos_config()->password) == 0) {
             conn->locked = false;
             indicate_unlock = true;
@@ -484,11 +479,11 @@ static void naos_ble_notification_handler(naos_config_notification_t notificatio
       naos_ble_conn_t *conn = &naos_ble_conns[j];
       switch (notification) {
         case NAOS_CONFIG_NOTIFICATION_DESCRIPTION: {
-          char *value = naos_config_describe(conn->locked);
-          ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, j,
-                                                      naos_ble_char_description.handle, (uint16_t)strlen(value),
-                                                      (uint8_t *)value, false));
-          free(value);
+          //          char *value = naos_config_describe(conn->locked);
+          //          ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, j,
+          //                                                      naos_ble_char_description.handle,
+          //                                                      (uint16_t)strlen(value), (uint8_t *)value, false));
+          //          free(value);
         }
       }
     }

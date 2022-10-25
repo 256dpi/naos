@@ -27,10 +27,10 @@ static void naos_manager_ping() {
 }
 
 static naos_param_t naos_manager_param_ping = {
-        .name = "ping",
-        .type = NAOS_ACTION,
-        .mode = NAOS_SYSTEM,
-        .func_a = naos_manager_ping,
+    .name = "ping",
+    .type = NAOS_ACTION,
+    .mode = NAOS_SYSTEM,
+    .func_a = naos_manager_ping,
 };
 
 static void naos_manager_send_heartbeat() {
@@ -52,7 +52,7 @@ static void naos_manager_send_heartbeat() {
   // send heartbeat
   char buf[64];
   snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s,%.2f,%d,%.2f,%.2f", naos_config()->device_type,
-           naos_config()->firmware_version, device_name, esp_get_free_heap_size(), naos_millis(),
+           naos_config()->device_version, device_name, esp_get_free_heap_size(), naos_millis(),
            esp_ota_get_running_partition()->label, battery, rssi, usage.cpu0, usage.cpu1);
   naos_publish("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
 
@@ -67,7 +67,7 @@ static void naos_manager_send_announcement() {
 
   // send announce
   char buf[64];
-  snprintf(buf, sizeof buf, "%s,%s,%s,%s", naos_config()->device_type, naos_config()->firmware_version, device_name,
+  snprintf(buf, sizeof buf, "%s,%s,%s,%s", naos_config()->device_type, naos_config()->device_version, device_name,
            base_topic);
   naos_publish("naos/announcement", buf, 0, false, NAOS_GLOBAL);
 

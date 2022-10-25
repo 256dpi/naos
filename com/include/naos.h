@@ -120,14 +120,10 @@ typedef struct {
  */
 typedef struct {
   /**
-   * The device type.
+   * The device type and version.
    */
   const char *device_type;
-
-  /**
-   * The firmware version.
-   */
-  const char *firmware_version;
+  const char *device_version;
 
   /**
    * The parameters to be registered during initialization.
