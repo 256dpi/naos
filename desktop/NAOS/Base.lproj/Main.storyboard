@@ -769,7 +769,7 @@
                                 </textFieldCell>
                             </textField>
                             <textField horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eJN-Ld-xoS">
-                                <rect key="frame" x="148" y="317" width="61" height="16"/>
+                                <rect key="frame" x="148" y="317" width="317" height="16"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Unknown" id="2qI-H7-l32">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -784,26 +784,6 @@
                                 </buttonCell>
                                 <connections>
                                     <action selector="refresh:" target="c3R-v8-FCu" id="Eij-rV-1vF"/>
-                                </connections>
-                            </button>
-                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="iGI-eA-HLl">
-                                <rect key="frame" x="329" y="306" width="78" height="32"/>
-                                <buttonCell key="cell" type="push" title="Reboot" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Uir-7r-7oc">
-                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <connections>
-                                    <action selector="reboot:" target="c3R-v8-FCu" id="PaC-sc-Ddr"/>
-                                </connections>
-                            </button>
-                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xI6-uE-fpe">
-                                <rect key="frame" x="405" y="306" width="61" height="32"/>
-                                <buttonCell key="cell" type="push" title="Ping" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="yNY-Lo-Vqm">
-                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <connections>
-                                    <action selector="ping:" target="c3R-v8-FCu" id="4ta-RB-dlU"/>
                                 </connections>
                             </button>
                             <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="vIX-he-pNY">
@@ -1018,25 +998,19 @@
                         </subviews>
                         <constraints>
                             <constraint firstAttribute="trailing" secondItem="Btq-GW-2uI" secondAttribute="trailing" constant="20" symbolic="YES" id="1Le-RM-1X9"/>
+                            <constraint firstItem="Btq-GW-2uI" firstAttribute="leading" secondItem="eJN-Ld-xoS" secondAttribute="trailing" constant="8" symbolic="YES" id="2C5-eg-0Yb"/>
                             <constraint firstItem="6b4-qo-6vn" firstAttribute="top" secondItem="Btq-GW-2uI" secondAttribute="bottom" constant="20" symbolic="YES" id="4eL-O6-aAm"/>
                             <constraint firstItem="Btq-GW-2uI" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="9He-E1-vOp"/>
-                            <constraint firstItem="6b4-qo-6vn" firstAttribute="top" secondItem="xI6-uE-fpe" secondAttribute="bottom" constant="20" symbolic="YES" id="CNP-ij-0wo"/>
                             <constraint firstItem="eJN-Ld-xoS" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" id="IXy-PI-EKU"/>
                             <constraint firstAttribute="trailing" secondItem="vIX-he-pNY" secondAttribute="trailing" constant="20" symbolic="YES" id="L1f-sr-AUf"/>
-                            <constraint firstItem="iGI-eA-HLl" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="LMB-UK-SZP"/>
                             <constraint firstItem="vIX-he-pNY" firstAttribute="top" secondItem="6b4-qo-6vn" secondAttribute="bottom" constant="8" symbolic="YES" id="MxG-sa-ua0"/>
                             <constraint firstAttribute="trailing" secondItem="6b4-qo-6vn" secondAttribute="trailing" constant="20" symbolic="YES" id="SOb-ff-wrh"/>
                             <constraint firstItem="eJN-Ld-xoS" firstAttribute="leading" secondItem="uyZ-Nk-Zew" secondAttribute="trailing" constant="10" id="STn-ac-0EN"/>
                             <constraint firstItem="uyZ-Nk-Zew" firstAttribute="baseline" secondItem="eJN-Ld-xoS" secondAttribute="baseline" id="TVJ-eq-8eU"/>
                             <constraint firstItem="6b4-qo-6vn" firstAttribute="leading" secondItem="lYY-xl-sde" secondAttribute="leading" constant="20" symbolic="YES" id="UNW-ND-J2d"/>
-                            <constraint firstItem="xI6-uE-fpe" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="Utk-cb-neH"/>
                             <constraint firstItem="vIX-he-pNY" firstAttribute="leading" secondItem="lYY-xl-sde" secondAttribute="leading" constant="20" symbolic="YES" id="WMh-fR-DPU"/>
-                            <constraint firstItem="xI6-uE-fpe" firstAttribute="leading" secondItem="iGI-eA-HLl" secondAttribute="trailing" constant="12" symbolic="YES" id="frT-OY-Nac"/>
-                            <constraint firstItem="Btq-GW-2uI" firstAttribute="leading" secondItem="xI6-uE-fpe" secondAttribute="trailing" constant="12" symbolic="YES" id="kd4-aj-NEU"/>
-                            <constraint firstItem="6b4-qo-6vn" firstAttribute="top" secondItem="iGI-eA-HLl" secondAttribute="bottom" constant="20" symbolic="YES" id="peH-EW-w3B"/>
                             <constraint firstAttribute="bottom" secondItem="vIX-he-pNY" secondAttribute="bottom" constant="20" symbolic="YES" id="qMh-hV-0sw"/>
                             <constraint firstItem="uyZ-Nk-Zew" firstAttribute="leading" secondItem="lYY-xl-sde" secondAttribute="leading" constant="24" id="qod-tz-cdb"/>
-                            <constraint firstItem="iGI-eA-HLl" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="eJN-Ld-xoS" secondAttribute="trailing" constant="20" id="vla-Hz-tea"/>
                             <constraint firstItem="uyZ-Nk-Zew" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="zR9-y9-0Zj"/>
                         </constraints>
                     </view>

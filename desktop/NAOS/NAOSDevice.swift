@@ -88,13 +88,6 @@ public struct NAOSDeviceDescriptor: Hashable {
 	}
 }
 
-public enum NAOSDeviceCommand: String {
-	case ping
-	case reboot
-	case restartWifi = "restart-wifi"
-	case restartMQTT = "restart-mqtt"
-}
-
 public enum NAOSDeviceParameterType: String {
 	case string = "s"
 	case bool = "b"
@@ -262,17 +255,6 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 
 		// write unlock command
 		peripheral.writeValue(password.data(using: .utf8)!, for: c, type: .withResponse)
-	}
-
-	public func execute(cmd: NAOSDeviceCommand) {
-		// get characteristic
-		guard let c = towRawCharacteristic(property: .command) else {
-			raiseError(error: NAOSDeviceError.characteristicNotFound)
-			return
-		}
-
-		// write system command
-		peripheral.writeValue(cmd.rawValue.data(using: .utf8)!, for: c, type: .withResponse)
 	}
 
 	public func write(parameter: NAOSDeviceParameter) {

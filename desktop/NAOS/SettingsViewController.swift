@@ -51,18 +51,6 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		device.refresh()
 	}
 
-	@IBAction
-	func reboot(_: AnyObject) {
-		// send reboot command
-		device.execute(cmd: .reboot)
-	}
-
-	@IBAction
-	func ping(_: AnyObject) {
-		// send ping command
-		device.execute(cmd: .ping)
-	}
-
 	// SettingsWindowController
 
 	func didRefresh() {
