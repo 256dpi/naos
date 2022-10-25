@@ -226,6 +226,9 @@ char *naos_params_list(naos_mode_t mode) {
       if ((param->mode & NAOS_PUBLIC) != 0) {
         length++;
       }
+      if ((param->mode & NAOS_LOCKED) != 0) {
+        length++;
+      }
     }
   }
 
@@ -296,6 +299,10 @@ char *naos_params_list(naos_mode_t mode) {
     }
     if ((param->mode & NAOS_PUBLIC) != 0) {
       buf[pos] = 'p';
+      pos++;
+    }
+    if ((param->mode & NAOS_LOCKED) != 0) {
+      buf[pos] = 'l';
       pos++;
     }
 

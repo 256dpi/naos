@@ -23,9 +23,8 @@ static float naos_monitor_cpu0 = 0;
 static float naos_monitor_cpu1 = 0;
 
 static naos_param_t naos_monitor_params[] = {
-    {.name = "monitor-cpu0", .type = NAOS_DOUBLE, .mode = NAOS_VOLATILE | NAOS_SYSTEM},  // TODO: Read only.
-    {.name = "monitor-cpu1", .type = NAOS_DOUBLE, .mode = NAOS_VOLATILE | NAOS_SYSTEM}   // TODO: Read only.
-};
+    {.name = "monitor-cpu0", .type = NAOS_DOUBLE, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
+    {.name = "monitor-cpu1", .type = NAOS_DOUBLE, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED}};
 
 static bool naos_monitor_hook0() {
   naos_monitor_idle0++;

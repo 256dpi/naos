@@ -424,7 +424,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
             conn->param = param;
           }
         } else if (c == &naos_ble_char_params_value) {
-          if (conn->param != NULL) {
+          if (conn->param != NULL && (conn->param->mode & NAOS_LOCKED) == 0) {
             naos_config_write_parm(conn->param->name, value);
           }
         }
