@@ -16,7 +16,6 @@
 		52BD19D72561EB2E006D3507 /* NAOSDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CD2561EB2D006D3507 /* NAOSDevice.swift */; };
 		52BD19D82561EB2E006D3507 /* NAOSDeviceProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CE2561EB2D006D3507 /* NAOSDeviceProxy.swift */; };
 		52BD19D92561EB2E006D3507 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CF2561EB2D006D3507 /* SettingsWindowController.swift */; };
-		52BD19DB2561EB2E006D3507 /* NetworkUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19D12561EB2D006D3507 /* NetworkUtilities.swift */; };
 		52BD19DC2561EB2E006D3507 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19D22561EB2D006D3507 /* SettingsViewController.swift */; };
 		52BD19DD2561EB2E006D3507 /* UnlockViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19D32561EB2D006D3507 /* UnlockViewController.swift */; };
 		52BD19DE2561EB2E006D3507 /* SettingsParameterValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19D42561EB2D006D3507 /* SettingsParameterValue.swift */; };
@@ -37,7 +36,6 @@
 		52BD19CD2561EB2D006D3507 /* NAOSDevice.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NAOSDevice.swift; sourceTree = "<group>"; };
 		52BD19CE2561EB2D006D3507 /* NAOSDeviceProxy.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NAOSDeviceProxy.swift; sourceTree = "<group>"; };
 		52BD19CF2561EB2D006D3507 /* SettingsWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
-		52BD19D12561EB2D006D3507 /* NetworkUtilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkUtilities.swift; sourceTree = "<group>"; };
 		52BD19D22561EB2D006D3507 /* SettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		52BD19D32561EB2D006D3507 /* UnlockViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnlockViewController.swift; sourceTree = "<group>"; };
 		52BD19D42561EB2D006D3507 /* SettingsParameterValue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsParameterValue.swift; sourceTree = "<group>"; };
@@ -84,7 +82,6 @@
 				52BD19D42561EB2D006D3507 /* SettingsParameterValue.swift */,
 				52BD19D22561EB2D006D3507 /* SettingsViewController.swift */,
 				52BD19CF2561EB2D006D3507 /* SettingsWindowController.swift */,
-				52BD19D12561EB2D006D3507 /* NetworkUtilities.swift */,
 				52BD19CD2561EB2D006D3507 /* NAOSDevice.swift */,
 				52BD19CE2561EB2D006D3507 /* NAOSDeviceProxy.swift */,
 				52BD19CC2561EB2D006D3507 /* NAOSManager.swift */,
@@ -183,7 +180,6 @@
 				52BD19B92561EA93006D3507 /* AppDelegate.swift in Sources */,
 				52BD19D82561EB2E006D3507 /* NAOSDeviceProxy.swift in Sources */,
 				52BD19D72561EB2E006D3507 /* NAOSDevice.swift in Sources */,
-				52BD19DB2561EB2E006D3507 /* NetworkUtilities.swift in Sources */,
 				52BD19DF2561EB2E006D3507 /* NAOSManagerProxy.swift in Sources */,
 				52BD19D92561EB2E006D3507 /* SettingsWindowController.swift in Sources */,
 				52BD19CB2561EB27006D3507 /* LoadingViewController.swift in Sources */,

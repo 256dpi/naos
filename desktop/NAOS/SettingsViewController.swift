@@ -8,16 +8,6 @@ import CoreBluetooth
 
 class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, SettingsParameterValueDelegate {
 	@IBOutlet var connectionStatusLabel: NSTextField!
-	@IBOutlet var wifiSSIDTextField: NSTextField!
-	@IBOutlet var wifiPasswordTextField: NSTextField!
-	@IBOutlet var wifiSSIDLabel: NSTextField!
-	@IBOutlet var mqttHostTextField: NSTextField!
-	@IBOutlet var mqttPortTextField: NSTextField!
-	@IBOutlet var mqttClientIDTextField: NSTextField!
-	@IBOutlet var mqttUsernameTextField: NSTextField!
-	@IBOutlet var mqttPasswordTextField: NSTextField!
-	@IBOutlet var deviceNameTextField: NSTextField!
-	@IBOutlet var baseTopicTextField: NSTextField!
 	@IBOutlet var parameterTableView: NSTableView!
 	@IBOutlet var descriptionLabel: NSTextField!
 
@@ -27,9 +17,6 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
-
-		// hide wifi ssid label
-		wifiSSIDLabel.isHidden = true
 
 		// clear description
 		descriptionLabel.stringValue = ""
@@ -76,62 +63,9 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		device.execute(cmd: .ping)
 	}
 
-	@IBAction
-	func configureWiFi(_: AnyObject) {
-		// write settings
-		writeSettings(settings: [.wifiSSID, .wifiPassword])
-
-		// send restart command
-		device.execute(cmd: .restartWifi)
-	}
-
-	@IBAction
-	func useShiftrIO(_: AnyObject) {
-		// set settings
-		mqttHostTextField.stringValue = "public.cloud.shiftr.io"
-		mqttPortTextField.stringValue = "1883"
-		mqttUsernameTextField.stringValue = "public"
-		mqttPasswordTextField.stringValue = "public"
-	}
-
-	@IBAction
-	func useLocalBroker(_: AnyObject) {
-		// set settings
-		mqttHostTextField.stringValue = NetworkUtilities.getWiFiAddress() ?? ""
-		mqttPortTextField.stringValue = UserDefaults.standard.string(forKey: "mqttPort") ?? ""
-	}
-
-	@IBAction
-	func configureMQTT(_: AnyObject) {
-		// write settings
-		writeSettings(settings: [
-			.mqttHost, .mqttPort, .mqttClientID, .mqttUsername,
-			.mqttPassword,
-		])
-
-		// send restart command
-		device.execute(cmd: .restartMQTT)
-	}
-
-	@IBAction
-	func configureDevice(_: AnyObject) {
-		// write settings
-		writeSettings(settings: [.deviceName, .baseTopic])
-
-		// send restart command
-		device.execute(cmd: .restartMQTT)
-	}
-
 	// SettingsWindowController
 
 	func didRefresh() {
-		// update text fields
-		for (s, v) in device.settings {
-			if let textField = textFieldForSetting(setting: s) {
-				textField.stringValue = v
-			}
-		}
-
 		// update connection status
 		connectionStatusLabel.stringValue = (device.descriptors[.conenctionStatus] ?? "").capitalized
 
@@ -144,14 +78,6 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 		// reload parameters
 		parameterTableView.reloadData()
-
-		// set wifi ssid
-		if let ssid = NetworkUtilities.getSSID() {
-			wifiSSIDLabel.stringValue = String(format: "Your computer uses \"%@\".", ssid)
-			wifiSSIDLabel.isHidden = false
-		} else {
-			wifiSSIDLabel.isHidden = true
-		}
 
 		// dismiss sheet
 		dismiss(loadingViewController!)
@@ -288,48 +214,12 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		// write parameter
 		device.write(parameter: parameter)
 	}
-	
+
 	func didClickButton(parameter: NAOSDeviceParameter) {
 		// update parameter
 		device.parameters[parameter] = ""
-		
+
 		// write parameter
 		device.write(parameter: parameter)
-	}
-
-	// Helpers
-
-	func writeSettings(settings: [NAOSDeviceSetting]) {
-		for s in settings {
-			if let textField = textFieldForSetting(setting: s) {
-				device.settings[s] = textField.stringValue
-				device.write(setting: s)
-			}
-		}
-	}
-
-	func textFieldForSetting(setting: NAOSDeviceSetting) -> NSTextField? {
-		switch setting {
-		case .wifiSSID:
-			return wifiSSIDTextField
-		case .wifiPassword:
-			return wifiPasswordTextField
-		case .mqttHost:
-			return mqttHostTextField
-		case .mqttPort:
-			return mqttPortTextField
-		case .mqttClientID:
-			return mqttClientIDTextField
-		case .mqttUsername:
-			return mqttUsernameTextField
-		case .mqttPassword:
-			return mqttPasswordTextField
-		case .deviceName:
-			return deviceNameTextField
-		case .baseTopic:
-			return baseTopicTextField
-		default:
-			return nil
-		}
 	}
 }

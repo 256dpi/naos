@@ -11,9 +11,6 @@ internal let NAOSDeviceService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5
 internal enum NAOSDeviceCharacteristic: String {
 	case description = "87BFFDCF-0704-22A2-9C4A-7A61BC8C1726"
 	case lock = "F7A5FBA4-4084-239B-684D-07D5902EB591"
-	case settingsList = "DEAEE42C-B5EB-80A9-BB4C-5C88E55F285D"
-	case settingsSelect = "A97F99BB-339B-87BD-B848-2D7A62CCF37B"
-	case settingsValue = "C8BEBECB-E7E1-50A0-614A-0AFF25C9947E"
 	case command = "F1634D43-7F82-8891-B440-BAE5D1529229"
 	case paramsList = "AC2289D1-231B-B78B-DF48-7D951A6EA665"
 	case paramsSelect = "CFC9706D-406F-CCBE-4240-F88D6ED4BACD"
@@ -24,10 +21,10 @@ internal enum NAOSDeviceCharacteristic: String {
 	}
 
 	static let refreshable = [
-		description, lock, settingsList, paramsList,
+		description, lock, paramsList,
 	]
 
-	static let all = refreshable + [settingsSelect, settingsValue, command, paramsSelect, paramsValue]
+	static let all = refreshable + [command, paramsSelect, paramsValue]
 }
 
 public struct NAOSDeviceDescriptor: Hashable {
@@ -91,33 +88,6 @@ public struct NAOSDeviceDescriptor: Hashable {
 	}
 }
 
-public struct NAOSDeviceSetting: Hashable {
-	public var name: String
-
-	public func hash(into hasher: inout Hasher) {
-		hasher.combine(name)
-	}
-
-	public static func == (lhs: NAOSDeviceSetting, rhs: NAOSDeviceSetting) -> Bool {
-		return lhs.name == rhs.name
-	}
-
-	public static let wifiSSID = NAOSDeviceSetting(name: "wifi-ssid")
-	public static let wifiPassword = NAOSDeviceSetting(name: "wifi-password")
-	public static let mqttHost = NAOSDeviceSetting(name: "mqtt-host")
-	public static let mqttPort = NAOSDeviceSetting(name: "mqtt-port")
-	public static let mqttClientID = NAOSDeviceSetting(name: "mqtt-client-id")
-	public static let mqttUsername = NAOSDeviceSetting(name: "mqtt-username")
-	public static let mqttPassword = NAOSDeviceSetting(name: "mqtt-password")
-	public static let deviceName = NAOSDeviceSetting(name: "device-name")
-	public static let baseTopic = NAOSDeviceSetting(name: "base-topic")
-
-	public static let all = [
-		wifiSSID, wifiPassword, mqttHost, mqttPort, mqttClientID,
-		mqttUsername, mqttPassword, deviceName, baseTopic,
-	]
-}
-
 public enum NAOSDeviceCommand: String {
 	case ping
 	case reboot
@@ -155,8 +125,10 @@ public struct NAOSDeviceParameter: Hashable {
 	}
 
 	public static func == (lhs: NAOSDeviceParameter, rhs: NAOSDeviceParameter) -> Bool {
-		return lhs.name == rhs.name && lhs.type == rhs.type
+		return lhs.name == rhs.name && lhs.type == rhs.type && lhs.mode == rhs.mode
 	}
+
+	public static let deviceName = NAOSDeviceParameter(name: "device-name", type: .string, mode: .system)
 }
 
 public enum NAOSDeviceError: LocalizedError {
@@ -186,21 +158,17 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 	public private(set) var descriptors: [NAOSDeviceDescriptor: String] = [:]
 	public private(set) var protected: Bool = false
 	public private(set) var locked: Bool = false
-	public private(set) var availableSettings: [NAOSDeviceSetting] = []
-	public var settings: [NAOSDeviceSetting: String] = [:]
 	public private(set) var availableParameters: [NAOSDeviceParameter] = []
 	public var parameters: [NAOSDeviceParameter: String] = [:]
 	public var delegate: NAOSDeviceDelegate?
 
 	internal var peripheral: CBPeripheral
-
 	private var proxy: NAOSDeviceProxy!
 	private var manager: NAOSManager
 	private var service: CBService?
 	private var initialRefresh: Bool = true
 	private var refreshing: Bool = false
 	private var tracker: [NAOSDeviceCharacteristic: Bool] = [:]
-	private var currentSetting: Int = -1
 	private var currentParameter: Int = -1
 	private var errorOccurred: Bool = false
 
@@ -282,7 +250,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 	}
 
 	public func title() -> String {
-		return (descriptors[.deviceType] ?? "") + " (" + (settings[.deviceName] ?? (descriptors[.deviceName] ?? "")) + ")"
+		return (descriptors[.deviceType] ?? "") + " (" + (parameters[.deviceName] ?? (descriptors[.deviceName] ?? "")) + ")"
 	}
 
 	public func unlock(password: String) {
@@ -294,34 +262,6 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 
 		// write unlock command
 		peripheral.writeValue(password.data(using: .utf8)!, for: c, type: .withResponse)
-	}
-
-	public func write(setting: NAOSDeviceSetting) {
-		// return if not available
-		if availableSettings.firstIndex(of: setting) == nil {
-			return
-		}
-
-		// get characteristic
-		guard let selectChar = towRawCharacteristic(property: .settingsSelect) else {
-			raiseError(error: NAOSDeviceError.characteristicNotFound)
-			return
-		}
-
-		// get characteristic
-		guard let valueChar = towRawCharacteristic(property: .settingsValue) else {
-			raiseError(error: NAOSDeviceError.characteristicNotFound)
-			return
-		}
-
-		// select setting
-		peripheral.writeValue(setting.name.data(using: .utf8)!, for: selectChar, type: .withResponse)
-
-		// write setting
-		peripheral.writeValue(settings[setting]!.data(using: .utf8)!, for: valueChar, type: .withResponse)
-
-		// notify manager
-		manager.didUpdateDevice(device: self)
 	}
 
 	public func execute(cmd: NAOSDeviceCommand) {
@@ -477,6 +417,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 		// handle characteristic
 		if rawChar.uuid == NAOSDeviceCharacteristic.description.cbuuid() {
 			// set descriptors
+			print("description", value)
 			for (key, value) in parseKeyValue(value: value) {
 				descriptors[NAOSDeviceDescriptor(name: key)] = value
 			}
@@ -502,45 +443,6 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 				if let d = delegate {
 					d.naosDeviceDidUnlock(device: self)
 				}
-			}
-
-		} else if rawChar.uuid == NAOSDeviceCharacteristic.settingsList.cbuuid() {
-			// reset list
-			availableSettings = []
-
-			// save settings
-			for name in value.split(separator: ",") {
-				availableSettings.append(NAOSDeviceSetting(name: String(name)))
-			}
-
-			// queue first setting if refreshing
-			if refreshing, availableSettings.count > 0 {
-				// set index
-				currentSetting = 0
-
-				// select setting
-				peripheral.writeValue(availableSettings[currentSetting].name.data(using: .utf8)!, for: towRawCharacteristic(property: .settingsSelect)!, type: .withResponse)
-
-				// read setting
-				peripheral.readValue(for: towRawCharacteristic(property: .settingsValue)!)
-			}
-
-		} else if rawChar.uuid == NAOSDeviceCharacteristic.settingsValue.cbuuid() {
-			// update setting
-			settings[availableSettings[currentSetting]] = value
-
-			// increment setting
-			currentSetting += 1
-
-			// check overflow
-			if currentSetting == availableSettings.count {
-				currentSetting = -1
-			} else {
-				// select setting
-				peripheral.writeValue(availableSettings[currentSetting].name.data(using: .utf8)!, for: towRawCharacteristic(property: .settingsSelect)!, type: .withResponse)
-
-				// read setting
-				peripheral.readValue(for: towRawCharacteristic(property: .settingsValue)!)
 			}
 
 		} else if rawChar.uuid == NAOSDeviceCharacteristic.paramsList.cbuuid() {
@@ -656,8 +558,11 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 		for item in value.split(separator: ",") {
 			let pair = item.split(separator: "=")
 			let key = String(pair[0])
-			let value = String(pair[1])
-			kv[key] = value
+			if pair.count > 1 {
+				kv[key] = String(pair[1])
+			} else {
+				kv[key] = ""
+			}
 		}
 		return kv
 	}
