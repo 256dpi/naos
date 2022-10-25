@@ -9,18 +9,10 @@ import CoreBluetooth
 class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, SettingsParameterValueDelegate {
 	@IBOutlet var connectionStatusLabel: NSTextField!
 	@IBOutlet var parameterTableView: NSTableView!
-	@IBOutlet var descriptionLabel: NSTextField!
 
 	private var device: NAOSDevice!
 
 	private var loadingViewController: LoadingViewController?
-
-	override func viewDidLoad() {
-		super.viewDidLoad()
-
-		// clear description
-		descriptionLabel.stringValue = ""
-	}
 
 	func setDevice(device: NAOSDevice) {
 		// save device
@@ -55,14 +47,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 	func didRefresh() {
 		// update connection status
-		connectionStatusLabel.stringValue = (device.descriptors[.conenctionStatus] ?? "").capitalized
-
-		// update description
-		var info = [String]()
-		for (descriptor, value) in device.descriptors {
-			info.append(descriptor.title() + ": " + descriptor.format(value: value))
-		}
-		descriptionLabel.stringValue = info.joined(separator: "\n")
+		connectionStatusLabel.stringValue = (device.parameters[.connectionStatus] ?? "").capitalized
 
 		// reload parameters
 		parameterTableView.reloadData()
@@ -73,7 +58,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 	func didUpdateConnectionStatus() {
 		// update connection status
-		connectionStatusLabel.stringValue = (device.descriptors[.conenctionStatus] ?? "").capitalized
+		connectionStatusLabel.stringValue = (device.parameters[.connectionStatus] ?? "").capitalized
 	}
 
 	// NSTableView

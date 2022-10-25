@@ -9,7 +9,6 @@ import CoreBluetooth
 internal let NAOSDeviceService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
 
 internal enum NAOSDeviceCharacteristic: String {
-	case description = "87BFFDCF-0704-22A2-9C4A-7A61BC8C1726"
 	case lock = "F7A5FBA4-4084-239B-684D-07D5902EB591"
 	case command = "F1634D43-7F82-8891-B440-BAE5D1529229"
 	case paramsList = "AC2289D1-231B-B78B-DF48-7D951A6EA665"
@@ -21,71 +20,10 @@ internal enum NAOSDeviceCharacteristic: String {
 	}
 
 	static let refreshable = [
-		description, lock, paramsList,
+		lock, paramsList,
 	]
 
 	static let all = refreshable + [command, paramsSelect, paramsValue]
-}
-
-public struct NAOSDeviceDescriptor: Hashable {
-	public var name: String
-
-	public func hash(into hasher: inout Hasher) {
-		hasher.combine(name)
-	}
-
-	public static func == (lhs: NAOSDeviceDescriptor, rhs: NAOSDeviceDescriptor) -> Bool {
-		return lhs.name == rhs.name
-	}
-
-	public static let deviceType = NAOSDeviceDescriptor(name: "device_type")
-	public static let deviceName = NAOSDeviceDescriptor(name: "device_name")
-	public static let firmwareVersion = NAOSDeviceDescriptor(name: "firmware_version")
-	public static let conenctionStatus = NAOSDeviceDescriptor(name: "connection_status")
-	public static let batteryLevel = NAOSDeviceDescriptor(name: "battery_level")
-	public static let uptime = NAOSDeviceDescriptor(name: "uptime")
-	public static let freeHeap = NAOSDeviceDescriptor(name: "free_heap")
-	public static let runningPartition = NAOSDeviceDescriptor(name: "running_partition")
-	public static let wifiRSSI = NAOSDeviceDescriptor(name: "wifi_rssi")
-	public static let cp0Usage = NAOSDeviceDescriptor(name: "cpu0_usage")
-	public static let cpu1Usage = NAOSDeviceDescriptor(name: "cpu1_usage")
-
-	public func title() -> String {
-		return name.split(separator: "_").map { str in str.capitalized }.joined(separator: " ")
-	}
-
-	public func format(value: String) -> String {
-		let num = Double(value) ?? 0
-		switch self {
-		case .conenctionStatus:
-			return value.capitalized
-		case .batteryLevel:
-			return String(format: "%.0f%%", num * 100)
-		case .uptime:
-			let formatter = DateComponentsFormatter()
-			formatter.allowedUnits = [.hour, .minute, .second]
-			formatter.unitsStyle = .abbreviated
-			return formatter.string(from: num / 1000) ?? ""
-		case .freeHeap:
-			return ByteCountFormatter.string(from: Measurement(value: num, unit: .bytes), countStyle: .memory)
-		case .runningPartition:
-			return value
-		case .wifiRSSI:
-			var signal = (100 - (num * -1)) * 2
-			if signal > 100 {
-				signal = 100
-			} else if signal < 0 {
-				signal = 0
-			}
-			return String(format: "%.0f%%", signal)
-		case .cp0Usage:
-			return String(format: "%.0f%% (Sys)", num * 100)
-		case .cpu1Usage:
-			return String(format: "%.0f%% (App)", num * 100)
-		default:
-			return value
-		}
-	}
 }
 
 public enum NAOSDeviceParameterType: String {
@@ -118,10 +56,45 @@ public struct NAOSDeviceParameter: Hashable {
 	}
 
 	public static func == (lhs: NAOSDeviceParameter, rhs: NAOSDeviceParameter) -> Bool {
-		return lhs.name == rhs.name && lhs.type == rhs.type && lhs.mode == rhs.mode
+		return lhs.name == rhs.name && lhs.type == rhs.type
 	}
 
 	public static let deviceName = NAOSDeviceParameter(name: "device-name", type: .string, mode: .system)
+	public static let deviceType = NAOSDeviceParameter(name: "device-type", type: .string, mode: .system)
+	public static let connectionStatus = NAOSDeviceParameter(name: "connection-status", type: .string, mode: .system)
+
+//	public func format(value: String) -> String {
+//		let num = Double(value) ?? 0
+//		switch self {
+//		case .conenctionStatus:
+//			return value.capitalized
+//		case .batteryLevel:
+//			return String(format: "%.0f%%", num * 100)
+//		case .uptime:
+//			let formatter = DateComponentsFormatter()
+//			formatter.allowedUnits = [.hour, .minute, .second]
+//			formatter.unitsStyle = .abbreviated
+//			return formatter.string(from: num / 1000) ?? ""
+//		case .freeHeap:
+//			return ByteCountFormatter.string(from: Measurement(value: num, unit: .bytes), countStyle: .memory)
+//		case .runningPartition:
+//			return value
+//		case .wifiRSSI:
+//			var signal = (100 - (num * -1)) * 2
+//			if signal > 100 {
+//				signal = 100
+//			} else if signal < 0 {
+//				signal = 0
+//			}
+//			return String(format: "%.0f%%", signal)
+//		case .cp0Usage:
+//			return String(format: "%.0f%% (Sys)", num * 100)
+//		case .cpu1Usage:
+//			return String(format: "%.0f%% (App)", num * 100)
+//		default:
+//			return value
+//		}
+//	}
 }
 
 public enum NAOSDeviceError: LocalizedError {
@@ -148,7 +121,6 @@ public protocol NAOSDeviceDelegate {
 }
 
 public class NAOSDevice: NSObject, CBPeripheralDelegate {
-	public private(set) var descriptors: [NAOSDeviceDescriptor: String] = [:]
 	public private(set) var protected: Bool = false
 	public private(set) var locked: Bool = false
 	public private(set) var availableParameters: [NAOSDeviceParameter] = []
@@ -243,7 +215,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 	}
 
 	public func title() -> String {
-		return (descriptors[.deviceType] ?? "") + " (" + (parameters[.deviceName] ?? (descriptors[.deviceName] ?? "")) + ")"
+		return (parameters[.deviceName] ?? "") + " (" + (parameters[.deviceType] ?? "") + ")"
 	}
 
 	public func unlock(password: String) {
@@ -397,21 +369,7 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 		}
 
 		// handle characteristic
-		if rawChar.uuid == NAOSDeviceCharacteristic.description.cbuuid() {
-			// set descriptors
-			print("description", value)
-			for (key, value) in parseKeyValue(value: value) {
-				descriptors[NAOSDeviceDescriptor(name: key)] = value
-			}
-
-			// notify delegate and return immediately if not refreshing
-			if !refreshing {
-				if let d = delegate {
-					d.naosDeviceDidUpdateConnectionStatus(device: self)
-				}
-			}
-
-		} else if rawChar.uuid == NAOSDeviceCharacteristic.lock.cbuuid() {
+		if rawChar.uuid == NAOSDeviceCharacteristic.lock.cbuuid() {
 			// save lock status
 			locked = value == "locked"
 
