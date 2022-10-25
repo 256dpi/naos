@@ -126,7 +126,7 @@ void naos_register(naos_param_t *param) {
   }
 
   // force application if undefined
-  if ((param->mode & (NAOS_SYSTEM|NAOS_APPLICATION)) == 0) {
+  if ((param->mode & (NAOS_SYSTEM | NAOS_APPLICATION)) == 0) {
     param->mode |= NAOS_APPLICATION;
   }
 
@@ -214,7 +214,16 @@ char *naos_params_list(naos_mode_t mode) {
   for (int i = 0; i < naos_params_count; i++) {
     naos_param_t *param = naos_params_registry[i];
     if ((param->mode & mode) == mode) {
-      length += strlen(param->name) + 3;
+      length += strlen(param->name) + 4;
+      if ((param->mode & NAOS_VOLATILE) != 0) {
+        length++;
+      }
+      if ((param->mode & NAOS_SYSTEM) != 0) {
+        length++;
+      }
+      if ((param->mode & NAOS_APPLICATION) != 0) {
+        length++;
+      }
     }
   }
 
@@ -262,7 +271,24 @@ char *naos_params_list(naos_mode_t mode) {
         break;
     }
     pos++;
+
+    // write separator
+    buf[pos] = ':';
     pos++;
+
+    // write mode
+    if ((param->mode & NAOS_VOLATILE) != 0) {
+      buf[pos] = 'v';
+      pos++;
+    }
+    if ((param->mode & NAOS_SYSTEM) != 0) {
+      buf[pos] = 's';
+      pos++;
+    }
+    if ((param->mode & NAOS_APPLICATION) != 0) {
+      buf[pos] = 'a';
+      pos++;
+    }
 
     // write comma or zero
     buf[pos] = (char)((i == naos_params_count - 1) ? '\0' : ',');
