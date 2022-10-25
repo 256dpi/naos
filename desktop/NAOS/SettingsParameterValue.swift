@@ -8,10 +8,12 @@ import Cocoa
 public protocol SettingsParameterValueDelegate {
 	func didChangeTextField(parameter: NAOSDeviceParameter, value: String)
 	func didClickCheckbox(parameter: NAOSDeviceParameter, value: Bool)
+	func didClickButton(parameter: NAOSDeviceParameter)
 }
 
 class SettingsParameterValue: NSTableCellView {
 	@IBOutlet var checkbox: NSButton!
+	@IBOutlet var button: NSButton!
 	public var parameter: NAOSDeviceParameter?
 	public var delegate: SettingsParameterValueDelegate?
 
@@ -24,6 +26,12 @@ class SettingsParameterValue: NSTableCellView {
 	@IBAction func didClickCheckbox(sender: NSButton) {
 		if let d = delegate {
 			d.didClickCheckbox(parameter: parameter!, value: sender.state == .on)
+		}
+	}
+	
+	@IBAction func didClickButton(sender: NSButton) {
+		if let d = delegate {
+			d.didClickButton(parameter: parameter!)
 		}
 	}
 }

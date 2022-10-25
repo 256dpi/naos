@@ -47,6 +47,7 @@ typedef enum {
   NAOS_BOOL,
   NAOS_LONG,
   NAOS_DOUBLE,
+  NAOS_ACTION,
 } naos_type_t;
 
 /**
@@ -103,6 +104,7 @@ typedef struct {
     void (*func_b)(bool);
     void (*func_l)(int32_t);
     void (*func_d)(double);
+    void (*func_a)();
   };
 
   /**

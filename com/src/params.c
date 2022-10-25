@@ -10,6 +10,10 @@ static nvs_handle naos_params_nvs_handle;
 static naos_param_t *naos_params_registry[CONFIG_NAOS_PARAM_REGISTRY_SIZE] = {0};
 static size_t naos_params_count = 0;
 
+static char naos_params_type_keys[] = {
+    [NAOS_STRING] = 's', [NAOS_BOOL] = 'b', [NAOS_LONG] = 'l', [NAOS_DOUBLE] = 'd', [NAOS_ACTION] = 'a',
+};
+
 static void naos_params_update(naos_param_t *param) {
   // update pointer
   switch (param->type) {
@@ -77,6 +81,12 @@ static void naos_params_update(naos_param_t *param) {
 
       break;
     }
+    case NAOS_ACTION: {
+      // yield trigger
+      if (param->func_a != NULL) {
+        param->func_a();
+      }
+    }
   }
 }
 
@@ -94,6 +104,20 @@ void naos_register(naos_param_t *param) {
   // check size
   if (naos_params_count >= CONFIG_NAOS_PARAM_REGISTRY_SIZE) {
     ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // check name and type
+  if (strlen(param->name) == 0) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  } else if (naos_lookup(param->name) != NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  } else if (param->type < 0 || param->type > NAOS_ACTION) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // force volatile for actions
+  if (param->type == NAOS_ACTION) {
+    param->mode |= NAOS_VOLATILE;
   }
 
   // store parameter
@@ -118,6 +142,9 @@ void naos_register(naos_param_t *param) {
       case NAOS_DOUBLE:
         naos_set_d(param->name, param->default_d);
         break;
+      case NAOS_ACTION:
+        naos_set(param->name, "");
+        break;
     }
   } else if (err == ESP_OK) {
     // otherwise, read stored value
@@ -133,6 +160,11 @@ void naos_register(naos_param_t *param) {
 }
 
 naos_param_t *naos_lookup(const char *name) {
+  // check name
+  if (name == NULL || strlen(name) == 0) {
+    return NULL;
+  }
+
   // find parameter
   for (size_t i = 0; i < naos_params_count; i++) {
     naos_param_t *param = naos_params_registry[i];
@@ -174,20 +206,7 @@ char *naos_params_list() {
     pos++;
 
     // write type
-    switch (param->type) {
-      case NAOS_STRING:
-        buf[pos] = 's';
-        break;
-      case NAOS_BOOL:
-        buf[pos] = 'b';
-        break;
-      case NAOS_LONG:
-        buf[pos] = 'l';
-        break;
-      case NAOS_DOUBLE:
-        buf[pos] = 'd';
-        break;
-    }
+    buf[pos] = naos_params_type_keys[param->type];
     pos++;
 
     // write comma or zero
@@ -227,6 +246,11 @@ void naos_set(const char *name, const char *value) {
   // lookup parameter
   naos_param_t *param = naos_lookup(name);
   if (param == NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // check value
+  if (value == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 

@@ -189,16 +189,22 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 			// setup controls
 			if p.type == .bool {
 				v.checkbox!.isHidden = false
+				v.button!.isHidden = true
 				v.textField!.isHidden = true
 				v.checkbox.state = device.parameters[p]! == "1" ? .on : .off
+			} else if p.type == .action {
+				v.checkbox!.isHidden = true
+				v.button!.isHidden = false
+				v.textField!.isHidden = true
 			} else {
 				v.checkbox!.isHidden = true
+				v.button!.isHidden = true
 				v.textField!.isHidden = false
 				v.textField!.stringValue = device.parameters[p]!
 
 				// set appropriate number formatters
 				switch p.type {
-				case .string, .bool:
+				case .string, .bool, .action:
 					break
 				case .long:
 					let f = NumberFormatter()
@@ -230,6 +236,8 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				v.textField!.stringValue = "Long"
 			case .double:
 				v.textField!.stringValue = "Double"
+			case .action:
+				v.textField!.stringValue = "Action"
 			}
 
 			return v
@@ -277,6 +285,14 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		// update parameter
 		device.parameters[parameter] = value ? "1" : "0"
 
+		// write parameter
+		device.write(parameter: parameter)
+	}
+	
+	func didClickButton(parameter: NAOSDeviceParameter) {
+		// update parameter
+		device.parameters[parameter] = ""
+		
 		// write parameter
 		device.write(parameter: parameter)
 	}

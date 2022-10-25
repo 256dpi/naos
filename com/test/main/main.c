@@ -109,6 +109,11 @@ static void fun_b(bool ok) {
   naos_log("fun_b: %s", ok ? "true" : "false");
 }
 
+static void fun_a() {
+  // log info
+  naos_log("fun_a: triggered");
+}
+
 static void eth_init() {
   // prepare mac
   eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
@@ -146,13 +151,14 @@ static naos_param_t params[] = {
     {.name = "fun_l", .type = NAOS_LONG, .default_l = 0, .func_l = &fun_l},
     {.name = "fun_d", .type = NAOS_DOUBLE, .default_d = 0, .func_d = &fun_d},
     {.name = "fun_b", .type = NAOS_BOOL, .default_b = true, .func_b = &fun_b},
+    {.name = "fun_a", .type = NAOS_ACTION, .func_a = &fun_a},
 };
 
 static naos_config_t config = {
     .device_type = "naos-test",
     .firmware_version = "0.0.1",
     .parameters = params,
-    .num_parameters = 8,
+    .num_parameters = sizeof(params) / sizeof(params[0]),
     .setup_callback = setup,
     .ping_callback = ping,
     .online_callback = online,

@@ -130,6 +130,7 @@ public enum NAOSDeviceParameterType: String {
 	case bool = "b"
 	case long = "l"
 	case double = "d"
+	case action = "a"
 }
 
 public struct NAOSDeviceParameter: Hashable {
