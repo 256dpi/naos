@@ -129,8 +129,8 @@ void naos_register(naos_param_t *param) {
     param->mode |= NAOS_VOLATILE;
   }
 
-  // force application if not system
-  if ((param->mode & NAOS_SYSTEM) == 0) {
+  // force application if undefined
+  if ((param->mode & (NAOS_SYSTEM|NAOS_APPLICATION)) == 0) {
     param->mode |= NAOS_APPLICATION;
   }
 
