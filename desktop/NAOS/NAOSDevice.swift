@@ -133,9 +133,22 @@ public enum NAOSDeviceParameterType: String {
 	case action = "a"
 }
 
+public struct NAOSDeviceParameterMode: OptionSet {
+	public let rawValue: Int
+
+	public init(rawValue: Int) {
+		self.rawValue = rawValue
+	}
+
+	public static let volatile = NAOSDeviceParameterMode(rawValue: 1 << 0)
+	public static let system = NAOSDeviceParameterMode(rawValue: 1 << 1)
+	public static let application = NAOSDeviceParameterMode(rawValue: 1 << 2)
+}
+
 public struct NAOSDeviceParameter: Hashable {
 	public var name: String
 	public var type: NAOSDeviceParameterType
+	public var mode: NAOSDeviceParameterMode
 
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(name)
@@ -540,7 +553,18 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 				let subSegments = s.split(separator: ":")
 				let name = String(subSegments[0])
 				let type = NAOSDeviceParameterType(rawValue: String(subSegments[1])) ?? .string
-				availableParameters.append(NAOSDeviceParameter(name: name, type: type))
+				let rawMode = String(subSegments[2])
+				var mode = NAOSDeviceParameterMode()
+				if rawMode.contains("v") {
+					mode.insert(.volatile)
+				}
+				if rawMode.contains("s") {
+					mode.insert(.system)
+				}
+				if rawMode.contains("a") {
+					mode.insert(.application)
+				}
+				availableParameters.append(NAOSDeviceParameter(name: name, type: type, mode: mode))
 			}
 
 			// queue first parameter if refreshing
