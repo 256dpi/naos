@@ -5,4 +5,6 @@ void naos_system_init();
 void naos_system_configure_wifi();
 void naos_system_configure_mqtt();
 
+// naos_status
+
 #endif  // NAOS_SYSTEM_H

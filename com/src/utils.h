@@ -21,4 +21,7 @@ const char *naos_d2str(double num);
 char *naos_format(char *fmt, ...);
 char *naos_concat(const char *str1, const char *str2);
 
+// naos_millis
+// naos_delay
+
 #endif  // NAOS_UTILS_H

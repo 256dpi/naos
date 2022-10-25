@@ -5,4 +5,7 @@
 
 const naos_config_t *naos_config();
 
+// naos_scope_str
+// naos_status_str
+
 #endif  // NAOS_INTERNAL_H

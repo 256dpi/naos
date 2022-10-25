@@ -18,19 +18,6 @@
 static naos_config_handler_t naos_config_handlers[NAOS_CONFIG_MAX_HANDLERS] = {0};
 static uint8_t naos_config_num_handlers = 0;
 
-char* naos_config_identify() {
-  // collect data
-  const char* type = naos_config()->device_type;
-  char* name = naos_settings_read(NAOS_SETTING_DEVICE_NAME);
-  const char* firmware = naos_config()->firmware_version;
-
-  // assemble string
-  char* str = naos_format("device_type=%s,device_name=%s,firmware_version=%s", type, name, firmware);
-  free(name);
-
-  return str;
-}
-
 char* naos_config_describe(bool locked) {
   // collect data
   const char* type = naos_config()->device_type;

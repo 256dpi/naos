@@ -10,4 +10,6 @@ char* naos_manager_read_param(naos_param_t* param);
 void naos_manager_write_param(naos_param_t* param, const char* value);
 void naos_manager_stop();
 
+// naos_log
+
 #endif  // NAOS_MANAGER_H

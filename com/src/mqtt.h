@@ -16,4 +16,8 @@ void naos_mqtt_start(const char *host, char *port, const char *client_id, const 
 naos_mqtt_status_t naos_mqtt_check();
 void naos_mqtt_stop();
 
+// naos_subscribe
+// naos_unsubscribe
+// naos_publish{b,l,d,r}
+
 #endif  // NAOS_MQTT_H

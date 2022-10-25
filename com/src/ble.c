@@ -514,7 +514,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
   NAOS_UNLOCK(naos_ble_mutex);
 }
 
-void naos_ble_notification_handler(naos_config_notification_t notification) {
+static void naos_ble_notification_handler(naos_config_notification_t notification) {
   // acquire mutex
   NAOS_LOCK(naos_ble_mutex);
 
