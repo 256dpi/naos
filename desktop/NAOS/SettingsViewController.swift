@@ -85,26 +85,28 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 			v.parameter = p
 			v.delegate = self
 
+			v.checkbox!.isHidden = true
+			v.button!.isHidden = true
+			v.textField!.isHidden = true
+
 			// setup controls
 			if p.type == .bool {
 				v.checkbox!.isHidden = false
-				v.button!.isHidden = true
-				v.textField!.isHidden = true
 				v.checkbox.state = device.parameters[p]! == "1" ? .on : .off
+				v.checkbox.isEnabled = !p.mode.contains(.locked)
 			} else if p.type == .action {
-				v.checkbox!.isHidden = true
 				v.button!.isHidden = false
-				v.textField!.isHidden = true
+				v.button.isEnabled = !p.mode.contains(.locked)
 			} else {
-				v.checkbox!.isHidden = true
-				v.button!.isHidden = true
 				v.textField!.isHidden = false
+				v.textField!.formatter = nil
 				v.textField!.stringValue = device.parameters[p]!
+				v.textField!.isEnabled = !p.mode.contains(.locked)
 
 				// set appropriate number formatters
 				switch p.type {
 				case .string, .bool, .action:
-					v.textField?.formatter = nil
+					break
 				case .long:
 					let f = NumberFormatter()
 					f.numberStyle = .decimal

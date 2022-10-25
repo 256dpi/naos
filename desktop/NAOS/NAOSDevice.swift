@@ -44,6 +44,8 @@ public struct NAOSDeviceParameterMode: OptionSet {
 	public static let volatile = NAOSDeviceParameterMode(rawValue: 1 << 0)
 	public static let system = NAOSDeviceParameterMode(rawValue: 1 << 1)
 	public static let application = NAOSDeviceParameterMode(rawValue: 1 << 2)
+	public static let _public = NAOSDeviceParameterMode(rawValue: 1 << 3)
+	public static let locked = NAOSDeviceParameterMode(rawValue: 1 << 4)
 }
 
 public struct NAOSDeviceParameter: Hashable {
@@ -405,6 +407,12 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 				}
 				if rawMode.contains("a") {
 					mode.insert(.application)
+				}
+				if rawMode.contains("p") {
+					mode.insert(._public)
+				}
+				if rawMode.contains("l") {
+					mode.insert(.locked)
 				}
 				availableParameters.append(NAOSDeviceParameter(name: name, type: type, mode: mode))
 			}
