@@ -8,9 +8,9 @@
 static naos_config_handler_t naos_config_handlers[NAOS_CONFIG_MAX_HANDLERS] = {0};
 static uint8_t naos_config_num_handlers = 0;
 
-char* naos_config_list_params() {
+char* naos_config_list_params(naos_mode_t mode) {
   // list params
-  return naos_params_list(0);
+  return naos_params_list(mode);
 }
 
 char* naos_config_read_param(const char* key) {

@@ -316,14 +316,14 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         // handle characteristic
         if (c == &naos_ble_char_lock) {
           value = strdup(conn->locked ? "locked" : "unlocked");
-        } else if (!conn->locked) {
-          if (c == &naos_ble_char_params_list) {
-            value = naos_config_list_params();
-          } else if (c == &naos_ble_char_params_select) {
-            if (conn->param != NULL) {
-              value = strdup(conn->param->name);
-            }
-          } else if (c == &naos_ble_char_params_value) {
+        } else if (c == &naos_ble_char_params_list) {
+          value = naos_config_list_params(conn->locked ? NAOS_PUBLIC : 0);
+        } else if (c == &naos_ble_char_params_select) {
+          if (conn->param != NULL) {
+            value = strdup(conn->param->name);
+          }
+        } else if (c == &naos_ble_char_params_value) {
+          if (conn->param != NULL) {
             value = naos_config_read_param(conn->param->name);
           }
         }
@@ -416,12 +416,15 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
             conn->locked = false;
             indicate_unlock = true;
           }
-        } else if (!conn->locked) {
-          if (c == &naos_ble_char_params_list) {
-            // ignore
-          } else if (c == &naos_ble_char_params_select) {
-            conn->param = naos_lookup(value);
-          } else if (c == &naos_ble_char_params_value) {
+        } else if (c == &naos_ble_char_params_list) {
+          // ignore
+        } else if (c == &naos_ble_char_params_select) {
+          naos_param_t *param = naos_lookup(value);
+          if (param != NULL && (!conn->locked || (param->mode & NAOS_PUBLIC) != 0)) {
+            conn->param = param;
+          }
+        } else if (c == &naos_ble_char_params_value) {
+          if (conn->param != NULL) {
             naos_config_write_parm(conn->param->name, value);
           }
         }

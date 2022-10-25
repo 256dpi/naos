@@ -54,9 +54,10 @@ typedef enum {
  * The parameter modes.
  */
 typedef enum {
-  NAOS_VOLATILE = (1 << 0),   /** Only stored in memory */
-  NAOS_SYSTEM = (1 << 1),     /** Only informative */
-  NAOS_APPLICATION = (1 << 2) /** Only informative */
+  NAOS_VOLATILE = (1 << 0),    /** Stored in memory */
+  NAOS_SYSTEM = (1 << 1),      /** Only informative */
+  NAOS_APPLICATION = (1 << 2), /** Only informative */
+  NAOS_PUBLIC = (1 << 3)       /** Requires no password */
 } naos_mode_t;
 
 /**

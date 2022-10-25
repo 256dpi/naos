@@ -30,9 +30,11 @@ static naos_status_t naos_system_status;
 static uint32_t naos_system_updated = 0;
 
 static naos_param_t naos_system_params[] = {
-    {.name = "device-type", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM},     // TODO: Read only.
+    {.name = "device-type",
+     .type = NAOS_STRING,
+     .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_PUBLIC},                                   // TODO: Read only.
     {.name = "device-version", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM},  // TODO: Read only.
-    {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM | NAOS_PUBLIC},
     {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = esp_restart},
     {.name = "wifi-ssid", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},

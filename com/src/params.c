@@ -208,9 +208,11 @@ char *naos_params_list(naos_mode_t mode) {
 
   // determine list length
   size_t length = 0;
+  size_t count = 0;
   for (int i = 0; i < naos_params_count; i++) {
     naos_param_t *param = naos_params_registry[i];
     if ((param->mode & mode) == mode) {
+      count++;
       length += strlen(param->name) + 4;
       if ((param->mode & NAOS_VOLATILE) != 0) {
         length++;
@@ -219,6 +221,9 @@ char *naos_params_list(naos_mode_t mode) {
         length++;
       }
       if ((param->mode & NAOS_APPLICATION) != 0) {
+        length++;
+      }
+      if ((param->mode & NAOS_PUBLIC) != 0) {
         length++;
       }
     }
@@ -237,6 +242,9 @@ char *naos_params_list(naos_mode_t mode) {
     if ((param->mode & mode) != mode) {
       continue;
     }
+
+    // decrement
+    count--;
 
     // copy name
     strcpy(buf + pos, param->name);
@@ -286,9 +294,13 @@ char *naos_params_list(naos_mode_t mode) {
       buf[pos] = 'a';
       pos++;
     }
+    if ((param->mode & NAOS_PUBLIC) != 0) {
+      buf[pos] = 'p';
+      pos++;
+    }
 
     // write comma or zero
-    buf[pos] = (char)((i == naos_params_count - 1) ? '\0' : ',');
+    buf[pos] = (char)((count == 0) ? '\0' : ',');
     pos++;
   }
 
