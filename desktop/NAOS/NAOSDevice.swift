@@ -112,12 +112,11 @@ public enum NAOSError: LocalizedError {
 }
 
 public protocol NAOSDeviceDelegate {
-	func naosDeviceDidConnect(device: NAOSDevice)
-	func naosDeviceDidUnlock(device: NAOSDevice)
-	func naosDeviceDidRefresh(device: NAOSDevice)
 	func naosDeviceDidUpdate(device: NAOSDevice, parameter: NAOSParameter)
 	func naosDeviceDidDisconnect(device: NAOSDevice, error: Error?)
 }
+
+// TODO: Handle intermittent connection errors.
 
 public class NAOSDevice: NSObject {
 	internal var peripheral: Peripheral
@@ -207,15 +206,6 @@ public class NAOSDevice: NSObject {
 
 				// update parameter
 				try await self.read(parameter: param!)
-
-				print("updated", value)
-			}
-		}
-
-		// call delegate if available
-		if let d = delegate {
-			DispatchQueue.main.async {
-				d.naosDeviceDidConnect(device: self)
 			}
 		}
 	}
@@ -283,13 +273,6 @@ public class NAOSDevice: NSObject {
 
 		// notify manager
 		manager.didRefreshDevice(device: self)
-
-		// call delegate if available
-		if let d = delegate {
-			DispatchQueue.main.async {
-				d.naosDeviceDidRefresh(device: self)
-			}
-		}
 	}
 
 	public func title() -> String {
@@ -307,19 +290,7 @@ public class NAOSDevice: NSObject {
 		// read lock
 		let lock = try await read(char: .lock)
 
-		// check lock
-		if lock != "unlocked" {
-			return false
-		}
-
-		// call delegate if present
-		if let d = delegate {
-			DispatchQueue.main.async {
-				d.naosDeviceDidUnlock(device: self)
-			}
-		}
-
-		return true
+		return lock == "unlocked"
 	}
 
 	public func read(parameter: NAOSParameter) async throws {

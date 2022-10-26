@@ -42,25 +42,35 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 			if device.locked {
 				// show unlock view
 				unlockViewController = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "UnlockViewController") as? UnlockViewController
+				unlockViewController!.device = device
+				unlockViewController!.swc = self
 				contentViewController = unlockViewController
-
-				// set device
-				unlockViewController!.setDevice(device: device)
 			} else {
 				// show settings view
 				settingsViewController = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "SettingsViewController") as? SettingsViewController
+				settingsViewController!.device = device
 				contentViewController = settingsViewController
 
-				// set device
-				settingsViewController!.setDevice(device: device)
+				// trigger refresh
+				settingsViewController?.refresh(self)
 			}
 		}
 	}
 
-	// NAOSDeviceDelegate
+	func didUnlock() {
+		// show settings view
+		settingsViewController = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "SettingsViewController") as? SettingsViewController
+		settingsViewController!.device = device
+		contentViewController = settingsViewController
 
-	func naosDeviceDidConnect(device _: NAOSDevice) {}
-	func naosDeviceDidRefresh(device _: NAOSDevice) {}
+		// remove old controller
+		unlockViewController = nil
+
+		// trigger refresh
+		settingsViewController!.refresh(self)
+	}
+
+	// NAOSDeviceDelegate
 
 //	func naosDeviceDidError(device _: NAOSDevice, error: Error) {
 //		// show error
@@ -77,23 +87,6 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 		if let wc = settingsViewController {
 			wc.didUpdateParameter(parameter: parameter)
 		}
-	}
-
-	func naosDeviceDidUnlock(device: NAOSDevice) {
-		// return if unlock screen is not active
-		if unlockViewController == nil {
-			return
-		}
-
-		// show settings view
-		settingsViewController = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "SettingsViewController") as? SettingsViewController
-		contentViewController = settingsViewController
-
-		// set device
-		settingsViewController!.setDevice(device: device)
-
-		// remove old controller
-		unlockViewController = nil
 	}
 
 	func naosDeviceDidDisconnect(device _: NAOSDevice, error: Error?) {

@@ -8,12 +8,8 @@ import Cocoa
 class UnlockViewController: NSViewController {
 	@IBOutlet var passwordField: NSSecureTextField!
 
-	private var device: NAOSDevice!
-
-	func setDevice(device: NAOSDevice) {
-		// save device
-		self.device = device
-	}
+	internal var device: NAOSDevice!
+	internal var swc: SettingsWindowController!
 
 	@IBAction
 	func unlock(_: AnyObject) {
@@ -21,9 +17,16 @@ class UnlockViewController: NSViewController {
 		let password = passwordField.stringValue
 		passwordField.stringValue = ""
 
-		// unlock device
 		Task {
-			try await device.unlock(password: password)
+			// unlock device
+			let ok = try await device.unlock(password: password)
+
+			// yield unlock if successful
+			if ok {
+				DispatchQueue.main.async {
+					self.swc.didUnlock()
+				}
+			}
 		}
 	}
 }

@@ -9,17 +9,9 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 	@IBOutlet var connectionStatusLabel: NSTextField!
 	@IBOutlet var parameterTableView: NSTableView!
 
-	private var device: NAOSDevice!
+	internal var device: NAOSDevice!
 
 	private var loadingViewController: LoadingViewController?
-
-	func setDevice(device: NAOSDevice) {
-		// save device
-		self.device = device
-
-		// perform refresh
-		refresh(self)
-	}
 
 	@IBAction
 	func refresh(_: AnyObject) {
