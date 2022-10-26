@@ -5,13 +5,17 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
-#include "naos.h"
+#include "params.h"
 #include "utils.h"
+
+#define NAOS_PARAMS_MAX_RECEIVERS 8
 
 static nvs_handle naos_params_handle;
 static SemaphoreHandle_t naos_params_mutex;
 static naos_param_t *naos_params_registry[CONFIG_NAOS_PARAM_REGISTRY_SIZE] = {0};
 static size_t naos_params_count = 0;
+static naos_params_receiver_t naos_params_receivers[NAOS_PARAMS_MAX_RECEIVERS] = {0};
+static uint8_t naos_params_receivers_count = 0;
 
 static void naos_params_update(naos_param_t *param) {
   // update pointer
@@ -317,6 +321,52 @@ char *naos_params_list(naos_mode_t mode) {
   return buf;
 }
 
+void naos_params_subscribe(naos_params_receiver_t receiver) {
+  // acquire mutex
+  NAOS_LOCK(naos_params_mutex);
+
+  // check count
+  if (naos_params_receivers_count >= NAOS_PARAMS_MAX_RECEIVERS) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // add receiver
+  naos_params_receivers[naos_params_receivers_count] = receiver;
+  naos_params_receivers_count++;
+
+  // release mutex
+  NAOS_UNLOCK(naos_params_mutex);
+}
+
+void naos_params_dispatch() {
+  // acquire mutex
+  NAOS_LOCK(naos_params_mutex);
+
+  // iterate parameters
+  for (size_t i = 0; i < naos_params_count; i++) {
+    // get param
+    naos_param_t *param = naos_params_registry[i];
+
+    // continue if not changed
+    if (!param->changed) {
+      continue;
+    }
+
+    // clear flag
+    param->changed = false;
+
+    // dispatch change
+    for (size_t j = 0; j < naos_params_receivers_count; j++) {
+      NAOS_UNLOCK(naos_params_mutex);
+      naos_params_receivers[j](param);
+      NAOS_LOCK(naos_params_mutex);
+    }
+  }
+
+  // release mutex
+  NAOS_UNLOCK(naos_params_mutex);
+}
+
 const char *naos_get(const char *name) {
   // lookup parameter
   naos_param_t *param = naos_lookup(name);
@@ -365,6 +415,9 @@ void naos_set(const char *name, const char *value) {
   // update value
   free(param->value);
   param->value = strdup(value);
+
+  // track change
+  param->changed = true;
 
   // release mutex
   NAOS_UNLOCK(naos_params_mutex);

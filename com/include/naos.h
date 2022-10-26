@@ -115,6 +115,11 @@ typedef struct {
    * The current value.
    */
   char *value;
+
+  /**
+   * The changes tracker.
+   */
+  bool changed;
 } naos_param_t;
 
 /**

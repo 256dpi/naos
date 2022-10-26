@@ -11,8 +11,9 @@
 #include <string.h>
 
 #include "naos.h"
-#include "utils.h"
 #include "config.h"
+#include "params.h"
+#include "utils.h"
 
 #define NAOS_BLE_INITIALIZED_BIT (1 << 0)
 #define NAOS_BLE_MAX_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
@@ -89,13 +90,18 @@ static naos_ble_gatts_char_t naos_ble_char_params_value = {
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
     .max_write_len = 128};
 
-#define NAOS_BLE_NUM_CHARS 4
+static naos_ble_gatts_char_t naos_ble_char_params_update = {
+        .uuid = {0x26, 0x17, 0x8c, 0xbc, 0x61, 0x7a, 0x4a, 0x9c, 0xa2, 0x22, 0x04, 0x07, 0xcf, 0xfd, 0xbf, 0x87},
+        .prop = ESP_GATT_CHAR_PROP_BIT_INDICATE};
+
+#define NAOS_BLE_NUM_CHARS 5
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
     &naos_ble_char_lock,
     &naos_ble_char_params_list,
     &naos_ble_char_params_select,
     &naos_ble_char_params_value,
+    &naos_ble_char_params_update,
 };
 
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
@@ -317,14 +323,14 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         if (c == &naos_ble_char_lock) {
           value = strdup(conn->locked ? "locked" : "unlocked");
         } else if (c == &naos_ble_char_params_list) {
-          value = naos_config_list_params(conn->locked ? NAOS_PUBLIC : 0);
+          value = naos_params_list(conn->locked ? NAOS_PUBLIC : 0);
         } else if (c == &naos_ble_char_params_select) {
           if (conn->param != NULL) {
             value = strdup(conn->param->name);
           }
         } else if (c == &naos_ble_char_params_value) {
           if (conn->param != NULL) {
-            value = naos_config_read_param(conn->param->name);
+            value = strdup(naos_get(conn->param->name));
           }
         }
 
@@ -425,7 +431,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
           }
         } else if (c == &naos_ble_char_params_value) {
           if (conn->param != NULL && (conn->param->mode & NAOS_LOCKED) == 0) {
-            naos_config_write_parm(conn->param->name, value);
+            naos_config_write_param(conn->param->name, value);
           }
         }
 
@@ -472,23 +478,16 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
   NAOS_UNLOCK(naos_ble_mutex);
 }
 
-static void naos_ble_notification_handler(naos_config_notification_t notification) {
+static void naos_ble_param_receiver(naos_param_t *param) {
   // acquire mutex
   NAOS_LOCK(naos_ble_mutex);
 
   // send indicate to all unlocked connections
   for (int j = 0; j < NAOS_BLE_MAX_CONNECTIONS; j++) {
-    if (naos_ble_conns[j].connected && !naos_ble_conns[j].locked) {
-      naos_ble_conn_t *conn = &naos_ble_conns[j];
-      switch (notification) {
-        case NAOS_CONFIG_NOTIFICATION_DESCRIPTION: {
-          //          char *value = naos_config_describe(conn->locked);
-          //          ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, j,
-          //                                                      naos_ble_char_description.handle,
-          //                                                      (uint16_t)strlen(value), (uint8_t *)value, false));
-          //          free(value);
-        }
-      }
+    naos_ble_conn_t *conn = &naos_ble_conns[j];
+    if (conn->connected && !conn->locked) {
+      ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, j, naos_ble_char_params_update.handle,
+                                                  (uint16_t)strlen(param->name), (uint8_t *)param->name, false));
     }
   }
 
@@ -551,6 +550,6 @@ void naos_ble_init() {
   // wait for initialization to complete
   xEventGroupWaitBits(naos_ble_signal, NAOS_BLE_INITIALIZED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
 
-  // register notification handler
-  naos_config_register(naos_ble_notification_handler);
+  // subscribe parameters changes
+  naos_params_subscribe(naos_ble_param_receiver);
 }

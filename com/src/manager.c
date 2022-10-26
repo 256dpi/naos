@@ -358,16 +358,6 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
   NAOS_UNLOCK(naos_manager_mutex);
 }
 
-char *naos_manager_read_param(naos_param_t *param) {
-  // check param
-  if (param == NULL) {
-    return NULL;
-  }
-
-  // get param
-  return strdup(naos_get(param->name));
-}
-
 void naos_manager_write_param(naos_param_t *param, const char *value) {
   // check number
   if (param == NULL) {

@@ -62,9 +62,6 @@ static void naos_system_set_status(naos_status_t status) {
   // set status
   naos_set("connection-status", name);
 
-  // notify connection status
-  naos_config_notify(NAOS_CONFIG_NOTIFICATION_DESCRIPTION);
-
   // call status callback if present
   if (naos_config()->status_callback != NULL) {
     naos_acquire();
@@ -144,6 +141,9 @@ static void naos_system_task() {
       naos_set_l("free-heap", (int32_t)esp_get_free_heap_size());
       naos_system_updated = naos_millis();
     }
+
+    // dispatch parameters
+    naos_params_dispatch();
   }
 }
 
