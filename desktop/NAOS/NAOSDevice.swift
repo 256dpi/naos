@@ -153,7 +153,9 @@ public class NAOSDevice: NSObject {
 		try await manager.centralManager.connect(peripheral, options: nil)
 
 		// discover services
-		try await peripheral.discoverServices([NAOSService])
+		try await withTimeout(seconds: 1) {
+			try await self.peripheral.discoverServices([NAOSService])
+		}
 
 		// find service
 		for svc in peripheral.discoveredServices ?? [] {
@@ -166,12 +168,16 @@ public class NAOSDevice: NSObject {
 		}
 
 		// discover characteristics
-		try await peripheral.discoverCharacteristics(nil, for: service!)
+		try await withTimeout(seconds: 1) {
+			try await self.peripheral.discoverCharacteristics(nil, for: self.service!)
+		}
 
 		// enable notifications for characteristics that support indication
 		for char in service!.discoveredCharacteristics ?? [] {
 			if char.properties.contains(.indicate) {
-				try await peripheral.setNotifyValue(true, for: char)
+				try await withTimeout(seconds: 1) {
+					try await self.peripheral.setNotifyValue(true, for: char)
+				}
 			}
 		}
 
@@ -370,7 +376,9 @@ public class NAOSDevice: NSObject {
 		}
 
 		// read value
-		try await peripheral.readValue(for: char)
+		try await withTimeout(seconds: 1) {
+			try await self.peripheral.readValue(for: char)
+		}
 
 		// parse string
 		let str = String(data: char.value ?? Data(capacity: 0), encoding: .utf8) ?? ""
@@ -385,7 +393,9 @@ public class NAOSDevice: NSObject {
 		}
 
 		// read value
-		try await peripheral.writeValue(data.data(using: .utf8)!, for: char, type: .withResponse)
+		try await withTimeout(seconds: 1) {
+			try await self.peripheral.writeValue(data.data(using: .utf8)!, for: char, type: .withResponse)
+		}
 	}
 
 	private func fromRawCharacteristic(char: Characteristic) -> NAOSCharacteristic? {
