@@ -101,7 +101,7 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 
 		// disconnect device
 		Task {
-			try await device.disconnect()
+			try! await device.disconnect()
 		}
 
 		return false
