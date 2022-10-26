@@ -67,11 +67,7 @@ public class NAOSManager: NSObject {
 				if error != nil {
 					for device in self.allDevices {
 						if device.peripheral.identifier == peripheral.identifier {
-							if let d = device.delegate {
-								DispatchQueue.main.async {
-									d.naosDeviceDidDisconnect(device: device, error: error!)
-								}
-							}
+							device.didDisconnect(error: error!)
 						}
 					}
 				}

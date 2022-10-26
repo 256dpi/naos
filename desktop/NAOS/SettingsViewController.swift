@@ -24,7 +24,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		// refresh device
 		Task {
 			// perform refresh
-			try await device.refresh()
+			try! await device.refresh() // TODO: Handle error.
 
 			DispatchQueue.main.async {
 				// update connection status
@@ -171,7 +171,12 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		// write parameter
 		Task {
 			// perform write
-			try await device.write(parameter: parameter)
+			do {
+				try await device.write(parameter: parameter)
+			} catch {
+				showError(error: error)
+				return
+			}
 
 			// recalculate row height
 			DispatchQueue.main.async {
@@ -186,7 +191,11 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 		// write parameter
 		Task {
-			try await device.write(parameter: parameter)
+			do {
+				try await device.write(parameter: parameter)
+			} catch {
+				showError(error: error)
+			}
 		}
 	}
 
@@ -196,7 +205,11 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 		// write parameter
 		Task {
-			try await device.write(parameter: parameter)
+			do {
+				try await device.write(parameter: parameter)
+			} catch {
+				showError(error: error)
+			}
 		}
 	}
 }

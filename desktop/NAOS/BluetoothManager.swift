@@ -96,9 +96,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 
 	func naosManagerDidFailToPrepareDevice(manager _: NAOSManager, error: Error) {
 		// show error
-		let alert = NSAlert()
-		alert.messageText = error.localizedDescription
-		alert.runModal()
+		showError(error: error)
 	}
 
 	func naosManagerDidRefreshDevice(manager _: NAOSManager, device: NAOSDevice) {

@@ -38,10 +38,10 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 		// connect to device
 		Task {
 			// perform connect
-			try await device.connect()
+			try! await device.connect()  // TODO: Handle error.
 
 			// refresh device
-			try await device.refresh()
+			try! await device.refresh() // TODO: Handle error.
 
 			// check if locked
 			if device.locked {
@@ -76,16 +76,6 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 	}
 
 	// NAOSDeviceDelegate
-
-//	func naosDeviceDidError(device _: NAOSDevice, error: Error) {
-//		// show error
-//		let alert = NSAlert()
-//		alert.messageText = error.localizedDescription
-//		alert.runModal()
-//
-//		// let manager close window
-//		manager.close(self)
-//	}
 
 	func naosDeviceDidUpdate(device _: NAOSDevice, parameter: NAOSParameter) {
 		// forward parameter update

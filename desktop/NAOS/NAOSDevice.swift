@@ -359,6 +359,27 @@ public class NAOSDevice: NSObject {
 		// disconnect from device
 		try await manager.centralManager.cancelPeripheralConnection(peripheral)
 	}
+	
+	internal func didDisconnect(error: Error) {
+		// acquire mutex
+		mutex.wait()
+		defer { mutex.signal() }
+
+		// lock again if protected
+		if protected {
+			locked = true
+		}
+
+		// cancel subscription
+		subscription?.cancel()
+		
+		// call delegate if available
+		if let d = delegate {
+			DispatchQueue.main.async {
+				d.naosDeviceDidDisconnect(device: self, error: error)
+			}
+		}
+	}
 
 	// Helpers
 

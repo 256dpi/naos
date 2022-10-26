@@ -19,7 +19,12 @@ class UnlockViewController: NSViewController {
 
 		Task {
 			// unlock device
-			let ok = try await device.unlock(password: password)
+			var ok = false
+			do {
+				ok = try await device.unlock(password: password)
+			} catch {
+				showError(error: error)
+			}
 
 			// yield unlock if successful
 			if ok {

@@ -6,9 +6,13 @@
 //  Copyright © 2022 Joël Gähwiler. All rights reserved.
 //
 
-import Foundation
+import Cocoa
 
-public struct TimedOutError: Error, Equatable {}
+public struct TimedOutError: LocalizedError, Equatable {
+	public var errorDescription: String? {
+		return "Operation timed out."
+	}
+}
 
 public func withTimeout<R>(seconds: TimeInterval, operation: @escaping @Sendable () async throws -> R) async throws -> R {
 	return try await withThrowingTaskGroup(of: R.self) { group in
@@ -35,5 +39,14 @@ public func withTimeout<R>(seconds: TimeInterval, operation: @escaping @Sendable
 		group.cancelAll()
 		
 		return result
+	}
+}
+
+public func showError(error: Error) {
+	// show error
+	DispatchQueue.main.async {
+		let alert = NSAlert()
+		alert.messageText = error.localizedDescription
+		alert.runModal()
 	}
 }
