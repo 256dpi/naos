@@ -4,7 +4,6 @@
 //
 
 import Cocoa
-import CoreBluetooth
 
 class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, SettingsParameterValueDelegate {
 	@IBOutlet var connectionStatusLabel: NSTextField!

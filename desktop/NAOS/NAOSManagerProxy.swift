@@ -3,8 +3,8 @@
 // Copyright (c) 2017 Joël Gähwiler. All rights reserved.
 //
 
+import Cocoa
 import CoreBluetooth
-import Foundation
 
 class NAOSManagerProxy: NSObject, CBCentralManagerDelegate {
 	var parent: NAOSManager

@@ -4,7 +4,6 @@
 //
 
 import Cocoa
-import CoreBluetooth
 
 // TODO: Add multiple menus per device type.
 

@@ -4,7 +4,6 @@
 //
 
 import Cocoa
-import CoreBluetooth
 
 class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDeviceDelegate {
 	private var device: NAOSDevice!
