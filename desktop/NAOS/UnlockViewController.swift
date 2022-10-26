@@ -17,10 +17,13 @@ class UnlockViewController: NSViewController {
 
 	@IBAction
 	func unlock(_: AnyObject) {
-		// unlock device
-		device.unlock(password: passwordField.stringValue)
-
-		// reset
+		// copy and reset password
+		let password = passwordField.stringValue
 		passwordField.stringValue = ""
+
+		// unlock device
+		Task {
+			try await device.unlock(password: password)
+		}
 	}
 }

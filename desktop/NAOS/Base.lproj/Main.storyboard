@@ -866,7 +866,7 @@
                                                                         <font key="font" metaFont="system"/>
                                                                     </buttonCell>
                                                                     <connections>
-                                                                        <action selector="didClickCheckboxWithSender:" target="Cfr-F8-oKl" id="eQ7-Ef-KRg"/>
+                                                                        <action selector="didCheckWithSender:" target="Cfr-F8-oKl" id="Eed-6q-eAP"/>
                                                                     </connections>
                                                                 </button>
                                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="udz-js-rtU">
@@ -879,7 +879,7 @@
                                                                         <font key="font" metaFont="system"/>
                                                                     </buttonCell>
                                                                     <connections>
-                                                                        <action selector="didClickButtonWithSender:" target="Cfr-F8-oKl" id="GMD-bv-wVG"/>
+                                                                        <action selector="didClickWithSender:" target="Cfr-F8-oKl" id="rwX-aq-KEQ"/>
                                                                     </connections>
                                                                 </button>
                                                                 <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="bMb-U6-w9r">
@@ -893,7 +893,7 @@
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
                                                                     <connections>
-                                                                        <action selector="didChangeTextFieldWithSender:" target="Cfr-F8-oKl" id="v7z-k1-TLx"/>
+                                                                        <action selector="didChangeWithSender:" target="Cfr-F8-oKl" id="A7y-8E-a17"/>
                                                                     </connections>
                                                                 </textField>
                                                             </subviews>
@@ -1065,7 +1065,7 @@
                         </constraints>
                     </view>
                     <connections>
-                        <outlet property="passwordField" destination="dCO-7u-Rbm" id="XY0-ff-QAi"/>
+                        <outlet property="passwordField" destination="dCO-7u-Rbm" id="17n-gz-qsM"/>
                     </connections>
                 </viewController>
                 <customObject id="W9o-ec-r9P" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>

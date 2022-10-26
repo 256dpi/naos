@@ -17,47 +17,34 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		// save device
 		self.device = device
 
-		// read all values
+		// perform refresh
 		refresh(self)
-
-		// reload table
-		parameterTableView.reloadData()
 	}
 
 	@IBAction
 	func refresh(_: AnyObject) {
-		// create refresh view controller
+		// show loading view controller
 		loadingViewController = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "LoadingViewController") as? LoadingViewController
-
-		// set label
 		loadingViewController!.message = "Refreshing..."
-
-		// set size
 		loadingViewController!.preferredContentSize = CGSize(width: 200, height: 200)
-
-		// present refresh controller as sheet
 		presentAsSheet(loadingViewController!)
 
-		// read all settings
-		device.refresh()
-	}
+		// refresh device
+		Task {
+			// perform refresh
+			try await device.refresh()
 
-	// SettingsWindowController
+			DispatchQueue.main.async {
+				// update connection status
+				self.connectionStatusLabel.stringValue = (self.device.parameters[.connectionStatus] ?? "").capitalized
 
-	func didRefresh() {
-		// update connection status
-		connectionStatusLabel.stringValue = (device.parameters[.connectionStatus] ?? "").capitalized
+				// reload parameters
+				self.parameterTableView.reloadData()
 
-		// reload parameters
-		parameterTableView.reloadData()
-
-		// dismiss sheet
-		dismiss(loadingViewController!)
-	}
-
-	func didUpdateConnectionStatus() {
-		// update connection status
-		connectionStatusLabel.stringValue = (device.parameters[.connectionStatus] ?? "").capitalized
+				// dismiss sheet
+				self.dismiss(self.loadingViewController!)
+			}
+		}
 	}
 
 	// NSTableView
@@ -168,32 +155,56 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		return CGFloat(lines * 17)
 	}
 
+	// SettingsWindowController
+
+	func didUpdateParameter(parameter: NAOSParameter) {
+		// update connection status
+		if parameter == .connectionStatus {
+			connectionStatusLabel.stringValue = (device.parameters[.connectionStatus] ?? "").capitalized
+		}
+
+		// find index
+		let index = device.availableParameters.firstIndex(of: parameter)!
+
+		// reload paramter
+		parameterTableView.reloadData(forRowIndexes: IndexSet(integer: index), columnIndexes: IndexSet(integer: 1))
+	}
+
 	// SettingsParameterValueDelegate
 
-	func didChangeTextField(parameter: NAOSDeviceParameter, value: String) {
+	func didChangeTextField(parameter: NAOSParameter, value: String) {
 		// update parameter
 		device.parameters[parameter] = value
 
 		// write parameter
-		device.write(parameter: parameter)
+		Task {
+			// perform write
+			try await device.write(parameter: parameter)
 
-		// recalcualte row height
-		parameterTableView.noteHeightOfRows(withIndexesChanged: IndexSet(integer: device.availableParameters.firstIndex(of: parameter)!))
+			// recalculate row height
+			DispatchQueue.main.async {
+				self.parameterTableView.noteHeightOfRows(withIndexesChanged: IndexSet(integer: self.device.availableParameters.firstIndex(of: parameter)!))
+			}
+		}
 	}
 
-	func didClickCheckbox(parameter: NAOSDeviceParameter, value: Bool) {
+	func didClickCheckbox(parameter: NAOSParameter, value: Bool) {
 		// update parameter
 		device.parameters[parameter] = value ? "1" : "0"
 
 		// write parameter
-		device.write(parameter: parameter)
+		Task {
+			try await device.write(parameter: parameter)
+		}
 	}
 
-	func didClickButton(parameter: NAOSDeviceParameter) {
+	func didClickButton(parameter: NAOSParameter) {
 		// update parameter
 		device.parameters[parameter] = ""
 
 		// write parameter
-		device.write(parameter: parameter)
+		Task {
+			try await device.write(parameter: parameter)
+		}
 	}
 }

@@ -3,28 +3,21 @@
 //  Copyright © 2017 Joël Gähwiler. All rights reserved.
 //
 
+import AsyncBluetooth
 import Cocoa
-import CoreBluetooth
 
 public protocol NAOSManagerDelegate {
 	func naosManagerDidPrepareDevice(manager: NAOSManager, device: NAOSDevice)
 	func naosManagerDidFailToPrepareDevice(manager: NAOSManager, error: Error)
-	func naosManagerDidUpdateDevice(manager: NAOSManager, device: NAOSDevice)
+	func naosManagerDidRefreshDevice(manager: NAOSManager, device: NAOSDevice)
 	func naosManagerDidReset(manager: NAOSManager)
-}
-
-public extension NAOSManagerDelegate {
-	func naosManagerDidUpdateDevice(manager _: NAOSManager, device _: NAOSDevice) {}
 }
 
 public class NAOSManager: NSObject {
 	public var delegate: NAOSManagerDelegate?
-
-	internal var centralManager: CBCentralManager!
-
+	internal var centralManager: CentralManager!
 	private var allDevices: [NAOSDevice]
 	private var availableDevices: [NAOSDevice]
-	private var proxy: NAOSManagerProxy!
 
 	public init(delegate: NAOSManagerDelegate?) {
 		// set delegate
@@ -37,99 +30,95 @@ public class NAOSManager: NSObject {
 		// call superclass
 		super.init()
 
-		// create proxy and central manager
-		proxy = NAOSManagerProxy(parent: self)
-		centralManager = CBCentralManager(delegate: proxy, queue: nil)
+		// central manager
+		centralManager = CentralManager()
+		
+		// TODO: Support enable/disable Bluetooth.
+		
+		// run background task
+		Task {
+			while true {
+				// wait until ready
+				try await centralManager.waitUntilReady()
+				
+				// create scan stream
+				let stream = try await centralManager.scanForPeripherals(withServices: [NAOSService])
+				
+				// handle discovered peripherals
+				for await scanData in stream {
+					// check device
+					var found = false
+					for device in allDevices {
+						if device.peripheral.identifier == scanData.peripheral.identifier {
+							found = true
+						}
+					}
+					if found {
+						continue
+					}
+			
+					// create new device
+					let device = NAOSDevice(peripheral: scanData.peripheral, manager: self)
+			
+					// add device
+					allDevices.append(device)
+					
+					Task {
+						// prepare device
+						do {
+							try await device.connect()
+							try await device.refresh()
+							try await device.disconnect()
+						} catch {
+							// handle error
+							if let d = delegate {
+								DispatchQueue.main.async {
+									d.naosManagerDidFailToPrepareDevice(manager: self, error: error)
+								}
+							}
+							
+							return
+						}
+						
+						// add available device
+						availableDevices.append(device)
+						
+						// call callback if present
+						if let d = delegate {
+							DispatchQueue.main.async {
+								d.naosManagerDidPrepareDevice(manager: self, device: device)
+							}
+						}
+					}
+				}
+			}
+		}
 	}
+	
+//	internal func centralManagerDidUpdateState(state: CBManagerState) {
+//		if state == .poweredOn {
+//			// start scanning
+//			centralManager.scanForPeripherals(withServices: [NAOSDeviceService], options: nil)
+//		} else if state == .poweredOff {
+//			// clear all arrays
+//			allDevices.removeAll()
+//			availableDevices.removeAll()
+//
+//			// call callback if present
+//			if let d = delegate {
+//				d.naosManagerDidReset(manager: self)
+//			}
+//		}
+//	}
 
 	// NAOSDevice
 
-	internal func didPrepareDevice(device: NAOSDevice) {
-		// add available device
-		availableDevices.append(device)
-
-		// call callback if present
-		if let d = delegate {
-			d.naosManagerDidPrepareDevice(manager: self, device: device)
-		}
-	}
-
-	internal func failedToPrepareDevice(device _: NAOSDevice, error: Error) {
+	internal func didRefreshDevice(device: NAOSDevice) {
 		// call callback if available
 		if let d = delegate {
-			d.naosManagerDidFailToPrepareDevice(manager: self, error: error)
-		}
-	}
-
-	internal func didUpdateDevice(device: NAOSDevice) {
-		// call callback if available
-		if let d = delegate {
-			d.naosManagerDidUpdateDevice(manager: self, device: device)
-		}
-	}
-
-	// NAOSManagerProxy
-
-	internal func centralManagerDidUpdateState(state: CBManagerState) {
-		if state == .poweredOn {
-			// start scanning
-			centralManager.scanForPeripherals(withServices: [NAOSDeviceService], options: nil)
-		} else if state == .poweredOff {
-			// clear all arrays
-			allDevices.removeAll()
-			availableDevices.removeAll()
-
-			// call callback if present
-			if let d = delegate {
-				d.naosManagerDidReset(manager: self)
+			DispatchQueue.main.async {
+				d.naosManagerDidRefreshDevice(manager: self, device: device)
 			}
 		}
-	}
-
-	internal func centralManagerDidDiscover(peripheral: CBPeripheral) {
-		// return if peripheral is already attached to a device
-		if deviceForPeripheral(peripheral: peripheral) != nil {
-			return
-		}
-
-		// create new device
-		let device = NAOSDevice(peripheral: peripheral, manager: self)
-
-		// add device
-		allDevices.append(device)
-	}
-
-	internal func centralManagerDidConnect(peripheral: CBPeripheral) {
-		// forward connect event
-		if let d = deviceForPeripheral(peripheral: peripheral) {
-			d.forwardDidConnect()
-		}
-	}
-
-	internal func centralManagerDidFailToConnect(peripheral: CBPeripheral, error: Error?) {
-		// forward fail to connect event
-		if let d = deviceForPeripheral(peripheral: peripheral) {
-			d.forwardDidFailToConnect(error: error)
-		}
-	}
-
-	internal func centralManagerDidDisconnect(peripheral: CBPeripheral, error: Error?) {
-		// forward disconnect event
-		if let d = deviceForPeripheral(peripheral: peripheral) {
-			d.forwardDidDisconnect(error: error)
-		}
-	}
-
-	// Helpers
-
-	private func deviceForPeripheral(peripheral: CBPeripheral) -> NAOSDevice? {
-		// search device in list
-		for device in allDevices {
-			if device.peripheral == peripheral {
-				return device
-			}
-		}
-
-		return nil
 	}
 }

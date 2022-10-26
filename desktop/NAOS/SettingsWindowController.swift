@@ -31,45 +31,51 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 		connectingViewController = (contentViewController as! LoadingViewController)
 
 		// connect to device
-		device.connect()
+		Task {
+			// perform connect
+			try await device.connect()
+
+			// refresh device
+			try await device.refresh()
+
+			// check if locked
+			if device.locked {
+				// show unlock view
+				unlockViewController = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "UnlockViewController") as? UnlockViewController
+				contentViewController = unlockViewController
+
+				// set device
+				unlockViewController!.setDevice(device: device)
+			} else {
+				// show settings view
+				settingsViewController = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "SettingsViewController") as? SettingsViewController
+				contentViewController = settingsViewController
+
+				// set device
+				settingsViewController!.setDevice(device: device)
+			}
+		}
 	}
 
 	// NAOSDeviceDelegate
 
-	func naosDeviceDidConnect(device _: NAOSDevice) {
-		// check if locked
-		if device.locked {
-			// show unlock view
-			unlockViewController = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "UnlockViewController") as? UnlockViewController
-			contentViewController = unlockViewController
+	func naosDeviceDidConnect(device _: NAOSDevice) {}
+	func naosDeviceDidRefresh(device _: NAOSDevice) {}
 
-			// set device
-			unlockViewController!.setDevice(device: device)
+//	func naosDeviceDidError(device _: NAOSDevice, error: Error) {
+//		// show error
+//		let alert = NSAlert()
+//		alert.messageText = error.localizedDescription
+//		alert.runModal()
+//
+//		// let manager close window
+//		manager.close(self)
+//	}
 
-			return
-		}
-
-		// show settings view
-		settingsViewController = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "SettingsViewController") as? SettingsViewController
-		contentViewController = settingsViewController
-
-		// set device
-		settingsViewController!.setDevice(device: device)
-	}
-
-	func naosDeviceDidError(device _: NAOSDevice, error: Error) {
-		// show error
-		let alert = NSAlert()
-		alert.messageText = error.localizedDescription
-		alert.runModal()
-
-		// let manager close window
-		manager.close(self)
-	}
-
-	func naosDeviceDidUpdateConnectionStatus(device _: NAOSDevice) {
+	func naosDeviceDidUpdate(device _: NAOSDevice, parameter: NAOSParameter) {
+		// forward parameter update
 		if let wc = settingsViewController {
-			wc.didUpdateConnectionStatus()
+			wc.didUpdateParameter(parameter: parameter)
 		}
 	}
 
@@ -90,12 +96,6 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 		unlockViewController = nil
 	}
 
-	func naosDeviceDidRefresh(device _: NAOSDevice) {
-		if let wc = settingsViewController {
-			wc.didRefresh()
-		}
-	}
-
 	func naosDeviceDidDisconnect(device _: NAOSDevice, error: Error?) {
 		// show connecting view
 		contentViewController = connectingViewController
@@ -103,7 +103,9 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 
 		// reconnect on error
 		if error != nil {
-			device.connect()
+			Task {
+				try await device.connect()
+			}
 		}
 	}
 
@@ -111,7 +113,9 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 
 	func windowShouldClose(_: NSWindow) -> Bool {
 		// disconnect device
-		device.disconnect()
+		Task {
+			try await device.disconnect()
+		}
 
 		// let manager close window
 		manager.close(self)

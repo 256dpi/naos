@@ -3,30 +3,28 @@
 //  Copyright © 2017 Joël Gähwiler. All rights reserved.
 //
 
+import AsyncBluetooth
 import Cocoa
+import Combine
 import CoreBluetooth
 
-internal let NAOSDeviceService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
+internal let NAOSService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
 
-internal enum NAOSDeviceCharacteristic: String {
+internal enum NAOSCharacteristic: String {
 	case lock = "F7A5FBA4-4084-239B-684D-07D5902EB591"
-	case command = "F1634D43-7F82-8891-B440-BAE5D1529229"
-	case paramsList = "AC2289D1-231B-B78B-DF48-7D951A6EA665"
-	case paramsSelect = "CFC9706D-406F-CCBE-4240-F88D6ED4BACD"
-	case paramsValue = "01CA5446-8EE1-7E99-2041-6884B01E71B3"
+	case list = "AC2289D1-231B-B78B-DF48-7D951A6EA665"
+	case select = "CFC9706D-406F-CCBE-4240-F88D6ED4BACD"
+	case value = "01CA5446-8EE1-7E99-2041-6884B01E71B3"
+	case update = "87BFFDCF-0704-22A2-9C4A-7A61BC8C1726"
 
 	func cbuuid() -> CBUUID {
 		return CBUUID(string: rawValue)
 	}
 
-	static let refreshable = [
-		lock, paramsList,
-	]
-
-	static let all = refreshable + [command, paramsSelect, paramsValue]
+	static let all: [NAOSCharacteristic] = [.lock, .list, .select, .value, .update]
 }
 
-public enum NAOSDeviceParameterType: String {
+public enum NAOSType: String {
 	case string = "s"
 	case bool = "b"
 	case long = "l"
@@ -34,36 +32,36 @@ public enum NAOSDeviceParameterType: String {
 	case action = "a"
 }
 
-public struct NAOSDeviceParameterMode: OptionSet {
+public struct NAOSMode: OptionSet {
 	public let rawValue: Int
 
 	public init(rawValue: Int) {
 		self.rawValue = rawValue
 	}
 
-	public static let volatile = NAOSDeviceParameterMode(rawValue: 1 << 0)
-	public static let system = NAOSDeviceParameterMode(rawValue: 1 << 1)
-	public static let application = NAOSDeviceParameterMode(rawValue: 1 << 2)
-	public static let _public = NAOSDeviceParameterMode(rawValue: 1 << 3)
-	public static let locked = NAOSDeviceParameterMode(rawValue: 1 << 4)
+	public static let volatile = NAOSMode(rawValue: 1 << 0)
+	public static let system = NAOSMode(rawValue: 1 << 1)
+	public static let application = NAOSMode(rawValue: 1 << 2)
+	public static let _public = NAOSMode(rawValue: 1 << 3)
+	public static let locked = NAOSMode(rawValue: 1 << 4)
 }
 
-public struct NAOSDeviceParameter: Hashable {
+public struct NAOSParameter: Hashable {
 	public var name: String
-	public var type: NAOSDeviceParameterType
-	public var mode: NAOSDeviceParameterMode
+	public var type: NAOSType
+	public var mode: NAOSMode
 
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(name)
 	}
 
-	public static func == (lhs: NAOSDeviceParameter, rhs: NAOSDeviceParameter) -> Bool {
+	public static func == (lhs: NAOSParameter, rhs: NAOSParameter) -> Bool {
 		return lhs.name == rhs.name && lhs.type == rhs.type
 	}
 
-	public static let deviceName = NAOSDeviceParameter(name: "device-name", type: .string, mode: .system)
-	public static let deviceType = NAOSDeviceParameter(name: "device-type", type: .string, mode: .system)
-	public static let connectionStatus = NAOSDeviceParameter(name: "connection-status", type: .string, mode: .system)
+	public static let deviceName = NAOSParameter(name: "device-name", type: .string, mode: .system)
+	public static let deviceType = NAOSParameter(name: "device-type", type: .string, mode: .system)
+	public static let connectionStatus = NAOSParameter(name: "connection-status", type: .string, mode: .system)
 
 //	public func format(value: String) -> String {
 //		let num = Double(value) ?? 0
@@ -99,7 +97,7 @@ public struct NAOSDeviceParameter: Hashable {
 //	}
 }
 
-public enum NAOSDeviceError: LocalizedError {
+public enum NAOSError: LocalizedError {
 	case serviceNotFound
 	case characteristicNotFound
 
@@ -115,104 +113,182 @@ public enum NAOSDeviceError: LocalizedError {
 
 public protocol NAOSDeviceDelegate {
 	func naosDeviceDidConnect(device: NAOSDevice)
-	func naosDeviceDidUpdateConnectionStatus(device: NAOSDevice)
 	func naosDeviceDidUnlock(device: NAOSDevice)
 	func naosDeviceDidRefresh(device: NAOSDevice)
-	func naosDeviceDidError(device: NAOSDevice, error: Error)
+	func naosDeviceDidUpdate(device: NAOSDevice, parameter: NAOSParameter)
 	func naosDeviceDidDisconnect(device: NAOSDevice, error: Error?)
 }
 
-public class NAOSDevice: NSObject, CBPeripheralDelegate {
+public class NAOSDevice: NSObject {
+	internal var peripheral: Peripheral
+	private var manager: NAOSManager
+	private var service: Service?
+	private var mutex: DispatchSemaphore
+	private var refreshing: Bool = false
+	private var subscription: AnyCancellable?
+
+	public var delegate: NAOSDeviceDelegate?
 	public private(set) var protected: Bool = false
 	public private(set) var locked: Bool = false
-	public private(set) var availableParameters: [NAOSDeviceParameter] = []
-	public var parameters: [NAOSDeviceParameter: String] = [:]
-	public var delegate: NAOSDeviceDelegate?
+	public private(set) var availableParameters: [NAOSParameter] = []
+	public var parameters: [NAOSParameter: String] = [:]
 
-	internal var peripheral: CBPeripheral
-	private var proxy: NAOSDeviceProxy!
-	private var manager: NAOSManager
-	private var service: CBService?
-	private var initialRefresh: Bool = true
-	private var refreshing: Bool = false
-	private var tracker: [NAOSDeviceCharacteristic: Bool] = [:]
-	private var currentParameter: Int = -1
-	private var errorOccurred: Bool = false
-
-	init(peripheral: CBPeripheral, manager: NAOSManager) {
+	init(peripheral: Peripheral, manager: NAOSManager) {
 		// initialize instance
 		self.peripheral = peripheral
 		self.manager = manager
 
-		// initialize tracker
-		for c in NAOSDeviceCharacteristic.all {
-			tracker[c] = false
-		}
+		// create mutex
+		mutex = DispatchSemaphore(value: 1)
 
+		// initialize super
 		super.init()
-
-		// create proxy and set delegate
-		proxy = NAOSDeviceProxy(parent: self)
-		peripheral.delegate = proxy
-
-		// start initial refresh
-		connect()
 	}
 
-	public func connect() {
-		// connect to device
-		manager.centralManager.connect(peripheral, options: nil)
-	}
+	public func connect() async throws {
+		// acquire mutex
+		mutex.wait()
+		defer { mutex.signal() }
 
-	public func refresh() {
-		// immediately return if already refreshing
-		if refreshing {
-			return
-		}
+		// connect
+		try await manager.centralManager.connect(peripheral, options: nil)
 
-		// set flag
-		refreshing = true
+		// discover services
+		try await peripheral.discoverServices([NAOSService])
 
-		// iterate over all readable properties
-		for char in NAOSDeviceCharacteristic.refreshable {
-			// get characteristic
-			guard let c = towRawCharacteristic(property: char) else {
-				raiseError(error: NAOSDeviceError.characteristicNotFound)
-				return
+		// find service
+		for svc in peripheral.discoveredServices ?? [] {
+			if svc.uuid == NAOSService {
+				service = svc
 			}
-
-			// track request
-			tracker[char] = true
-
-			// issue read request
-			peripheral.readValue(for: c)
 		}
-	}
-
-	private func finishRefresh() {
-		// set flag
-		refreshing = false
-
-		// check for initial refresh
-		if initialRefresh {
-			// disconnect from device
-			disconnect()
-
-			// update state
-			initialRefresh = false
-
-			// notify manager
-			manager.didPrepareDevice(device: self)
-
-			return
+		if service == nil {
+			throw NAOSError.serviceNotFound
 		}
 
-		// notify manager
-		manager.didUpdateDevice(device: self)
+		// discover characteristics
+		try await peripheral.discoverCharacteristics(nil, for: service!)
+
+		// enable notifications for characteristics that support indication
+		for char in service!.discoveredCharacteristics ?? [] {
+			if char.properties.contains(.indicate) {
+				try await peripheral.setNotifyValue(true, for: char)
+			}
+		}
+
+		// subscribe to value updates
+		subscription?.cancel()
+		subscription = peripheral.characteristicValueUpdatedPublisher.sink { char in
+			Task {
+				// skip if refreshing
+				if self.refreshing {
+					return
+				}
+
+				// get value
+				var value = ""
+				if char.value != nil {
+					value = String(data: char.value!, encoding: .utf8) ?? ""
+				}
+
+				// get characteristic
+				let char = self.fromRawCharacteristic(char: char)
+				if char != .update {
+					return
+				}
+
+				// find parameter
+				let param = self.availableParameters.first { param in
+					param.name == value
+				}
+				if param == nil {
+					return
+				}
+
+				// update parameter
+				try await self.read(parameter: param!)
+
+				print("updated", value)
+			}
+		}
 
 		// call delegate if available
 		if let d = delegate {
-			d.naosDeviceDidRefresh(device: self)
+			DispatchQueue.main.async {
+				d.naosDeviceDidConnect(device: self)
+			}
+		}
+	}
+
+	public func refresh() async throws {
+		// acquire mutex
+		mutex.wait()
+		defer { mutex.signal() }
+
+		// manage flag
+		refreshing = true
+		defer { refreshing = false }
+
+		// read lock
+		let lock = try await read(char: .lock)
+
+		// save lock status
+		locked = lock == "locked"
+
+		// save if this device is protected
+		if locked {
+			protected = true
+		}
+
+		// read list
+		let list = try await read(char: .list)
+
+		// reset list
+		availableParameters = []
+
+		// save parameters
+		let segments = list.split(separator: ",")
+		for s in segments {
+			let subSegments = s.split(separator: ":")
+			let name = String(subSegments[0])
+			let type = NAOSType(rawValue: String(subSegments[1])) ?? .string
+			let rawMode = String(subSegments[2])
+			var mode = NAOSMode()
+			if rawMode.contains("v") {
+				mode.insert(.volatile)
+			}
+			if rawMode.contains("s") {
+				mode.insert(.system)
+			}
+			if rawMode.contains("a") {
+				mode.insert(.application)
+			}
+			if rawMode.contains("p") {
+				mode.insert(._public)
+			}
+			if rawMode.contains("l") {
+				mode.insert(.locked)
+			}
+			availableParameters.append(NAOSParameter(name: name, type: type, mode: mode))
+		}
+
+		// refresh parameters
+		for parameter in availableParameters {
+			// select parameter
+			try await write(char: .select, data: parameter.name)
+
+			// read parameter
+			parameters[parameter] = try await read(char: .value)
+		}
+
+		// notify manager
+		manager.didRefreshDevice(device: self)
+
+		// call delegate if available
+		if let d = delegate {
+			DispatchQueue.main.async {
+				d.naosDeviceDidRefresh(device: self)
+			}
 		}
 	}
 
@@ -220,304 +296,130 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 		return (parameters[.deviceName] ?? "") + " (" + (parameters[.deviceType] ?? "") + ")"
 	}
 
-	public func unlock(password: String) {
-		// get characteristic
-		guard let c = towRawCharacteristic(property: .lock) else {
-			raiseError(error: NAOSDeviceError.characteristicNotFound)
-			return
+	public func unlock(password: String) async throws -> Bool {
+		// acquire mutex
+		mutex.wait()
+		defer { mutex.signal() }
+
+		// write lock
+		try await write(char: .lock, data: password)
+
+		// read lock
+		let lock = try await read(char: .lock)
+
+		// check lock
+		if lock != "unlocked" {
+			return false
 		}
 
-		// write unlock command
-		peripheral.writeValue(password.data(using: .utf8)!, for: c, type: .withResponse)
+		// call delegate if present
+		if let d = delegate {
+			DispatchQueue.main.async {
+				d.naosDeviceDidUnlock(device: self)
+			}
+		}
+
+		return true
 	}
 
-	public func write(parameter: NAOSDeviceParameter) {
-		// return if not available
-		if availableParameters.firstIndex(of: parameter) == nil {
-			return
-		}
-
-		// get characteristic
-		guard let selectChar = towRawCharacteristic(property: .paramsSelect) else {
-			raiseError(error: NAOSDeviceError.characteristicNotFound)
-			return
-		}
-
-		// get characteristic
-		guard let valueChar = towRawCharacteristic(property: .paramsValue) else {
-			raiseError(error: NAOSDeviceError.characteristicNotFound)
-			return
-		}
+	public func read(parameter: NAOSParameter) async throws {
+		// acquire mutex
+		mutex.wait()
+		defer { mutex.signal() }
 
 		// select parameter
-		peripheral.writeValue(parameter.name.data(using: .utf8)!, for: selectChar, type: .withResponse)
+		try await write(char: .select, data: parameter.name)
 
 		// write parameter
-		peripheral.writeValue(parameters[parameter]!.data(using: .utf8)!, for: valueChar, type: .withResponse)
+		parameters[parameter] = try await read(char: .value)
 
 		// notify manager
-		manager.didUpdateDevice(device: self)
-	}
+		manager.didRefreshDevice(device: self)
 
-	public func disconnect() {
-		// disconnect from device
-		manager.centralManager.cancelPeripheralConnection(peripheral)
-	}
-
-	// NAOSManager
-
-	internal func forwardDidConnect() {
-		// discover service
-		peripheral.discoverServices([NAOSDeviceService])
-	}
-
-	internal func forwardDidFailToConnect(error: Error?) {
-		// check error
-		if let e = error {
-			raiseError(error: e)
-			return
+		// call delegate if present
+		if let d = delegate {
+			DispatchQueue.main.async {
+				d.naosDeviceDidUpdate(device: self, parameter: parameter)
+			}
 		}
 	}
 
-	internal func forwardDidDisconnect(error: Error?) {
+	public func write(parameter: NAOSParameter) async throws {
+		// acquire mutex
+		mutex.wait()
+		defer { mutex.signal() }
+
+		// select parameter
+		try await write(char: .select, data: parameter.name)
+
+		// write parameter
+		try await write(char: .value, data: parameters[parameter]!)
+
+		// notify manager
+		manager.didRefreshDevice(device: self)
+
+		// call delegate if present
+		if let d = delegate {
+			DispatchQueue.main.async {
+				d.naosDeviceDidUpdate(device: self, parameter: parameter)
+			}
+		}
+	}
+
+	public func disconnect() async throws {
+		// acquire mutex
+		mutex.wait()
+		defer { mutex.signal() }
+
 		// lock again if protected
 		if protected {
 			locked = true
 		}
 
-		// return immediately if an error occurred beforehand
-		if errorOccurred {
-			return
-		}
+		// cancel subscription
+		subscription?.cancel()
+
+		// disconnect from device
+		try await manager.centralManager.cancelPeripheralConnection(peripheral)
 
 		// call delegate if present
 		if let d = delegate {
-			d.naosDeviceDidDisconnect(device: self, error: error)
-		}
-	}
-
-	// NAOSDeviceProxy
-
-	internal func peripheralDidDiscoverServices(error: Error?) {
-		// check error
-		if let e = error {
-			raiseError(error: e)
-			return
-		}
-
-		// save service reference
-		for svc in peripheral.services ?? [] {
-			if svc.uuid == NAOSDeviceService {
-				service = svc
+			DispatchQueue.main.async {
+				d.naosDeviceDidDisconnect(device: self, error: nil)
 			}
-		}
-
-		// check existence of service
-		guard let ps = service else {
-			raiseError(error: NAOSDeviceError.serviceNotFound)
-			return
-		}
-
-		// discover characteristics
-		peripheral.discoverCharacteristics(nil, for: ps)
-	}
-
-	internal func peripheralDidDiscoverCharacteristicsFor(service: CBService, error: Error?) {
-		// check error
-		if let e = error {
-			raiseError(error: e)
-			return
-		}
-
-		// go through all characteristics
-		for chr in service.characteristics ?? [] {
-			// enable notifications for characteristics that support indication
-			if chr.properties.contains(.indicate) {
-				peripheral.setNotifyValue(true, for: chr)
-			}
-		}
-
-		// perform initial refresh
-		if initialRefresh {
-			refresh()
-			return
-		}
-
-		// call delegate if available
-		if let d = delegate {
-			d.naosDeviceDidConnect(device: self)
-		}
-	}
-
-	internal func peripheralDidUpdateValueFor(rawChar: CBCharacteristic, error: Error?) {
-		// check error
-		if let e = error {
-			raiseError(error: e)
-			return
-		}
-
-		// get string from value
-		var value = ""
-		if let v = rawChar.value {
-			if let s = String(data: v, encoding: .utf8) {
-				value = s
-			}
-		}
-
-		// get characteristic
-		guard let char = fromRawCharacteristic(characteristic: rawChar) else {
-			raiseError(error: NAOSDeviceError.characteristicNotFound)
-			return
-		}
-
-		// handle characteristic
-		if rawChar.uuid == NAOSDeviceCharacteristic.lock.cbuuid() {
-			// save lock status
-			locked = value == "locked"
-
-			// save if this device is protected
-			if locked {
-				protected = true
-			}
-
-			// notify delegate and return immediately if not refreshing
-			if !refreshing, !locked {
-				if let d = delegate {
-					d.naosDeviceDidUnlock(device: self)
-				}
-			}
-
-		} else if rawChar.uuid == NAOSDeviceCharacteristic.paramsList.cbuuid() {
-			// reset list
-			availableParameters = []
-
-			// save parameters
-			let segments = value.split(separator: ",")
-			for s in segments {
-				let subSegments = s.split(separator: ":")
-				let name = String(subSegments[0])
-				let type = NAOSDeviceParameterType(rawValue: String(subSegments[1])) ?? .string
-				let rawMode = String(subSegments[2])
-				var mode = NAOSDeviceParameterMode()
-				if rawMode.contains("v") {
-					mode.insert(.volatile)
-				}
-				if rawMode.contains("s") {
-					mode.insert(.system)
-				}
-				if rawMode.contains("a") {
-					mode.insert(.application)
-				}
-				if rawMode.contains("p") {
-					mode.insert(._public)
-				}
-				if rawMode.contains("l") {
-					mode.insert(.locked)
-				}
-				availableParameters.append(NAOSDeviceParameter(name: name, type: type, mode: mode))
-			}
-
-			// queue first parameter if refreshing
-			if refreshing, availableParameters.count > 0 {
-				// set index
-				currentParameter = 0
-
-				// select parameter
-				peripheral.writeValue(availableParameters[currentParameter].name.data(using: .utf8)!, for: towRawCharacteristic(property: .paramsSelect)!, type: .withResponse)
-
-				// read parameter
-				peripheral.readValue(for: towRawCharacteristic(property: .paramsValue)!)
-			}
-
-		} else if rawChar.uuid == NAOSDeviceCharacteristic.paramsValue.cbuuid() {
-			// update parameter
-			parameters[availableParameters[currentParameter]] = value
-
-			// increment parameter
-			currentParameter += 1
-
-			// check overflow
-			if currentParameter == availableParameters.count {
-				currentParameter = -1
-			} else {
-				// select parameter
-				peripheral.writeValue(availableParameters[currentParameter].name.data(using: .utf8)!, for: towRawCharacteristic(property: .paramsSelect)!, type: .withResponse)
-
-				// read parameter
-				peripheral.readValue(for: towRawCharacteristic(property: .paramsValue)!)
-			}
-		}
-
-		// check if refreshing and property is marked to be refreshed
-		if refreshing {
-			// unmark property if marked
-			if tracker[char]! {
-				tracker[char] = false
-			}
-
-			// return if one property is still flagged to be refreshed
-			for (_, v) in tracker {
-				if v {
-					return
-				}
-			}
-
-			// return if parameters are not finished
-			if currentParameter >= 0 {
-				return
-			}
-
-			// finish refresh
-			finishRefresh()
-		}
-	}
-
-	internal func peripheralDidWriteValueFor(rawChar: CBCharacteristic, error: Error?) {
-		// check error
-		if let e = error {
-			raiseError(error: e)
-			return
 		}
 	}
 
 	// Helpers
 
-	private func raiseError(error: Error) {
-		// check for initial refresh
-		if initialRefresh {
-			// notify manager
-			manager.failedToPrepareDevice(device: self, error: error)
-		} else {
-			// call delegate if available
-			if let d = delegate {
-				d.naosDeviceDidError(device: self, error: error)
-			}
+	internal func read(char: NAOSCharacteristic) async throws -> String {
+		// get characteristic
+		guard let char = towRawCharacteristic(char: char) else {
+			throw NAOSError.characteristicNotFound
 		}
 
-		// set flag
-		errorOccurred = true
+		// read value
+		try await peripheral.readValue(for: char)
 
-		// disconnect device
-		disconnect()
+		// parse string
+		let str = String(data: char.value ?? Data(capacity: 0), encoding: .utf8) ?? ""
+
+		return str
 	}
 
-	private func parseKeyValue(value: String) -> [String: String] {
-		var kv = [String: String]()
-		for item in value.split(separator: ",") {
-			let pair = item.split(separator: "=")
-			let key = String(pair[0])
-			if pair.count > 1 {
-				kv[key] = String(pair[1])
-			} else {
-				kv[key] = ""
-			}
+	internal func write(char: NAOSCharacteristic, data: String) async throws {
+		// get characteristic
+		guard let char = towRawCharacteristic(char: char) else {
+			throw NAOSError.characteristicNotFound
 		}
-		return kv
+
+		// read value
+		try await peripheral.writeValue(data.data(using: .utf8)!, for: char, type: .withResponse)
 	}
 
-	private func fromRawCharacteristic(characteristic: CBCharacteristic) -> NAOSDeviceCharacteristic? {
-		for property in NAOSDeviceCharacteristic.all {
-			if property.cbuuid() == characteristic.uuid {
+	private func fromRawCharacteristic(char: Characteristic) -> NAOSCharacteristic? {
+		for property in NAOSCharacteristic.all {
+			if property.cbuuid() == char.uuid {
 				return property
 			}
 		}
@@ -525,11 +427,11 @@ public class NAOSDevice: NSObject, CBPeripheralDelegate {
 		return nil
 	}
 
-	private func towRawCharacteristic(property: NAOSDeviceCharacteristic) -> CBCharacteristic? {
+	private func towRawCharacteristic(char: NAOSCharacteristic) -> Characteristic? {
 		if let s = service {
-			if let cs = s.characteristics {
+			if let cs = s.discoveredCharacteristics {
 				for c in cs {
-					if c.uuid == property.cbuuid() {
+					if c.uuid == char.cbuuid() {
 						return c
 					}
 				}

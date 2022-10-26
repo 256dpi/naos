@@ -101,7 +101,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		alert.runModal()
 	}
 
-	func naosManagerDidUpdateDevice(manager _: NAOSManager, device: NAOSDevice) {
+	func naosManagerDidRefreshDevice(manager _: NAOSManager, device: NAOSDevice) {
 		// update menu item title
 		devices[device]?.title = device.title()
 
