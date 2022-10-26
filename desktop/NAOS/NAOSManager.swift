@@ -5,6 +5,8 @@
 
 import AsyncBluetooth
 import Cocoa
+import Combine
+import CoreBluetooth
 
 public protocol NAOSManagerDelegate {
 	func naosManagerDidPrepareDevice(manager: NAOSManager, device: NAOSDevice)
@@ -18,6 +20,7 @@ public class NAOSManager: NSObject {
 	internal var centralManager: CentralManager!
 	private var allDevices: [NAOSDevice]
 	private var availableDevices: [NAOSDevice]
+	private var subscription: AnyCancellable?
 
 	public init(delegate: NAOSManagerDelegate?) {
 		// set delegate
@@ -33,11 +36,43 @@ public class NAOSManager: NSObject {
 		// central manager
 		centralManager = CentralManager()
 		
-		// TODO: Support enable/disable Bluetooth.
+		// subscribe events
+		subscription = centralManager.eventPublisher.sink { event in
+			switch event {
+			case .didUpdateState(let state):
+				switch state {
+				case .poweredOn:
+					// start scan
+					self.scan()
+				case .poweredOff:
+					// stop scan
+					Task {
+						await self.centralManager.stopScan()
+					}
+					
+					// clear all arrays
+					self.allDevices.removeAll()
+					self.availableDevices.removeAll()
 		
-		// run background task
+					// call callback if present
+					if let d = self.delegate {
+						DispatchQueue.main.async {
+							d.naosManagerDidReset(manager: self)
+						}
+					}
+				default:
+					break
+				}
+			default:
+				break
+			}
+		}
+	}
+	
+	func scan() {
 		Task {
-			while true {
+			// run until cancelled
+			while !Task.isCancelled {
 				// wait until ready
 				try await centralManager.waitUntilReady()
 				
@@ -94,22 +129,6 @@ public class NAOSManager: NSObject {
 			}
 		}
 	}
-	
-//	internal func centralManagerDidUpdateState(state: CBManagerState) {
-//		if state == .poweredOn {
-//			// start scanning
-//			centralManager.scanForPeripherals(withServices: [NAOSDeviceService], options: nil)
-//		} else if state == .poweredOff {
-//			// clear all arrays
-//			allDevices.removeAll()
-//			availableDevices.removeAll()
-//
-//			// call callback if present
-//			if let d = delegate {
-//				d.naosManagerDidReset(manager: self)
-//			}
-//		}
-//	}
 
 	// NAOSDevice
 
