@@ -30,6 +30,11 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 		// grab default connecting view
 		connectingViewController = (contentViewController as! LoadingViewController)
 
+		// connect
+		connect()
+	}
+
+	func connect() {
 		// connect to device
 		Task {
 			// perform connect
@@ -84,34 +89,30 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 
 	func naosDeviceDidUpdate(device _: NAOSDevice, parameter: NAOSParameter) {
 		// forward parameter update
-		if let wc = settingsViewController {
-			wc.didUpdateParameter(parameter: parameter)
+		if let svc = settingsViewController {
+			svc.didUpdateParameter(parameter: parameter)
 		}
 	}
 
-	func naosDeviceDidDisconnect(device _: NAOSDevice, error: Error?) {
+	func naosDeviceDidDisconnect(device _: NAOSDevice, error _: Error) {
 		// show connecting view
 		contentViewController = connectingViewController
 		settingsViewController = nil
 
-		// reconnect on error
-		if error != nil {
-			Task {
-				try await device.connect()
-			}
-		}
+		// reconnect
+		connect()
 	}
 
 	// NSWindowDelegate
 
 	func windowShouldClose(_: NSWindow) -> Bool {
+		// let manager close window
+		manager.close(self)
+
 		// disconnect device
 		Task {
 			try await device.disconnect()
 		}
-
-		// let manager close window
-		manager.close(self)
 
 		return false
 	}

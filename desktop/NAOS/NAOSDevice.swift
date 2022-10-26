@@ -113,7 +113,7 @@ public enum NAOSError: LocalizedError {
 
 public protocol NAOSDeviceDelegate {
 	func naosDeviceDidUpdate(device: NAOSDevice, parameter: NAOSParameter)
-	func naosDeviceDidDisconnect(device: NAOSDevice, error: Error?)
+	func naosDeviceDidDisconnect(device: NAOSDevice, error: Error)
 }
 
 // TODO: Handle intermittent connection errors.
@@ -358,13 +358,6 @@ public class NAOSDevice: NSObject {
 
 		// disconnect from device
 		try await manager.centralManager.cancelPeripheralConnection(peripheral)
-
-		// call delegate if present
-		if let d = delegate {
-			DispatchQueue.main.async {
-				d.naosDeviceDidDisconnect(device: self, error: nil)
-			}
-		}
 	}
 
 	// Helpers
