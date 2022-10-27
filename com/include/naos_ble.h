@@ -2,7 +2,7 @@
 #define NAOS_BLE_H
 
 /**
- * Initialize the Bluetooth Low Energy Configuration subsystem.
+ * Initialize the Bluetooth Low Energy configuration subsystem.
  */
 void naos_ble_init();
 

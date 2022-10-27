@@ -3,7 +3,8 @@ IF(DEFINED ENV{IDF_PATH})
     file(GLOB srcs ./src/*.c)
     idf_component_register(SRCS ${srcs}
         INCLUDE_DIRS "include"
-        REQUIRES bt esp-mqtt app_update
+        REQUIRES bt esp_http_server esp-mqtt app_update
+        EMBED_TXTFILES console.html
     )
 ELSE()
     # CLion compatible development setup

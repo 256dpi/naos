@@ -1,0 +1,139 @@
+<html lang="en">
+<head>
+    <title>NAOS</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif, 'Helvetica', 'Arial';
+            background-color: #f6f6f6;
+        }
+
+        .page {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 50px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        input {
+            position: relative;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 5px;
+            margin: 5px 0;
+        }
+
+        #loader {
+            position: fixed;
+            top: 0;
+            height: 100vh;
+            width: 100vw;
+            background-color: rgba(0, 0, 0, 0.25);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner, .spinner:after {
+            width: 10em;
+            height: 10em;
+            border-radius: 50%;
+        }
+        .spinner {
+            margin: auto;
+            font-size: 10px;
+            position: relative;
+            border: 1.1em solid rgba(0, 0, 0, 0.25);
+            border-left: 1.1em solid black;
+            animation: spinner 1.1s infinite linear;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <h1>NAOS</h1>
+        <button type="button" id="refresh">Refresh</button>
+        <div id="params"></div>
+    </div>
+
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <script type="module">
+        const host = (new URLSearchParams(window.location.search)).get('host') || '';
+        function url(type, name) {
+            return host + '/' + type + (name ? `?name=${name}` : '');
+        }
+
+        async function list() {
+            const res = await fetch(url('naos'))
+            const info = await res.text();
+            return info.trim().split(',');
+        }
+
+        async function read(param) {
+            const res = await fetch(url('naos', param));
+            return await res.text();
+        }
+
+        async function write(param, value) {
+            const res = await fetch(url('naos', param), {
+                method: 'PUT',
+                body: value,
+            })
+            return await res.text();
+        }
+
+        async function refresh() {
+            const params = document.getElementById('params');
+            for (const param of await list()) {
+                const [paramKey,paramType] = param.split(':');
+                let el = document.getElementById(paramKey);
+                if (!el) {
+                    el = document.createElement('label')
+                    el.textContent = paramKey;
+                    params.appendChild(el);
+                    el = document.createElement('input')
+                    el.setAttribute('id', paramKey);
+                    el.setAttribute('type', 'text');
+                    el.onchange = () => {
+                        write(paramKey, el.value);
+                    }
+                    params.appendChild(el);
+                }
+                el.value = await read(paramKey);
+            }
+        }
+
+        const loader = document.getElementById('loader');
+
+        async function execute(fn) {
+            loader.style.opacity = '1';
+            loader.style.pointerEvents = 'all';
+            try {
+                await fn();
+            } catch (e) {
+                alert(e.toString());
+            }
+            loader.style.opacity = '0';
+            loader.style.pointerEvents = 'none';
+        }
+
+        document.getElementById('refresh').onclick = () => {
+            execute(refresh);
+        }
+
+        execute(refresh);
+    </script>
+</body>
+</html>
