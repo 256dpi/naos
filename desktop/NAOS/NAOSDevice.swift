@@ -120,7 +120,8 @@ public class NAOSDevice: NSObject {
 	internal var peripheral: Peripheral
 	private var manager: NAOSManager
 	private var service: Service?
-	private var mutex: DispatchSemaphore
+	private var mutex = DispatchSemaphore(value: 1)
+	private var connected: Bool = false
 	private var refreshing: Bool = false
 	private var subscription: AnyCancellable?
 
@@ -129,17 +130,37 @@ public class NAOSDevice: NSObject {
 	public private(set) var locked: Bool = false
 	public private(set) var availableParameters: [NAOSParameter] = []
 	public var parameters: [NAOSParameter: String] = [:]
+	internal var updatable: Set<NAOSParameter> = Set()
 
 	init(peripheral: Peripheral, manager: NAOSManager) {
 		// initialize instance
 		self.peripheral = peripheral
 		self.manager = manager
 
-		// create mutex
-		mutex = DispatchSemaphore(value: 1)
-
 		// initialize super
 		super.init()
+
+		// run updater
+		Task {
+			while true {
+				// wait a second
+				try await Task.sleep(nanoseconds: 1_000_000_000)
+
+				// skip if not connected or refreshing
+				if !connected || refreshing {
+					continue
+				}
+
+				// copy and clear updatable params
+				let params = updatable
+				updatable = Set()
+
+				// attempt to read params
+				for param in params {
+					try? await self.read(parameter: param)
+				}
+			}
+		}
 	}
 
 	public func connect() async throws {
@@ -179,38 +200,39 @@ public class NAOSDevice: NSObject {
 			}
 		}
 
+		// set flag
+		connected = true
+
 		// subscribe to value updates
 		subscription?.cancel()
 		subscription = peripheral.characteristicValueUpdatedPublisher.sink { char in
-			Task {
-				// skip if refreshing
-				if self.refreshing {
-					return
-				}
-
-				// get value
-				var value = ""
-				if char.value != nil {
-					value = String(data: char.value!, encoding: .utf8) ?? ""
-				}
-
-				// get characteristic
-				let char = self.fromRawCharacteristic(char: char)
-				if char != .update {
-					return
-				}
-
-				// find parameter
-				let param = self.availableParameters.first { param in
-					param.name == value
-				}
-				if param == nil {
-					return
-				}
-
-				// update parameter
-				try await self.read(parameter: param!)
+			// skip if refreshing
+			if self.refreshing {
+				return
 			}
+
+			// get value
+			var value = ""
+			if char.value != nil {
+				value = String(data: char.value!, encoding: .utf8) ?? ""
+			}
+
+			// get characteristic
+			let char = self.fromRawCharacteristic(char: char)
+			if char != .update {
+				return
+			}
+
+			// find parameter
+			let param = self.availableParameters.first { param in
+				param.name == value
+			}
+			if param == nil {
+				return
+			}
+
+			// add to set
+			self.updatable.insert(param!)
 		}
 	}
 
@@ -351,6 +373,9 @@ public class NAOSDevice: NSObject {
 			locked = true
 		}
 
+		// set flag
+		connected = false
+
 		// cancel subscription
 		subscription?.cancel()
 
@@ -367,6 +392,9 @@ public class NAOSDevice: NSObject {
 		if protected {
 			locked = true
 		}
+
+		// set flag
+		connected = false
 
 		// cancel subscription
 		subscription?.cancel()
