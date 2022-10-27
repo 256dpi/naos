@@ -78,9 +78,32 @@ static void naos_manager_process() {
   }
 }
 
+static void naos_manager_receiver(naos_param_t *param) {
+  // skip system params
+  if (param->mode & NAOS_SYSTEM) {
+    return;
+  }
+
+  // acquire mutex
+  NAOS_LOCK(naos_manager_mutex);
+
+  // call update callback if present
+  if (naos_config()->update_callback != NULL) {
+    naos_acquire();
+    naos_config()->update_callback(param->name, param->value);
+    naos_release();
+  }
+
+  // release mutex
+  NAOS_UNLOCK(naos_manager_mutex);
+}
+
 void naos_manager_init() {
   // create mutex
   naos_manager_mutex = xSemaphoreCreateMutex();
+
+  // subscribe parameters changes
+  naos_params_subscribe(naos_manager_receiver);
 }
 
 void naos_manager_start() {
@@ -333,29 +356,6 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
     NAOS_UNLOCK(naos_manager_mutex);
 
     return;
-  }
-
-  // release mutex
-  NAOS_UNLOCK(naos_manager_mutex);
-}
-
-void naos_manager_write_param(naos_param_t *param, const char *value) {
-  // check number
-  if (param == NULL) {
-    return;
-  }
-
-  // acquire mutex
-  NAOS_LOCK(naos_manager_mutex);
-
-  // save param
-  naos_set(param->name, value);
-
-  // call update callback if present
-  if (naos_config()->update_callback != NULL) {
-    naos_acquire();
-    naos_config()->update_callback(param->name, value);
-    naos_release();
   }
 
   // release mutex

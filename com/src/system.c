@@ -6,7 +6,6 @@
 #include <nvs_flash.h>
 #include <string.h>
 
-#include "config.h"
 #include "system.h"
 #include "manager.h"
 #include "monitor.h"

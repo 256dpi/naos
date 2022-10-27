@@ -11,7 +11,6 @@
 #include <string.h>
 
 #include "naos.h"
-#include "config.h"
 #include "params.h"
 #include "utils.h"
 
@@ -423,7 +422,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
           }
         } else if (c == &naos_ble_char_value) {
           if (conn->param != NULL && (conn->param->mode & NAOS_LOCKED) == 0) {
-            naos_config_write_param(conn->param->name, value);
+            naos_set(conn->param->name, value);
           }
         }
 
