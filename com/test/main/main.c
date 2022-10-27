@@ -5,6 +5,7 @@
 #include <esp_netif.h>
 
 #include <naos.h>
+#include <naos_ble.h>
 
 #define ETHERNET false
 
@@ -186,6 +187,7 @@ static naos_param_t param_message = {
 void app_main() {
   // initialize naos
   naos_init(&config);
+  naos_ble_init();
 
   // register parameter
   naos_register(&param_counter);

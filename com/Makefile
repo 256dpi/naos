@@ -57,7 +57,6 @@ run: build flash monitor
 
 disable:
 	sed -i.bak "s/.*CONFIG_NAOS_WIFI_DISABLE.*/CONFIG_NAOS_WIFI_DISABLE=y/g" ./test/sdkconfig
-	sed -i.bak "s/.*CONFIG_NAOS_BLE_DISABLE.*/CONFIG_NAOS_BLE_DISABLE=y/g" ./test/sdkconfig
 	sed -i.bak "s/.*CONFIG_NAOS_MQTT_DISABLE.*/CONFIG_NAOS_MQTT_DISABLE=y/g" ./test/sdkconfig
 	rm ./test/sdkconfig.bak
 

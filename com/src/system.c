@@ -16,10 +16,6 @@
 #include "update.h"
 #include "utils.h"
 
-#ifndef CONFIG_NAOS_BLE_DISABLE
-#include "ble.h"
-#endif
-
 #ifndef CONFIG_NAOS_MQTT_DISABLE
 #include "mqtt.h"
 #endif
@@ -210,11 +206,6 @@ void naos_system_init() {
 
   // init manager
   naos_manager_init();
-
-  // initialize bluetooth stack
-#ifndef CONFIG_NAOS_BLE_DISABLE
-  naos_ble_init();
-#endif
 
   // initialize network stack
   naos_net_init();
