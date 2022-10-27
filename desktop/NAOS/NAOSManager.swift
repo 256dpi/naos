@@ -113,6 +113,9 @@ public class NAOSManager: NSObject {
 							try await device.refresh()
 							try await device.disconnect()
 						} catch {
+							// disconnect
+							try? await centralManager.cancelPeripheralConnection(scanData.peripheral)
+							
 							// remove device
 							allDevices.remove(at: allDevices.firstIndex(of: device)!)
 							
