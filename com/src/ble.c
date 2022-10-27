@@ -153,18 +153,11 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
       // set advertisement config
       ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&naos_ble_adv_data));
 
-      // prepare total with on handle for the service
+      // count required handles for service
       uint16_t total_handles = 1;
-
-      // iterate through all characteristics
       for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
-        // get pointer of current characteristic
         naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
-
-        // add characteristic handles
         total_handles += 2;
-
-        // add one handle for client descriptor
         if (c->prop & ESP_GATT_CHAR_PROP_BIT_INDICATE) {
           total_handles++;
         }
@@ -237,7 +230,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         // get pointer of current characteristic
         naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
 
-        // move on if uuid does not match
+        // skip if uuid does not match
         if (memcmp(p->add_char.char_uuid.uuid.uuid128, c->_uuid.uuid.uuid128, ESP_UUID_LEN_128) != 0) {
           continue;
         }
@@ -277,7 +270,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
 
     // handle characteristic read event
     case ESP_GATTS_READ_EVT: {
-      // break immediately if no response is needed
+      // stop immediately if no response is needed
       if (!p->read.need_rsp) {
         break;
       }
@@ -290,7 +283,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         // get pointer of current characteristic
         naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
 
-        // move on if handles do not match
+        // skip if handles do not match
         if (p->read.handle != c->handle) {
           continue;
         }
@@ -305,16 +298,11 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         }
 
         // prepare response
-        esp_gatt_rsp_t rsp;
-        memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
-
-        // set handle
+        esp_gatt_rsp_t rsp = {0};
         rsp.attr_value.handle = c->handle;
 
-        // prepare value
-        char *value = NULL;
-
         // handle characteristic
+        char *value = NULL;
         if (c == &naos_ble_char_lock) {
           value = strdup(conn->locked ? "locked" : "unlocked");
         } else if (c == &naos_ble_char_list) {
@@ -335,10 +323,6 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         if (value != NULL) {
           strcpy((char *)rsp.attr_value.value, value);
           rsp.attr_value.len = (uint16_t)strlen(value);
-        }
-
-        // free value
-        if (value != NULL) {
           free(value);
         }
 
@@ -378,7 +362,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         // get pointer of current characteristic
         naos_ble_gatts_char_t *c = naos_ble_gatts_chars[j];
 
-        // move on if handles do not match
+        // skip if handles do not match
         if (p->write.handle != c->handle) {
           continue;
         }
