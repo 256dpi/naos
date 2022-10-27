@@ -12,7 +12,6 @@
 #include "params.h"
 #include "update.h"
 #include "utils.h"
-#include "net.h"
 
 static SemaphoreHandle_t naos_manager_mutex;
 static TaskHandle_t naos_manager_task;
@@ -30,7 +29,10 @@ static void naos_manager_send_heartbeat() {
   }
 
   // get WiFi RSSI
-  int8_t rssi = naos_net_wifi_rssi();
+  int32_t rssi = -1;
+  if (naos_lookup("wifi-rssi")) {
+    rssi = naos_get_l("wifi-rssi");
+  }
 
   // get CPU usage
   naos_cpu_usage_t usage = naos_monitor_get();

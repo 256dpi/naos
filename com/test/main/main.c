@@ -5,6 +5,7 @@
 
 #include <naos.h>
 #include <naos_ble.h>
+#include <naos_wifi.h>
 #include <naos_http.h>
 
 #define ETHERNET false
@@ -188,6 +189,7 @@ void app_main() {
   // initialize naos
   naos_init(&config);
   naos_ble_init();
+  naos_wifi_init();
   naos_http_init();
 
   // register parameter

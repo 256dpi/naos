@@ -1,9 +1,5 @@
 menu "naos"
 
-config NAOS_WIFI_DISABLE
-    bool "Disable WiFi support"
-    default false
-
 config NAOS_MQTT_DISABLE
     bool "Disable MQTT support"
     default false

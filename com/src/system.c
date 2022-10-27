@@ -41,10 +41,6 @@ static naos_param_t naos_system_params[] = {
     {.name = "device-version", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM | NAOS_PUBLIC},
     {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = esp_restart},
-    {.name = "wifi-ssid", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "wifi-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "wifi-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_system_configure_wifi},
-    {.name = "wifi-rssi", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "mqtt-host", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "mqtt-port", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "mqtt-client-id", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
@@ -89,8 +85,8 @@ static void naos_system_task() {
     // get old status
     naos_status_t old_status = naos_system_status;
 
-    // get net status
-    naos_net_status_t net = naos_net_check();
+    // determine connection
+    bool connected = naos_net_connected();
 
 #ifndef CONFIG_NAOS_MQTT_DISABLE
     // get mqtt status
@@ -100,11 +96,11 @@ static void naos_system_task() {
 
     // calculate new status
     naos_status_t new_status = NAOS_DISCONNECTED;
-    if (net.connected_any) {
+    if (connected) {
       new_status = NAOS_CONNECTED;
     }
 #ifndef CONFIG_NAOS_MQTT_DISABLE
-    if (net.connected_any && mqtt.connected) {
+    if (connected && mqtt.connected) {
       new_status = NAOS_NETWORKED;
     }
 #endif
@@ -144,7 +140,6 @@ static void naos_system_task() {
 
     // update parameters
     if (naos_millis() > naos_system_updated + 1000) {
-      naos_set_l("wifi-rssi", naos_net_wifi_rssi());
       naos_set_l("uptime", (int32_t)naos_millis());
       naos_set_l("free-heap", (int32_t)esp_get_free_heap_size());
       if (naos_config()->battery_callback != NULL) {
@@ -221,9 +216,6 @@ void naos_system_init() {
   // set initial state
   naos_system_set_status(NAOS_DISCONNECTED);
 
-  // initially configure WiFi
-  naos_system_configure_wifi();
-
   // initially configure MQTT
   naos_system_configure_mqtt();
 
@@ -239,28 +231,6 @@ void naos_system_init() {
 naos_status_t naos_status() {
   // return current status
   return naos_system_status;
-}
-
-void naos_system_configure_wifi() {
-  // acquire mutex
-  NAOS_LOCK(naos_system_mutex);
-
-  // log call
-  ESP_LOGI(NAOS_LOG_TAG, "naos_system_configure_wifi");
-
-  // get settings
-  char *wifi_ssid = strdup(naos_get("wifi-ssid"));
-  char *wifi_password = strdup(naos_get("wifi-password"));
-
-  // re-configure WiFi
-  naos_net_configure_wifi(wifi_ssid, wifi_password);
-
-  // free strings
-  free(wifi_ssid);
-  free(wifi_password);
-
-  // release mutex
-  NAOS_UNLOCK(naos_system_mutex);
 }
 
 void naos_system_configure_mqtt() {
