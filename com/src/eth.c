@@ -1,12 +1,14 @@
 #include <esp_event.h>
 #include <string.h>
 
+#include <naos.h>
+
 #include "utils.h"
 #include "net.h"
 
 static SemaphoreHandle_t naos_eth_mutex;
 static bool naos_eth_connected = false;
-static char naos_eth_ip_addr[16] = {0};
+static char naos_eth_addr[16] = {0};
 
 static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void *data) {
   // acquire mutex
@@ -19,8 +21,9 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
         // set status
         naos_eth_connected = false;
 
-        // clear ip addr
-        memset(naos_eth_ip_addr, 0, 16);
+        // clear addr
+        memset(naos_eth_addr, 0, 16);
+        naos_set("eth-addr", "");
 
         break;
       }
@@ -38,9 +41,10 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
         // set status
         naos_eth_connected = true;
 
-        // set ip addr
+        // set addr
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
-        sprintf(naos_eth_ip_addr, IPSTR, IP2STR(&event->ip_info.ip));
+        sprintf(naos_eth_addr, IPSTR, IP2STR(&event->ip_info.ip));
+        naos_set("eth-addr", naos_eth_addr);
 
         break;
       }
@@ -66,6 +70,10 @@ static naos_net_status_t naos_eth_status() {
   return status;
 }
 
+static naos_param_t naos_eth_params[] = {
+    {.name = "eth-addr", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
+};
+
 void naos_eth_init() {
   // create mutex
   naos_eth_mutex = xSemaphoreCreateMutex();
@@ -77,6 +85,11 @@ void naos_eth_init() {
   // register link
   naos_net_link_t link = {.status = naos_eth_status};
   naos_net_register(link);
+
+  // register parameters
+  for (size_t i = 0; i < (sizeof(naos_eth_params) / sizeof(naos_eth_params[0])); i++) {
+    naos_register(&naos_eth_params[i]);
+  }
 }
 
 void naos_eth_olimex() {

@@ -13,7 +13,7 @@ static SemaphoreHandle_t naos_wifi_mutex;
 static wifi_config_t naos_wifi_config;
 static bool naos_wifi_started;
 static bool naos_wifi_connected;
-static char naos_wifi_ip_addr[16] = {0};
+static char naos_wifi_addr[16] = {0};
 static TimerHandle_t naos_wifi_timer;
 
 static void naos_wifi_configure() {
@@ -77,8 +77,9 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
         // set status
         naos_wifi_connected = false;
 
-        // clear ip addr
-        memset(naos_wifi_ip_addr, 0, 16);
+        // clear addr
+        memset(naos_wifi_addr, 0, 16);
+        naos_set("wifi-addr", "");
 
         // attempt to reconnect if started
         if (naos_wifi_started) {
@@ -101,9 +102,10 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
         // set status
         naos_wifi_connected = true;
 
-        // set ip addr
+        // set addr
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
-        sprintf(naos_wifi_ip_addr, IPSTR, IP2STR(&event->ip_info.ip));
+        sprintf(naos_wifi_addr, IPSTR, IP2STR(&event->ip_info.ip));
+        naos_set("wifi-addr", naos_wifi_addr);
 
         break;
       }
@@ -139,6 +141,7 @@ static naos_param_t naos_wifi_params[] = {
     {.name = "wifi-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_wifi_configure},
     {.name = "wifi-rssi", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
+    {.name = "wifi-addr", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
 };
 
 void naos_wifi_init() {
