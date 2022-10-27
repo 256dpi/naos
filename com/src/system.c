@@ -49,7 +49,7 @@ static naos_param_t naos_system_params[] = {
     {.name = "running-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "uptime", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "free-heap", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
-    // TODO: Add battery level.
+    {.name = "battery-level", .type = NAOS_DOUBLE, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
 };
 
 static void naos_system_set_status(naos_status_t status) {
@@ -139,6 +139,9 @@ static void naos_system_task() {
       naos_set_l("wifi-rssi", naos_net_wifi_rssi());
       naos_set_l("uptime", (int32_t)naos_millis());
       naos_set_l("free-heap", (int32_t)esp_get_free_heap_size());
+      if (naos_config()->battery_callback != NULL) {
+        naos_set_d("battery-level", naos_config()->battery_callback());
+      }
       naos_system_updated = naos_millis();
     }
 
