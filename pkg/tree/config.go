@@ -11,18 +11,6 @@ import (
 	"github.com/256dpi/naos/pkg/utils"
 )
 
-var settings = map[string]bool{
-	"wifi-ssid":      true,
-	"wifi-password":  true,
-	"mqtt-host":      true,
-	"mqtt-port":      true,
-	"mqtt-username":  true,
-	"mqtt-password":  true,
-	"mqtt-client-id": true,
-	"device-name":    true,
-	"base-topic":     true,
-}
-
 // Config will write settings and parameters to an attached device.
 func Config(naosPath string, values map[string]string, port string, out io.Writer) error {
 	// get IDF major version
@@ -34,17 +22,9 @@ func Config(naosPath string, values map[string]string, port string, out io.Write
 	// assemble CSV
 	var buf bytes.Buffer
 	buf.WriteString("key,type,encoding,value\n")
-	buf.WriteString("naos-sys,namespace,,\n")
-	for key, value := range values {
-		if settings[key] {
-			buf.WriteString(fmt.Sprintf("%s,data,string,%s\n", key, value))
-		}
-	}
 	buf.WriteString("naos,namespace,,\n")
 	for key, value := range values {
-		if !settings[key] {
-			buf.WriteString(fmt.Sprintf("%s,data,string,%s\n", key, value))
-		}
+		buf.WriteString(fmt.Sprintf("%s,data,string,%s\n", key, value))
 	}
 
 	// calculate paths
