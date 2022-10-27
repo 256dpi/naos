@@ -182,6 +182,7 @@ func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader
 	return tree.Attach(p.Tree(), device, simple, out, in)
 }
 
+// Exec will execute a command withing the tree.
 func (p *Project) Exec(cmd string, out io.Writer, in io.Reader) error {
 	// execute command
 	return tree.Exec(p.Tree(), out, in, cmd)
