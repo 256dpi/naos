@@ -14,20 +14,6 @@
             padding: 50px;
         }
 
-        label {
-            display: block;
-            margin: 10px 0 5px;
-        }
-
-        input {
-            position: relative;
-            display: block;
-            width: 100%;
-            box-sizing: border-box;
-            padding: 5px;
-            margin: 5px 0;
-        }
-
         #loader {
             position: fixed;
             top: 0;
@@ -37,6 +23,27 @@
             display: flex;
             justify-content: center;
             align-items: center;
+        }
+
+        #params {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        #params th, td {
+            text-align: left;
+        }
+
+        #params input {
+            position: relative;
+            display: block;
+            box-sizing: border-box;
+            padding: 5px;
+            margin: 5px 0;
+        }
+
+        #params input[type=text] {
+            width: 100%;
         }
 
         .spinner, .spinner:after {
@@ -62,7 +69,18 @@
     <div class="page">
         <h1>NAOS</h1>
         <button type="button" id="refresh">Refresh</button>
-        <div id="params"></div>
+        <table id="params">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Value</th>
+                    <th>Type</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            </tbody>
+        </table>
     </div>
 
     <div id="loader">
@@ -71,69 +89,144 @@
 
     <script type="module">
         const host = (new URLSearchParams(window.location.search)).get('host') || '';
+
         function url(type, name) {
             return host + '/' + type + (name ? `?name=${name}` : '');
         }
 
-        async function list() {
-            const res = await fetch(url('naos'))
-            const info = await res.text();
-            return info.trim().split(',');
-        }
+        let ws = new WebSocket(url('naos').replace('http', 'ws'), 'naos');
+        let reqs = {};
 
-        async function read(param) {
-            const res = await fetch(url('naos', param));
-            return await res.text();
-        }
-
-        async function write(param, value) {
-            const res = await fetch(url('naos', param), {
-                method: 'PUT',
-                body: value,
+        function send(type, value = undefined) {
+            return new Promise((resolve, reject) => {
+                ws.send(type + (value !== undefined ? "#" + value: ''));
+                reqs[type] ||= [];
+                reqs[type].push(resolve);
+                setTimeout(()=> {
+                    reject(new Error('timed out'));
+                }, 2000);
             })
-            return await res.text();
-        }
-
-        async function refresh() {
-            const params = document.getElementById('params');
-            for (const param of await list()) {
-                const [paramKey,paramType] = param.split(':');
-                let el = document.getElementById(paramKey);
-                if (!el) {
-                    el = document.createElement('label')
-                    el.textContent = paramKey;
-                    params.appendChild(el);
-                    el = document.createElement('input')
-                    el.setAttribute('id', paramKey);
-                    el.setAttribute('type', 'text');
-                    el.onchange = () => {
-                        write(paramKey, el.value);
-                    }
-                    params.appendChild(el);
-                }
-                el.value = await read(paramKey);
-            }
         }
 
         const loader = document.getElementById('loader');
+        const rows = document.querySelector('#params tbody');
 
-        async function execute(fn) {
+        const types = {b: 'Bool', s: 'String', l: 'Long', d: 'Double', a: 'Action'}
+
+        async function refresh() {
+            // show loader
             loader.style.opacity = '1';
             loader.style.pointerEvents = 'all';
-            try {
-                await fn();
-            } catch (e) {
-                alert(e.toString());
+
+            // clear table
+            rows.innerHTML = "";
+
+            // get list
+            let list = await send('list');
+
+            // parse params
+            let params = list.split(',');
+
+            // read params
+            for (let param of params) {
+                let [name, type, mode] = param.split(':');
+
+                // get param
+                let value = await send('read:' + name);
+
+                // append row
+                let row = document.createElement('tr')
+                let cell = document.createElement('td');
+                cell.textContent = name;
+                row.appendChild(cell);
+                cell = document.createElement('td');
+                switch (type) {
+                    case 'b': {
+                        let input = document.createElement('input');
+                        input.setAttribute('type', 'checkbox');
+                        input.setAttribute('checked', value);
+                        input.disabled = mode.includes('l');
+                        input.onchange = () => {
+                            send('write:' + name, input.checked);
+                        }
+                        cell.appendChild(input);
+                        break;
+                    }
+                    case 's':
+                    case 'l':
+                    case 'd': {
+                        let input = document.createElement('input');
+                        input.setAttribute('type', 'text');
+                        input.value = value;
+                        input.disabled = mode.includes('l');
+                        input.onchange = () => {
+                            send('write:' + name, input.value);
+                        }
+                        cell.appendChild(input);
+                        break;
+                    }
+                    case 'a': {
+                        let button = document.createElement('button');
+                        button.innerText = 'Trigger';
+                        button.onclick = () => {
+                            send('write:' + name, '');
+                        }
+                        cell.appendChild(button);
+                        break;
+                    }
+                }
+                row.appendChild(cell);
+                cell = document.createElement('td');
+                cell.textContent = types[type];
+                row.appendChild(cell);
+                rows.appendChild(row);
             }
+
+            // hide loader
             loader.style.opacity = '0';
             loader.style.pointerEvents = 'none';
         }
 
         document.getElementById('refresh').onclick = () => {
-            execute(refresh);
+            refresh();
+        };
+
+        ws.onopen = (event) => {
+            // log event
+            console.log('onopen', event);
+
+            // refresh
+            refresh();
         }
 
-        execute(refresh);
+        ws.onmessage = (event) => {
+            // log message
+            console.log('onmessage', event);
+
+            // parse message
+            let msg = event.data.toString()
+
+            // split message
+            let [type, value] = msg.split("#", 2);
+
+            // resolve requests
+            for (let resolve of reqs[type] || []) {
+                resolve(value);
+            }
+
+            // clear requests
+            reqs[type] = [];
+        }
+
+        ws.onerror = (err) => {
+            // log error
+            console.log('onerror', err);
+        }
+
+        ws.onclose = (event) => {
+            // log close
+            console.log('onclose', event);
+        }
     </script>
 </body>
 </html>
