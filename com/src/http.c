@@ -3,6 +3,8 @@
 #include "params.h"
 #include "utils.h"
 
+#define NAOS_HTTP_MAX_CONNS 7
+
 static httpd_handle_t naos_http_handle = {0};
 
 extern const char naos_http_console[] asm("_binary_console_html_start");
@@ -144,6 +146,40 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   return err;
 }
 
+static void naos_http_update(void *arg) {
+  // get param
+  naos_param_t *param = arg;
+
+  // get sessions
+  size_t num = NAOS_HTTP_MAX_CONNS;
+  int fds[NAOS_HTTP_MAX_CONNS] = {0};
+  ESP_ERROR_CHECK(httpd_get_client_list(naos_http_handle, &num, fds));
+
+  // prepare frame
+  httpd_ws_frame_t frame = {.type = HTTPD_WS_TYPE_TEXT};
+  frame.payload = (uint8_t *)naos_format("update:%s#%s", param->name, param->value);
+  frame.len = strlen((char *)frame.payload);
+
+  // iterate sessions
+  for (size_t i = 0; i < num; i++) {
+    // check if websocket
+    if (httpd_ws_get_fd_info(naos_http_handle, fds[i]) != HTTPD_WS_CLIENT_WEBSOCKET) {
+      continue;
+    }
+
+    // send frame
+    ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_ws_send_frame_async(naos_http_handle, fds[i], &frame));
+  }
+
+  // free payload
+  free(frame.payload);
+}
+
+static void naos_http_receiver(naos_param_t *param) {
+  // queue function
+  ESP_ERROR_CHECK(httpd_queue_work(naos_http_handle, naos_http_update, param));
+}
+
 static httpd_uri_t naos_http_route_index = {.uri = "/", .method = HTTP_GET, .handler = naos_http_index};
 static httpd_uri_t naos_http_route_socket = {.uri = "/naos",
                                              .method = HTTP_GET,
@@ -154,6 +190,7 @@ static httpd_uri_t naos_http_route_socket = {.uri = "/naos",
 void naos_http_init() {
   // prepare config
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+  config.max_open_sockets = NAOS_HTTP_MAX_CONNS;
 
   // start server
   ESP_ERROR_CHECK(httpd_start(&naos_http_handle, &config));
@@ -161,4 +198,7 @@ void naos_http_init() {
   // register handlers
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_index));
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_socket));
+
+  // subscribe parameter changes
+  naos_params_subscribe(naos_http_receiver);
 }

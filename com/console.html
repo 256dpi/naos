@@ -113,6 +113,27 @@
 
         const types = {b: 'Bool', s: 'String', l: 'Long', d: 'Double', a: 'Action'}
 
+        function update(name, value) {
+            // get row
+            let row = document.getElementById(name);
+            if (!row) {
+                return;
+            }
+
+            // get input
+            let input = row.querySelector('input')
+            if (!input) {
+                return;
+            }
+
+            // update input
+            if (input.type === 'checkbox') {
+                input.checked = value;
+            } else {
+                input.value = value;
+            }
+        }
+
         async function refresh() {
             // show loader
             loader.style.opacity = '1';
@@ -136,6 +157,7 @@
 
                 // append row
                 let row = document.createElement('tr')
+                row.id = name;
                 let cell = document.createElement('td');
                 cell.textContent = name;
                 row.appendChild(cell);
@@ -201,7 +223,7 @@
 
         ws.onmessage = (event) => {
             // log message
-            console.log('onmessage', event);
+            // console.log('onmessage', event);
 
             // parse message
             let msg = event.data.toString()
@@ -212,6 +234,11 @@
             // resolve requests
             for (let resolve of reqs[type] || []) {
                 resolve(value);
+            }
+
+            // handle updates
+            if (type.startsWith('update:')) {
+                update(type.split(':')[1], value);
             }
 
             // clear requests
