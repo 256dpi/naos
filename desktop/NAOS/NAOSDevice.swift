@@ -259,9 +259,17 @@ public class NAOSDevice: NSObject {
 		if locked {
 			protected = true
 		}
+		
+		// read system parameters
+		try await write(char: .list, data: "system")
+		let system = try await read(char: .list)
+		
+		// read application parameters
+		try await write(char: .list, data: "application")
+		let application = try await read(char: .list)
 
 		// read list
-		let list = try await read(char: .list)
+		let list = system + application
 
 		// reset list
 		availableParameters = []

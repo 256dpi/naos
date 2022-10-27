@@ -21,6 +21,7 @@ typedef struct {
   uint16_t id;
   bool connected;
   bool locked;
+  naos_mode_t mode;
   naos_param_t *param;
 } naos_ble_conn_t;
 
@@ -77,7 +78,8 @@ static naos_ble_gatts_char_t naos_ble_char_lock = {
 
 static naos_ble_gatts_char_t naos_ble_char_list = {
     .uuid = {0x65, 0xa6, 0x6e, 0x1a, 0x95, 0x7d, 0x48, 0xdf, 0x8b, 0xb7, 0x1b, 0x23, 0xd1, 0x89, 0x22, 0xac},
-    .prop = ESP_GATT_CHAR_PROP_BIT_READ};
+    .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
+    .max_write_len = 32};
 
 static naos_ble_gatts_char_t naos_ble_char_select = {
     .uuid = {0xcd, 0xba, 0xd4, 0x6e, 0x8d, 0xf8, 0x40, 0x42, 0xbe, 0xcc, 0x6f, 0x40, 0x6d, 0x70, 0xc9, 0xcf},
@@ -87,7 +89,7 @@ static naos_ble_gatts_char_t naos_ble_char_select = {
 static naos_ble_gatts_char_t naos_ble_char_value = {
     .uuid = {0xb3, 0x71, 0x1e, 0xb0, 0x84, 0x68, 0x41, 0x20, 0x99, 0x7e, 0xe1, 0x8e, 0x46, 0x54, 0xca, 0x01},
     .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE,
-    .max_write_len = 128};
+    .max_write_len = 256};
 
 static naos_ble_gatts_char_t naos_ble_char_update = {
     .uuid = {0x26, 0x17, 0x8c, 0xbc, 0x61, 0x7a, 0x4a, 0x9c, 0xa2, 0x22, 0x04, 0x07, 0xcf, 0xfd, 0xbf, 0x87},
@@ -306,7 +308,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
         if (c == &naos_ble_char_lock) {
           value = strdup(conn->locked ? "locked" : "unlocked");
         } else if (c == &naos_ble_char_list) {
-          value = naos_params_list(conn->locked ? NAOS_PUBLIC : 0);
+          value = naos_params_list(conn->mode | (conn->locked ? NAOS_PUBLIC : 0));
         } else if (c == &naos_ble_char_select) {
           if (conn->param != NULL) {
             value = strdup(conn->param->name);
@@ -316,8 +318,6 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
             value = strdup(naos_get(conn->param->name));
           }
         }
-
-        // TODO: Check offset
 
         // set value
         if (value != NULL) {
@@ -385,20 +385,24 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
           return;
         }
 
-        // TODO: Check offset
-
         // allocate value
         char *value = malloc(p->write.len + 1);
         memcpy(value, (char *)p->write.value, p->write.len);
         value[p->write.len] = '\0';
 
-        // handle unlocks directly
+        // handle characteristic
         if (c == &naos_ble_char_lock) {
           if (conn->locked && strcmp(value, naos_config()->password) == 0) {
             conn->locked = false;
           }
         } else if (c == &naos_ble_char_list) {
-          // ignore
+          if (strcmp(value, "system") == 0) {
+            conn->mode = NAOS_SYSTEM;
+          } else if (strcmp(value, "application") == 0) {
+            conn->mode = NAOS_APPLICATION;
+          } else {
+            conn->mode = 0;
+          }
         } else if (c == &naos_ble_char_select) {
           naos_param_t *param = naos_lookup(value);
           if (param != NULL && (!conn->locked || (param->mode & NAOS_PUBLIC) != 0)) {
