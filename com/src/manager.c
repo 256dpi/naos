@@ -19,20 +19,6 @@ static TaskHandle_t naos_manager_task;
 static bool naos_manager_process_started = false;
 static bool naos_manager_recording = false;
 
-static void naos_manager_ping() {
-  // perform ping
-  naos_acquire();
-  naos_config()->ping_callback();
-  naos_release();
-}
-
-static naos_param_t naos_manager_param_ping = {
-    .name = "ping",
-    .type = NAOS_ACTION,
-    .mode = NAOS_SYSTEM,
-    .func_a = naos_manager_ping,
-};
-
 static void naos_manager_send_heartbeat() {
   // get device name
   char *device_name = strdup(naos_get("device-name"));
@@ -95,11 +81,6 @@ static void naos_manager_process() {
 void naos_manager_init() {
   // create mutex
   naos_manager_mutex = xSemaphoreCreateMutex();
-
-  // register ping action if available
-  if (naos_config()->ping_callback != NULL) {
-    naos_register(&naos_manager_param_ping);
-  }
 }
 
 void naos_manager_start() {
