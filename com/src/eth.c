@@ -78,3 +78,31 @@ void naos_eth_init() {
   naos_net_link_t link = {.status = naos_eth_status};
   naos_net_register(link);
 }
+
+void naos_eth_olimex() {
+  // prepare mac
+  eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+  mac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
+  mac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_180_GPIO;
+  esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+
+  // prepare phy
+  eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+  phy_config.phy_addr = 0;
+  esp_eth_phy_t *phy = esp_eth_phy_new_lan87xx(&phy_config);
+
+  // install driver
+  esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
+  esp_eth_handle_t eth_handle = NULL;
+  ESP_ERROR_CHECK(esp_eth_driver_install(&config, &eth_handle));
+
+  // create interface
+  esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
+  esp_netif_t *eth_netif = esp_netif_new(&cfg);
+
+  // attach ethernet
+  ESP_ERROR_CHECK(esp_netif_attach(eth_netif, esp_eth_new_netif_glue(eth_handle)));
+
+  // start ethernet driver
+  ESP_ERROR_CHECK(esp_eth_start(eth_handle));
+}

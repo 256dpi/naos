@@ -6,4 +6,9 @@
  */
 void naos_eth_init();
 
+/**
+ * Will configure Ethernet on the Olimex ESP32 Gateway board.
+ */
+void naos_eth_olimex();
+
 #endif  // NAOS_ETH_H

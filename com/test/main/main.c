@@ -1,12 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
-#include <esp_eth.h>
-#include <esp_netif.h>
 
 #include <naos.h>
 #include <naos_ble.h>
 #include <naos_wifi.h>
 #include <naos_http.h>
+#include <naos_eth.h>
 
 #define ETHERNET false
 
@@ -116,34 +115,6 @@ static void fun_a() {
   naos_log("fun_a: triggered");
 }
 
-static void eth_init() {
-  // prepare mac
-  eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-  mac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
-  mac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_180_GPIO;
-  esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
-
-  // prepare phy
-  eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
-  phy_config.phy_addr = 0;
-  esp_eth_phy_t *phy = esp_eth_phy_new_lan87xx(&phy_config);
-
-  // install driver
-  esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
-  esp_eth_handle_t eth_handle = NULL;
-  ESP_ERROR_CHECK(esp_eth_driver_install(&config, &eth_handle));
-
-  // create interface
-  esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
-  esp_netif_t *eth_netif = esp_netif_new(&cfg);
-
-  // attach ethernet
-  ESP_ERROR_CHECK(esp_netif_attach(eth_netif, esp_eth_new_netif_glue(eth_handle)));
-
-  // start ethernet driver
-  ESP_ERROR_CHECK(esp_eth_start(eth_handle));
-}
-
 static naos_param_t params[] = {
     {.name = "var_s", .type = NAOS_STRING, .default_s = "", .sync_s = &var_s},
     {.name = "var_l", .type = NAOS_LONG, .default_l = 0, .sync_l = &var_l},
@@ -191,6 +162,10 @@ void app_main() {
   naos_ble_init();
   naos_wifi_init();
   naos_http_init();
+  if (ETHERNET) {
+    naos_eth_init();
+    naos_eth_olimex();
+  }
 
   // register parameter
   naos_register(&param_counter);
@@ -198,9 +173,4 @@ void app_main() {
 
   // initialize counter
   counter = naos_get_l("counter");
-
-  // initialize ethernet
-  if (ETHERNET) {
-    eth_init();
-  }
 }
