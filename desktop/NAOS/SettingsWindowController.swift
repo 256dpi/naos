@@ -37,11 +37,16 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 	func connect() {
 		// connect to device
 		Task {
-			// perform connect
-			try! await device.connect()  // TODO: Handle error.
+			do {
+				// perform connect
+				try await device.connect()
 
-			// refresh device
-			try! await device.refresh() // TODO: Handle error.
+				// refresh device
+				try await device.refresh()
+			} catch {
+				showError(error: error)
+				return
+			}
 
 			// check if locked
 			if device.locked {
@@ -101,7 +106,11 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 
 		// disconnect device
 		Task {
-			try! await device.disconnect()
+			do {
+				try await device.disconnect()
+			} catch {
+				showError(error: error)
+			}
 		}
 
 		return false

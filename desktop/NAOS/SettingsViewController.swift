@@ -10,7 +10,6 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 	@IBOutlet var parameterTableView: NSTableView!
 
 	internal var device: NAOSDevice!
-
 	private var loadingViewController: LoadingViewController?
 
 	@IBAction
@@ -24,7 +23,11 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		// refresh device
 		Task {
 			// perform refresh
-			try! await device.refresh() // TODO: Handle error.
+			do {
+				try await device.refresh()
+			} catch {
+				showError(error: error)
+			}
 
 			DispatchQueue.main.async {
 				// update connection status
@@ -70,7 +73,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 			// setup controls
 			if p.type == .bool {
 				v.checkbox!.isHidden = false
-				v.checkbox.state = device.parameters[p]! == "1" ? .on : .off
+				v.checkbox.state = device.parameters[p] == "1" ? .on : .off
 				v.checkbox.isEnabled = !p.mode.contains(.locked)
 			} else if p.type == .action {
 				v.button!.isHidden = false
@@ -78,7 +81,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 			} else {
 				v.textField!.isHidden = false
 				v.textField!.formatter = nil
-				v.textField!.stringValue = device.parameters[p]!
+				v.textField!.stringValue = device.parameters[p] ?? ""
 				v.textField!.isEnabled = !p.mode.contains(.locked)
 
 				// set appropriate number formatters

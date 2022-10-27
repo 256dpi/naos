@@ -39,7 +39,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		// instantiate window controller
 		let controller = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "SettingsWindowController") as! SettingsWindowController
 
-		// add to dict and show window
+		// store and show window
 		controllers[device] = controller
 		controller.showWindow(self)
 
@@ -58,14 +58,14 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 	// SettingsWindowController
 
 	func close(_ wc: SettingsWindowController) {
-		// remove controller and device from dict
+		// remove controller
 		for (d, c) in controllers {
 			if c == wc {
 				controllers.removeValue(forKey: d)
 			}
 		}
 
-		// finally close window
+		// close window
 		wc.close()
 
 		// send notification
@@ -83,7 +83,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		item.action = #selector(open(_:))
 		devicesMenu.addItem(item)
 
-		// save menu item
+		// save device
 		devices[device] = item
 
 		// update menu item title
@@ -108,15 +108,18 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 	}
 
 	func naosManagerDidReset(manager _: NAOSManager) {
-		// close all open controllers
+		// close all controllers
 		for (_, c) in controllers {
 			close(c)
 		}
 
-		// remove al devices
+		// remove all controllers
+		controllers.removeAll()
+
+		// remove all devices
 		devices.removeAll()
 
-		// first remove all items
+		// remove all items
 		devicesMenu.removeAllItems()
 
 		// update menu item title

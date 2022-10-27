@@ -116,8 +116,6 @@ public protocol NAOSDeviceDelegate {
 	func naosDeviceDidDisconnect(device: NAOSDevice, error: Error)
 }
 
-// TODO: Handle intermittent connection errors.
-
 public class NAOSDevice: NSObject {
 	internal var peripheral: Peripheral
 	private var manager: NAOSManager
@@ -359,7 +357,7 @@ public class NAOSDevice: NSObject {
 		// disconnect from device
 		try await manager.centralManager.cancelPeripheralConnection(peripheral)
 	}
-	
+
 	internal func didDisconnect(error: Error) {
 		// acquire mutex
 		mutex.wait()
@@ -372,7 +370,7 @@ public class NAOSDevice: NSObject {
 
 		// cancel subscription
 		subscription?.cancel()
-		
+
 		// call delegate if available
 		if let d = delegate {
 			DispatchQueue.main.async {

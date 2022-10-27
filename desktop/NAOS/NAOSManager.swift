@@ -113,6 +113,9 @@ public class NAOSManager: NSObject {
 							try await device.refresh()
 							try await device.disconnect()
 						} catch {
+							// remove device
+							allDevices.remove(at: allDevices.firstIndex(of: device)!)
+							
 							// handle error
 							if let d = delegate {
 								DispatchQueue.main.async {

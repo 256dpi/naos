@@ -20,9 +20,9 @@ public func withTimeout<R>(seconds: TimeInterval, operation: @escaping @Sendable
 
 		// start work
 		group.addTask {
-			return try await operation()
+			try await operation()
 		}
-		
+
 		// start reaper
 		group.addTask {
 			let interval = deadline.timeIntervalSinceNow
@@ -30,14 +30,13 @@ public func withTimeout<R>(seconds: TimeInterval, operation: @escaping @Sendable
 				try await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
 			}
 			try Task.checkCancellation()
-			print("timed out")
 			throw TimedOutError()
 		}
-		
+
 		// get first result, cancel the other
 		let result = try await group.next()!
 		group.cancelAll()
-		
+
 		return result
 	}
 }

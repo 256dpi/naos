@@ -39,7 +39,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		// increment counter
 		openWindows += 1
 
-		// show dock icon if that is the first
+		// show dock icon on first window
 		if openWindows == 1 {
 			NSApp.setActivationPolicy(.regular)
 			NSApp.activate(ignoringOtherApps: true)
@@ -49,16 +49,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	@objc func close() {
-		// increment counter
+		// decrement counter
 		openWindows -= 1
 
-		// hide dock icon if window was the last
+		// hide dock icon on last window
 		if openWindows == 0 {
 			NSApp.setActivationPolicy(.accessory)
 		}
 	}
 
 	@IBAction func quit(_: AnyObject) {
+		// terminate application
 		NSApplication.shared.terminate(self)
 	}
 
