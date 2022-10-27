@@ -81,7 +81,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 			} else {
 				v.textField!.isHidden = false
 				v.textField!.formatter = nil
-				v.textField!.stringValue = device.parameters[p] ?? ""
+				v.textField!.stringValue = p.format(value: device.parameters[p] ?? "") 
 				v.textField!.isEnabled = !p.mode.contains(.locked)
 
 				// set appropriate number formatters
