@@ -757,11 +757,11 @@
             <objects>
                 <viewController storyboardIdentifier="SettingsViewController" id="c3R-v8-FCu" customClass="SettingsViewController" customModule="NAOS" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="lYY-xl-sde">
-                        <rect key="frame" x="0.0" y="0.0" width="558" height="353"/>
+                        <rect key="frame" x="0.0" y="0.0" width="558" height="480"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="uyZ-Nk-Zew">
-                                <rect key="frame" x="22" y="317" width="120" height="16"/>
+                                <rect key="frame" x="22" y="444" width="120" height="16"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Connection Status:" id="2tY-WY-TmF">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -769,7 +769,7 @@
                                 </textFieldCell>
                             </textField>
                             <textField horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eJN-Ld-xoS">
-                                <rect key="frame" x="148" y="317" width="317" height="16"/>
+                                <rect key="frame" x="148" y="444" width="317" height="16"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Unknown" id="2qI-H7-l32">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -777,7 +777,7 @@
                                 </textFieldCell>
                             </textField>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Btq-GW-2uI">
-                                <rect key="frame" x="464" y="306" width="81" height="32"/>
+                                <rect key="frame" x="464" y="433" width="81" height="32"/>
                                 <buttonCell key="cell" type="push" title="Refresh" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="DrJ-5f-C9z">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -787,13 +787,13 @@
                                 </connections>
                             </button>
                             <scrollView autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="6b4-qo-6vn">
-                                <rect key="frame" x="20" y="20" width="518" height="273"/>
+                                <rect key="frame" x="20" y="20" width="518" height="400"/>
                                 <clipView key="contentView" id="IDq-2E-72n">
-                                    <rect key="frame" x="1" y="1" width="516" height="271"/>
+                                    <rect key="frame" x="1" y="1" width="516" height="398"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="18" usesAutomaticRowHeights="YES" headerView="cfK-bv-6E4" viewBased="YES" id="R4Z-Qg-sbl">
-                                            <rect key="frame" x="0.0" y="0.0" width="516" height="243"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="516" height="370"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <size key="intercellSpacing" width="3" height="2"/>
                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -972,7 +972,7 @@
                                     </subviews>
                                 </clipView>
                                 <constraints>
-                                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="200" id="BOv-i8-HFQ"/>
+                                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="400" id="BOv-i8-HFQ"/>
                                 </constraints>
                                 <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="DgK-6H-9IG">
                                     <rect key="frame" x="1" y="183" width="438" height="16"/>
@@ -994,7 +994,7 @@
                             <constraint firstItem="Btq-GW-2uI" firstAttribute="leading" secondItem="eJN-Ld-xoS" secondAttribute="trailing" constant="8" symbolic="YES" id="2C5-eg-0Yb"/>
                             <constraint firstItem="6b4-qo-6vn" firstAttribute="top" secondItem="Btq-GW-2uI" secondAttribute="bottom" constant="20" symbolic="YES" id="4eL-O6-aAm"/>
                             <constraint firstItem="Btq-GW-2uI" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="9He-E1-vOp"/>
-                            <constraint firstItem="eJN-Ld-xoS" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" id="IXy-PI-EKU"/>
+                            <constraint firstItem="eJN-Ld-xoS" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="IXy-PI-EKU"/>
                             <constraint firstAttribute="trailing" secondItem="6b4-qo-6vn" secondAttribute="trailing" constant="20" symbolic="YES" id="SOb-ff-wrh"/>
                             <constraint firstItem="eJN-Ld-xoS" firstAttribute="leading" secondItem="uyZ-Nk-Zew" secondAttribute="trailing" constant="10" id="STn-ac-0EN"/>
                             <constraint firstItem="uyZ-Nk-Zew" firstAttribute="baseline" secondItem="eJN-Ld-xoS" secondAttribute="baseline" id="TVJ-eq-8eU"/>
