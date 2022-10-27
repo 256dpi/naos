@@ -88,13 +88,9 @@
     </div>
 
     <script type="module">
-        const host = (new URLSearchParams(window.location.search)).get('host') || '';
+        const host = (new URLSearchParams(window.location.search)).get('host') || window.location.toString();
 
-        function url(type, name) {
-            return host + '/' + type + (name ? `?name=${name}` : '');
-        }
-
-        let ws = new WebSocket(url('naos').replace('http', 'ws'), 'naos');
+        let ws = new WebSocket(host.replace('http', 'ws') + '.sock');
         let reqs = {};
 
         function send(type, value = undefined) {

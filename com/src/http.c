@@ -59,9 +59,6 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     req.payload[req.len] = 0;
   }
 
-  // log frame
-  naos_log("frame: %s", req.payload);
-
   // prepare response
   httpd_ws_frame_t res = {.type = HTTPD_WS_TYPE_TEXT};
 
@@ -180,8 +177,8 @@ static void naos_http_receiver(naos_param_t *param) {
   ESP_ERROR_CHECK(httpd_queue_work(naos_http_handle, naos_http_update, param));
 }
 
-static httpd_uri_t naos_http_route_index = {.uri = "/", .method = HTTP_GET, .handler = naos_http_index};
-static httpd_uri_t naos_http_route_socket = {.uri = "/naos",
+static httpd_uri_t naos_http_route_index = {.uri = "/naos", .method = HTTP_GET, .handler = naos_http_index};
+static httpd_uri_t naos_http_route_socket = {.uri = "/naos.sock",
                                              .method = HTTP_GET,
                                              .handler = naos_http_socket,
                                              .is_websocket = true,
