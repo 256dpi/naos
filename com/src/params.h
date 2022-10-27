@@ -10,6 +10,8 @@ char *naos_params_list(naos_mode_t mode);
 void naos_params_subscribe(naos_params_receiver_t receiver);
 void naos_params_dispatch();
 
+// naos_register
+// naos_lookup
 // naos_get{b,l,d}
 // naos_set{b,l,d}
 
