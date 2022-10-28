@@ -1,8 +1,6 @@
-#include <esp_event.h>
 #include <string.h>
+#include <esp_event.h>
 #include <esp_wifi.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/timers.h>
 
 #include <naos.h>
 
@@ -179,6 +177,5 @@ void naos_wifi_init() {
   naos_wifi_configure();
 
   // start update timer
-  TimerHandle_t timer = xTimerCreate("naos-wifi", pdMS_TO_TICKS(1000), pdTRUE, 0, naos_wifi_update);
-  xTimerStart(timer, 0);
+  naos_repeat("naos-wifi", naos_wifi_update, 1000);
 }

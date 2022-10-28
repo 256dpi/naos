@@ -1,8 +1,9 @@
 #include <freertos/FreeRTOS.h>
-#include <freertos/timers.h>
 #include <esp_freertos_hooks.h>
 
 #include <naos.h>
+
+#include "utils.h"
 
 #if defined(CONFIG_ESP32_DEFAULT_CPU_FREQ_240)
 #define NAOS_CPU_MAX_IDLE_CALLS 368000.f
@@ -75,6 +76,5 @@ void naos_cpu_init() {
   ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(naos_cpu_hook1, 1));
 
   // start update timer
-  TimerHandle_t timer = xTimerCreate("naos-cpu", pdMS_TO_TICKS(1000), pdTRUE, 0, naos_cpu_update);
-  xTimerStart(timer, 0);
+  naos_repeat("naos-cpu", naos_cpu_update, 1000);
 }

@@ -1,10 +1,14 @@
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/timers.h>
 #include <stdio.h>
 #include <string.h>
 
-uint32_t naos_millis() { return esp_log_timestamp(); }
+uint32_t naos_millis() {
+  // return timestamp
+  return esp_log_timestamp();
+}
 
 void naos_delay(uint32_t millis) {
   if (millis >= portTICK_PERIOD_MS) {
@@ -56,4 +60,10 @@ char *naos_concat(const char *str1, const char *str2) {
   strcat(str, str2);
 
   return str;
+}
+
+void naos_repeat(const char *name, void (*task)(), uint32_t millis) {
+  // creat and start timer
+  TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(millis), pdTRUE, 0, task);
+  xTimerStart(timer, 0);
 }

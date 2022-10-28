@@ -2,7 +2,6 @@
 #include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
-#include <freertos/timers.h>
 #include <esp_mqtt.h>
 
 #include "com.h"
@@ -160,6 +159,5 @@ void naos_mqtt_init() {
   naos_com_register(transport);
 
   // start manage timer
-  TimerHandle_t timer = xTimerCreate("naos-mqtt", pdMS_TO_TICKS(1000), pdTRUE, 0, naos_mqtt_manage);
-  xTimerStart(timer, 0);
+  naos_repeat("naos-mqtt", naos_mqtt_manage, 1000);
 }

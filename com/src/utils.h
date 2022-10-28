@@ -16,12 +16,13 @@
   ESP_LOGV(NAOS_LOG_TAG, "NAOS_UNLOCK: %s", __func__); \
   xSemaphoreGive(mutex)
 
+// naos_millis
+// naos_delay
+
 const char *naos_i2str(int32_t num);
 const char *naos_d2str(double num);
 char *naos_format(char *fmt, ...);
 char *naos_concat(const char *str1, const char *str2);
-
-// naos_millis
-// naos_delay
+void naos_repeat(const char *name, void (*task)(), uint32_t millis);
 
 #endif  // NAOS_UTILS_H

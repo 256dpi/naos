@@ -3,7 +3,6 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
-#include <freertos/timers.h>
 #include <string.h>
 
 #include "naos.h"
@@ -330,11 +329,8 @@ void naos_manager_init() {
   naos_log_register(naos_manager_sink);
 
   // start signal timer
-  TimerHandle_t timer =
-      xTimerCreate("naos-manager-s", pdMS_TO_TICKS(CONFIG_NAOS_HEARTBEAT_INTERVAL), pdTRUE, 0, naos_manager_signal);
-  xTimerStart(timer, 0);
+  naos_repeat("naos-manager#s", naos_manager_signal, CONFIG_NAOS_HEARTBEAT_INTERVAL);
 
   // start check timer
-  timer = xTimerCreate("naos-manager-c", pdMS_TO_TICKS(100), pdTRUE, 0, naos_manager_check);
-  xTimerStart(timer, 0);
+  naos_repeat("naos-manager#c", naos_manager_check, 100);
 }
