@@ -5,6 +5,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
+#include "naos.h"
 #include "params.h"
 #include "utils.h"
 
@@ -362,6 +363,15 @@ void naos_params_dispatch() {
     for (size_t j = 0; j < naos_params_receivers_count; j++) {
       NAOS_UNLOCK(naos_params_mutex);
       naos_params_receivers[j](param);
+      NAOS_LOCK(naos_params_mutex);
+    }
+
+    // call update callback if present
+    if (naos_config()->update_callback != NULL) {
+      NAOS_UNLOCK(naos_params_mutex);
+      naos_acquire();
+      naos_config()->update_callback(param->name, param->value);
+      naos_release();
       NAOS_LOCK(naos_params_mutex);
     }
   }

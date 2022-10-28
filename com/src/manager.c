@@ -18,7 +18,7 @@ static TaskHandle_t naos_manager_task;
 static bool naos_manager_process_started = false;
 static bool naos_manager_recording = false;
 
-static void naos_manager_send_heartbeat() {
+static void naos_manager_heartbeat() {
   // get device name
   char *device_name = strdup(naos_get("device-name"));
 
@@ -52,7 +52,7 @@ static void naos_manager_send_heartbeat() {
   free(device_name);
 }
 
-static void naos_manager_send_announcement() {
+static void naos_manager_announce() {
   // get device name & base topic
   char *device_name = strdup(naos_get("device-name"));
   char *base_topic = strdup(naos_get("mqtt-base-topic"));
@@ -74,7 +74,7 @@ static void naos_manager_process() {
     NAOS_LOCK(naos_manager_mutex);
 
     // send heartbeat
-    naos_manager_send_heartbeat();
+    naos_manager_heartbeat();
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -84,42 +84,20 @@ static void naos_manager_process() {
   }
 }
 
-static void naos_manager_receiver(naos_param_t *param) {
-  // skip system params
-  if (param->mode & NAOS_SYSTEM) {
-    return;
-  }
-
-  // acquire mutex
-  NAOS_LOCK(naos_manager_mutex);
-
-  // call update callback if present
-  if (naos_config()->update_callback != NULL) {
-    naos_acquire();
-    naos_config()->update_callback(param->name, param->value);
-    naos_release();
-  }
-
-  // release mutex
-  NAOS_UNLOCK(naos_manager_mutex);
-}
-
 static void naos_manager_handler(naos_scope_t scope, const char *topic, const uint8_t *payload, size_t len, int qos,
                                  bool retained) {
+  // skip other messages
+  if (strncmp(topic, "naos/", 5) != 0) {
+    return;
+  }
+
   // acquire mutex
   NAOS_LOCK(naos_manager_mutex);
 
-  // call message callback if present for non system messages
-  if (strncmp(topic, "naos/", 5) != 0 && naos_config()->message_callback != NULL) {
-    naos_acquire();
-    naos_config()->message_callback(topic, payload, len, scope);
-    naos_release();
-  }
-
-  // check collect
+  // handle collect
   if (scope == NAOS_GLOBAL && strcmp(topic, "naos/collect") == 0) {
     // send announcement
-    naos_manager_send_announcement();
+    naos_manager_announce();
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -127,14 +105,10 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     return;
   }
 
-  // check ping
+  // handle ping
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/ping") == 0) {
-    // call ping callback if present
-    if (naos_config()->ping_callback != NULL) {
-      naos_acquire();
-      naos_config()->ping_callback();
-      naos_release();
-    }
+    // trigger ping
+    naos_set("ping", "");
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -142,15 +116,11 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     return;
   }
 
-  // check discover
+  // handle discover
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/discover") == 0) {
-    // get list
+    // send list
     char *list = naos_params_list(NAOS_APPLICATION);
-
-    // send value
     naos_publish("naos/parameters", list, 0, false, NAOS_LOCAL);
-
-    // free list
     free(list);
 
     // release mutex
@@ -159,43 +129,10 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     return;
   }
 
-  // check get
+  // handle get
   if (scope == NAOS_LOCAL && strncmp(topic, "naos/get/", 9) == 0) {
     // get param
     char *param = (char *)topic + 9;
-
-    // get value
-    const char *value = naos_get(param);
-
-    // construct topic
-    char *t = naos_concat("naos/value/", param);
-
-    // send value
-    naos_publish(t, value, 0, false, NAOS_LOCAL);
-
-    // free topic
-    free(t);
-
-    // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
-
-    return;
-  }
-
-  // check set
-  if (scope == NAOS_LOCAL && strncmp(topic, "naos/set/", 9) == 0) {
-    // get param
-    char *param = (char *)topic + 9;
-
-    // save param
-    naos_set(param, (const char *)payload);
-
-    // call update callback if present
-    if (naos_config()->update_callback != NULL) {
-      naos_acquire();
-      naos_config()->update_callback(param, (const char *)payload);
-      naos_release();
-    }
 
     // send value
     char *t = naos_concat("naos/value/", param);
@@ -208,9 +145,28 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     return;
   }
 
-  // check log
+  // handle set
+  if (scope == NAOS_LOCAL && strncmp(topic, "naos/set/", 9) == 0) {
+    // get param
+    char *param = (char *)topic + 9;
+
+    // save param
+    naos_set(param, (const char *)payload);
+
+    // send value
+    char *t = naos_concat("naos/value/", param);
+    naos_publish(t, naos_get(param), 0, false, NAOS_LOCAL);
+    free(t);
+
+    // release mutex
+    NAOS_UNLOCK(naos_manager_mutex);
+
+    return;
+  }
+
+  // handle record
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/record") == 0) {
-    // enable or disable logging
+    // enable or disable recording
     if (strcmp((const char *)payload, "on") == 0) {
       naos_manager_recording = true;
     } else if (strcmp((const char *)payload, "off") == 0) {
@@ -223,7 +179,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     return;
   }
 
-  // check debug
+  // handle debug
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/debug") == 0) {
     // get coredump size
     uint32_t size = naos_coredump_size();
@@ -269,7 +225,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     return;
   }
 
-  // check update begin
+  // handle update begin
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/update/begin") == 0) {
     // get update size
     size_t total = (size_t)strtol((const char *)payload, NULL, 10);
@@ -287,7 +243,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     return;
   }
 
-  // check update write
+  // handle update write
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/update/write") == 0) {
     // write chunk (very time expensive)
     naos_update_write(payload, len);
@@ -302,7 +258,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     return;
   }
 
-  // check update finish
+  // handle update finish
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/update/finish") == 0) {
     // finish update
     naos_update_finish();
@@ -333,9 +289,6 @@ static void naos_manager_sink(const char *msg) {
 void naos_manager_init() {
   // create mutex
   naos_manager_mutex = xSemaphoreCreateMutex();
-
-  // subscribe parameters changes
-  naos_params_subscribe(naos_manager_receiver);
 
   // subscribe messages
   naos_com_subscribe(naos_manager_handler);
@@ -378,7 +331,7 @@ void naos_manager_start() {
   naos_subscribe("naos/update/finish", 0, NAOS_LOCAL);
 
   // send initial announcement
-  naos_manager_send_announcement();
+  naos_manager_announce();
 
   // release mutex
   NAOS_UNLOCK(naos_manager_mutex);

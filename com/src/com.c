@@ -2,6 +2,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
+#include "naos.h"
 #include "com.h"
 #include "utils.h"
 
@@ -61,6 +62,13 @@ void naos_com_dispatch(naos_scope_t scope, const char *topic, const uint8_t *pay
   NAOS_UNLOCK(naos_com_mutex);
   for (size_t i = 0; i < count; i++) {
     naos_com_receivers[i](scope, topic, payload, len, qos, retained);
+  }
+
+  // call message callback if present
+  if (naos_config()->message_callback != NULL) {
+    naos_acquire();
+    naos_config()->message_callback(topic, payload, len, scope);
+    naos_release();
   }
 }
 
