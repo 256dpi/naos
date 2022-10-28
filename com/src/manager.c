@@ -3,6 +3,7 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+#include <freertos/timers.h>
 #include <string.h>
 
 #include "naos.h"
@@ -14,17 +15,15 @@
 #include "log.h"
 
 static SemaphoreHandle_t naos_manager_mutex;
-static TaskHandle_t naos_manager_task;
-static bool naos_manager_process_started = false;
 static bool naos_manager_recording = false;
 
 static void naos_manager_heartbeat() {
   // get device name
-  char *device_name = strdup(naos_get("device-name"));
+  const char *device_name = naos_get("device-name");
 
-  // get battery
+  // get battery level
   double battery = -1;
-  if(naos_lookup("battery-level")) {
+  if (naos_lookup("battery-level")) {
     battery = naos_get_d("battery-level");
   }
 
@@ -47,41 +46,18 @@ static void naos_manager_heartbeat() {
            naos_config()->device_version, device_name, esp_get_free_heap_size(), naos_millis(),
            esp_ota_get_running_partition()->label, battery, rssi, cpu0, cpu1);
   naos_publish("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
-
-  // free string
-  free(device_name);
 }
 
 static void naos_manager_announce() {
-  // get device name & base topic
-  char *device_name = strdup(naos_get("device-name"));
-  char *base_topic = strdup(naos_get("mqtt-base-topic"));
+  // get device name and base topic
+  const char *device_name = naos_get("device-name");
+  const char *base_topic = naos_get("mqtt-base-topic");
 
-  // send announce
+  // send announcement
   char buf[64];
   snprintf(buf, sizeof buf, "%s,%s,%s,%s", naos_config()->device_type, naos_config()->device_version, device_name,
            base_topic);
   naos_publish("naos/announcement", buf, 0, false, NAOS_GLOBAL);
-
-  // free strings
-  free(device_name);
-  free(base_topic);
-}
-
-static void naos_manager_process() {
-  for (;;) {
-    // acquire mutex
-    NAOS_LOCK(naos_manager_mutex);
-
-    // send heartbeat
-    naos_manager_heartbeat();
-
-    // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
-
-    // wait for next interval
-    naos_delay(CONFIG_NAOS_HEARTBEAT_INTERVAL);
-  }
 }
 
 static void naos_manager_handler(naos_scope_t scope, const char *topic, const uint8_t *payload, size_t len, int qos,
@@ -277,10 +253,64 @@ static void naos_manager_sink(const char *msg) {
   // acquire mutex
   NAOS_LOCK(naos_manager_mutex);
 
-  // publish message if recording
-  if (naos_manager_recording) {
+  // publish message if networked and recording
+  if (naos_com_networked() && naos_manager_recording) {
     naos_publish("naos/log", msg, 0, false, NAOS_LOCAL);
   }
+
+  // release mutex
+  NAOS_UNLOCK(naos_manager_mutex);
+}
+
+static void naos_manager_signal() {
+  // acquire mutex
+  NAOS_LOCK(naos_manager_mutex);
+
+  // send heartbeat if networked
+  if (naos_com_networked()) {
+    naos_manager_heartbeat();
+  }
+
+  // release mutex
+  NAOS_UNLOCK(naos_manager_mutex);
+}
+
+static void naos_manager_check() {
+  // keep old status
+  static bool old_networked = false;
+
+  // acquire mutex
+  NAOS_LOCK(naos_manager_mutex);
+
+  // get new status
+  bool new_networked = naos_com_networked();
+
+  // handle status
+  if (!old_networked && new_networked) {
+    // subscribe global topics
+    naos_subscribe("naos/collect", 0, NAOS_GLOBAL);
+
+    // subscribe local topics
+    naos_subscribe("naos/ping", 0, NAOS_LOCAL);
+    naos_subscribe("naos/discover", 0, NAOS_LOCAL);
+    naos_subscribe("naos/get/+", 0, NAOS_LOCAL);
+    naos_subscribe("naos/set/+", 0, NAOS_LOCAL);
+    naos_subscribe("naos/unset/+", 0, NAOS_LOCAL);
+    naos_subscribe("naos/record", 0, NAOS_LOCAL);
+    naos_subscribe("naos/debug", 0, NAOS_LOCAL);
+    naos_subscribe("naos/update/begin", 0, NAOS_LOCAL);
+    naos_subscribe("naos/update/write", 0, NAOS_LOCAL);
+    naos_subscribe("naos/update/finish", 0, NAOS_LOCAL);
+
+    // send initial announcement
+    naos_manager_announce();
+  } else if (old_networked && !new_networked) {
+    // clear recording
+    naos_manager_recording = false;
+  }
+
+  // update status
+  old_networked = new_networked;
 
   // release mutex
   NAOS_UNLOCK(naos_manager_mutex);
@@ -295,66 +325,13 @@ void naos_manager_init() {
 
   // register sink
   naos_log_register(naos_manager_sink);
-}
 
-void naos_manager_start() {
-  // acquire mutex
-  NAOS_LOCK(naos_manager_mutex);
+  // start signal timer
+  TimerHandle_t timer =
+      xTimerCreate("naos-manager-s", pdMS_TO_TICKS(CONFIG_NAOS_HEARTBEAT_INTERVAL), pdTRUE, 0, naos_manager_signal);
+  xTimerStart(timer, 0);
 
-  // check if already running
-  if (naos_manager_process_started) {
-    ESP_LOGE(NAOS_LOG_TAG, "naos_manager_start: already started");
-    NAOS_UNLOCK(naos_manager_mutex);
-    return;
-  }
-
-  // set flag
-  naos_manager_process_started = true;
-
-  // create task
-  ESP_LOGI(NAOS_LOG_TAG, "naos_manager_start: create task");
-  xTaskCreatePinnedToCore(naos_manager_process, "naos-manager", 4096, NULL, 2, &naos_manager_task, 1);
-
-  // subscribe to global topics
-  naos_subscribe("naos/collect", 0, NAOS_GLOBAL);
-
-  // subscribe to local topics
-  naos_subscribe("naos/ping", 0, NAOS_LOCAL);
-  naos_subscribe("naos/discover", 0, NAOS_LOCAL);
-  naos_subscribe("naos/get/+", 0, NAOS_LOCAL);
-  naos_subscribe("naos/set/+", 0, NAOS_LOCAL);
-  naos_subscribe("naos/unset/+", 0, NAOS_LOCAL);
-  naos_subscribe("naos/record", 0, NAOS_LOCAL);
-  naos_subscribe("naos/debug", 0, NAOS_LOCAL);
-  naos_subscribe("naos/update/begin", 0, NAOS_LOCAL);
-  naos_subscribe("naos/update/write", 0, NAOS_LOCAL);
-  naos_subscribe("naos/update/finish", 0, NAOS_LOCAL);
-
-  // send initial announcement
-  naos_manager_announce();
-
-  // release mutex
-  NAOS_UNLOCK(naos_manager_mutex);
-}
-
-void naos_manager_stop() {
-  // acquire mutex
-  NAOS_LOCK(naos_manager_mutex);
-
-  // check if task is still running
-  if (!naos_manager_process_started) {
-    NAOS_UNLOCK(naos_manager_mutex);
-    return;
-  }
-
-  // set flags
-  naos_manager_process_started = false;
-  naos_manager_recording = false;
-
-  // remove task
-  ESP_LOGI(NAOS_LOG_TAG, "naos_manager_stop: deleting task");
-  vTaskDelete(naos_manager_task);
-
-  // release mutex
-  NAOS_UNLOCK(naos_manager_mutex);
+  // start check timer
+  timer = xTimerCreate("naos-manager-c", pdMS_TO_TICKS(100), pdTRUE, 0, naos_manager_check);
+  xTimerStart(timer, 0);
 }

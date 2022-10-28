@@ -6,7 +6,6 @@
 #include <string.h>
 
 #include "system.h"
-#include "manager.h"
 #include "naos.h"
 #include "net.h"
 #include "params.h"
@@ -91,18 +90,10 @@ static void naos_system_task() {
       // set status
       naos_system_set_status(new_status);
 
-      // handle task and manger
+      // manage task
       if (new_status == NAOS_NETWORKED) {
-        // start manager
-        naos_manager_start();
-
-        // start task
         naos_task_start();
       } else if (old_status == NAOS_NETWORKED) {
-        // stop manager
-        naos_manager_stop();
-
-        // stop task
         naos_task_stop();
       }
     }
@@ -166,9 +157,6 @@ void naos_system_init() {
 
   // init task
   naos_task_init();
-
-  // init manager
-  naos_manager_init();
 
   // initialize OTA
   naos_update_init();

@@ -8,6 +8,7 @@
 #include <naos_http.h>
 #include <naos_eth.h>
 #include <naos_mqtt.h>
+#include <naos_manager.h>
 
 #define ETHERNET false
 
@@ -166,6 +167,7 @@ void app_main() {
   naos_wifi_init();
   naos_http_init();
   naos_mqtt_init();
+  naos_manager_init();
   if (ETHERNET) {
     naos_eth_olimex();
     naos_eth_init();

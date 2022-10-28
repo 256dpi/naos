@@ -8,4 +8,4 @@ void naos_log_register(naos_log_sink_t sink);
 
 // naos_log
 
-#endif // NAOS_LOG_H
+#endif  // NAOS_LOG_H
