@@ -12,7 +12,7 @@ static SemaphoreHandle_t naos_com_mutex;
 static naos_com_transport_t naos_com_transports[NAOS_COM_MAX_TRANSPORTS] = {0};
 static size_t naos_com_transport_count = 0;
 static naos_com_receiver_t naos_com_receivers[NAOS_COM_MAX_RECEIVERS] = {0};
-static size_t naos_com_receivers_count = 0;
+static size_t naos_com_receiver_count = 0;
 
 void naos_com_init() {
   // create mutex
@@ -41,13 +41,13 @@ void naos_com_subscribe(naos_com_receiver_t receiver) {
   NAOS_LOCK(naos_com_mutex);
 
   // check count
-  if (naos_com_receivers_count >= NAOS_COM_MAX_RECEIVERS) {
+  if (naos_com_receiver_count >= NAOS_COM_MAX_RECEIVERS) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
   // store transport
-  naos_com_receivers[naos_com_receivers_count] = receiver;
-  naos_com_receivers_count++;
+  naos_com_receivers[naos_com_receiver_count] = receiver;
+  naos_com_receiver_count++;
 
   // release mutex
   NAOS_UNLOCK(naos_com_mutex);
@@ -56,7 +56,10 @@ void naos_com_subscribe(naos_com_receiver_t receiver) {
 void naos_com_dispatch(naos_scope_t scope, const char *topic, const uint8_t *payload, size_t len, int qos,
                        bool retained) {
   // dispatch to all receivers
-  for (size_t i = 0; i < naos_com_receivers_count; i++) {
+  NAOS_LOCK(naos_com_mutex);
+  size_t count = naos_com_receiver_count;
+  NAOS_UNLOCK(naos_com_mutex);
+  for (size_t i = 0; i < count; i++) {
     naos_com_receivers[i](scope, topic, payload, len, qos, retained);
   }
 }
