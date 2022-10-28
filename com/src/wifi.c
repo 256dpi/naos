@@ -14,6 +14,7 @@ static wifi_config_t naos_wifi_config;
 static esp_netif_t *naos_wifi_netif;
 static bool naos_wifi_started;
 static bool naos_wifi_connected;
+static uint16_t naos_wifi_generation = 0;
 static char naos_wifi_addr[16] = {0};
 
 static void naos_wifi_configure() {
@@ -99,6 +100,7 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
       case IP_EVENT_STA_GOT_IP: {
         // set status
         naos_wifi_connected = true;
+        naos_wifi_generation++;
 
         // set addr
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
@@ -121,7 +123,10 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
 static naos_net_status_t naos_wifi_status() {
   // read status
   NAOS_LOCK(naos_wifi_mutex);
-  naos_net_status_t status = {.connected = naos_wifi_connected};
+  naos_net_status_t status = {
+      .connected = naos_wifi_connected,
+      .generation = naos_wifi_generation,
+  };
   NAOS_UNLOCK(naos_wifi_mutex);
 
   return status;

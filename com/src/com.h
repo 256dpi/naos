@@ -5,6 +5,7 @@
 
 typedef struct {
   bool networked;
+  uint16_t generation;
 } naos_com_status_t;
 
 typedef struct {

@@ -11,6 +11,7 @@ static esp_eth_handle_t naos_eth_handle;
 static esp_netif_t *naos_eth_netif;
 static bool naos_eth_started = false;
 static bool naos_eth_connected = false;
+static uint16_t naos_eth_generation = 0;
 static char naos_eth_addr[16] = {0};
 
 static void naos_eth_configure() {
@@ -68,6 +69,7 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
       case IP_EVENT_ETH_GOT_IP: {
         // set status
         naos_eth_connected = true;
+        naos_eth_generation++;
 
         // set addr
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
@@ -92,6 +94,7 @@ static naos_net_status_t naos_eth_status() {
   NAOS_LOCK(naos_eth_mutex);
   naos_net_status_t status = {
       .connected = naos_eth_connected,
+      .generation = naos_eth_generation,
   };
   NAOS_UNLOCK(naos_eth_mutex);
 

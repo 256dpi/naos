@@ -14,6 +14,7 @@ static SemaphoreHandle_t naos_mqtt_mutex;
 static char *naos_mqtt_base_topic_prefix = NULL;
 static bool naos_mqtt_started = false;
 static bool naos_mqtt_networked = false;
+static bool naos_mqtt_generation = false;
 
 static char *naos_mqtt_with_base_topic(const char *topic) {
   // prefix base topic
@@ -45,6 +46,9 @@ static void naos_mqtt_status_handler(esp_mqtt_status_t status) {
 
   // set status
   naos_mqtt_networked = status == ESP_MQTT_STATUS_CONNECTED;
+  if (naos_mqtt_networked) {
+    naos_mqtt_generation++;
+  }
 
   // release mutex
   NAOS_UNLOCK(naos_mqtt_mutex);
@@ -66,6 +70,7 @@ naos_com_status_t naos_mqtt_status() {
   NAOS_LOCK(naos_mqtt_mutex);
   naos_com_status_t status = {
       .networked = naos_mqtt_networked,
+      .generation = naos_mqtt_generation,
   };
   NAOS_UNLOCK(naos_mqtt_mutex);
 
