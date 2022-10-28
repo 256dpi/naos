@@ -9,6 +9,7 @@
 static SemaphoreHandle_t naos_eth_mutex;
 static esp_eth_handle_t naos_eth_handle;
 static esp_netif_t *naos_eth_netif;
+static bool naos_eth_started = false;
 static bool naos_eth_connected = false;
 static char naos_eth_addr[16] = {0};
 
@@ -19,8 +20,11 @@ static void naos_eth_configure() {
   // acquire mutex
   NAOS_LOCK(naos_eth_mutex);
 
-  // stop driver
-  ESP_ERROR_CHECK(esp_eth_stop(naos_eth_handle));
+  // stop driver if already started
+  if (naos_eth_started) {
+    ESP_ERROR_CHECK(esp_eth_stop(naos_eth_handle));
+    naos_eth_started = false;
+  }
 
   // configure network
   const char *manual = naos_get("eth-manual");
@@ -28,6 +32,7 @@ static void naos_eth_configure() {
 
   // start driver
   ESP_ERROR_CHECK(esp_eth_start(naos_eth_handle));
+  naos_eth_started = true;
 
   // release mutex
   NAOS_UNLOCK(naos_eth_mutex);

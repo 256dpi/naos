@@ -44,21 +44,15 @@ static void naos_wifi_configure() {
   // configure network
   naos_net_configure(naos_wifi_netif, manual);
 
-  // assign SSID and password
+  // configure station
   strcpy((char *)naos_wifi_config.sta.ssid, ssid);
   strcpy((char *)naos_wifi_config.sta.password, password);
-
-  // set to station mode
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-
-  // assign configuration
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &naos_wifi_config));
 
-  // update flag
-  naos_wifi_started = true;
-
-  // start WiFi
+  // start station
   ESP_ERROR_CHECK(esp_wifi_start());
+  naos_wifi_started = true;
 
   // release mutex
   NAOS_UNLOCK(naos_wifi_mutex);
@@ -154,7 +148,7 @@ void naos_wifi_init() {
   // create mutex
   naos_wifi_mutex = xSemaphoreCreateMutex();
 
-  // enable WiFi
+  // create WiFi station
   naos_wifi_netif = esp_netif_create_default_wifi_sta();
 
   // initialize WiFi
