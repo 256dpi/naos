@@ -23,9 +23,9 @@ static void naos_manager_send_heartbeat() {
   char *device_name = strdup(naos_get("device-name"));
 
   // get battery
-  float battery = -1;
-  if (naos_config()->battery_callback != NULL) {
-    battery = naos_config()->battery_callback();
+  double battery = -1;
+  if(naos_lookup("battery-level")) {
+    battery = naos_get_d("battery-level");
   }
 
   // get WiFi RSSI
