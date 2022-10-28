@@ -83,11 +83,11 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
 
   // handle ping
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/ping") == 0) {
+    // release mutex (conflict with naos_set)
+    NAOS_UNLOCK(naos_manager_mutex);
+
     // trigger ping
     naos_set("ping", "");
-
-    // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
 
     return;
   }
@@ -123,6 +123,9 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
 
   // handle set
   if (scope == NAOS_LOCAL && strncmp(topic, "naos/set/", 9) == 0) {
+    // release mutex (conflict with naos_set)
+    NAOS_UNLOCK(naos_manager_mutex);
+
     // get param
     char *param = (char *)topic + 9;
 
@@ -133,9 +136,6 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     char *t = naos_concat("naos/value/", param);
     naos_publish(t, naos_get(param), 0, false, NAOS_LOCAL);
     free(t);
-
-    // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
 
     return;
   }
