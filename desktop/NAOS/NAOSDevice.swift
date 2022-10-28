@@ -176,7 +176,7 @@ public class NAOSDevice: NSObject {
 		try await manager.centralManager.connect(peripheral, options: nil)
 
 		// discover services
-		try await withTimeout(seconds: 1) {
+		try await withTimeout(seconds: 2) {
 			try await self.peripheral.discoverServices([NAOSService])
 		}
 
@@ -428,7 +428,7 @@ public class NAOSDevice: NSObject {
 		}
 
 		// read value
-		try await withTimeout(seconds: 1) {
+		try await withTimeout(seconds: 2) {
 			try await self.peripheral.readValue(for: char)
 		}
 
@@ -445,7 +445,7 @@ public class NAOSDevice: NSObject {
 		}
 
 		// read value
-		try await withTimeout(seconds: 1) {
+		try await withTimeout(seconds: 2) {
 			try await self.peripheral.writeValue(data.data(using: .utf8)!, for: char, type: .withResponse)
 		}
 	}
