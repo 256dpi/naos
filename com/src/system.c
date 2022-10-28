@@ -112,7 +112,10 @@ static void naos_system_task() {
       naos_set_l("uptime", (int32_t)naos_millis());
       naos_set_l("free-heap", (int32_t)esp_get_free_heap_size());
       if (naos_config()->battery_callback != NULL) {
-        naos_set_d("battery-level", naos_config()->battery_callback());
+        naos_acquire();
+        float level = naos_config()->battery_callback();
+        naos_release();
+        naos_set_d("battery-level", level);
       }
       naos_system_updated = naos_millis();
     }
@@ -124,7 +127,9 @@ static void naos_system_task() {
 
 static void naos_setup_task() {
   // run callback
+  naos_acquire();
   naos_config()->setup_callback();
+  naos_release();
 
   // delete itself
   vTaskDelete(NULL);
