@@ -7,7 +7,7 @@
 
 #include "system.h"
 #include "manager.h"
-#include "monitor.h"
+#include "cpu.h"
 #include "naos.h"
 #include "net.h"
 #include "params.h"
@@ -183,9 +183,6 @@ void naos_system_init() {
   naos_set("device-type", naos_config()->device_type);
   naos_set("device-version", naos_config()->device_version);
   naos_set("running-partition", esp_ota_get_running_partition()->label);
-
-  // init monitor
-  naos_monitor_init();
 
   // register application parameters
   for (int i = 0; i < naos_config()->num_parameters; i++) {

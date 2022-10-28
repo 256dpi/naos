@@ -3,6 +3,7 @@
 
 #include <naos.h>
 #include <naos_ble.h>
+#include <naos_cpu.h>
 #include <naos_wifi.h>
 #include <naos_http.h>
 #include <naos_eth.h>
@@ -159,6 +160,7 @@ static naos_param_t param_message = {
 void app_main() {
   // initialize naos
   naos_init(&config);
+  naos_cpu_init();
   naos_ble_init();
   naos_wifi_init();
   naos_http_init();

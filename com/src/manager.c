@@ -35,9 +35,9 @@ static void naos_manager_send_heartbeat() {
 
   // get CPU usage
   double cpu0 = 0, cpu1 = 0;
-  if (naos_lookup("monitor-cpu0")) {
-    cpu0 = naos_get_d("monitor-cpu0");
-    cpu1 = naos_get_d("monitor-cpu1");
+  if (naos_lookup("cpu-usage0")) {
+    cpu0 = naos_get_d("cpu-usage0");
+    cpu1 = naos_get_d("cpu-usage1");
   }
 
   // send heartbeat
