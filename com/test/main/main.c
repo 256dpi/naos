@@ -163,8 +163,8 @@ void app_main() {
   naos_wifi_init();
   naos_http_init();
   if (ETHERNET) {
-    naos_eth_init();
     naos_eth_olimex();
+    naos_eth_init();
   }
 
   // register parameter

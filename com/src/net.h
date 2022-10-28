@@ -1,7 +1,7 @@
 #ifndef NAOS_NET_H
 #define NAOS_NET_H
 
-#include <esp_netif_ip_addr.h>
+#include <esp_netif.h>
 
 typedef struct {
   bool connected;
