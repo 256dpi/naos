@@ -43,7 +43,7 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
 
         // set addr
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
-        sprintf(naos_eth_addr, IPSTR, IP2STR(&event->ip_info.ip));
+        naos_net_ip2str(&event->ip_info.ip, naos_eth_addr);
         naos_set("eth-addr", naos_eth_addr);
 
         break;

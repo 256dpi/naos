@@ -11,6 +11,7 @@
 
 static SemaphoreHandle_t naos_wifi_mutex;
 static wifi_config_t naos_wifi_config;
+static esp_netif_t *naos_wifi_netif;
 static bool naos_wifi_started;
 static bool naos_wifi_connected;
 static char naos_wifi_addr[16] = {0};
@@ -29,17 +30,21 @@ static void naos_wifi_configure() {
     naos_wifi_started = false;
   }
 
-  // get ssid and password
+  // get SSID, password and manual config
   const char *ssid = naos_get("wifi-ssid");
   const char *password = naos_get("wifi-password");
+  const char *manual = naos_get("wifi-manual");
 
-  // return if ssid is not set
+  // return if SSID is missing
   if (strlen(ssid) == 0) {
     NAOS_UNLOCK(naos_wifi_mutex);
     return;
   }
 
-  // assign ssid and password
+  // configure network
+  naos_net_configure(naos_wifi_netif, manual);
+
+  // assign SSID and password
   strcpy((char *)naos_wifi_config.sta.ssid, ssid);
   strcpy((char *)naos_wifi_config.sta.password, password);
 
@@ -104,7 +109,7 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
 
         // set addr
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
-        sprintf(naos_wifi_addr, IPSTR, IP2STR(&event->ip_info.ip));
+        naos_net_ip2str(&event->ip_info.ip, naos_wifi_addr);
         naos_set("wifi-addr", naos_wifi_addr);
 
         break;
@@ -139,6 +144,7 @@ static void naos_wifi_update() {
 static naos_param_t naos_wifi_params[] = {
     {.name = "wifi-ssid", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "wifi-manual", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_wifi_configure},
     {.name = "wifi-rssi", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "wifi-addr", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
@@ -149,7 +155,7 @@ void naos_wifi_init() {
   naos_wifi_mutex = xSemaphoreCreateMutex();
 
   // enable WiFi
-  esp_netif_create_default_wifi_sta();
+  naos_wifi_netif = esp_netif_create_default_wifi_sta();
 
   // initialize WiFi
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
