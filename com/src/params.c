@@ -13,10 +13,10 @@
 
 static nvs_handle naos_params_handle;
 static SemaphoreHandle_t naos_params_mutex;
-static naos_param_t *naos_params_registry[CONFIG_NAOS_PARAM_REGISTRY_SIZE] = {0};
+static naos_param_t *naos_params[CONFIG_NAOS_PARAM_REGISTRY_SIZE] = {0};
 static size_t naos_params_count = 0;
 static naos_params_receiver_t naos_params_receivers[NAOS_PARAMS_MAX_RECEIVERS] = {0};
-static uint8_t naos_params_receivers_count = 0;
+static uint8_t naos_params_receiver_count = 0;
 
 static void naos_params_update(naos_param_t *param) {
   // update pointer
@@ -134,7 +134,7 @@ void naos_register(naos_param_t *param) {
   }
 
   // store parameter
-  naos_params_registry[naos_params_count] = param;
+  naos_params[naos_params_count] = param;
   naos_params_count++;
 
   // check parameter
@@ -191,7 +191,7 @@ naos_param_t *naos_lookup(const char *name) {
   // find parameter
   naos_param_t *result = NULL;
   for (size_t i = 0; i < naos_params_count; i++) {
-    naos_param_t *param = naos_params_registry[i];
+    naos_param_t *param = naos_params[i];
     if (strcmp(name, param->name) == 0) {
       result = param;
       break;
@@ -218,7 +218,7 @@ char *naos_params_list(naos_mode_t mode) {
   size_t length = 0;
   size_t count = 0;
   for (int i = 0; i < naos_params_count; i++) {
-    naos_param_t *param = naos_params_registry[i];
+    naos_param_t *param = naos_params[i];
     if ((param->mode & mode) == mode) {
       count++;
       length += strlen(param->name) + 4;
@@ -247,7 +247,7 @@ char *naos_params_list(naos_mode_t mode) {
   size_t pos = 0;
   for (int i = 0; i < naos_params_count; i++) {
     // get param
-    naos_param_t *param = naos_params_registry[i];
+    naos_param_t *param = naos_params[i];
 
     // check mode
     if ((param->mode & mode) != mode) {
@@ -330,13 +330,13 @@ void naos_params_subscribe(naos_params_receiver_t receiver) {
   NAOS_LOCK(naos_params_mutex);
 
   // check count
-  if (naos_params_receivers_count >= NAOS_PARAMS_MAX_RECEIVERS) {
+  if (naos_params_receiver_count >= NAOS_PARAMS_MAX_RECEIVERS) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
   // add receiver
-  naos_params_receivers[naos_params_receivers_count] = receiver;
-  naos_params_receivers_count++;
+  naos_params_receivers[naos_params_receiver_count] = receiver;
+  naos_params_receiver_count++;
 
   // release mutex
   NAOS_UNLOCK(naos_params_mutex);
@@ -349,7 +349,7 @@ void naos_params_dispatch() {
   // iterate parameters
   for (size_t i = 0; i < naos_params_count; i++) {
     // get param
-    naos_param_t *param = naos_params_registry[i];
+    naos_param_t *param = naos_params[i];
 
     // continue if not changed
     if (!param->changed) {
@@ -360,7 +360,7 @@ void naos_params_dispatch() {
     param->changed = false;
 
     // dispatch change
-    for (size_t j = 0; j < naos_params_receivers_count; j++) {
+    for (size_t j = 0; j < naos_params_receiver_count; j++) {
       NAOS_UNLOCK(naos_params_mutex);
       naos_params_receivers[j](param);
       NAOS_LOCK(naos_params_mutex);

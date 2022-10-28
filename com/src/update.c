@@ -9,7 +9,6 @@
 #include "utils.h"
 
 static SemaphoreHandle_t naos_update_mutex;
-
 static const esp_partition_t *naos_update_partition = NULL;
 static esp_ota_handle_t naos_update_handle = 0;
 

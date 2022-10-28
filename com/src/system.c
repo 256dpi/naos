@@ -17,7 +17,6 @@
 
 SemaphoreHandle_t naos_system_mutex;
 static naos_status_t naos_system_status;
-static uint32_t naos_system_updated = 0;
 
 static void naos_system_ping() {
   // check existence
@@ -71,6 +70,9 @@ static void naos_system_task() {
   // prepare generation
   uint32_t old_generation = 0;
 
+  // prepare updated
+  static uint32_t params_updated = 0;
+
   for (;;) {
     // wait some time
     naos_delay(100);
@@ -100,7 +102,7 @@ static void naos_system_task() {
       } else if (old_status == NAOS_NETWORKED) {
         naos_task_stop();
       }
-    } else if(networked && new_generation > old_generation) {
+    } else if (networked && new_generation > old_generation) {
       // restart task
       naos_task_stop();
       naos_task_start();
@@ -110,7 +112,7 @@ static void naos_system_task() {
     old_generation = new_generation;
 
     // update parameters
-    if (naos_millis() > naos_system_updated + 1000) {
+    if (naos_millis() > params_updated + 1000) {
       naos_set_l("uptime", (int32_t)naos_millis());
       naos_set_l("free-heap", (int32_t)esp_get_free_heap_size());
       if (naos_config()->battery_callback != NULL) {
@@ -119,7 +121,7 @@ static void naos_system_task() {
         naos_release();
         naos_set_d("battery-level", level);
       }
-      naos_system_updated = naos_millis();
+      params_updated = naos_millis();
     }
 
     // dispatch parameters
