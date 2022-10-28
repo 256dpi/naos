@@ -79,11 +79,10 @@ static void naos_system_task() {
     bool connected = naos_net_connected();
     bool networked = naos_com_networked();
     naos_status_t new_status = NAOS_DISCONNECTED;
-    if (connected) {
-      new_status = NAOS_CONNECTED;
-    }
     if (connected && networked) {
       new_status = NAOS_NETWORKED;
+    } else if (connected) {
+      new_status = NAOS_CONNECTED;
     }
 
     // handle status change

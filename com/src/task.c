@@ -26,6 +26,11 @@ static void naos_task_process() {
   }
 }
 
+void naos_task_init() {
+  // create mutex
+  naos_task_mutex = xSemaphoreCreateMutex();
+}
+
 void naos_acquire() {
   // acquire mutex
   NAOS_LOCK(naos_task_mutex);
@@ -34,11 +39,6 @@ void naos_acquire() {
 void naos_release() {
   // release mutex
   NAOS_UNLOCK(naos_task_mutex);
-}
-
-void naos_task_init() {
-  // create mutex
-  naos_task_mutex = xSemaphoreCreateMutex();
 }
 
 void naos_task_start() {
