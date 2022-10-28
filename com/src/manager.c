@@ -5,12 +5,12 @@
 #include <freertos/semphr.h>
 #include <string.h>
 
-#include "coredump.h"
-#include "manager.h"
 #include "naos.h"
+#include "coredump.h"
 #include "params.h"
 #include "update.h"
 #include "utils.h"
+#include "com.h"
 
 static SemaphoreHandle_t naos_manager_mutex;
 static TaskHandle_t naos_manager_task;
@@ -103,55 +103,8 @@ static void naos_manager_receiver(naos_param_t *param) {
   NAOS_UNLOCK(naos_manager_mutex);
 }
 
-void naos_manager_init() {
-  // create mutex
-  naos_manager_mutex = xSemaphoreCreateMutex();
-
-  // subscribe parameters changes
-  naos_params_subscribe(naos_manager_receiver);
-}
-
-void naos_manager_start() {
-  // acquire mutex
-  NAOS_LOCK(naos_manager_mutex);
-
-  // check if already running
-  if (naos_manager_process_started) {
-    ESP_LOGE(NAOS_LOG_TAG, "naos_manager_start: already started");
-    NAOS_UNLOCK(naos_manager_mutex);
-    return;
-  }
-
-  // set flag
-  naos_manager_process_started = true;
-
-  // create task
-  ESP_LOGI(NAOS_LOG_TAG, "naos_manager_start: create task");
-  xTaskCreatePinnedToCore(naos_manager_process, "naos-manager", 4096, NULL, 2, &naos_manager_task, 1);
-
-  // subscribe to global topics
-  naos_subscribe("naos/collect", 0, NAOS_GLOBAL);
-
-  // subscribe to local topics
-  naos_subscribe("naos/ping", 0, NAOS_LOCAL);
-  naos_subscribe("naos/discover", 0, NAOS_LOCAL);
-  naos_subscribe("naos/get/+", 0, NAOS_LOCAL);
-  naos_subscribe("naos/set/+", 0, NAOS_LOCAL);
-  naos_subscribe("naos/unset/+", 0, NAOS_LOCAL);
-  naos_subscribe("naos/record", 0, NAOS_LOCAL);
-  naos_subscribe("naos/debug", 0, NAOS_LOCAL);
-  naos_subscribe("naos/update/begin", 0, NAOS_LOCAL);
-  naos_subscribe("naos/update/write", 0, NAOS_LOCAL);
-  naos_subscribe("naos/update/finish", 0, NAOS_LOCAL);
-
-  // send initial announcement
-  naos_manager_send_announcement();
-
-  // release mutex
-  NAOS_UNLOCK(naos_manager_mutex);
-}
-
-void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope) {
+static void naos_manager_handler(naos_scope_t scope, const char *topic, const uint8_t *payload, size_t len, int qos,
+                                 bool retained) {
   // acquire mutex
   NAOS_LOCK(naos_manager_mutex);
 
@@ -243,13 +196,9 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
       naos_release();
     }
 
-    // construct topic
-    char *t = naos_concat("naos/value/", param);
-
     // send value
+    char *t = naos_concat("naos/value/", param);
     naos_publish(t, naos_get(param), 0, false, NAOS_LOCAL);
-
-    // free topic
     free(t);
 
     // release mutex
@@ -362,6 +311,57 @@ void naos_manager_handle(const char *topic, uint8_t *payload, size_t len, naos_s
 
     return;
   }
+
+  // release mutex
+  NAOS_UNLOCK(naos_manager_mutex);
+}
+
+void naos_manager_init() {
+  // create mutex
+  naos_manager_mutex = xSemaphoreCreateMutex();
+
+  // subscribe parameters changes
+  naos_params_subscribe(naos_manager_receiver);
+
+  // subscribe messages
+  naos_com_subscribe(naos_manager_handler);
+}
+
+void naos_manager_start() {
+  // acquire mutex
+  NAOS_LOCK(naos_manager_mutex);
+
+  // check if already running
+  if (naos_manager_process_started) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_manager_start: already started");
+    NAOS_UNLOCK(naos_manager_mutex);
+    return;
+  }
+
+  // set flag
+  naos_manager_process_started = true;
+
+  // create task
+  ESP_LOGI(NAOS_LOG_TAG, "naos_manager_start: create task");
+  xTaskCreatePinnedToCore(naos_manager_process, "naos-manager", 4096, NULL, 2, &naos_manager_task, 1);
+
+  // subscribe to global topics
+  naos_subscribe("naos/collect", 0, NAOS_GLOBAL);
+
+  // subscribe to local topics
+  naos_subscribe("naos/ping", 0, NAOS_LOCAL);
+  naos_subscribe("naos/discover", 0, NAOS_LOCAL);
+  naos_subscribe("naos/get/+", 0, NAOS_LOCAL);
+  naos_subscribe("naos/set/+", 0, NAOS_LOCAL);
+  naos_subscribe("naos/unset/+", 0, NAOS_LOCAL);
+  naos_subscribe("naos/record", 0, NAOS_LOCAL);
+  naos_subscribe("naos/debug", 0, NAOS_LOCAL);
+  naos_subscribe("naos/update/begin", 0, NAOS_LOCAL);
+  naos_subscribe("naos/update/write", 0, NAOS_LOCAL);
+  naos_subscribe("naos/update/finish", 0, NAOS_LOCAL);
+
+  // send initial announcement
+  naos_manager_send_announcement();
 
   // release mutex
   NAOS_UNLOCK(naos_manager_mutex);

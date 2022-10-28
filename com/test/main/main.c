@@ -7,6 +7,7 @@
 #include <naos_wifi.h>
 #include <naos_http.h>
 #include <naos_eth.h>
+#include <naos_mqtt.h>
 
 #define ETHERNET false
 
@@ -50,7 +51,7 @@ static void update(const char *param, const char *value) {
   }
 }
 
-static void handle(const char *topic, uint8_t *payload, size_t len, naos_scope_t scope) {
+static void handle(const char *topic, const uint8_t *payload, size_t len, naos_scope_t scope) {
   // check fail topic
   if (strcmp(topic, "fail") == 0 && scope == NAOS_LOCAL) {
     // cause error
@@ -164,6 +165,7 @@ void app_main() {
   naos_ble_init();
   naos_wifi_init();
   naos_http_init();
+  naos_mqtt_init();
   if (ETHERNET) {
     naos_eth_olimex();
     naos_eth_init();

@@ -13,10 +13,7 @@
 #include "task.h"
 #include "update.h"
 #include "utils.h"
-
-#ifndef CONFIG_NAOS_MQTT_DISABLE
-#include "mqtt.h"
-#endif
+#include "com.h"
 
 SemaphoreHandle_t naos_system_mutex;
 static naos_status_t naos_system_status;
@@ -39,13 +36,6 @@ static naos_param_t naos_system_params[] = {
     {.name = "device-version", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM | NAOS_PUBLIC},
     {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = esp_restart},
-    {.name = "mqtt-host", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "mqtt-port", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "mqtt-client-id", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "mqtt-username", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "mqtt-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "mqtt-base-topic", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "mqtt-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_system_configure_mqtt},
     {.name = "connection-status", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "running-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "uptime", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
@@ -83,25 +73,16 @@ static void naos_system_task() {
     // get old status
     naos_status_t old_status = naos_system_status;
 
-    // determine connection
+    // determine new status
     bool connected = naos_net_connected();
-
-#ifndef CONFIG_NAOS_MQTT_DISABLE
-    // get mqtt status
-    naos_mqtt_status_t mqtt = {0};
-    mqtt = naos_mqtt_check();
-#endif
-
-    // calculate new status
+    bool networked = naos_com_networked();
     naos_status_t new_status = NAOS_DISCONNECTED;
     if (connected) {
       new_status = NAOS_CONNECTED;
     }
-#ifndef CONFIG_NAOS_MQTT_DISABLE
-    if (connected && mqtt.connected) {
+    if (connected && networked) {
       new_status = NAOS_NETWORKED;
     }
-#endif
 
     // handle status change
     if (naos_system_status != new_status) {
@@ -123,18 +104,6 @@ static void naos_system_task() {
         naos_task_stop();
       }
     }
-
-#ifndef CONFIG_NAOS_MQTT_DISABLE
-    // manage mqtt
-    if (mqtt.running && new_status == NAOS_DISCONNECTED) {
-      // stop mqtt
-      naos_mqtt_stop();
-
-    } else if (!mqtt.running && new_status != NAOS_DISCONNECTED) {
-      // start mqtt
-      naos_system_configure_mqtt();
-    }
-#endif
 
     // update parameters
     if (naos_millis() > naos_system_updated + 1000) {
@@ -188,28 +157,23 @@ void naos_system_init() {
     naos_register(&naos_config()->parameters[i]);
   }
 
+  // initialize network stack
+  naos_net_init();
+
+  // initialize communication stack
+  naos_com_init();
+
   // init task
   naos_task_init();
 
   // init manager
   naos_manager_init();
 
-  // initialize network stack
-  naos_net_init();
-
-  // initialize mqtt client
-#ifndef CONFIG_NAOS_MQTT_DISABLE
-  naos_mqtt_init(naos_manager_handle);
-#endif
-
   // initialize OTA
   naos_update_init();
 
   // set initial state
   naos_system_set_status(NAOS_DISCONNECTED);
-
-  // initially configure MQTT
-  naos_system_configure_mqtt();
 
   // run system task
   xTaskCreatePinnedToCore(naos_system_task, "naos-system", 4096, NULL, 2, NULL, 1);
@@ -223,39 +187,4 @@ void naos_system_init() {
 naos_status_t naos_status() {
   // return current status
   return naos_system_status;
-}
-
-void naos_system_configure_mqtt() {
-  // acquire mutex
-  NAOS_LOCK(naos_system_mutex);
-
-  // log call
-  ESP_LOGI(NAOS_LOG_TAG, "naos_system_configure_mqtt");
-
-  // get settings
-  char *host = strdup(naos_get("mqtt-host"));
-  char *port = strdup(naos_get("mqtt-port"));
-  char *client_id = strdup(naos_get("mqtt-client-id"));
-  char *username = strdup(naos_get("mqtt-username"));
-  char *password = strdup(naos_get("mqtt-password"));
-  char *base_topic = strdup(naos_get("mqtt-base-topic"));
-
-#ifndef CONFIG_NAOS_MQTT_DISABLE
-  // stop MQTT
-  naos_mqtt_stop();
-
-  // start MQTT
-  naos_mqtt_start(host, port, client_id, username, password, base_topic);
-#endif
-
-  // free strings
-  free(host);
-  free(port);
-  free(client_id);
-  free(username);
-  free(password);
-  free(base_topic);
-
-  // release mutex
-  NAOS_UNLOCK(naos_system_mutex);
 }
