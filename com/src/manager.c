@@ -254,7 +254,7 @@ static void naos_manager_sink(const char *msg) {
   NAOS_LOCK(naos_manager_mutex);
 
   // publish message if networked and recording
-  if (naos_com_networked() && naos_manager_recording) {
+  if (naos_com_networked(NULL) && naos_manager_recording) {
     naos_publish("naos/log", msg, 0, false, NAOS_LOCAL);
   }
 
@@ -267,7 +267,7 @@ static void naos_manager_signal() {
   NAOS_LOCK(naos_manager_mutex);
 
   // send heartbeat if networked
-  if (naos_com_networked()) {
+  if (naos_com_networked(NULL)) {
     naos_manager_heartbeat();
   }
 
@@ -283,7 +283,7 @@ static void naos_manager_check() {
   NAOS_LOCK(naos_manager_mutex);
 
   // get new status
-  bool new_networked = naos_com_networked();
+  bool new_networked = naos_com_networked(NULL);
 
   // handle status
   if (!old_networked && new_networked) {

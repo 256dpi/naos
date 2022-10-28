@@ -14,7 +14,7 @@ typedef struct {
 
 void naos_net_init();
 void naos_net_register(naos_net_link_t link);
-bool naos_net_connected();
+bool naos_net_connected(uint32_t *generation);
 
 bool naos_net_ip2str(esp_ip4_addr_t *addr, char str[16]);
 bool naos_net_str2ip(char str[16], esp_ip4_addr_t *addr);

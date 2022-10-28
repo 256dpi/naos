@@ -192,7 +192,7 @@ static void naos_mqtt_configure() {
 
 static void naos_mqtt_manage() {
   // get network status
-  bool connected = naos_net_connected();
+  bool connected = naos_net_connected(NULL);
 
   // handle status
   if (connected && !naos_mqtt_started) {

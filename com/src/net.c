@@ -38,7 +38,7 @@ void naos_net_register(naos_net_link_t link) {
   NAOS_UNLOCK(naos_net_mutex);
 }
 
-bool naos_net_connected() {
+bool naos_net_connected(uint32_t *generation) {
   // acquire mutex
   NAOS_LOCK(naos_net_mutex);
 
@@ -48,7 +48,9 @@ bool naos_net_connected() {
     naos_net_status_t status = naos_net_links[i].status();
     if (status.connected) {
       connected = true;
-      break;
+      if (generation != NULL) {
+        *generation += (uint32_t)status.generation;
+      }
     }
   }
 

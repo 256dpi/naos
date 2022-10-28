@@ -72,7 +72,7 @@ void naos_com_dispatch(naos_scope_t scope, const char *topic, const uint8_t *pay
   }
 }
 
-bool naos_com_networked() {
+bool naos_com_networked(uint32_t *generation) {
   // acquire mutex
   NAOS_LOCK(naos_com_mutex);
 
@@ -82,7 +82,9 @@ bool naos_com_networked() {
     naos_com_status_t status = naos_com_transports[i].status();
     if (status.networked) {
       networked = true;
-      break;
+      if (generation != NULL) {
+        *generation += (uint32_t)status.generation;
+      }
     }
   }
 
