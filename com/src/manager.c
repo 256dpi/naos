@@ -11,6 +11,7 @@
 #include "update.h"
 #include "utils.h"
 #include "com.h"
+#include "log.h"
 
 static SemaphoreHandle_t naos_manager_mutex;
 static TaskHandle_t naos_manager_task;
@@ -316,6 +317,19 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
   NAOS_UNLOCK(naos_manager_mutex);
 }
 
+static void naos_manager_sink(const char *msg) {
+  // acquire mutex
+  NAOS_LOCK(naos_manager_mutex);
+
+  // publish message if recording
+  if (naos_manager_recording) {
+    naos_publish("naos/log", msg, 0, false, NAOS_LOCAL);
+  }
+
+  // release mutex
+  NAOS_UNLOCK(naos_manager_mutex);
+}
+
 void naos_manager_init() {
   // create mutex
   naos_manager_mutex = xSemaphoreCreateMutex();
@@ -325,6 +339,9 @@ void naos_manager_init() {
 
   // subscribe messages
   naos_com_subscribe(naos_manager_handler);
+
+  // register sink
+  naos_log_register(naos_manager_sink);
 }
 
 void naos_manager_start() {
@@ -365,29 +382,6 @@ void naos_manager_start() {
 
   // release mutex
   NAOS_UNLOCK(naos_manager_mutex);
-}
-
-void naos_log(const char *fmt, ...) {
-  // process input
-  va_list args;
-  va_start(args, fmt);
-  char buf[128];
-  vsnprintf(buf, 128, fmt, args);
-  va_end(args);
-
-  // publish log message if enabled
-  if (naos_manager_recording) {
-    naos_publish("naos/log", buf, 0, false, NAOS_LOCAL);
-  }
-
-  // get device type
-  const char *device_type = "unknown";
-  if (naos_config() != NULL) {
-    device_type = naos_config()->device_type;
-  }
-
-  // print log message esp like
-  printf("N (%d) %s: %s\n", naos_millis(), device_type, buf);
 }
 
 void naos_manager_stop() {

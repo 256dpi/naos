@@ -14,6 +14,7 @@
 #include "update.h"
 #include "utils.h"
 #include "com.h"
+#include "log.h"
 
 SemaphoreHandle_t naos_system_mutex;
 static naos_status_t naos_system_status;
@@ -153,10 +154,9 @@ void naos_system_init() {
   naos_set("device-version", naos_config()->device_version);
   naos_set("running-partition", esp_ota_get_running_partition()->label);
 
-  // initialize network stack
+  // initialize subsystems
+  naos_log_init();
   naos_net_init();
-
-  // initialize communication stack
   naos_com_init();
 
   // init task
