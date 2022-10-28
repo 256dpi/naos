@@ -7,7 +7,6 @@
 
 #include "coredump.h"
 #include "manager.h"
-#include "monitor.h"
 #include "naos.h"
 #include "params.h"
 #include "update.h"
@@ -35,13 +34,17 @@ static void naos_manager_send_heartbeat() {
   }
 
   // get CPU usage
-  naos_cpu_usage_t usage = naos_monitor_get();
+  double cpu0 = 0, cpu1 = 0;
+  if (naos_lookup("monitor-cpu0")) {
+    cpu0 = naos_get_d("monitor-cpu0");
+    cpu1 = naos_get_d("monitor-cpu1");
+  }
 
   // send heartbeat
   char buf[64];
   snprintf(buf, sizeof buf, "%s,%s,%s,%d,%d,%s,%.2f,%d,%.2f,%.2f", naos_config()->device_type,
            naos_config()->device_version, device_name, esp_get_free_heap_size(), naos_millis(),
-           esp_ota_get_running_partition()->label, battery, rssi, usage.cpu0, usage.cpu1);
+           esp_ota_get_running_partition()->label, battery, rssi, cpu0, cpu1);
   naos_publish("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
 
   // free string

@@ -1,10 +1,7 @@
 #include <freertos/FreeRTOS.h>
-
-#include <esp_freertos_hooks.h>
 #include <freertos/task.h>
+#include <esp_freertos_hooks.h>
 #include <naos.h>
-
-#include "monitor.h"
 
 #if defined(CONFIG_ESP32_DEFAULT_CPU_FREQ_240)
 #define NAOS_MAX_IDLE_CALLS 368000.f
@@ -83,14 +80,4 @@ void naos_monitor_init() {
 
   // run task
   xTaskCreatePinnedToCore(naos_monitor_task, "naos-monitor", 2048, NULL, 1, NULL, 1);
-}
-
-naos_cpu_usage_t naos_monitor_get() {
-  // prepare usage
-  naos_cpu_usage_t usage = {
-      .cpu0 = naos_monitor_cpu0,
-      .cpu1 = naos_monitor_cpu1,
-  };
-
-  return usage;
 }

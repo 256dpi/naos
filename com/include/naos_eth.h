@@ -2,7 +2,7 @@
 #define NAOS_ETH_H
 
 /**
- * Will prepare Ethernet on the Olimex ESP32 Gateway board.
+ * Prepare Ethernet on the Olimex ESP32 Gateway board.
  */
 void naos_eth_olimex();
 
