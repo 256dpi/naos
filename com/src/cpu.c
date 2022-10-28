@@ -47,8 +47,6 @@ static void naos_cpu_update() {
     idle1 = NAOS_CPU_MAX_IDLE_CALLS;
   }
 
-  // TODO: Calculate drift?
-
   // calculate new usage
   float usage0 = 1.f - idle0 / NAOS_CPU_MAX_IDLE_CALLS;
   float usage1 = 1.f - idle1 / NAOS_CPU_MAX_IDLE_CALLS;

@@ -7,7 +7,6 @@
 
 #include "system.h"
 #include "manager.h"
-#include "cpu.h"
 #include "naos.h"
 #include "net.h"
 #include "params.h"
