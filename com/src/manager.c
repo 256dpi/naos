@@ -51,7 +51,7 @@ static void naos_manager_heartbeat() {
 static void naos_manager_announce() {
   // get device name and base topic
   const char *device_name = naos_get("device-name");
-  const char *base_topic = naos_get("mqtt-base-topic");
+  const char *base_topic = naos_get("base-topic");
 
   // send announcement
   char buf[64];

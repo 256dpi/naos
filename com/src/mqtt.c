@@ -1,5 +1,4 @@
 #include <sdkconfig.h>
-#include <stdlib.h>
 #include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -11,34 +10,9 @@
 #include "utils.h"
 
 static SemaphoreHandle_t naos_mqtt_mutex;
-static char *naos_mqtt_base_topic_prefix = NULL;
 static bool naos_mqtt_started = false;
 static bool naos_mqtt_networked = false;
 static uint32_t naos_mqtt_generation = false;
-
-static char *naos_mqtt_with_base_topic(const char *topic) {
-  // prefix base topic
-  return naos_concat(naos_mqtt_base_topic_prefix, topic);
-}
-
-static naos_scope_t naos_mqtt_scope_from_topic(const char *topic) {
-  // determine scope
-  if (strncmp(topic, naos_mqtt_base_topic_prefix, strlen(naos_mqtt_base_topic_prefix)) == 0) {
-    return NAOS_LOCAL;
-  } else {
-    return NAOS_GLOBAL;
-  }
-}
-
-static const char *naos_mqtt_without_base_topic(const char *topic) {
-  // return immediately if string is not prefixed with the base topic
-  if (naos_mqtt_scope_from_topic(topic) == NAOS_GLOBAL) {
-    return topic;
-  }
-
-  // return adjusted pointer
-  return topic + strlen(naos_mqtt_base_topic_prefix);
-}
 
 static void naos_mqtt_status_handler(esp_mqtt_status_t status) {
   // acquire mutex
@@ -55,14 +29,10 @@ static void naos_mqtt_status_handler(esp_mqtt_status_t status) {
 }
 
 static void naos_mqtt_message_handler(const char *topic, uint8_t *payload, size_t len) {
-  // get scope and scoped topic
-  naos_scope_t scope = naos_mqtt_scope_from_topic(topic);
-  const char *scoped_topic = naos_mqtt_without_base_topic(topic);
-
   // TODO: Set QoS and retained?
 
   // dispatch message
-  naos_com_dispatch(scope, scoped_topic, payload, len, 0, false);
+  naos_com_dispatch(topic, payload, len, 0, false);
 }
 
 naos_com_status_t naos_mqtt_status() {
@@ -77,56 +47,19 @@ naos_com_status_t naos_mqtt_status() {
   return status;
 }
 
-static bool naos_mqtt_subscribe(naos_scope_t scope, const char *topic, int qos) {
-  // add base topic if scope is local
-  if (scope == NAOS_LOCAL) {
-    topic = naos_mqtt_with_base_topic(topic);
-  }
-
+static bool naos_mqtt_subscribe(const char *topic, int qos) {
   // subscribe
-  bool ret = esp_mqtt_subscribe(topic, qos);
-
-  // free prefixed topic
-  if (scope == NAOS_LOCAL) {
-    free((void *)topic);
-  }
-
-  return ret;
+  return esp_mqtt_subscribe(topic, qos);
 }
 
-static bool naos_mqtt_unsubscribe(naos_scope_t scope, const char *topic) {
-  // add base topic if scope is local
-  if (scope == NAOS_LOCAL) {
-    topic = naos_mqtt_with_base_topic(topic);
-  }
-
+static bool naos_mqtt_unsubscribe(const char *topic) {
   // unsubscribe
-  bool ret = esp_mqtt_unsubscribe(topic);
-
-  // free prefixed topic
-  if (scope == NAOS_LOCAL) {
-    free((void *)topic);
-  }
-
-  return ret;
+  return esp_mqtt_unsubscribe(topic);
 }
 
-static bool naos_mqtt_publish(naos_scope_t scope, const char *topic, const uint8_t *payload, size_t len, int qos,
-                              bool retained) {
-  // add base topic if scope is local
-  if (scope == NAOS_LOCAL) {
-    topic = naos_mqtt_with_base_topic(topic);
-  }
-
+static bool naos_mqtt_publish(const char *topic, const uint8_t *payload, size_t len, int qos, bool retained) {
   // publish
-  bool ret = esp_mqtt_publish(topic, (uint8_t *)payload, len, qos, retained);
-
-  // free prefixed topic
-  if (scope == NAOS_LOCAL) {
-    free((void *)topic);
-  }
-
-  return ret;
+  return esp_mqtt_publish(topic, (uint8_t *)payload, len, qos, retained);
 }
 
 static void naos_mqtt_start() {
@@ -136,28 +69,15 @@ static void naos_mqtt_start() {
   const char *client_id = naos_get("mqtt-client-id");
   const char *username = naos_get("mqtt-username");
   const char *password = naos_get("mqtt-password");
-  const char *base_topic = naos_get("mqtt-base-topic");
 
   // return if host is empty
   if (strlen(host) == 0) {
     return;
   }
 
-  // acquire mutex
-  NAOS_LOCK(naos_mqtt_mutex);
-
   // set flag
+  NAOS_LOCK(naos_mqtt_mutex);
   naos_mqtt_started = true;
-
-  // free base topic prefix if set
-  if (naos_mqtt_base_topic_prefix != NULL) {
-    free(naos_mqtt_base_topic_prefix);
-  }
-
-  // set base topic prefix
-  naos_mqtt_base_topic_prefix = naos_concat(base_topic, "/");
-
-  // release mutex
   NAOS_UNLOCK(naos_mqtt_mutex);
 
   // start the MQTT client
@@ -168,14 +88,10 @@ static void naos_mqtt_stop() {
   // stop the MQTT client
   esp_mqtt_stop();
 
-  // acquire mutex
-  NAOS_LOCK(naos_mqtt_mutex);
-
   // set flags
+  NAOS_LOCK(naos_mqtt_mutex);
   naos_mqtt_started = false;
   naos_mqtt_networked = false;
-
-  // release mutex
   NAOS_UNLOCK(naos_mqtt_mutex);
 }
 
@@ -183,8 +99,13 @@ static void naos_mqtt_configure() {
   // log call
   ESP_LOGI(NAOS_LOG_TAG, "naos_mqtt_configure");
 
+  // get started
+  NAOS_LOCK(naos_mqtt_mutex);
+  bool started = naos_mqtt_started;
+  NAOS_UNLOCK(naos_mqtt_mutex);
+
   // restart MQTT if started
-  if (naos_mqtt_started) {
+  if (started) {
     naos_mqtt_stop();
     naos_mqtt_start();
   }
@@ -194,10 +115,15 @@ static void naos_mqtt_manage() {
   // get network status
   bool connected = naos_net_connected(NULL);
 
+  // get started
+  NAOS_LOCK(naos_mqtt_mutex);
+  bool started = naos_mqtt_started;
+  NAOS_UNLOCK(naos_mqtt_mutex);
+
   // handle status
-  if (connected && !naos_mqtt_started) {
+  if (connected && !started) {
     naos_mqtt_start();
-  } else if (!connected && naos_mqtt_started) {
+  } else if (!connected && started) {
     naos_mqtt_stop();
   }
 }
@@ -208,16 +134,12 @@ static naos_param_t naos_mqtt_params[] = {
     {.name = "mqtt-client-id", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "mqtt-username", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "mqtt-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "mqtt-base-topic", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "mqtt-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_mqtt_configure},
 };
 
 void naos_mqtt_init() {
   // create mutex
   naos_mqtt_mutex = xSemaphoreCreateMutex();
-
-  // ensure base topic
-  naos_mqtt_base_topic_prefix = strdup("");
 
   // initialize MQTT
   esp_mqtt_init(naos_mqtt_status_handler, naos_mqtt_message_handler, CONFIG_NAOS_MQTT_BUFFER_SIZE,
