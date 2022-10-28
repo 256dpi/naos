@@ -15,7 +15,6 @@ static esp_netif_t *naos_wifi_netif;
 static bool naos_wifi_started;
 static bool naos_wifi_connected;
 static char naos_wifi_addr[16] = {0};
-static TimerHandle_t naos_wifi_timer;
 
 static void naos_wifi_configure() {
   // log call
@@ -175,6 +174,6 @@ void naos_wifi_init() {
   naos_wifi_configure();
 
   // start update timer
-  naos_wifi_timer = xTimerCreate("naos-wifi", pdMS_TO_TICKS(1000), pdTRUE, 0, naos_wifi_update);
-  xTimerStart(naos_wifi_timer, 0);
+  TimerHandle_t timer = xTimerCreate("naos-wifi", pdMS_TO_TICKS(1000), pdTRUE, 0, naos_wifi_update);
+  xTimerStart(timer, 0);
 }
