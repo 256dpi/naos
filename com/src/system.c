@@ -68,6 +68,9 @@ static void naos_system_set_status(naos_status_t status) {
 }
 
 static void naos_system_task() {
+  // prepare generation
+  uint32_t old_generation = 0;
+
   for (;;) {
     // wait some time
     naos_delay(100);
@@ -76,8 +79,9 @@ static void naos_system_task() {
     naos_status_t old_status = naos_system_status;
 
     // determine new status
+    uint32_t new_generation = 0;
     bool connected = naos_net_connected(NULL);
-    bool networked = naos_com_networked(NULL);
+    bool networked = naos_com_networked(&new_generation);
     naos_status_t new_status = NAOS_DISCONNECTED;
     if (connected && networked) {
       new_status = NAOS_NETWORKED;
@@ -96,7 +100,14 @@ static void naos_system_task() {
       } else if (old_status == NAOS_NETWORKED) {
         naos_task_stop();
       }
+    } else if(networked && new_generation > old_generation) {
+      // restart task
+      naos_task_stop();
+      naos_task_start();
     }
+
+    // update generation
+    old_generation = new_generation;
 
     // update parameters
     if (naos_millis() > naos_system_updated + 1000) {

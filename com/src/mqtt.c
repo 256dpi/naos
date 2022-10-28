@@ -14,7 +14,7 @@ static SemaphoreHandle_t naos_mqtt_mutex;
 static char *naos_mqtt_base_topic_prefix = NULL;
 static bool naos_mqtt_started = false;
 static bool naos_mqtt_networked = false;
-static bool naos_mqtt_generation = false;
+static uint32_t naos_mqtt_generation = false;
 
 static char *naos_mqtt_with_base_topic(const char *topic) {
   // prefix base topic

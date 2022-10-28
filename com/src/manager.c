@@ -278,15 +278,17 @@ static void naos_manager_signal() {
 static void naos_manager_check() {
   // keep old status
   static bool old_networked = false;
+  static uint32_t old_generation = 0;
 
   // acquire mutex
   NAOS_LOCK(naos_manager_mutex);
 
   // get new status
-  bool new_networked = naos_com_networked(NULL);
+  uint32_t new_generation = 0;
+  bool new_networked = naos_com_networked(&new_generation);
 
   // handle status
-  if (!old_networked && new_networked) {
+  if ((!old_networked && new_networked) || (new_networked && new_generation > old_generation)) {
     // subscribe global topics
     naos_subscribe("naos/collect", 0, NAOS_GLOBAL);
 
@@ -304,13 +306,14 @@ static void naos_manager_check() {
 
     // send initial announcement
     naos_manager_announce();
-  } else if (old_networked && !new_networked) {
+  } else if (!new_networked) {
     // clear recording
     naos_manager_recording = false;
   }
 
   // update status
   old_networked = new_networked;
+  old_generation = new_generation;
 
   // release mutex
   NAOS_UNLOCK(naos_manager_mutex);
