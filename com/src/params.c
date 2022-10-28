@@ -366,8 +366,8 @@ void naos_params_dispatch() {
       NAOS_LOCK(naos_params_mutex);
     }
 
-    // call update callback if present
-    if (naos_config()->update_callback != NULL) {
+    // call update callback if present for application parameters
+    if ((param->mode & NAOS_APPLICATION) && naos_config()->update_callback != NULL) {
       NAOS_UNLOCK(naos_params_mutex);
       naos_acquire();
       naos_config()->update_callback(param->name, param->value);
