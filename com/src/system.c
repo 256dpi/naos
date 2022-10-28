@@ -49,7 +49,9 @@ static void naos_system_set_status(naos_status_t status) {
   const char *name = naos_status_str(status);
 
   // change state
+  NAOS_LOCK(naos_system_mutex);
   naos_system_status = status;
+  NAOS_UNLOCK(naos_system_mutex);
 
   // set status
   naos_set("connection-status", name);
@@ -152,11 +154,6 @@ void naos_system_init() {
   naos_set("device-version", naos_config()->device_version);
   naos_set("running-partition", esp_ota_get_running_partition()->label);
 
-  // register application parameters
-  for (int i = 0; i < naos_config()->num_parameters; i++) {
-    naos_register(&naos_config()->parameters[i]);
-  }
-
   // initialize network stack
   naos_net_init();
 
@@ -175,6 +172,11 @@ void naos_system_init() {
   // set initial state
   naos_system_set_status(NAOS_DISCONNECTED);
 
+  // register application parameters
+  for (int i = 0; i < naos_config()->num_parameters; i++) {
+    naos_register(&naos_config()->parameters[i]);
+  }
+
   // run system task
   xTaskCreatePinnedToCore(naos_system_task, "naos-system", 4096, NULL, 2, NULL, 1);
 
@@ -185,6 +187,10 @@ void naos_system_init() {
 }
 
 naos_status_t naos_status() {
-  // return current status
-  return naos_system_status;
+  // get status
+  NAOS_LOCK(naos_system_mutex);
+  naos_status_t status = naos_system_status;
+  NAOS_UNLOCK(naos_system_mutex);
+
+  return status;
 }
