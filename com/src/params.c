@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <esp_log.h>
-#include <nvs.h>
+#include <nvs_flash.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
@@ -96,6 +96,9 @@ static void naos_params_update(naos_param_t *param) {
 void naos_params_init() {
   // create mutex
   naos_params_mutex = xSemaphoreCreateMutex();
+
+  // initialize flash memory
+  ESP_ERROR_CHECK(nvs_flash_init());
 
   // open nvs namespace
   ESP_ERROR_CHECK(nvs_open("naos", NVS_READWRITE, &naos_params_handle));

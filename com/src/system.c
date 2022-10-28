@@ -3,7 +3,6 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
-#include <nvs_flash.h>
 #include <string.h>
 
 #include "system.h"
@@ -171,9 +170,6 @@ void naos_system_init() {
 
   // create mutex
   naos_system_mutex = xSemaphoreCreateMutex();
-
-  // initialize flash memory
-  ESP_ERROR_CHECK(nvs_flash_init());
 
   // init parameters
   naos_params_init();
