@@ -101,7 +101,7 @@ static void naos_system_task() {
       } else if (old_status == NAOS_NETWORKED) {
         naos_task_stop();
       }
-    } else if (networked && new_generation > old_generation) {
+    } else if (new_status == NAOS_NETWORKED && new_generation > old_generation) {
       // restart task
       naos_task_stop();
       naos_task_start();
