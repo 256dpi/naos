@@ -165,7 +165,10 @@ void naos_wifi_init() {
   ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &naos_wifi_handler, NULL, NULL));
 
   // register link
-  naos_net_link_t link = {.status = naos_wifi_status};
+  naos_net_link_t link = {
+      .name = "wifi",
+      .status = naos_wifi_status,
+  };
   naos_net_register(link);
 
   // register parameters

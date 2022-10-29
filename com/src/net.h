@@ -9,6 +9,7 @@ typedef struct {
 } naos_net_status_t;
 
 typedef struct {
+  const char *name;
   naos_net_status_t (*status)();
 } naos_net_link_t;
 

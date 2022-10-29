@@ -140,7 +140,10 @@ void naos_eth_init() {
   ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &naos_eth_handler, NULL, NULL));
 
   // register link
-  naos_net_link_t link = {.status = naos_eth_status};
+  naos_net_link_t link = {
+      .name = "eth",
+      .status = naos_eth_status,
+  };
   naos_net_register(link);
 
   // register parameters

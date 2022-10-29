@@ -9,6 +9,7 @@ typedef struct {
 } naos_com_status_t;
 
 typedef struct {
+  const char *name;
   naos_com_status_t (*status)();
   bool (*subscribe)(const char *topic, int qos);
   bool (*unsubscribe)(const char *topic);

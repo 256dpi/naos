@@ -147,6 +147,7 @@ void naos_mqtt_init() {
 
   // register transport
   naos_com_transport_t transport = {
+      .name = "mqtt",
       .status = naos_mqtt_status,
       .subscribe = naos_mqtt_subscribe,
       .unsubscribe = naos_mqtt_unsubscribe,

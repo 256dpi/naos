@@ -109,6 +109,7 @@ void naos_osc_init() {
 
   // register transport
   naos_com_transport_t transport = {
+      .name = "osc",
       .status = naos_osc_status,
       .publish = naos_osc_publish,
   };
