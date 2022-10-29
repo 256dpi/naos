@@ -133,7 +133,8 @@ bool naos_subscribe(const char *topic, int qos, naos_scope_t scope) {
   bool ok = true;
   for (size_t i = 0; i < naos_com_transport_count; i++) {
     naos_com_transport_t transport = naos_com_transports[i];
-    if (transport.subscribe != NULL) {
+    naos_com_status_t status = transport.status();
+    if (status.networked && transport.subscribe != NULL) {
       if (!transport.subscribe(topic, qos)) {
         ok = false;
       }
@@ -158,7 +159,8 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope) {
   bool ok = true;
   for (size_t i = 0; i < naos_com_transport_count; i++) {
     naos_com_transport_t transport = naos_com_transports[i];
-    if (transport.unsubscribe != NULL) {
+    naos_com_status_t status = transport.status();
+    if (status.networked && transport.unsubscribe != NULL) {
       if (!transport.unsubscribe(topic)) {
         ok = false;
       }
@@ -199,7 +201,8 @@ bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool 
   bool ok = true;
   for (size_t i = 0; i < naos_com_transport_count; i++) {
     naos_com_transport_t transport = naos_com_transports[i];
-    if (transport.publish != NULL) {
+    naos_com_status_t status = transport.status();
+    if (status.networked && transport.publish != NULL) {
       if (!transport.publish(topic, payload, len, qos, retained)) {
         ok = false;
       }
