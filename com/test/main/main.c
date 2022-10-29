@@ -62,7 +62,7 @@ static void handle(const char *topic, const uint8_t *payload, size_t len, naos_s
 
   // log other incoming message
   else {
-    naos_log("%s message %s with payload %s (%ld) received", naos_scope_str(scope), topic, payload, len);
+    naos_log("%s message at %s with payload %s (%ld) received", naos_scope_str(scope), topic, payload, len);
   }
 }
 

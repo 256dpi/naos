@@ -37,7 +37,7 @@ static const char *naos_com_without_base_topic(const char *topic) {
   }
 
   // return adjusted pointer
-  return topic + strlen(naos_com_base_topic->value + 1);
+  return topic + strlen(naos_com_base_topic->value) + 1;
 }
 
 void naos_com_init() {
