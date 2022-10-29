@@ -3,5 +3,6 @@ cmake-build-*/
 test/esp-idf/
 test/tools
 test/components/esp-mqtt/
+test/components/esp-osc/
 test/build/
 doc/

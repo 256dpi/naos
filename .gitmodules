@@ -5,3 +5,6 @@
 [submodule "tree/components/esp-mqtt"]
 	path = tree/components/esp-mqtt
 	url = https://github.com/256dpi/esp-mqtt.git
+[submodule "tree/components/esp-osc"]
+	path = tree/components/esp-osc
+	url = https://github.com/256dpi/esp-osc.git

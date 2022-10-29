@@ -2,21 +2,23 @@ SHELL := /bin/bash
 
 ESP_IDF_VERSION := $(shell cat ../tree/esp-idf.version)
 ESP_MQTT_VERSION := $(shell cat ../tree/esp-mqtt.version)
+ESP_OSC_VERSION := $(shell cat ../tree/esp-osc.version)
 
 prepare:
 	git clone --recursive  https://github.com/espressif/esp-idf.git test/esp-idf
 	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
 	cd test/esp-idf; git submodule update --recursive --init
 	git clone --recursive  https://github.com/256dpi/esp-mqtt.git test/components/esp-mqtt
-	cd test/components/esp-mqtt; git fetch; git checkout $(ESP_MQTT_VERSION)
-	cd test/components/esp-mqtt; git submodule update --recursive --init
+	cd test/components/esp-mqtt; git fetch; git checkout $(ESP_MQTT_VERSION); git submodule update --recursive --init
+	git clone --recursive  https://github.com/256dpi/esp-osc.git test/components/esp-osc
+	cd test/components/esp-osc; git fetch; git checkout $(ESP_OSC_VERSION); git submodule update --recursive --init
 
 update:
 	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
 	cd test/esp-idf; git submodule update --recursive --init
 	cd test/esp-idf/components/esptool_py/esptool; git remote add fork https://github.com/256dpi/esptool.git; git checkout fork/dtr-rts-fix
-	cd test/components/esp-mqtt; git fetch; git checkout $(ESP_MQTT_VERSION)
-	cd test/components/esp-mqtt; git submodule update --recursive --init
+	cd test/components/esp-mqtt; git fetch; git checkout $(ESP_MQTT_VERSION); git submodule update --recursive --init
+	cd test/components/esp-osc; git fetch; git checkout $(ESP_OSC_VERSION); git submodule update --recursive --init
 
 install:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; cd test/esp-idf; ./install.sh esp32
