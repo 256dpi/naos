@@ -27,14 +27,12 @@ static void naos_mqtt_status_handler(esp_mqtt_status_t status) {
   NAOS_UNLOCK(naos_mqtt_mutex);
 }
 
-static void naos_mqtt_message_handler(const char *topic, uint8_t *payload, size_t len) {
-  // TODO: Set QoS and retained?
-
+static void naos_mqtt_message_handler(const char *topic, const uint8_t *payload, size_t len, int qos, bool retained) {
   // dispatch message
-  naos_com_dispatch(topic, payload, len, 0, false);
+  naos_com_dispatch(topic, payload, len, qos, retained);
 }
 
-naos_com_status_t naos_mqtt_status() {
+static naos_com_status_t naos_mqtt_status() {
   // get status
   NAOS_LOCK(naos_mqtt_mutex);
   naos_com_status_t status = {
@@ -47,18 +45,18 @@ naos_com_status_t naos_mqtt_status() {
 }
 
 static bool naos_mqtt_subscribe(const char *topic, int qos) {
-  // subscribe
+  // subscribe topic
   return esp_mqtt_subscribe(topic, qos);
 }
 
 static bool naos_mqtt_unsubscribe(const char *topic) {
-  // unsubscribe
+  // unsubscribe topic
   return esp_mqtt_unsubscribe(topic);
 }
 
 static bool naos_mqtt_publish(const char *topic, const uint8_t *payload, size_t len, int qos, bool retained) {
-  // publish
-  return esp_mqtt_publish(topic, (uint8_t *)payload, len, qos, retained);
+  // publish message
+  return esp_mqtt_publish(topic, payload, len, qos, retained);
 }
 
 static void naos_mqtt_start() {
