@@ -76,6 +76,9 @@ static void loop() {
 
   // publish message
   naos_publish("hello", naos_get("message"), 0, false, NAOS_LOCAL);
+
+  // send osc message
+  naos_osc_send("counter", "i", counter);
 }
 
 static float battery() {
@@ -116,6 +119,16 @@ static void fun_b(bool ok) {
 static void fun_a() {
   // log info
   naos_log("fun_a: triggered");
+}
+
+static bool osc_filter(const char *topic, const char *format, esp_osc_value_t *values) {
+  // handle counter
+  if (strcmp(topic, "counter") == 0 && strcmp(format, "i") == 0) {
+    naos_log("osc_filter: %i", values[0].i);
+    return false;
+  }
+
+  return true;
 }
 
 static naos_param_t params[] = {
@@ -166,8 +179,10 @@ void app_main() {
   naos_ble_init();
   naos_wifi_init();
   naos_http_init();
+  naos_http_install("<h1>Hello world!</h1>");
   naos_mqtt_init();
   naos_osc_init();
+  naos_osc_filter(osc_filter);
   naos_manager_init();
   if (ETHERNET) {
     naos_eth_olimex();
