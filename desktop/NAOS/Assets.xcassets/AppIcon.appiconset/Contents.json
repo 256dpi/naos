@@ -1,61 +1,61 @@
 {
   "images" : [
     {
-      "filename" : "App Logo-16.png",
+      "filename" : "Logo-16.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "16x16"
     },
     {
-      "filename" : "App Logo-32.png",
+      "filename" : "Logo-32.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "16x16"
     },
     {
-      "filename" : "App Logo-33.png",
+      "filename" : "Logo-33.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "32x32"
     },
     {
-      "filename" : "App Logo-64.png",
+      "filename" : "Logo-64.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "32x32"
     },
     {
-      "filename" : "App Logo-128.png",
+      "filename" : "Logo-128.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "128x128"
     },
     {
-      "filename" : "App Logo-256.png",
+      "filename" : "Logo-256.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "128x128"
     },
     {
-      "filename" : "App Logo-257.png",
+      "filename" : "Logo-257.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "256x256"
     },
     {
-      "filename" : "App Logo-512.png",
+      "filename" : "Logo-512.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "256x256"
     },
     {
-      "filename" : "App Logo-513.png",
+      "filename" : "Logo-513.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "512x512"
     },
     {
-      "filename" : "App Logo-1024.png",
+      "filename" : "Logo-1024.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "512x512"
