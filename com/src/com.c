@@ -136,6 +136,7 @@ bool naos_subscribe(const char *topic, int qos, naos_scope_t scope) {
     naos_com_status_t status = transport.status();
     if (status.networked && transport.subscribe != NULL) {
       if (!transport.subscribe(topic, qos)) {
+        ESP_LOGW(NAOS_LOG_TAG, "naos_subscribe: transport '%s' failed", transport.name);
         ok = false;
       }
     }
@@ -162,6 +163,7 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope) {
     naos_com_status_t status = transport.status();
     if (status.networked && transport.unsubscribe != NULL) {
       if (!transport.unsubscribe(topic)) {
+        ESP_LOGW(NAOS_LOG_TAG, "naos_unsubscribe: transport '%s' failed", transport.name);
         ok = false;
       }
     }
@@ -204,6 +206,7 @@ bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool 
     naos_com_status_t status = transport.status();
     if (status.networked && transport.publish != NULL) {
       if (!transport.publish(topic, payload, len, qos, retained)) {
+        ESP_LOGW(NAOS_LOG_TAG, "naos_publish: transport '%s' failed", transport.name);
         ok = false;
       }
     }
