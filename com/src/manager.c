@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "com.h"
 #include "log.h"
+#include "net.h"
 
 static naos_mutex_t naos_manager_mutex;
 static bool naos_manager_recording = false;
@@ -282,7 +283,8 @@ static void naos_manager_check() {
 
   // get new status
   uint32_t new_generation = 0;
-  bool new_networked = naos_com_networked(&new_generation);
+  bool connected = naos_net_connected(NULL);
+  bool new_networked = connected && naos_com_networked(&new_generation);
 
   // handle status
   if ((!old_networked && new_networked) || (new_networked && new_generation > old_generation)) {
