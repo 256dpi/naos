@@ -135,9 +135,6 @@ static void naos_setup_task() {
   naos_acquire();
   naos_config()->setup_callback();
   naos_release();
-
-  // delete itself
-  vTaskDelete(NULL);
 }
 
 void naos_system_init() {
@@ -184,11 +181,11 @@ void naos_system_init() {
   }
 
   // run system task
-  xTaskCreatePinnedToCore(naos_system_task, "naos-system", 4096, NULL, 2, NULL, 1);
+  naos_run("naos-system", 4096, naos_system_task);
 
   // run setup task if provided
   if (naos_config()->setup_callback) {
-    xTaskCreatePinnedToCore(naos_setup_task, "naos-setup", 8192, NULL, 2, NULL, 1);
+    naos_run("naos-setup", 8192, naos_setup_task);
   }
 }
 

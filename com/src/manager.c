@@ -329,8 +329,8 @@ void naos_manager_init() {
   naos_log_register(naos_manager_sink);
 
   // start signal timer
-  naos_repeat("naos-manager#s", naos_manager_signal, CONFIG_NAOS_HEARTBEAT_INTERVAL);
+  naos_repeat("naos-manager#s", CONFIG_NAOS_HEARTBEAT_INTERVAL, naos_manager_signal);
 
   // start check timer
-  naos_repeat("naos-manager#c", naos_manager_check, 100);
+  naos_repeat("naos-manager#c", 100, naos_manager_check);
 }

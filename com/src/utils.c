@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "utils.h"
+
 uint32_t naos_millis() {
   // return timestamp
   return esp_log_timestamp();
@@ -62,13 +64,29 @@ char *naos_concat(const char *str1, const char *str2) {
   return str;
 }
 
-void naos_repeat(const char *name, void (*task)(), uint32_t millis) {
-  // creat and start timer
-  TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(millis), pdTRUE, 0, task);
-  while(xTimerStart(timer, portMAX_DELAY) != pdPASS) {}
+static void naos_execute(void *arg) {
+  // run task
+  ((naos_func_t)arg)();
+
+  // delete task
+  vTaskDelete(NULL);
 }
 
-void naos_defer(void (*task)()) {
+void naos_run(const char *name, uint16_t stack, naos_func_t func) {
+  // create task
+  TaskHandle_t handle = {0};
+  xTaskCreatePinnedToCore(naos_execute, name, stack, func, 2, &handle, 1);
+}
+
+void naos_repeat(const char *name, uint32_t millis, naos_func_t func) {
+  // create and start timer
+  TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(millis), pdTRUE, 0, func);
+  while (xTimerStart(timer, portMAX_DELAY) != pdPASS) {
+  }
+}
+
+void naos_defer(naos_func_t func) {
   // pend function call
-  while (xTimerPendFunctionCall(task, NULL, 0, portMAX_DELAY) != pdPASS) {}
+  while (xTimerPendFunctionCall(func, NULL, 0, portMAX_DELAY) != pdPASS) {
+  }
 }

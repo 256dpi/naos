@@ -157,5 +157,5 @@ void naos_mqtt_init() {
   naos_com_register(transport);
 
   // start manage timer
-  naos_repeat("naos-mqtt", naos_mqtt_manage, 1000);
+  naos_repeat("naos-mqtt", 1000, naos_mqtt_manage);
 }

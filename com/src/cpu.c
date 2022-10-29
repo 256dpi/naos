@@ -76,5 +76,5 @@ void naos_cpu_init() {
   ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(naos_cpu_hook1, 1));
 
   // start update timer
-  naos_repeat("naos-cpu", naos_cpu_update, 1000);
+  naos_repeat("naos-cpu", 1000, naos_cpu_update);
 }

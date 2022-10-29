@@ -24,7 +24,9 @@ const char *naos_d2str(double num);
 char *naos_format(char *fmt, ...);
 char *naos_concat(const char *str1, const char *str2);
 
-void naos_repeat(const char *name, void (*task)(), uint32_t millis);
-void naos_defer(void (*task)());
+typedef void (*naos_func_t)();
+void naos_run(const char *name, uint16_t stack, naos_func_t func);
+void naos_repeat(const char *name, uint32_t millis, naos_func_t func);
+void naos_defer(naos_func_t func);
 
 #endif  // NAOS_UTILS_H

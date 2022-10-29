@@ -177,5 +177,5 @@ void naos_wifi_init() {
   naos_wifi_configure();
 
   // start update timer
-  naos_repeat("naos-wifi", naos_wifi_update, 1000);
+  naos_repeat("naos-wifi", 1000, naos_wifi_update);
 }
