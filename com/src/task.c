@@ -7,7 +7,7 @@
 #include "utils.h"
 
 static SemaphoreHandle_t naos_task_mutex;
-static TaskHandle_t naos_task_handle;
+static naos_task_t naos_task_handle;
 static bool naos_task_started = false;
 
 static void naos_task_process() {
@@ -49,7 +49,7 @@ void naos_task_start() {
   // create task if loop is present
   if (naos_config()->loop_callback != NULL) {
     ESP_LOGI(NAOS_LOG_TAG, "naos_task_start: create task");
-    xTaskCreatePinnedToCore(naos_task_process, "naos-task", 8192, NULL, 2, &naos_task_handle, 1);
+    naos_task_handle = naos_run("naos-task", 8192, naos_task_process);
   }
 
   // release mutex
@@ -77,7 +77,7 @@ void naos_task_stop() {
   // remove task if loop is present
   if (naos_config()->loop_callback != NULL) {
     ESP_LOGI(NAOS_LOG_TAG, "naos_task_stop: deleting task");
-    vTaskDelete(naos_task_handle);
+    naos_kill(naos_task_handle);
   }
 
   // release mutex

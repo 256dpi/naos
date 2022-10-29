@@ -72,10 +72,17 @@ static void naos_execute(void *arg) {
   vTaskDelete(NULL);
 }
 
-void naos_run(const char *name, uint16_t stack, naos_func_t func) {
+naos_task_t naos_run(const char *name, uint16_t stack, naos_func_t func) {
   // create task
   TaskHandle_t handle = {0};
   xTaskCreatePinnedToCore(naos_execute, name, stack, func, 2, &handle, 1);
+
+  return handle;
+}
+
+void naos_kill(naos_task_t task) {
+  // delete task
+  vTaskDelete(task);
 }
 
 void naos_repeat(const char *name, uint32_t millis, naos_func_t func) {

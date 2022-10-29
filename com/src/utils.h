@@ -3,6 +3,8 @@
 
 #include <esp_log.h>
 #include <stdint.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #define NAOS_LOG_TAG "naos"
 
@@ -24,8 +26,10 @@ const char *naos_d2str(double num);
 char *naos_format(char *fmt, ...);
 char *naos_concat(const char *str1, const char *str2);
 
+typedef TaskHandle_t naos_task_t;
 typedef void (*naos_func_t)();
-void naos_run(const char *name, uint16_t stack, naos_func_t func);
+naos_task_t naos_run(const char *name, uint16_t stack, naos_func_t func);
+void naos_kill(naos_task_t task);
 void naos_repeat(const char *name, uint32_t millis, naos_func_t func);
 void naos_defer(naos_func_t func);
 
