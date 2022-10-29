@@ -113,3 +113,29 @@ void naos_unlock(naos_mutex_t mutex) {
   // release mutex
   xSemaphoreGive(mutex);
 }
+
+naos_signal_t naos_signal() {
+  // create event group
+  return xEventGroupCreate();
+}
+
+void naos_trigger(naos_signal_t signal, uint16_t bits) {
+  // check bits
+  if (bits == 0) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // set bits
+  xEventGroupSetBits(signal, bits);
+}
+
+void naos_await(naos_signal_t signal, uint16_t bits) {
+  // check bits
+  if (bits == 0) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // await bits
+  while (xEventGroupWaitBits(signal, bits, pdTRUE, pdTRUE, portMAX_DELAY) == 0) {
+  }
+}

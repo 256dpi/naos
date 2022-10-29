@@ -6,6 +6,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
+#include <freertos/event_groups.h>
 
 #define NAOS_LOG_TAG "naos"
 
@@ -37,5 +38,10 @@ typedef SemaphoreHandle_t naos_mutex_t;
 naos_mutex_t naos_mutex();
 void naos_lock(naos_mutex_t mutex);
 void naos_unlock(naos_mutex_t mutex);
+
+typedef EventGroupHandle_t naos_signal_t;
+naos_signal_t naos_signal();
+void naos_trigger(naos_signal_t signal, uint16_t bits);
+void naos_await(naos_signal_t signal, uint16_t bits);
 
 #endif  // NAOS_UTILS_H
