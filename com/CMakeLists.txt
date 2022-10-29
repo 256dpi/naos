@@ -3,7 +3,7 @@ IF(DEFINED ENV{IDF_PATH})
     file(GLOB srcs ./src/*.c)
     idf_component_register(SRCS ${srcs}
         INCLUDE_DIRS "include"
-        REQUIRES bt esp_http_server esp-mqtt app_update
+        REQUIRES bt esp_http_server esp-mqtt esp-osc app_update
         EMBED_TXTFILES console.html
     )
 ELSE()
@@ -18,6 +18,7 @@ ELSE()
         ./test/build/config
         ./test/components/esp-mqtt
         ./test/components/esp-mqtt/lwmqtt/include
+        ./test/components/esp-osc
         ./test/esp-idf/components/app_trace/include
         ./test/esp-idf/components/app_update/include
         ./test/esp-idf/components/asio/asio/asio/include

@@ -8,6 +8,7 @@
 #include <naos_http.h>
 #include <naos_eth.h>
 #include <naos_mqtt.h>
+#include <naos_osc.h>
 #include <naos_manager.h>
 
 #define ETHERNET false
@@ -53,17 +54,16 @@ static void update(const char *param, const char *value) {
 }
 
 static void handle(const char *topic, const uint8_t *payload, size_t len, naos_scope_t scope) {
-  // check fail topic
+  // handle fail
   if (strcmp(topic, "fail") == 0 && scope == NAOS_LOCAL) {
     // cause error
     int r = 10 / 0;
     naos_log("error: %d", r);
+    return;
   }
 
   // log other incoming message
-  else {
-    naos_log("%s message at %s with payload %s (%ld) received", naos_scope_str(scope), topic, payload, len);
-  }
+  naos_log("%s message at %s with payload %s (%ld) received", naos_scope_str(scope), topic, payload, len);
 }
 
 static void loop() {
@@ -167,6 +167,7 @@ void app_main() {
   naos_wifi_init();
   naos_http_init();
   naos_mqtt_init();
+  naos_osc_init();
   naos_manager_init();
   if (ETHERNET) {
     naos_eth_olimex();
