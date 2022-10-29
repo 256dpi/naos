@@ -1,4 +1,4 @@
-#include <esp_osc.h>
+#include <naos_osc.h>
 
 #include "com.h"
 #include "utils.h"
@@ -9,8 +9,16 @@ naos_mutex_t naos_osc_mutex;
 esp_osc_client_t naos_osc_client;
 esp_osc_target_t naos_osc_targets[NAOS_OSC_MAX_TARGETS];
 size_t naos_osc_target_count = 0;
+esp_osc_callback_t naos_osc_filter_callback = NULL;
 
 static bool naos_osc_callback(const char *topic, const char *format, esp_osc_value_t *values) {
+  // filter using callback if available
+  if (naos_osc_filter_callback != NULL) {
+    if (!naos_osc_filter_callback(topic, format, values)) {
+      return true;
+    }
+  }
+
   // skip unsupported format
   if (strcmp(format, "b") != 0) {
     ESP_LOGI(NAOS_LOG_TAG, "naos_osc_callback: skipping unsupported format (%s)", format);
@@ -41,21 +49,8 @@ static naos_com_status_t naos_osc_status() {
 }
 
 static bool naos_osc_publish(const char *topic, const uint8_t *payload, size_t len, int qos, bool retained) {
-  // acquire mutex
-  NAOS_LOCK(naos_osc_mutex);
-
   // send message
-  bool ok = true;
-  for (size_t i = 0; i < naos_osc_target_count; i++) {
-    if (!esp_osc_send(&naos_osc_client, &naos_osc_targets[i], topic, "b", (int)len, payload)) {
-      ok = false;
-    }
-  }
-
-  // release mutex
-  NAOS_UNLOCK(naos_osc_mutex);
-
-  return ok;
+  return naos_osc_send(topic, "b", (int)len, payload);
 }
 
 static void naos_osc_configure() {
@@ -120,4 +115,36 @@ void naos_osc_init() {
 
   // run task
   naos_run("naos-osc", 4096, naos_osc_task);
+}
+
+void naos_osc_filter(esp_osc_callback_t filter) {
+  // acquire mutex
+  NAOS_LOCK(naos_osc_mutex);
+
+  // set filter
+  naos_osc_filter_callback = filter;
+
+  // release mutex
+  NAOS_UNLOCK(naos_osc_mutex);
+}
+
+bool naos_osc_send(const char *topic, const char *format, ...) {
+  // acquire mutex
+  NAOS_LOCK(naos_osc_mutex);
+
+  // send message
+  va_list args;
+  va_start(args, format);
+  bool ok = true;
+  for (size_t i = 0; i < naos_osc_target_count; i++) {
+    if (!esp_osc_send_v(&naos_osc_client, &naos_osc_targets[i], topic, format, args)) {
+      ok = false;
+    }
+  }
+  va_end(args);
+
+  // release mutex
+  NAOS_UNLOCK(naos_osc_mutex);
+
+  return ok;
 }
