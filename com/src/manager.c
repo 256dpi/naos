@@ -332,5 +332,5 @@ void naos_manager_init() {
   naos_repeat("naos-manager#s", CONFIG_NAOS_HEARTBEAT_INTERVAL, naos_manager_signal);
 
   // start check timer
-  naos_repeat("naos-manager#c", 100, naos_manager_check);
+  naos_repeat("naos-manager#c", 1000, naos_manager_check);
 }
