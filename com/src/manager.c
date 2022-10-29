@@ -320,7 +320,7 @@ void naos_manager_init() {
   // create mutex
   naos_manager_mutex = naos_mutex();
 
-  // subscribe messages
+  // handle messages
   naos_com_subscribe(naos_manager_handler);
 
   // register sink

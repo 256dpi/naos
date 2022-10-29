@@ -5,13 +5,13 @@
 #include "utils.h"
 
 #define NAOS_COM_MAX_TRANSPORTS 8
-#define NAOS_COM_MAX_RECEIVERS 8
+#define NAOS_COM_MAX_HANDLERS 8
 
 static naos_mutex_t naos_com_mutex;
 static naos_com_transport_t naos_com_transports[NAOS_COM_MAX_TRANSPORTS] = {0};
 static size_t naos_com_transport_count = 0;
-static naos_com_receiver_t naos_com_receivers[NAOS_COM_MAX_RECEIVERS] = {0};
-static size_t naos_com_receiver_count = 0;
+static naos_com_handler_t naos_com_handlers[NAOS_COM_MAX_HANDLERS] = {0};
+static size_t naos_com_handler_count = 0;
 static naos_param_t *naos_com_base_topic = {0};
 
 static char *naos_com_with_base_topic(const char *topic) {
@@ -63,18 +63,18 @@ void naos_com_register(naos_com_transport_t transport) {
   NAOS_UNLOCK(naos_com_mutex);
 }
 
-void naos_com_subscribe(naos_com_receiver_t receiver) {
+void naos_com_subscribe(naos_com_handler_t handler) {
   // acquire mutex
   NAOS_LOCK(naos_com_mutex);
 
   // check count
-  if (naos_com_receiver_count >= NAOS_COM_MAX_RECEIVERS) {
+  if (naos_com_handler_count >= NAOS_COM_MAX_HANDLERS) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
   // store transport
-  naos_com_receivers[naos_com_receiver_count] = receiver;
-  naos_com_receiver_count++;
+  naos_com_handlers[naos_com_handler_count] = handler;
+  naos_com_handler_count++;
 
   // release mutex
   NAOS_UNLOCK(naos_com_mutex);
@@ -85,12 +85,12 @@ void naos_com_dispatch(const char *topic, const uint8_t *payload, size_t len, in
   naos_scope_t scope = naos_com_scope_from_topic(topic);
   const char *scoped_topic = naos_com_without_base_topic(topic);
 
-  // dispatch to all receivers
+  // dispatch to all handlers
   NAOS_LOCK(naos_com_mutex);
-  size_t count = naos_com_receiver_count;
+  size_t count = naos_com_handler_count;
   NAOS_UNLOCK(naos_com_mutex);
   for (size_t i = 0; i < count; i++) {
-    naos_com_receivers[i](scope, scoped_topic, payload, len, qos, retained);
+    naos_com_handlers[i](scope, scoped_topic, payload, len, qos, retained);
   }
 
   // call message callback if present
