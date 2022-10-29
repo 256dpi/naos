@@ -1,6 +1,4 @@
 #include <stdlib.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
 
 #include "log.h"
 #include "utils.h"
@@ -8,13 +6,13 @@
 
 #define NAOS_LOG_MAX_SINKS 8
 
-static SemaphoreHandle_t naos_log_mutex;
+static naos_mutex_t naos_log_mutex;
 static naos_log_sink_t naos_log_sinks[NAOS_LOG_MAX_SINKS] = {0};
 static size_t naos_log_sink_count = 0;
 
 void naos_log_init() {
   // create mutex
-  naos_log_mutex = xSemaphoreCreateMutex();
+  naos_log_mutex = naos_mutex();
 }
 
 void naos_log_register(naos_log_sink_t sink) {

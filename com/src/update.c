@@ -2,19 +2,17 @@
 #include <esp_log.h>
 #include <esp_ota_ops.h>
 #include <esp_system.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
 
 #include "update.h"
 #include "utils.h"
 
-static SemaphoreHandle_t naos_update_mutex;
+static naos_mutex_t naos_update_mutex;
 static const esp_partition_t *naos_update_partition = NULL;
 static esp_ota_handle_t naos_update_handle = 0;
 
 void naos_update_init() {
   // create mutex
-  naos_update_mutex = xSemaphoreCreateMutex();
+  naos_update_mutex = naos_mutex();
 }
 
 void naos_update_begin(size_t size) {

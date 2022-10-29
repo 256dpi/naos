@@ -97,3 +97,19 @@ void naos_defer(naos_func_t func) {
   while (xTimerPendFunctionCall(func, NULL, 0, portMAX_DELAY) != pdPASS) {
   }
 }
+
+naos_mutex_t naos_mutex() {
+  // create mutex
+  return xSemaphoreCreateMutex();
+}
+
+void naos_lock(naos_mutex_t mutex) {
+  // acquire mutex
+  while (xSemaphoreTake(mutex, portMAX_DELAY) != pdPASS) {
+  }
+}
+
+void naos_unlock(naos_mutex_t mutex) {
+  // release mutex
+  xSemaphoreGive(mutex);
+}

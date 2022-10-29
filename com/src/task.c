@@ -1,12 +1,10 @@
 #include <esp_log.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
 
 #include "naos.h"
 #include "task.h"
 #include "utils.h"
 
-static SemaphoreHandle_t naos_task_mutex;
+static naos_mutex_t naos_task_mutex;
 static naos_task_t naos_task_handle;
 static bool naos_task_started = false;
 
@@ -24,7 +22,7 @@ static void naos_task_process() {
 
 void naos_task_init() {
   // create mutex
-  naos_task_mutex = xSemaphoreCreateMutex();
+  naos_task_mutex = naos_mutex();
 }
 
 void naos_task_start() {

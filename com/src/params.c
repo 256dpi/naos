@@ -2,8 +2,6 @@
 #include <string.h>
 #include <esp_log.h>
 #include <nvs_flash.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
 
 #include "naos.h"
 #include "params.h"
@@ -12,7 +10,7 @@
 #define NAOS_PARAMS_MAX_RECEIVERS 8
 
 static nvs_handle naos_params_handle;
-static SemaphoreHandle_t naos_params_mutex;
+static naos_mutex_t naos_params_mutex;
 static naos_param_t *naos_params[CONFIG_NAOS_PARAM_REGISTRY_SIZE] = {0};
 static size_t naos_params_count = 0;
 static naos_params_receiver_t naos_params_receivers[NAOS_PARAMS_MAX_RECEIVERS] = {0};
@@ -96,7 +94,7 @@ static void naos_params_update(naos_param_t *param) {
 
 void naos_params_init() {
   // create mutex
-  naos_params_mutex = xSemaphoreCreateMutex();
+  naos_params_mutex = naos_mutex();
 
   // initialize flash memory
   ESP_ERROR_CHECK(nvs_flash_init());

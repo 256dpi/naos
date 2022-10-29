@@ -6,7 +6,7 @@
 #include "utils.h"
 #include "net.h"
 
-static SemaphoreHandle_t naos_eth_mutex;
+static naos_mutex_t naos_eth_mutex;
 static esp_eth_handle_t naos_eth_handle;
 static esp_netif_t *naos_eth_netif;
 static bool naos_eth_started = false;
@@ -133,7 +133,7 @@ void naos_eth_olimex() {
 
 void naos_eth_init() {
   // create mutex
-  naos_eth_mutex = xSemaphoreCreateMutex();
+  naos_eth_mutex = naos_mutex();
 
   // register event handlers
   ESP_ERROR_CHECK(esp_event_handler_instance_register(ETH_EVENT, ESP_EVENT_ANY_ID, &naos_eth_handler, NULL, NULL));

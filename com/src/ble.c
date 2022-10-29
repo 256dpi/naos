@@ -1,13 +1,11 @@
-#include <freertos/FreeRTOS.h>
-
 #include <esp_bt.h>
 #include <esp_bt_defs.h>
 #include <esp_bt_main.h>
 #include <esp_gap_ble_api.h>
 #include <esp_gatt_defs.h>
 #include <esp_gatts_api.h>
+#include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
-#include <freertos/semphr.h>
 #include <string.h>
 
 #include "naos.h"
@@ -25,7 +23,7 @@ typedef struct {
   naos_param_t *param;
 } naos_ble_conn_t;
 
-static SemaphoreHandle_t naos_ble_mutex;
+static naos_mutex_t naos_ble_mutex;
 static EventGroupHandle_t naos_ble_signal;
 
 static esp_ble_adv_params_t naos_ble_adv_params = {
@@ -470,7 +468,7 @@ static void naos_ble_param_receiver(naos_param_t *param) {
 
 void naos_ble_init() {
   // create mutex
-  naos_ble_mutex = xSemaphoreCreateMutex();
+  naos_ble_mutex = naos_mutex();
 
   // create even group
   naos_ble_signal = xEventGroupCreate();

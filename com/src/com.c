@@ -1,6 +1,4 @@
 #include <string.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
 
 #include "naos.h"
 #include "com.h"
@@ -9,7 +7,7 @@
 #define NAOS_COM_MAX_TRANSPORTS 8
 #define NAOS_COM_MAX_RECEIVERS 8
 
-static SemaphoreHandle_t naos_com_mutex;
+static naos_mutex_t naos_com_mutex;
 static naos_com_transport_t naos_com_transports[NAOS_COM_MAX_TRANSPORTS] = {0};
 static size_t naos_com_transport_count = 0;
 static naos_com_receiver_t naos_com_receivers[NAOS_COM_MAX_RECEIVERS] = {0};
@@ -42,7 +40,7 @@ static const char *naos_com_without_base_topic(const char *topic) {
 
 void naos_com_init() {
   // create mutex
-  naos_com_mutex = xSemaphoreCreateMutex();
+  naos_com_mutex = naos_mutex();
 
   // lookup base topic param
   naos_com_base_topic = naos_lookup("base-topic");

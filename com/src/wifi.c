@@ -7,7 +7,7 @@
 #include "utils.h"
 #include "net.h"
 
-static SemaphoreHandle_t naos_wifi_mutex;
+static naos_mutex_t naos_wifi_mutex;
 static wifi_config_t naos_wifi_config;
 static esp_netif_t *naos_wifi_netif;
 static bool naos_wifi_started;
@@ -148,7 +148,7 @@ static naos_param_t naos_wifi_params[] = {
 
 void naos_wifi_init() {
   // create mutex
-  naos_wifi_mutex = xSemaphoreCreateMutex();
+  naos_wifi_mutex = naos_mutex();
 
   // create WiFi station
   naos_wifi_netif = esp_netif_create_default_wifi_sta();

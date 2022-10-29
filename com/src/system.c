@@ -1,8 +1,6 @@
 #include <esp_log.h>
 #include <esp_ota_ops.h>
 #include <esp_system.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
 #include <string.h>
 
 #include "system.h"
@@ -15,7 +13,7 @@
 #include "com.h"
 #include "log.h"
 
-SemaphoreHandle_t naos_system_mutex;
+naos_mutex_t naos_system_mutex;
 static naos_status_t naos_system_status;
 
 static void naos_system_ping() {
@@ -146,7 +144,7 @@ void naos_system_init() {
   }
 
   // create mutex
-  naos_system_mutex = xSemaphoreCreateMutex();
+  naos_system_mutex = naos_mutex();
 
   // init parameters
   naos_params_init();

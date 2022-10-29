@@ -1,8 +1,6 @@
 #include <esp_log.h>
 #include <esp_ota_ops.h>
 #include <esp_system.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
 #include <string.h>
 
 #include "naos.h"
@@ -13,7 +11,7 @@
 #include "com.h"
 #include "log.h"
 
-static SemaphoreHandle_t naos_manager_mutex;
+static naos_mutex_t naos_manager_mutex;
 static bool naos_manager_recording = false;
 
 static void naos_manager_heartbeat() {
@@ -320,7 +318,7 @@ static void naos_manager_check() {
 
 void naos_manager_init() {
   // create mutex
-  naos_manager_mutex = xSemaphoreCreateMutex();
+  naos_manager_mutex = naos_mutex();
 
   // subscribe messages
   naos_com_subscribe(naos_manager_handler);

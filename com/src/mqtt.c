@@ -1,14 +1,12 @@
 #include <sdkconfig.h>
 #include <string.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
 #include <esp_mqtt.h>
 
 #include "com.h"
 #include "net.h"
 #include "utils.h"
 
-static SemaphoreHandle_t naos_mqtt_mutex;
+static naos_mutex_t naos_mqtt_mutex;
 static bool naos_mqtt_started = false;
 static bool naos_mqtt_networked = false;
 static uint32_t naos_mqtt_generation = false;
@@ -136,7 +134,7 @@ static naos_param_t naos_mqtt_params[] = {
 
 void naos_mqtt_init() {
   // create mutex
-  naos_mqtt_mutex = xSemaphoreCreateMutex();
+  naos_mqtt_mutex = naos_mutex();
 
   // initialize MQTT
   esp_mqtt_init(naos_mqtt_status_handler, naos_mqtt_message_handler, CONFIG_NAOS_MQTT_BUFFER_SIZE,

@@ -6,13 +6,13 @@
 
 #define NAOS_NET_MAX_LINKS 4
 
-static SemaphoreHandle_t naos_net_mutex;
+static naos_mutex_t naos_net_mutex;
 static naos_net_link_t naos_net_links[NAOS_NET_MAX_LINKS] = {0};
 static size_t naos_net_link_count = 0;
 
 void naos_net_init() {
   // create mutex
-  naos_net_mutex = xSemaphoreCreateMutex();
+  naos_net_mutex = naos_mutex();
 
   // initialize networking
   ESP_ERROR_CHECK(esp_netif_init());
