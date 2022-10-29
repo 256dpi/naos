@@ -23,6 +23,8 @@ const char *naos_i2str(int32_t num);
 const char *naos_d2str(double num);
 char *naos_format(char *fmt, ...);
 char *naos_concat(const char *str1, const char *str2);
+
 void naos_repeat(const char *name, void (*task)(), uint32_t millis);
+void naos_defer(void (*task)());
 
 #endif  // NAOS_UTILS_H

@@ -86,9 +86,9 @@ static void naos_params_update(naos_param_t *param) {
       break;
     }
     case NAOS_ACTION: {
-      // yield trigger
+      // defer trigger
       if (param->func_a != NULL) {
-        param->func_a();
+        naos_defer(param->func_a);
       }
     }
   }

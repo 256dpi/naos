@@ -65,5 +65,10 @@ char *naos_concat(const char *str1, const char *str2) {
 void naos_repeat(const char *name, void (*task)(), uint32_t millis) {
   // creat and start timer
   TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(millis), pdTRUE, 0, task);
-  xTimerStart(timer, 0);
+  while(xTimerStart(timer, portMAX_DELAY) != pdPASS) {}
+}
+
+void naos_defer(void (*task)()) {
+  // pend function call
+  while (xTimerPendFunctionCall(task, NULL, 0, portMAX_DELAY) != pdPASS) {}
 }
