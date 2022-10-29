@@ -98,7 +98,7 @@ static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
 
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
 
-static void naos_ble_gap_event_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
+static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
   switch (e) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT: {
       // begin with advertisement
@@ -122,7 +122,7 @@ static void naos_ble_gap_event_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_
   }
 }
 
-static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_ble_gatts_cb_param_t *p) {
+static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_ble_gatts_cb_param_t *p) {
   // acquire mutex
   NAOS_LOCK(naos_ble_mutex);
 
@@ -446,7 +446,7 @@ static void naos_ble_gatts_event_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i
   NAOS_UNLOCK(naos_ble_mutex);
 }
 
-static void naos_ble_param_receiver(naos_param_t *param) {
+static void naos_ble_param_handler(naos_param_t *param) {
   // acquire mutex
   NAOS_LOCK(naos_ble_mutex);
 
@@ -497,11 +497,11 @@ void naos_ble_init() {
   // enable bluedroid stack
   ESP_ERROR_CHECK(esp_bluedroid_enable());
 
-  // register gatts callback
-  ESP_ERROR_CHECK(esp_ble_gatts_register_callback(naos_ble_gatts_event_handler));
+  // register gatts handler
+  ESP_ERROR_CHECK(esp_ble_gatts_register_callback(naos_ble_gatts_handler));
 
-  // register gap callback
-  ESP_ERROR_CHECK(esp_ble_gap_register_callback(naos_ble_gap_event_handler));
+  // register gap handler
+  ESP_ERROR_CHECK(esp_ble_gap_register_callback(naos_ble_gap_handler));
 
   // configure profile
   naos_ble_gatts_profile.interface = ESP_GATT_IF_NONE;
@@ -518,6 +518,6 @@ void naos_ble_init() {
   // wait for initialization to complete
   naos_await(naos_ble_signal, 1);
 
-  // subscribe parameters changes
-  naos_params_subscribe(naos_ble_param_receiver);
+  // handle parameters
+  naos_params_subscribe(naos_ble_param_handler);
 }

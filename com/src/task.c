@@ -39,7 +39,7 @@ void naos_task_start() {
   // set flag
   naos_task_started = true;
 
-  // call setup callback if present
+  // call online callback if present
   if (naos_config()->online_callback) {
     naos_config()->online_callback();
   }
@@ -67,7 +67,7 @@ void naos_task_stop() {
   // set flag
   naos_task_started = false;
 
-  // run terminate callback if present
+  // run offline callback if present
   if (naos_config()->offline_callback) {
     naos_config()->offline_callback();
   }

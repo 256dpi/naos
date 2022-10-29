@@ -172,7 +172,7 @@ static void naos_http_update(void *arg) {
   free(frame.payload);
 }
 
-static void naos_http_receiver(naos_param_t *param) {
+static void naos_http_param_handler(naos_param_t *param) {
   // queue function
   ESP_ERROR_CHECK(httpd_queue_work(naos_http_handle, naos_http_update, param));
 }
@@ -196,6 +196,6 @@ void naos_http_init() {
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_index));
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_socket));
 
-  // subscribe parameter changes
-  naos_params_subscribe(naos_http_receiver);
+  // handle parameters
+  naos_params_subscribe(naos_http_param_handler);
 }

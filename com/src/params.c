@@ -13,8 +13,8 @@ static nvs_handle naos_params_handle;
 static naos_mutex_t naos_params_mutex;
 static naos_param_t *naos_params[CONFIG_NAOS_PARAM_REGISTRY_SIZE] = {0};
 static size_t naos_params_count = 0;
-static naos_params_receiver_t naos_params_receivers[NAOS_PARAMS_MAX_RECEIVERS] = {0};
-static uint8_t naos_params_receiver_count = 0;
+static naos_params_handler_t naos_params_handlers[NAOS_PARAMS_MAX_RECEIVERS] = {0};
+static uint8_t naos_params_handler_count = 0;
 
 static void naos_params_update(naos_param_t *param) {
   // update pointer
@@ -323,18 +323,18 @@ char *naos_params_list(naos_mode_t mode) {
   return buf;
 }
 
-void naos_params_subscribe(naos_params_receiver_t receiver) {
+void naos_params_subscribe(naos_params_handler_t handler) {
   // acquire mutex
   NAOS_LOCK(naos_params_mutex);
 
   // check count
-  if (naos_params_receiver_count >= NAOS_PARAMS_MAX_RECEIVERS) {
+  if (naos_params_handler_count >= NAOS_PARAMS_MAX_RECEIVERS) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
-  // add receiver
-  naos_params_receivers[naos_params_receiver_count] = receiver;
-  naos_params_receiver_count++;
+  // add handler
+  naos_params_handlers[naos_params_handler_count] = handler;
+  naos_params_handler_count++;
 
   // release mutex
   NAOS_UNLOCK(naos_params_mutex);
@@ -358,13 +358,13 @@ void naos_params_dispatch() {
     param->changed = false;
 
     // dispatch change
-    for (size_t j = 0; j < naos_params_receiver_count; j++) {
+    for (size_t j = 0; j < naos_params_handler_count; j++) {
       NAOS_UNLOCK(naos_params_mutex);
-      naos_params_receivers[j](param);
+      naos_params_handlers[j](param);
       NAOS_LOCK(naos_params_mutex);
     }
 
-    // call update callback if present for application parameters
+    // call update callback for application parameters if present
     if ((param->mode & NAOS_APPLICATION) && naos_config()->update_callback != NULL) {
       NAOS_UNLOCK(naos_params_mutex);
       naos_acquire();
