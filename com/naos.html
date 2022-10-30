@@ -32,15 +32,25 @@
         }
 
         #params th, td {
+            height: 40px;
             text-align: left;
+            padding: 0;
+        }
+
+        #params th.min, td.min {
+            width: 1%;
+            white-space: nowrap;
+        }
+
+        #params th.max, td.max {
+            padding: 0 20px;
         }
 
         #params input {
             position: relative;
             display: block;
             box-sizing: border-box;
-            padding: 5px;
-            margin: 5px 0;
+            padding: 5px 10px;
         }
 
         #params input[type=text] {
@@ -73,9 +83,9 @@
         <table id="params">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Value</th>
-                    <th>Type</th>
+                    <th class="min">Name</th>
+                    <th class="max">Value</th>
+                    <th class="min">Type</th>
                 </tr>
             </thead>
 
@@ -155,9 +165,11 @@
                 let row = document.createElement('tr')
                 row.id = name;
                 let cell = document.createElement('td');
+                cell.className = 'min';
                 cell.textContent = name;
                 row.appendChild(cell);
                 cell = document.createElement('td');
+                cell.className = 'max';
                 switch (type) {
                     case 'b': {
                         let input = document.createElement('input');
@@ -195,6 +207,7 @@
                 }
                 row.appendChild(cell);
                 cell = document.createElement('td');
+                cell.className = 'min';
                 cell.textContent = Types[type];
                 row.appendChild(cell);
                 rows.appendChild(row);
