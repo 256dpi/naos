@@ -4,7 +4,7 @@ IF(DEFINED ENV{IDF_PATH})
     idf_component_register(SRCS ${srcs}
         INCLUDE_DIRS "include"
         REQUIRES bt esp_http_server esp-mqtt esp-osc app_update
-        EMBED_TXTFILES console.html
+        EMBED_TXTFILES naos.html naos.js
     )
 ELSE()
     # CLion compatible development setup

@@ -88,27 +88,26 @@
         <div class="spinner"></div>
     </div>
 
+    <script type="module" src="/naos.js"></script>
+
     <script type="module">
+        import NAOS, { Types, Modes } from '/naos.js';
+
         const host = (new URLSearchParams(window.location.search)).get('host') || window.location.toString();
 
-        let ws = new WebSocket(host.replace('http', 'ws') + '.sock');
-        let reqs = {};
+        let naos = new NAOS(host.replace('http', 'ws') + ".sock");
+        naos.debug = true;
 
-        function send(type, value = undefined) {
-            return new Promise((resolve, reject) => {
-                ws.send(type + (value !== undefined ? "#" + value: ''));
-                reqs[type] ||= [];
-                reqs[type].push(resolve);
-                setTimeout(()=> {
-                    reject(new Error('timed out'));
-                }, 2000);
-            })
+        naos.onConnect = () => {
+            refresh();
+        }
+
+        naos.onUpdate = (param, value) => {
+            update(param, value);
         }
 
         const loader = document.getElementById('loader');
         const rows = document.querySelector('#params tbody');
-
-        const types = {b: 'Bool', s: 'String', l: 'Long', d: 'Double', a: 'Action'}
 
         function update(name, value) {
             // get row
@@ -139,18 +138,11 @@
             // clear table
             rows.innerHTML = "";
 
-            // get list
-            let list = await send('list');
-
-            // parse params
-            let params = list.split(',');
-
             // read params
-            for (let param of params) {
-                let [name, type, mode] = param.split(':');
-
+            let list = await naos.list();
+            for (let [name, type, mode] of list) {
                 // get param
-                let value = await send('read:' + name);
+                let value = await naos.read(name);
 
                 // append row
                 let row = document.createElement('tr')
@@ -166,7 +158,7 @@
                         input.setAttribute('checked', value);
                         input.disabled = mode.includes('l');
                         input.onchange = () => {
-                            send('write:' + name, input.checked);
+                            naos.write(name, input.checked);
                         }
                         cell.appendChild(input);
                         break;
@@ -179,7 +171,7 @@
                         input.value = value;
                         input.disabled = mode.includes('l');
                         input.onchange = () => {
-                            send('write:' + name, input.value);
+                            naos.write(name, input.value);
                         }
                         cell.appendChild(input);
                         break;
@@ -188,7 +180,7 @@
                         let button = document.createElement('button');
                         button.innerText = 'Trigger';
                         button.onclick = () => {
-                            send('write:' + name, '');
+                            naos.write(name, '');
                         }
                         cell.appendChild(button);
                         break;
@@ -196,7 +188,7 @@
                 }
                 row.appendChild(cell);
                 cell = document.createElement('td');
-                cell.textContent = types[type];
+                cell.textContent = Types[type];
                 row.appendChild(cell);
                 rows.appendChild(row);
             }
@@ -209,48 +201,6 @@
         document.getElementById('refresh').onclick = () => {
             refresh();
         };
-
-        ws.onopen = (event) => {
-            // log event
-            console.log('onopen', event);
-
-            // refresh
-            refresh();
-        }
-
-        ws.onmessage = (event) => {
-            // log message
-            // console.log('onmessage', event);
-
-            // parse message
-            let msg = event.data.toString()
-
-            // split message
-            let [type, value] = msg.split("#", 2);
-
-            // resolve requests
-            for (let resolve of reqs[type] || []) {
-                resolve(value);
-            }
-
-            // handle updates
-            if (type.startsWith('update:')) {
-                update(type.split(':')[1], value);
-            }
-
-            // clear requests
-            reqs[type] = [];
-        }
-
-        ws.onerror = (err) => {
-            // log error
-            console.log('onerror', err);
-        }
-
-        ws.onclose = (event) => {
-            // log close
-            console.log('onclose', event);
-        }
     </script>
 </body>
 </html>
