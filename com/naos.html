@@ -94,6 +94,13 @@
         import NAOS, { Types, Modes } from '/naos.js';
 
         const host = (new URLSearchParams(window.location.search)).get('host') || window.location.toString();
+        const loader = document.getElementById('loader');
+        const rows = document.querySelector('#params tbody');
+
+        function showLoader(ok) {
+            loader.style.opacity = ok ? '1' : '0';
+            loader.style.pointerEvents = ok ? 'all' : 'none';
+        }
 
         let naos = new NAOS(host.replace('http', 'ws') + ".sock");
         naos.debug = true;
@@ -106,8 +113,9 @@
             update(param, value);
         }
 
-        const loader = document.getElementById('loader');
-        const rows = document.querySelector('#params tbody');
+        naos.onDisconnect = () => {
+            showLoader(true);
+        }
 
         function update(name, value) {
             // get row
@@ -132,8 +140,7 @@
 
         async function refresh() {
             // show loader
-            loader.style.opacity = '1';
-            loader.style.pointerEvents = 'all';
+            showLoader(true);
 
             // clear table
             rows.innerHTML = "";
@@ -194,8 +201,7 @@
             }
 
             // hide loader
-            loader.style.opacity = '0';
-            loader.style.pointerEvents = 'none';
+            showLoader(false);
         }
 
         document.getElementById('refresh').onclick = () => {
