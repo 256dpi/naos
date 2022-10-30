@@ -234,7 +234,7 @@ static void naos_http_update(void *arg) {
     }
 
     // check context
-    naos_http_ctx_t * ctx = httpd_sess_get_ctx(naos_http_handle, fds[i]);
+    naos_http_ctx_t *ctx = httpd_sess_get_ctx(naos_http_handle, fds[i]);
     if (ctx == NULL || ctx->locked) {
       continue;
     }

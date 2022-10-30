@@ -132,19 +132,14 @@
         }
 
         function update(name, value) {
-            // get row
             let row = document.getElementById(name);
             if (!row) {
                 return;
             }
-
-            // get input
             let input = row.querySelector('input')
             if (!input) {
                 return;
             }
-
-            // update input
             if (input.type === 'checkbox') {
                 input.checked = value;
             } else {
@@ -153,19 +148,11 @@
         }
 
         async function refresh() {
-            // show loader
             showLoader(true);
-
-            // clear table
             rows.innerHTML = "";
-
-            // read params
             let list = await naos.list();
             for (let [name, type, mode] of list) {
-                // get param
                 let value = await naos.read(name);
-
-                // append row
                 let row = document.createElement('tr')
                 row.id = name;
                 let cell = document.createElement('td');
@@ -216,8 +203,6 @@
                 row.appendChild(cell);
                 rows.appendChild(row);
             }
-
-            // hide loader
             showLoader(false);
         }
 
