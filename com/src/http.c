@@ -2,8 +2,13 @@
 
 #include "params.h"
 #include "utils.h"
+#include "naos.h"
 
 #define NAOS_HTTP_MAX_CONNS 7
+
+typedef struct {
+  bool locked;
+} naos_http_ctx_t;
 
 extern const char naos_http_index_html[] asm("_binary_naos_html_start");
 extern const char naos_http_script_js[] asm("_binary_naos_js_start");
@@ -79,8 +84,16 @@ static esp_err_t naos_http_script(httpd_req_t *req) {
 static esp_err_t naos_http_socket(httpd_req_t *conn) {
   // handle GET request
   if (conn->method == HTTP_GET) {
+    // set context
+    naos_http_ctx_t *ctx = malloc(sizeof(naos_http_ctx_t));
+    ctx->locked = naos_config()->password != NULL;
+    conn->sess_ctx = ctx;
+
     return ESP_OK;
   }
+
+  // get context
+  naos_http_ctx_t *ctx = conn->sess_ctx;
 
   // prepare request frame
   httpd_ws_frame_t req = {.type = HTTPD_WS_TYPE_TEXT};
@@ -118,9 +131,24 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     res.payload = (uint8_t *)strdup("ping");
   }
 
+  // handle lock
+  if (strcmp((char *)req.payload, "lock") == 0) {
+    res.payload = (uint8_t *)strdup(ctx->locked ? "lock#locked" : "lock#unlocked");
+  }
+
+  // handle unlock
+  if (strncmp((char *)req.payload, "unlock", 6) == 0) {
+    const char *password = (char *)req.payload + 7;
+    naos_log("unlock with '%s'", password);
+    if (ctx->locked) {
+      ctx->locked = strcmp(naos_config()->password, password) != 0;
+    }
+    res.payload = (uint8_t *)strdup(ctx->locked ? "unlock#locked" : "unlock#unlocked");
+  }
+
   // handle list
-  if (strncmp((char *)req.payload, "list", 4) == 0) {
-    char *list = naos_params_list(0);
+  if (strcmp((char *)req.payload, "list") == 0) {
+    char *list = naos_params_list(ctx->locked ? NAOS_PUBLIC : 0);
     res.payload = (uint8_t *)naos_concat("list#", list);
     free(list);
   }
@@ -132,7 +160,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
 
     // lookup param
     naos_param_t *param = naos_lookup(name);
-    if (param == NULL) {
+    if (param == NULL || (ctx->locked && !(param->mode & NAOS_PUBLIC))) {
       free(req.payload);
       return ESP_FAIL;
     }
@@ -157,7 +185,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
 
     // lookup param
     naos_param_t *param = naos_lookup(name);
-    if (param == NULL) {
+    if (param == NULL || (ctx->locked && !(param->mode & NAOS_PUBLIC))) {
       free(req.payload);
       return ESP_FAIL;
     }
@@ -202,6 +230,12 @@ static void naos_http_update(void *arg) {
   for (size_t i = 0; i < num; i++) {
     // check if websocket
     if (httpd_ws_get_fd_info(naos_http_handle, fds[i]) != HTTPD_WS_CLIENT_WEBSOCKET) {
+      continue;
+    }
+
+    // check context
+    naos_http_ctx_t * ctx = httpd_sess_get_ctx(naos_http_handle, fds[i]);
+    if (ctx == NULL || ctx->locked) {
       continue;
     }
 

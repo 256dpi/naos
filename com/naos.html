@@ -115,8 +115,12 @@
         let naos = new NAOS(host.replace('http', 'ws') + ".sock");
         naos.debug = true;
 
-        naos.onConnect = () => {
-            refresh();
+        naos.onConnect = async () => {
+            await refresh();
+            while(await naos.locked()) {
+                await naos.unlock(prompt('Password'));
+            }
+            await refresh();
         }
 
         naos.onUpdate = (param, value) => {

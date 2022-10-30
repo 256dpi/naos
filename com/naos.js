@@ -20,6 +20,14 @@ export default class NAOS {
         await this.send('ping');
     }
 
+    async locked() {
+        return await this.send('lock') === 'locked';
+    }
+
+    async unlock(password) {
+        return await this.send('unlock', password) === 'unlocked';
+    }
+
     async list() {
         let list = await this.send('list');
         return list.split(',').map(param => {
