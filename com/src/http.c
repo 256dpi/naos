@@ -113,16 +113,15 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   // prepare response
   httpd_ws_frame_t res = {.type = HTTPD_WS_TYPE_TEXT};
 
+  // handle ping
+  if (strcmp((char *)req.payload, "ping") == 0) {
+    res.payload = (uint8_t *)strdup("ping");
+  }
+
   // handle list
   if (strncmp((char *)req.payload, "list", 4) == 0) {
-    // list params
     char *list = naos_params_list(0);
-
-    // set payload
     res.payload = (uint8_t *)naos_concat("list#", list);
-    res.len = strlen((char *)res.payload);
-
-    // free intermediaries
     free(list);
   }
 
@@ -138,14 +137,9 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
       return ESP_FAIL;
     }
 
-    // get value
+    // set value
     char *value = strdup(naos_get(param->name));
-
-    // set payload
     res.payload = (uint8_t *)naos_format("read:%s#%s", name, value);
-    res.len = strlen((char *)res.payload);
-
-    // free intermediates
     free(value);
   }
 
@@ -171,14 +165,9 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     // set value
     naos_set(param->name, value);
 
-    // get value
+    // set value
     value = strdup(naos_get(param->name));
-
-    // set payload
     res.payload = (uint8_t *)naos_format("write:%s#%s", name, value);
-    res.len = strlen((char *)res.payload);
-
-    // free intermediates
     free(value);
   }
 
@@ -186,6 +175,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   free(req.payload);
 
   // send response frame
+  res.len = strlen((char *)res.payload);
   err = httpd_ws_send_frame(conn, &res);
 
   // free response payload

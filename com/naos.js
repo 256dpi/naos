@@ -16,6 +16,10 @@ export default class NAOS {
         this.connect();
     }
 
+    async ping() {
+        await this.send('ping');
+    }
+
     async list() {
         let list = await this.send('list');
         return list.split(',').map(param => {
@@ -36,6 +40,9 @@ export default class NAOS {
         this.socket.onopen = (event) => {
             if (this.debug) { console.log('onopen', event); }
             this.onConnect();
+            this.interval = setInterval(() => {
+                this.ping().then();
+            }, 1000);
         }
         this.socket.onmessage = (event) => {
             // if (this.debug) { console.log('onmessage', event); }
@@ -55,6 +62,7 @@ export default class NAOS {
         }
         this.socket.onclose = (event) => {
             if (this.debug) { console.log('onclose', event); }
+            clearInterval(this.interval);
             this.onDisconnect();
             setTimeout(() => {
                 this.connect();
