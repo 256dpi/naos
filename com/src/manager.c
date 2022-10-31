@@ -22,8 +22,8 @@ static void naos_manager_heartbeat() {
 
   // get battery level
   double battery = -1;
-  if (naos_lookup("battery-level")) {
-    battery = naos_get_d("battery-level");
+  if (naos_lookup("battery")) {
+    battery = naos_get_d("battery");
   }
 
   // get WiFi RSSI

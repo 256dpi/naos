@@ -20,18 +20,6 @@ static naos_status_t naos_system_status;
 static naos_system_handler_t naos_system_handlers[NAOS_SYSTEM_MAX_HANDLERS];
 static size_t naos_system_handler_count;
 
-static void naos_system_ping() {
-  // check existence
-  if (naos_config()->ping_callback == NULL) {
-    return;
-  }
-
-  // perform ping
-  naos_acquire();
-  naos_config()->ping_callback();
-  naos_release();
-}
-
 static naos_param_t naos_system_params[] = {
     {.name = "device-type", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_PUBLIC | NAOS_LOCKED},
     {.name = "device-version", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
@@ -43,8 +31,6 @@ static naos_param_t naos_system_params[] = {
     {.name = "running-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "uptime", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "free-heap", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
-    {.name = "battery-level", .type = NAOS_DOUBLE, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
-    {.name = "ping", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_system_ping},
 };
 
 static void naos_system_set_status(naos_status_t status) {
@@ -111,12 +97,6 @@ static void naos_system_task() {
     if (naos_millis() > params_updated + 1000) {
       naos_set_l("uptime", (int32_t)naos_millis());
       naos_set_l("free-heap", (int32_t)esp_get_free_heap_size());
-      if (naos_config()->battery_callback != NULL) {
-        naos_acquire();
-        float level = naos_config()->battery_callback();
-        naos_release();
-        naos_set_d("battery-level", level);
-      }
       params_updated = naos_millis();
     }
 

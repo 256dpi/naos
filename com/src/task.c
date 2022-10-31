@@ -98,9 +98,48 @@ static void naos_task_setup() {
   NAOS_UNLOCK(naos_task_mutex);
 }
 
+static void naos_task_battery() {
+  // update battery
+  NAOS_LOCK(naos_task_mutex);
+  float level = naos_config()->battery_callback();
+  NAOS_UNLOCK(naos_task_mutex);
+  naos_set_d("battery", level);
+}
+
+static void naos_task_ping() {
+  // perform ping
+  NAOS_LOCK(naos_task_mutex);
+  naos_config()->ping_callback();
+  NAOS_UNLOCK(naos_task_mutex);
+}
+
+static naos_param_t naos_task_param_battery = {
+    .name = "battery",
+    .type = NAOS_DOUBLE,
+    .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED,
+};
+
+static naos_param_t naos_task_param_ping = {
+    .name = "ping",
+    .type = NAOS_ACTION,
+    .mode = NAOS_SYSTEM,
+    .func_a = naos_task_ping,
+};
+
 void naos_start() {
   // create mutex
   naos_task_mutex = naos_mutex();
+
+  // register battery parameter if available
+  if (naos_config()->battery_callback != NULL) {
+    naos_register(&naos_task_param_battery);
+    naos_repeat("battery", 1000, naos_task_battery);
+  }
+
+  // register ping parameter if available
+  if (naos_config()->ping_callback != NULL) {
+    naos_register(&naos_task_param_ping);
+  }
 
   // subscribe status
   naos_system_subscribe(naos_task_status);
