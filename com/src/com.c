@@ -2,7 +2,6 @@
 
 #include <string.h>
 
-#include "naos.h"
 #include "com.h"
 #include "utils.h"
 
@@ -93,13 +92,6 @@ void naos_com_dispatch(const char *topic, const uint8_t *payload, size_t len, in
   NAOS_UNLOCK(naos_com_mutex);
   for (size_t i = 0; i < count; i++) {
     naos_com_handlers[i](scope, scoped_topic, payload, len, qos, retained);
-  }
-
-  // call message callback if present
-  if (naos_config()->message_callback != NULL) {
-    naos_acquire();
-    naos_config()->message_callback(scoped_topic, payload, len, scope);
-    naos_release();
   }
 }
 

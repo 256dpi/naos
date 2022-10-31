@@ -5,6 +5,8 @@
 #include "naos.h"
 #include "utils.h"
 #include "system.h"
+#include "params.h"
+#include "com.h"
 
 static naos_mutex_t naos_task_mutex;
 static naos_task_t naos_task_handle;
@@ -69,11 +71,31 @@ static void naos_task_status(naos_status_t status, uint32_t generation) {
   NAOS_UNLOCK(naos_task_mutex);
 }
 
+static void naos_task_update(naos_param_t *param) {
+  // skip system parameters
+  if (param->mode & NAOS_SYSTEM) {
+    return;
+  }
+
+  // yield update
+  NAOS_LOCK(naos_task_mutex);
+  naos_config()->update_callback(param->name, param->value);
+  NAOS_UNLOCK(naos_task_mutex);
+}
+
+static void naos_task_message(naos_scope_t scope, const char *topic, const uint8_t *payload, size_t len, int qos,
+                              bool retained) {
+  // yield message
+  NAOS_LOCK(naos_task_mutex);
+  naos_config()->message_callback(topic, payload, len, scope);
+  NAOS_UNLOCK(naos_task_mutex);
+}
+
 static void naos_task_setup() {
   // run callback
-  naos_acquire();
+  NAOS_LOCK(naos_task_mutex);
   naos_config()->setup_callback();
-  naos_release();
+  NAOS_UNLOCK(naos_task_mutex);
 }
 
 void naos_start() {
@@ -82,6 +104,16 @@ void naos_start() {
 
   // subscribe status
   naos_system_subscribe(naos_task_status);
+
+  // subscribe parameters if available
+  if (naos_config()->update_callback != NULL) {
+    naos_params_subscribe(naos_task_update);
+  }
+
+  // subscribe message if available
+  if (naos_config()->message_callback != NULL) {
+    naos_com_subscribe(naos_task_message);
+  }
 
   // run setup task if provided
   if (naos_config()->setup_callback) {
