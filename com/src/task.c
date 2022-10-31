@@ -5,6 +5,7 @@
 #include "naos.h"
 #include "task.h"
 #include "utils.h"
+#include "system.h"
 
 static naos_mutex_t naos_task_mutex;
 static naos_task_t naos_task_handle;
@@ -22,66 +23,54 @@ static void naos_task_process() {
   }
 }
 
+static void naos_task_status(naos_status_t status, uint32_t generation) {
+  // acquire lock
+  NAOS_LOCK(naos_task_mutex);
+
+  // stop task if started
+  if (naos_task_started) {
+    // run offline callback if available
+    if (naos_config()->offline_callback) {
+      naos_config()->offline_callback();
+    }
+
+    // kill task if loop is available
+    if (naos_config()->loop_callback != NULL) {
+      ESP_LOGI(NAOS_LOG_TAG, "naos_task_status: kill task");
+      naos_kill(naos_task_handle);
+    }
+
+    // set flag
+    naos_task_started = false;
+  }
+
+  // start task if newly networked or generation updated
+  if (status == NAOS_NETWORKED) {
+    // call online callback if available
+    if (naos_config()->online_callback) {
+      naos_config()->online_callback();
+    }
+
+    // create task if loop is available
+    if (naos_config()->loop_callback != NULL) {
+      ESP_LOGI(NAOS_LOG_TAG, "naos_task_start: run task");
+      naos_task_handle = naos_run("naos-task", 8192, naos_task_process);
+    }
+
+    // set flag
+    naos_task_started = true;
+  }
+
+  // release lock
+  NAOS_UNLOCK(naos_task_mutex);
+}
+
 void naos_task_init() {
   // create mutex
   naos_task_mutex = naos_mutex();
-}
 
-void naos_task_start() {
-  // acquire mutex
-  NAOS_LOCK(naos_task_mutex);
-
-  // check if already running
-  if (naos_task_started) {
-    ESP_LOGE(NAOS_LOG_TAG, "naos_task_start: already started");
-    NAOS_UNLOCK(naos_task_mutex);
-    return;
-  }
-
-  // set flag
-  naos_task_started = true;
-
-  // call online callback if present
-  if (naos_config()->online_callback) {
-    naos_config()->online_callback();
-  }
-
-  // create task if loop is present
-  if (naos_config()->loop_callback != NULL) {
-    ESP_LOGI(NAOS_LOG_TAG, "naos_task_start: create task");
-    naos_task_handle = naos_run("naos-task", 8192, naos_task_process);
-  }
-
-  // release mutex
-  NAOS_UNLOCK(naos_task_mutex);
-}
-
-void naos_task_stop() {
-  // acquire mutex
-  NAOS_LOCK(naos_task_mutex);
-
-  // check if started
-  if (!naos_task_started) {
-    NAOS_UNLOCK(naos_task_mutex);
-    return;
-  }
-
-  // set flag
-  naos_task_started = false;
-
-  // run offline callback if present
-  if (naos_config()->offline_callback) {
-    naos_config()->offline_callback();
-  }
-
-  // remove task if loop is present
-  if (naos_config()->loop_callback != NULL) {
-    ESP_LOGI(NAOS_LOG_TAG, "naos_task_stop: deleting task");
-    naos_kill(naos_task_handle);
-  }
-
-  // release mutex
-  NAOS_UNLOCK(naos_task_mutex);
+  // subscribe status
+  naos_system_subscribe(naos_task_status);
 }
 
 void naos_acquire() {

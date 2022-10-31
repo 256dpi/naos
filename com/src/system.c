@@ -14,8 +14,12 @@
 #include "com.h"
 #include "log.h"
 
-naos_mutex_t naos_system_mutex;
+#define NAOS_SYSTEM_MAX_HANDLERS 16
+
+static naos_mutex_t naos_system_mutex;
 static naos_status_t naos_system_status;
+static naos_system_handler_t naos_system_handlers[NAOS_SYSTEM_MAX_HANDLERS];
+static size_t naos_system_handler_count;
 
 static void naos_system_ping() {
   // check existence
@@ -79,11 +83,13 @@ static void naos_system_task() {
     naos_delay(100);
 
     // get old status
+    NAOS_LOCK(naos_system_mutex);
     naos_status_t old_status = naos_system_status;
+    NAOS_UNLOCK(naos_system_mutex);
 
     // determine new status
     uint32_t new_generation = 0;
-    bool connected = naos_net_connected(NULL);
+    bool connected = naos_net_connected(&new_generation);
     bool networked = naos_com_networked(&new_generation);
     naos_status_t new_status = NAOS_DISCONNECTED;
     if (connected && networked) {
@@ -92,21 +98,18 @@ static void naos_system_task() {
       new_status = NAOS_CONNECTED;
     }
 
-    // handle status change
-    if (naos_system_status != new_status) {
+    // handle changes
+    if (old_status != new_status || new_generation > old_generation) {
       // set status
       naos_system_set_status(new_status);
 
-      // manage task
-      if (new_status == NAOS_NETWORKED) {
-        naos_task_start();
-      } else if (old_status == NAOS_NETWORKED) {
-        naos_task_stop();
+      // dispatch status
+      NAOS_LOCK(naos_system_mutex);
+      size_t count = naos_system_handler_count;
+      NAOS_UNLOCK(naos_system_mutex);
+      for (size_t i = 0; i < count; i++) {
+        naos_system_handlers[i](new_status, new_generation);
       }
-    } else if (new_status == NAOS_NETWORKED && new_generation > old_generation) {
-      // restart task
-      naos_task_stop();
-      naos_task_start();
     }
 
     // update generation
@@ -192,6 +195,23 @@ void naos_system_init() {
   if (naos_config()->setup_callback) {
     naos_run("naos-setup", 8192, naos_setup_task);
   }
+}
+
+void naos_system_subscribe(naos_system_handler_t handler) {
+  // acquire mutex
+  NAOS_LOCK(naos_system_mutex);
+
+  // check count
+  if (naos_system_handler_count >= NAOS_SYSTEM_MAX_HANDLERS) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // store transport
+  naos_system_handlers[naos_system_handler_count] = handler;
+  naos_system_handler_count++;
+
+  // release mutex
+  NAOS_UNLOCK(naos_system_mutex);
 }
 
 naos_status_t naos_status() {
