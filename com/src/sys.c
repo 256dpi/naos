@@ -1,6 +1,7 @@
 #include <naos_sys.h>
 
 #include <esp_log.h>
+#include <esp_debug_helpers.h>
 
 uint32_t naos_millis() {
   // return timestamp
@@ -56,7 +57,9 @@ naos_mutex_t naos_mutex() {
 
 void naos_lock(naos_mutex_t mutex) {
   // acquire mutex
-  while (xSemaphoreTake(mutex, portMAX_DELAY) != pdPASS) {
+  while (xSemaphoreTake(mutex, pdMS_TO_TICKS(10000)) != pdPASS) {
+    ESP_LOGW("NAOS", "naos_lock: was blocked for 10s");
+    esp_backtrace_print(100);
   }
 }
 
