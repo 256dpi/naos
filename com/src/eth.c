@@ -28,6 +28,9 @@ static void naos_eth_configure() {
     naos_eth_started = false;
   }
 
+  // set flag
+  naos_eth_connected = false;
+
   // configure network
   const char *manual = naos_get("eth-manual");
   naos_net_configure(naos_eth_netif, manual);
