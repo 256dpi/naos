@@ -4,6 +4,7 @@
 #include "naos.h"
 #include "com.h"
 #include "utils.h"
+#include "net.h"
 
 #define NAOS_OSC_MAX_TARGETS 8
 
@@ -43,7 +44,7 @@ static void naos_osc_task() {
 static naos_com_status_t naos_osc_status() {
   // prepare status
   naos_com_status_t status = {
-      .networked = true,
+      .networked = naos_net_connected(NULL),
       .generation = 1,
   };
 
