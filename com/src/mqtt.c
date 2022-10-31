@@ -7,6 +7,7 @@
 #include "com.h"
 #include "net.h"
 #include "utils.h"
+#include "system.h"
 
 static naos_mutex_t naos_mqtt_mutex;
 static bool naos_mqtt_started = false;
@@ -108,9 +109,9 @@ static void naos_mqtt_configure() {
   }
 }
 
-static void naos_mqtt_manage() {
+static void naos_mqtt_manage(naos_status_t status, uint32_t generation) {
   // get network status
-  bool connected = naos_net_connected(NULL);
+  bool connected = status >= NAOS_CONNECTED;
 
   // get started
   NAOS_LOCK(naos_mqtt_mutex);
@@ -157,6 +158,6 @@ void naos_mqtt_init() {
   };
   naos_com_register(transport);
 
-  // start manage timer
-  naos_repeat("naos-mqtt", 1000, naos_mqtt_manage);
+  // handle status
+  naos_system_subscribe(naos_mqtt_manage);
 }
