@@ -189,10 +189,13 @@ void app_main() {
     naos_eth_init();
   }
 
-  // register parameter
+  // register parameters
   naos_register(&param_counter);
   naos_register(&param_message);
 
   // initialize counter
   counter = naos_get_l("counter");
+
+  // start
+  naos_start();
 }

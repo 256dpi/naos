@@ -8,7 +8,6 @@
 #include "naos.h"
 #include "net.h"
 #include "params.h"
-#include "task.h"
 #include "update.h"
 #include "utils.h"
 #include "com.h"
@@ -133,13 +132,6 @@ static void naos_system_task() {
   }
 }
 
-static void naos_setup_task() {
-  // run callback
-  naos_acquire();
-  naos_config()->setup_callback();
-  naos_release();
-}
-
 void naos_system_init() {
   // delay startup by max 5000ms if set
   if (naos_config()->delay_startup) {
@@ -174,9 +166,6 @@ void naos_system_init() {
   naos_net_init();
   naos_com_init();
 
-  // init task
-  naos_task_init();
-
   // initialize OTA
   naos_update_init();
 
@@ -190,11 +179,6 @@ void naos_system_init() {
 
   // run system task
   naos_run("naos-system", 4096, naos_system_task);
-
-  // run setup task if provided
-  if (naos_config()->setup_callback) {
-    naos_run("naos-setup", 8192, naos_setup_task);
-  }
 }
 
 void naos_system_subscribe(naos_system_handler_t handler) {

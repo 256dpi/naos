@@ -228,6 +228,11 @@ typedef struct {
 void naos_init(naos_config_t *config);
 
 /**
+ * Run the managed setup, online, loop and offline callbacks.
+ */
+void naos_start();
+
+/**
  * Register a parameter.
  */
 void naos_register(naos_param_t *param);

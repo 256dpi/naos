@@ -3,7 +3,6 @@
 #include <esp_log.h>
 
 #include "naos.h"
-#include "task.h"
 #include "utils.h"
 #include "system.h"
 
@@ -65,12 +64,24 @@ static void naos_task_status(naos_status_t status, uint32_t generation) {
   NAOS_UNLOCK(naos_task_mutex);
 }
 
-void naos_task_init() {
+static void naos_task_setup() {
+  // run callback
+  naos_acquire();
+  naos_config()->setup_callback();
+  naos_release();
+}
+
+void naos_start() {
   // create mutex
   naos_task_mutex = naos_mutex();
 
   // subscribe status
   naos_system_subscribe(naos_task_status);
+
+  // run setup task if provided
+  if (naos_config()->setup_callback) {
+    naos_run("naos-setup", 8192, naos_task_setup);
+  }
 }
 
 void naos_acquire() {
