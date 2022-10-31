@@ -274,7 +274,7 @@ static void naos_manager_signal() {
   NAOS_UNLOCK(naos_manager_mutex);
 }
 
-static void naos_manager_status(naos_status_t status, uint32_t generation) {
+static void naos_manager_status(naos_status_t status) {
   // acquire mutex
   NAOS_LOCK(naos_manager_mutex);
 

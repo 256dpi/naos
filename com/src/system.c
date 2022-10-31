@@ -86,7 +86,7 @@ static void naos_system_task() {
       size_t count = naos_system_handler_count;
       NAOS_UNLOCK(naos_system_mutex);
       for (size_t i = 0; i < count; i++) {
-        naos_system_handlers[i](new_status, new_generation);
+        naos_system_handlers[i](new_status);
       }
     }
 

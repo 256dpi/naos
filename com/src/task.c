@@ -24,7 +24,7 @@ static void naos_task_process() {
   }
 }
 
-static void naos_task_status(naos_status_t status, uint32_t generation) {
+static void naos_task_status(naos_status_t status) {
   // acquire lock
   NAOS_LOCK(naos_task_mutex);
 

@@ -3,7 +3,7 @@
 
 #include <naos.h>
 
-typedef void (*naos_system_handler_t)(naos_status_t status, uint32_t generation);
+typedef void (*naos_system_handler_t)(naos_status_t status);
 
 void naos_system_init();
 void naos_system_subscribe(naos_system_handler_t handler);
