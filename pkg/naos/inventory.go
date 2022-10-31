@@ -32,6 +32,7 @@ type Component struct {
 type Inventory struct {
 	Version    string                `json:"version"`
 	FixSerial  bool                  `json:"fix_serial"`
+	BaudRate   string                `json:"baud_rate"`
 	Embeds     []string              `json:"embeds"`
 	Overrides  map[string]string     `json:"overrides"`
 	Components map[string]*Component `json:"components"`

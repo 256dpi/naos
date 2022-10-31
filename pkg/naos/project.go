@@ -164,6 +164,14 @@ func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
 
 // Flash will flash the project to the attached device.
 func (p *Project) Flash(device, baudRate string, erase bool, appOnly bool, out io.Writer) error {
+	// ensure baud rate
+	if baudRate == "" {
+		baudRate = p.Inventory.BaudRate
+		if baudRate == "" {
+			baudRate = "921600"
+		}
+	}
+
 	// set missing device
 	if device == "" {
 		device = utils.FindPort(out)

@@ -69,7 +69,7 @@ Options:
   --simple              Use simple serial tool.
   --clear               Remove not available devices from inventory.
   --delete              Delete loaded coredumps from the devices.
-  -b --baud=<rate>      The baud rate [default: 921600].
+  -b --baud=<rate>      The baud rate.
   -d --duration=<time>  Operation duration [default: 2s].
   -t --timeout=<time>   Operation timeout [default: 5s].
   -j --jobs=<count>     Number of simultaneous update jobs [default: 10].
