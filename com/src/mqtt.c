@@ -5,7 +5,6 @@
 
 #include "naos.h"
 #include "com.h"
-#include "net.h"
 #include "utils.h"
 #include "system.h"
 
