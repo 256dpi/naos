@@ -269,7 +269,7 @@ public class NAOSDevice: NSObject {
 		let application = try await read(char: .list)
 
 		// read list
-		let list = system + application
+		let list = system + "," + application
 
 		// reset list
 		availableParameters = []
