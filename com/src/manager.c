@@ -11,7 +11,7 @@
 #include "utils.h"
 #include "com.h"
 #include "log.h"
-#include "net.h"
+#include "system.h"
 
 static naos_mutex_t naos_manager_mutex;
 static bool naos_manager_recording = false;
@@ -274,21 +274,12 @@ static void naos_manager_signal() {
   NAOS_UNLOCK(naos_manager_mutex);
 }
 
-static void naos_manager_check() {
-  // keep old status
-  static bool old_networked = false;
-  static uint32_t old_generation = 0;
-
+static void naos_manager_status(naos_status_t status, uint32_t generation) {
   // acquire mutex
   NAOS_LOCK(naos_manager_mutex);
 
-  // get new status
-  uint32_t new_generation = 0;
-  bool connected = naos_net_connected(NULL);
-  bool new_networked = connected && naos_com_networked(&new_generation);
-
   // handle status
-  if ((!old_networked && new_networked) || (new_networked && new_generation > old_generation)) {
+  if (status == NAOS_NETWORKED) {
     // subscribe global topics
     naos_subscribe("naos/collect", 0, NAOS_GLOBAL);
 
@@ -306,14 +297,10 @@ static void naos_manager_check() {
 
     // send initial announcement
     naos_manager_announce();
-  } else if (!new_networked) {
+  } else {
     // clear recording
     naos_manager_recording = false;
   }
-
-  // update status
-  old_networked = new_networked;
-  old_generation = new_generation;
 
   // release mutex
   NAOS_UNLOCK(naos_manager_mutex);
@@ -323,6 +310,9 @@ void naos_manager_init() {
   // create mutex
   naos_manager_mutex = naos_mutex();
 
+  // handle status
+  naos_system_subscribe(naos_manager_status);
+
   // handle messages
   naos_com_subscribe(naos_manager_handler);
 
@@ -330,8 +320,5 @@ void naos_manager_init() {
   naos_log_register(naos_manager_sink);
 
   // start signal timer
-  naos_repeat("naos-manager#s", CONFIG_NAOS_HEARTBEAT_INTERVAL, naos_manager_signal);
-
-  // start check timer
-  naos_repeat("naos-manager#c", 1000, naos_manager_check);
+  naos_repeat("naos-manager", CONFIG_NAOS_HEARTBEAT_INTERVAL, naos_manager_signal);
 }
