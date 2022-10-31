@@ -1,8 +1,9 @@
-#include <esp_err.h>
+#include <naos_sys.h>
+
 #include <esp_log.h>
 #include <esp_ota_ops.h>
-#include <esp_system.h>
 
+#include "naos.h"
 #include "update.h"
 #include "utils.h"
 

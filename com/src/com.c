@@ -1,3 +1,5 @@
+#include <naos_sys.h>
+
 #include <string.h>
 
 #include "naos.h"

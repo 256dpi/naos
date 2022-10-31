@@ -1,3 +1,5 @@
+#include <naos_sys.h>
+
 #include <esp_log.h>
 
 #include "naos.h"

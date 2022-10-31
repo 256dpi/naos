@@ -316,22 +316,6 @@ naos_status_t naos_status();
 void naos_log(const char *fmt, ...);
 
 /**
- * Returns the elapsed milliseconds since the start.
- *
- * @return The elapsed milliseconds.
- */
-uint32_t naos_millis();
-
-/**
- * Will delay current task for the specified amount of milliseconds.
- *
- * @note This function should only be used inside the loop callback.
- *
- * @param ms The amount of milliseconds to delay.
- */
-void naos_delay(uint32_t ms);
-
-/**
  * Acquire will acquire the global naos mutex. This allows to synchronize custom callbacks with naos callbacks.
  */
 void naos_acquire();

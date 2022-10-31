@@ -1,9 +1,7 @@
-#include <freertos/FreeRTOS.h>
-#include <esp_freertos_hooks.h>
-
 #include <naos.h>
+#include <naos_sys.h>
 
-#include "utils.h"
+#include <esp_freertos_hooks.h>
 
 #if defined(CONFIG_ESP32_DEFAULT_CPU_FREQ_240)
 #define NAOS_CPU_MAX_IDLE_CALLS 368000.f

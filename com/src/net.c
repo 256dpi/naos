@@ -1,6 +1,9 @@
+#include <naos_sys.h>
+
 #include <esp_event.h>
 #include <string.h>
 
+#include "naos.h"
 #include "utils.h"
 #include "net.h"
 

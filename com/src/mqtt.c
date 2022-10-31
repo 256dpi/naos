@@ -1,7 +1,9 @@
-#include <sdkconfig.h>
+#include <naos_sys.h>
+
 #include <string.h>
 #include <esp_mqtt.h>
 
+#include "naos.h"
 #include "com.h"
 #include "net.h"
 #include "utils.h"
