@@ -59,6 +59,10 @@ void naos_lock(naos_mutex_t mutex) {
   // acquire mutex
   while (xSemaphoreTake(mutex, pdMS_TO_TICKS(10000)) != pdPASS) {
     ESP_LOGW("NAOS", "naos_lock: was blocked for 10s");
+    TaskHandle_t handle = xSemaphoreGetMutexHolder(mutex);
+    if (handle != NULL) {
+      ESP_LOGW("NAOS", "naos_lock: ==> task %s has lock", pcTaskGetName(handle));
+    }
     esp_backtrace_print(100);
   }
 }
