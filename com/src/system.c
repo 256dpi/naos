@@ -59,13 +59,6 @@ static void naos_system_set_status(naos_status_t status) {
   // set status
   naos_set("connection-status", name);
 
-  // call status callback if present
-  if (naos_config()->status_callback != NULL) {
-    naos_acquire();
-    naos_config()->status_callback(status);
-    naos_release();
-  }
-
   // log new status
   ESP_LOGI(NAOS_LOG_TAG, "naos_system_set_status: %s", name);
 }

@@ -60,6 +60,11 @@ static void naos_task_status(naos_status_t status, uint32_t generation) {
     naos_task_started = true;
   }
 
+  // call status callback if present
+  if (naos_config()->status_callback != NULL) {
+    naos_config()->status_callback(status);
+  }
+
   // release lock
   NAOS_UNLOCK(naos_task_mutex);
 }
