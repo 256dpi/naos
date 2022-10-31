@@ -133,6 +133,11 @@ typedef struct {
   const char *device_version;
 
   /**
+   * A default password to be set.
+   */
+  const char *default_password;
+
+  /**
    * The parameters to be registered during initialization.
    */
   naos_param_t *parameters;
@@ -205,11 +210,6 @@ typedef struct {
    * @return A value between 0 and 1 indicating the battery charge level.
    */
   float (*battery_callback)();
-
-  /**
-   * A password to protect Bluetooth access.
-   */
-  const char *password;
 
   /**
    * If set, the device will randomly (up to 5s) delay startup to overcome WiFi and MQTT congestion issues if many

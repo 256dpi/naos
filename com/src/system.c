@@ -34,6 +34,7 @@ static naos_param_t naos_system_params[] = {
     {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM | NAOS_PUBLIC},
     {.name = "base-topic", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = esp_restart},
+    {.name = "device-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "connection-status", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "running-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "uptime", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
@@ -158,6 +159,11 @@ void naos_system_init() {
   naos_set("device-type", naos_config()->device_type);
   naos_set("device-version", naos_config()->device_version);
   naos_set("running-partition", esp_ota_get_running_partition()->label);
+
+  // ensure default password
+  if (naos_config()->default_password != NULL && strlen(naos_get("device-password")) == 0) {
+    naos_set("device-password", naos_config()->default_password);
+  }
 
   // initialize subsystems
   naos_log_init();

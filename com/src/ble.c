@@ -260,7 +260,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       // mark connection
       naos_ble_conns[p->connect.conn_id].id = p->connect.conn_id;
       naos_ble_conns[p->connect.conn_id].connected = true;
-      naos_ble_conns[p->connect.conn_id].locked = naos_config()->password != NULL;
+      naos_ble_conns[p->connect.conn_id].locked = strlen(naos_get("device-password")) > 0;
 
       // restart advertisement
       ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
@@ -390,7 +390,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
         // handle characteristic
         if (c == &naos_ble_char_lock) {
-          if (conn->locked && strcmp(value, naos_config()->password) == 0) {
+          if (conn->locked && strcmp(value, naos_get("device-password")) == 0) {
             conn->locked = false;
           }
         } else if (c == &naos_ble_char_list) {

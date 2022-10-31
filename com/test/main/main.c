@@ -146,6 +146,7 @@ static naos_param_t params[] = {
 static naos_config_t config = {
     .device_type = "naos-test",
     .device_version = "0.0.1",
+    .default_password = "secret",
     .parameters = params,
     .num_parameters = sizeof(params) / sizeof(params[0]),
     .setup_callback = setup,
@@ -158,7 +159,6 @@ static naos_config_t config = {
     .battery_callback = battery,
     .offline_callback = offline,
     .status_callback = status,
-    .password = "secret",
 };
 
 static naos_param_t param_counter = {
