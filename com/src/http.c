@@ -200,13 +200,22 @@ static esp_err_t naos_http_file(httpd_req_t *req) {
     return err;
   }
 
+  // get len length
+  size_t len = strlen(req->uri);
+  for (size_t i = 0; i < len; i++) {
+    if (req->uri[i] == '?') {
+      len = i;
+      break;
+    }
+  }
+
   // check files
   for (size_t i = 0; i < naos_http_file_count; i++) {
     // get file
     naos_http_file_t *file = &naos_http_files[i];
 
     // check path
-    if (strcmp(req->uri, file->path) != 0) {
+    if (strncmp(req->uri, file->path, len) != 0) {
       continue;
     }
 
