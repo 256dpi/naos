@@ -2,7 +2,7 @@ export const Types = {b: 'Bool', s: 'String', l: 'Long', d: 'Double', a: 'Action
 export const Modes = {v: 'Volatile', s: 'System', a: 'Application', p: 'Public', l: 'Locked'};
 
 export default class NAOS {
-    timeout = 2000;
+    timeout = 500;
     debug = false;
     url = '';
     onConnect = () => {};
@@ -17,7 +17,12 @@ export default class NAOS {
     }
 
     async ping() {
-        await this.send('ping');
+        try {
+            await this.send('ping');
+        } catch (err) {
+            console.log('ping', err);
+            this.reconnect();
+        }
     }
 
     async locked() {
@@ -50,7 +55,7 @@ export default class NAOS {
             this.onConnect();
             this.interval = setInterval(() => {
                 this.ping().then();
-            }, 1000);
+            }, this.timeout * 2);
         }
         this.socket.onmessage = (event) => {
             // if (this.debug) { console.log('onmessage', event); }
@@ -70,11 +75,7 @@ export default class NAOS {
         }
         this.socket.onclose = (event) => {
             if (this.debug) { console.log('onclose', event); }
-            clearInterval(this.interval);
-            this.onDisconnect();
-            setTimeout(() => {
-                this.connect();
-            }, 0);
+            this.reconnect();
         }
     }
 
@@ -83,9 +84,30 @@ export default class NAOS {
             this.socket.send(type + (value !== undefined ? '#' + value: ''));
             this.requests[type] ||= [];
             this.requests[type].push(resolve);
-            setTimeout(()=> {
+            setTimeout(() => {
                 reject(new Error('timed out'));
             }, this.timeout);
         })
+    }
+
+    reconnect() {
+        // stop timer
+        clearInterval(this.interval);
+
+        // terminate socket
+        if (this.socket) {
+            this.socket.onopen = null;
+            this.socket.onmessage = null;
+            this.socket.onerror = null;
+            this.socket.onclose = null;
+            this.socket.close();
+            this.socket = null;
+            this.onDisconnect();
+        }
+
+        // connect again
+        setTimeout(() => {
+            this.connect();
+        });
     }
 }
