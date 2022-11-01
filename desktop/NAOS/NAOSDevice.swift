@@ -278,6 +278,9 @@ public class NAOSDevice: NSObject {
 		let segments = list.split(separator: ",")
 		for s in segments {
 			let subSegments = s.split(separator: ":")
+			if subSegments.count != 3 {
+				continue
+			}
 			let name = String(subSegments[0])
 			let type = NAOSType(rawValue: String(subSegments[1])) ?? .string
 			let rawMode = String(subSegments[2])
