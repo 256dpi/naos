@@ -10,8 +10,9 @@ void naos_http_init();
  * Serve a file with the specified content.
  *
  * @param path The file path.
+ * @param type The file type.
  * @param content  The file content.
  */
-void naos_http_serve(const char *path, const char *content);
+void naos_http_serve(const char *path, const char *type, const char *content);
 
 #endif  // NAOS_HTTP_H

@@ -13,6 +13,7 @@ typedef struct {
 
 typedef struct {
   const char *path;
+  const char *type;
   const char *content;
 } naos_http_file_t;
 
@@ -209,6 +210,12 @@ static esp_err_t naos_http_file(httpd_req_t *req) {
       continue;
     }
 
+    // set content type
+    err = httpd_resp_set_type(req, file->type);
+    if (err != ESP_OK) {
+      return err;
+    }
+
     // send response
     err = httpd_resp_sendstr(req, file->content);
     if (err != ESP_OK) {
@@ -311,7 +318,7 @@ void naos_http_init() {
   naos_params_subscribe(naos_http_param_handler);
 }
 
-void naos_http_serve(const char *path, const char *content) {
+void naos_http_serve(const char *path, const char *type, const char *content) {
   // check count
   if (naos_http_file_count >= NAOS_HTTP_MAX_FILES) {
     ESP_ERROR_CHECK(ESP_FAIL);
@@ -320,6 +327,7 @@ void naos_http_serve(const char *path, const char *content) {
   // prepare files
   naos_http_file_t file = {
       .path = path,
+      .type = type,
       .content = content,
   };
 
