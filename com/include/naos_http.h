@@ -11,4 +11,12 @@ void naos_http_init();
  */
 void naos_http_install(const char *root);
 
+/**
+ * Serve a file with the specified content.
+ *
+ * @param path The file path.
+ * @param content  The file content.
+ */
+void naos_http_serve(const char *path, const char *content);
+
 #endif  // NAOS_HTTP_H

@@ -5,16 +5,24 @@
 #include "naos.h"
 
 #define NAOS_HTTP_MAX_CONNS 7
+#define NAOS_HTTP_MAX_FILES 8
 
 typedef struct {
   bool locked;
 } naos_http_ctx_t;
+
+typedef struct {
+  const char *path;
+  const char *content;
+} naos_http_file_t;
 
 extern const char naos_http_index_html[] asm("_binary_naos_html_start");
 extern const char naos_http_script_js[] asm("_binary_naos_js_start");
 
 static httpd_handle_t naos_http_handle = {0};
 static const char *naos_http_root_html = NULL;
+static naos_http_file_t naos_http_files[NAOS_HTTP_MAX_FILES] = {0};
+static size_t naos_http_file_count = 0;
 
 static esp_err_t naos_http_root(httpd_req_t *req) {
   // set response header
@@ -212,6 +220,41 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   return err;
 }
 
+static esp_err_t naos_http_file(httpd_req_t *req) {
+  // set response header
+  esp_err_t err = httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  if (err != ESP_OK) {
+    return err;
+  }
+
+  // check files
+  for (size_t i = 0; i < naos_http_file_count; i++) {
+    // get file
+    naos_http_file_t *file = &naos_http_files[i];
+
+    // check path
+    if (strcmp(req->uri, file->path) != 0) {
+      continue;
+    }
+
+    // send response
+    err = httpd_resp_sendstr(req, file->content);
+    if (err != ESP_OK) {
+      return err;
+    }
+
+    return ESP_OK;
+  }
+
+  // serve root if available
+  err = httpd_resp_send_404(req);
+  if (err != ESP_OK) {
+    return err;
+  }
+
+  return ESP_OK;
+}
+
 static void naos_http_update(void *arg) {
   // get param
   naos_param_t *param = arg;
@@ -260,11 +303,13 @@ static httpd_uri_t naos_http_route_socket = {.uri = "/naos.sock",
                                              .handler = naos_http_socket,
                                              .is_websocket = true,
                                              .supported_subprotocol = "naos"};
+static httpd_uri_t naos_http_route_file = {.uri = "*", .method = HTTP_GET, .handler = naos_http_file};
 
 void naos_http_init() {
   // prepare config
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.max_open_sockets = NAOS_HTTP_MAX_CONNS;
+  config.uri_match_fn = httpd_uri_match_wildcard;
 
   // start server
   ESP_ERROR_CHECK(httpd_start(&naos_http_handle, &config));
@@ -274,6 +319,7 @@ void naos_http_init() {
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_index));
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_script));
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_socket));
+  ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_file));
 
   // handle parameters
   naos_params_subscribe(naos_http_param_handler);
@@ -282,4 +328,21 @@ void naos_http_init() {
 void naos_http_install(const char *root) {
   // set root page
   naos_http_root_html = root;
+}
+
+void naos_http_serve(const char *path, const char *content) {
+  // check count
+  if (naos_http_file_count >= NAOS_HTTP_MAX_FILES) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // prepare files
+  naos_http_file_t file = {
+      .path = path,
+      .content = content,
+  };
+
+  // store file
+  naos_http_files[naos_http_file_count] = file;
+  naos_http_file_count++;
 }
