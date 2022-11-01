@@ -179,7 +179,7 @@ void app_main() {
   naos_ble_init();
   naos_wifi_init();
   naos_http_init();
-  naos_http_install("<h1>Hello world!</h1>");
+  naos_http_serve("/", "<h1>Hello world!</h1>");
   naos_http_serve("/foo", "<h2>Bar</h2>");
   naos_mqtt_init();
   naos_osc_init();

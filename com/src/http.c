@@ -20,38 +20,8 @@ extern const char naos_http_index_html[] asm("_binary_naos_html_start");
 extern const char naos_http_script_js[] asm("_binary_naos_js_start");
 
 static httpd_handle_t naos_http_handle = {0};
-static const char *naos_http_root_html = NULL;
 static naos_http_file_t naos_http_files[NAOS_HTTP_MAX_FILES] = {0};
 static size_t naos_http_file_count = 0;
-
-static esp_err_t naos_http_root(httpd_req_t *req) {
-  // set response header
-  esp_err_t err = httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-  if (err != ESP_OK) {
-    return err;
-  }
-
-  // serve root if available
-  if (naos_http_root_html != NULL) {
-    return httpd_resp_send(req, naos_http_root_html, HTTPD_RESP_USE_STRLEN);
-  }
-
-  // otherwise, redirect
-  err = httpd_resp_set_status(req, "302 Found");
-  if (err != ESP_OK) {
-    return err;
-  }
-  err = httpd_resp_set_hdr(req, "Location", "/naos");
-  if (err != ESP_OK) {
-    return err;
-  }
-  err = httpd_resp_send(req, NULL, 0);
-  if (err != ESP_OK) {
-    return err;
-  }
-
-  return ESP_OK;
-}
 
 static esp_err_t naos_http_index(httpd_req_t *req) {
   // set response header
@@ -61,7 +31,7 @@ static esp_err_t naos_http_index(httpd_req_t *req) {
   }
 
   // write response
-  err = httpd_resp_send(req, naos_http_index_html, HTTPD_RESP_USE_STRLEN);
+  err = httpd_resp_sendstr(req, naos_http_index_html);
   if (err != ESP_OK) {
     return err;
   }
@@ -75,13 +45,15 @@ static esp_err_t naos_http_script(httpd_req_t *req) {
   if (err != ESP_OK) {
     return err;
   }
+
+  // set content type
   err = httpd_resp_set_type(req, "text/javascript");
   if (err != ESP_OK) {
     return err;
   }
 
   // write response
-  err = httpd_resp_send(req, naos_http_script_js, HTTPD_RESP_USE_STRLEN);
+  err = httpd_resp_sendstr(req, naos_http_script_js);
   if (err != ESP_OK) {
     return err;
   }
@@ -246,6 +218,22 @@ static esp_err_t naos_http_file(httpd_req_t *req) {
     return ESP_OK;
   }
 
+  // redirect if root is missing
+  if (strcmp(req->uri, "/") == 0) {
+    err = httpd_resp_set_status(req, "302 Found");
+    if (err != ESP_OK) {
+      return err;
+    }
+    err = httpd_resp_set_hdr(req, "Location", "/naos");
+    if (err != ESP_OK) {
+      return err;
+    }
+    err = httpd_resp_send(req, NULL, 0);
+    if (err != ESP_OK) {
+      return err;
+    }
+  }
+
   // serve root if available
   err = httpd_resp_send_404(req);
   if (err != ESP_OK) {
@@ -295,7 +283,6 @@ static void naos_http_param_handler(naos_param_t *param) {
   ESP_ERROR_CHECK(httpd_queue_work(naos_http_handle, naos_http_update, param));
 }
 
-static httpd_uri_t naos_http_route_root = {.uri = "/", .method = HTTP_GET, .handler = naos_http_root};
 static httpd_uri_t naos_http_route_index = {.uri = "/naos", .method = HTTP_GET, .handler = naos_http_index};
 static httpd_uri_t naos_http_route_script = {.uri = "/naos.js", .method = HTTP_GET, .handler = naos_http_script};
 static httpd_uri_t naos_http_route_socket = {.uri = "/naos.sock",
@@ -315,7 +302,6 @@ void naos_http_init() {
   ESP_ERROR_CHECK(httpd_start(&naos_http_handle, &config));
 
   // register handlers
-  ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_root));
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_index));
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_script));
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_socket));
@@ -323,11 +309,6 @@ void naos_http_init() {
 
   // handle parameters
   naos_params_subscribe(naos_http_param_handler);
-}
-
-void naos_http_install(const char *root) {
-  // set root page
-  naos_http_root_html = root;
 }
 
 void naos_http_serve(const char *path, const char *content) {
