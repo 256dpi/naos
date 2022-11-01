@@ -44,6 +44,26 @@ public struct NAOSMode: OptionSet {
 	public static let application = NAOSMode(rawValue: 1 << 2)
 	public static let _public = NAOSMode(rawValue: 1 << 3)
 	public static let locked = NAOSMode(rawValue: 1 << 4)
+	
+	public static func parse(str: String) -> NAOSMode {
+		var mode = NAOSMode()
+		if str.contains("v") {
+			mode.insert(.volatile)
+		}
+		if str.contains("s") {
+			mode.insert(.system)
+		}
+		if str.contains("a") {
+			mode.insert(.application)
+		}
+		if str.contains("p") {
+			mode.insert(._public)
+		}
+		if str.contains("l") {
+			mode.insert(.locked)
+		}
+		return mode
+	}
 }
 
 public struct NAOSParameter: Hashable {
@@ -283,23 +303,7 @@ public class NAOSDevice: NSObject {
 			}
 			let name = String(subSegments[0])
 			let type = NAOSType(rawValue: String(subSegments[1])) ?? .string
-			let rawMode = String(subSegments[2])
-			var mode = NAOSMode()
-			if rawMode.contains("v") {
-				mode.insert(.volatile)
-			}
-			if rawMode.contains("s") {
-				mode.insert(.system)
-			}
-			if rawMode.contains("a") {
-				mode.insert(.application)
-			}
-			if rawMode.contains("p") {
-				mode.insert(._public)
-			}
-			if rawMode.contains("l") {
-				mode.insert(.locked)
-			}
+			let mode = NAOSMode.parse(str: String(subSegments[2]))
 			availableParameters.append(NAOSParameter(name: name, type: type, mode: mode))
 		}
 
