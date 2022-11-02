@@ -1,6 +1,7 @@
 #ifndef NAOS_SYS_H
 #define NAOS_SYS_H
 
+#include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
