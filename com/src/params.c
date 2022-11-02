@@ -71,7 +71,7 @@ static void naos_params_update(naos_param_t *param) {
     }
     case NAOS_DOUBLE: {
       // get value
-      double value = strtod(param->name, NULL);
+      double value = strtod(param->value, NULL);
 
       // update pointer
       if (param->sync_d != NULL) {
