@@ -120,7 +120,6 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   // handle unlock
   if (strncmp((char *)req.payload, "unlock", 6) == 0) {
     const char *password = (char *)req.payload + 7;
-    naos_log("unlock with '%s'", password);
     if (ctx->locked) {
       ctx->locked = strcmp(password, naos_get("device-password")) != 0;
     }

@@ -71,11 +71,9 @@ static void naos_osc_configure() {
   char *targets = strdup(naos_get("osc-targets"));
   char *target = strtok(targets, ",");
   while (target != NULL && naos_osc_target_count < NAOS_OSC_MAX_TARGETS) {
-    naos_log("target: '%s'", target);
     char target_addr[16];
     int target_port;
     if (sscanf(target, "%15[^:]:%d", target_addr, &target_port) == 2) {
-      naos_log("added target: '%s' : %d", target_addr, target_port);
       naos_osc_targets[naos_osc_target_count] = esp_osc_target(target_addr, target_port);
       naos_osc_target_count++;
     }
