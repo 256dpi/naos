@@ -158,8 +158,17 @@ func (p *Project) Install(force bool, out io.Writer) error {
 }
 
 // Build will build the project.
-func (p *Project) Build(clean, appOnly bool, out io.Writer) error {
-	return tree.Build(p.Tree(), p.Inventory.Overrides, p.Inventory.Embeds, clean, appOnly, out)
+func (p *Project) Build(overrides map[string]string, clean, appOnly bool, out io.Writer) error {
+	// merge overrides with inventory overrides
+	or := map[string]string{}
+	for k, v := range p.Inventory.Overrides {
+		or[k] = v
+	}
+	for k, v := range overrides {
+		or[k] = v
+	}
+
+	return tree.Build(p.Tree(), or, p.Inventory.Embeds, clean, appOnly, out)
 }
 
 // Flash will flash the project to the attached device.

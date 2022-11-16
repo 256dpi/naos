@@ -87,7 +87,7 @@ func install(cmd *command, p *naos.Project) {
 
 func build(cmd *command, p *naos.Project) {
 	// build project
-	exitIfSet(p.Build(cmd.oClean, cmd.oAppOnly, os.Stdout))
+	exitIfSet(p.Build(nil, cmd.oClean, cmd.oAppOnly, os.Stdout))
 }
 
 func flash(cmd *command, p *naos.Project) {
@@ -102,7 +102,7 @@ func attach(cmd *command, p *naos.Project) {
 
 func run(cmd *command, p *naos.Project) {
 	// build project
-	exitIfSet(p.Build(cmd.oClean, cmd.oAppOnly, os.Stdout))
+	exitIfSet(p.Build(nil, cmd.oClean, cmd.oAppOnly, os.Stdout))
 
 	// flash project
 	exitIfSet(p.Flash(cmd.aDevice, cmd.oBaudRate, cmd.oErase, cmd.oAppOnly, os.Stdout))
