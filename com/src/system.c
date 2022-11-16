@@ -1,6 +1,7 @@
 #include <naos/sys.h>
 
 #include <esp_ota_ops.h>
+#include <esp_random.h>
 #include <string.h>
 
 #include "system.h"
@@ -110,7 +111,7 @@ void naos_system_init() {
   // delay startup by max 5000ms if set
   if (naos_config()->delay_startup) {
     uint32_t delay = esp_random() / 858994;
-    ESP_LOGI(NAOS_LOG_TAG, "naos_system_init: delay startup by %dms", delay);
+    ESP_LOGI(NAOS_LOG_TAG, "naos_system_init: delay startup by %ldms", delay);
     naos_delay(delay);
   }
 

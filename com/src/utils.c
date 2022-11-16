@@ -7,7 +7,7 @@
 #include "utils.h"
 
 const char *naos_i2str(char buf[16], int32_t num) {
-  snprintf(buf, 16, "%d", num);
+  snprintf(str, 16, "%ld", num);
   return buf;
 }
 

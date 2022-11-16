@@ -3,7 +3,7 @@ IF(DEFINED ENV{IDF_PATH})
     file(GLOB srcs ./src/*.c)
     idf_component_register(SRCS ${srcs}
         INCLUDE_DIRS "include"
-        REQUIRES bt esp_http_server esp-mqtt esp-osc app_update fatfs
+        REQUIRES nvs_flash bt esp_eth esp_http_server esp-mqtt esp-osc app_update fatfs
         EMBED_TXTFILES naos.html naos.js
     )
 ELSE()

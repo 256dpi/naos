@@ -3,6 +3,7 @@
 #include <naos/eth.h>
 
 #include <driver/spi_master.h>
+#include <esp_eth.h>
 #include <esp_event.h>
 #include <string.h>
 
@@ -115,11 +116,12 @@ static naos_param_t naos_eth_params[] = {
 
 #if defined(CONFIG_IDF_TARGET_ESP32)
 void naos_eth_olimex() {
-  // prepare MAC
+  // prepare EMAC and MAC
+  eth_esp32_emac_config_t emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
   eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-  mac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
-  mac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_180_GPIO;
-  esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+  emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
+  emac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_180_GPIO;
+  esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&emac_config, &mac_config);
 
   // prepare PHY
   eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
