@@ -12,8 +12,6 @@ import (
 	"github.com/256dpi/naos/pkg/utils"
 )
 
-// TODO: Compare against original sdkconfig.
-
 // TODO: Changing embeds in a v4 projects requires a clean.
 
 // Build will build the project.
@@ -47,12 +45,12 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 		}
 	}
 
+	// determine path
+	configPath := filepath.Join(Directory(naosPath), "sdkconfig")
+
 	// apply overrides
 	if len(overrides) > 0 {
 		utils.Log(out, "Overriding sdkconfig...")
-
-		// determine path
-		configPath := filepath.Join(Directory(naosPath), "sdkconfig")
 
 		// read config
 		data, err := os.ReadFile(configPath)
@@ -63,40 +61,41 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 		// get config
 		sdkconfig := string(data)
 
-		// check config
-		match := true
-		scanner := bufio.NewScanner(strings.NewReader(sdkconfig))
-		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.HasPrefix(line, "#") || !strings.ContainsRune(line, '=') {
-				continue
-			}
-			seg := strings.Split(line, "=")
-			if _, ok := overrides[seg[0]]; !ok {
-				continue
-			}
-			if seg[1] != overrides[seg[0]] {
-				match = false
-			}
-		}
-
 		// recreate if no match
-		if !match {
-			// append comments
-			sdkconfig += "\n#\n# OVERRIDES\n#\n"
-
-			// replace lines
-			for key, value := range overrides {
-				re := regexp.MustCompile("(?m)^(" + regexp.QuoteMeta(key) + ")=(.*)$")
-				if re.MatchString(sdkconfig) {
-					sdkconfig = re.ReplaceAllString(sdkconfig, key+"="+value)
-				} else {
-					sdkconfig += key + "=" + value + "\n"
-				}
+		if !hasOverrides(sdkconfig, overrides) {
+			// apply overrides
+			sdkconfig, err = applyOverrides(naosPath, overrides)
+			if err != nil {
+				return err
 			}
 
 			// write config
 			err = os.WriteFile(configPath, []byte(sdkconfig), 0644)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// otherwise, ensure default sdkconfig
+	if len(overrides) == 0 {
+		utils.Log(out, "Ensure sdkconfig...")
+
+		// get original
+		original, err := utils.Original(naosPath, filepath.Join("tree", "sdkconfig"))
+		if err != nil {
+			return err
+		}
+
+		// get existing
+		existing, err := ioutil.ReadFile(configPath)
+		if err != nil {
+			return err
+		}
+
+		// overwrite if changed
+		if string(existing) != original {
+			err = ioutil.WriteFile(configPath, []byte(original), 0644)
 			if err != nil {
 				return err
 			}
@@ -157,4 +156,79 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 // AppBinary will return the bytes of the built app binary.
 func AppBinary(naosPath string) ([]byte, error) {
 	return ioutil.ReadFile(filepath.Join(Directory(naosPath), "build", "naos-project.bin"))
+}
+
+func hasOverrides(sdkconfig string, overrides map[string]string) bool {
+	// prepare scanner
+	scanner := bufio.NewScanner(strings.NewReader(sdkconfig))
+
+	// check lines
+	for scanner.Scan() {
+		// get line
+		line := strings.TrimSpace(scanner.Text())
+
+		// skip empty lines
+		if line == "" {
+			continue
+		}
+
+		// verify unset constants
+		if strings.HasSuffix(line, "is not set") {
+			name := line[2 : len(line)-11]
+			if overrides[name] != "" {
+				return false
+			}
+			continue
+		}
+
+		// ignore comments
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		// verify set constants
+		seg := strings.Split(line, "=")
+		if _, ok := overrides[seg[0]]; !ok {
+			continue
+		}
+		if seg[1] != overrides[seg[0]] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func applyOverrides(naosPath string, overrides map[string]string) (string, error) {
+	// read original config
+	sdkconfig, err := utils.Original(naosPath, filepath.Join("tree", "sdkconfig"))
+	if err != nil {
+		return "", err
+	}
+
+	// check overrides
+	if len(overrides) == 0 {
+		return sdkconfig, nil
+	}
+
+	// append comments
+	sdkconfig += "\n#\n# OVERRIDES\n#\n"
+
+	// replace lines
+	for key, value := range overrides {
+		re := regexp.MustCompile("(?m)^(" + regexp.QuoteMeta(key) + ")=(.*)$")
+		if re.MatchString(sdkconfig) {
+			if value != "" {
+				sdkconfig = re.ReplaceAllString(sdkconfig, key+"="+value)
+			} else {
+				sdkconfig = re.ReplaceAllString(sdkconfig, "# "+key+" is not set")
+			}
+		} else {
+			if value != "" {
+				sdkconfig += key + "=" + value + "\n"
+			}
+		}
+	}
+
+	return sdkconfig, nil
 }
