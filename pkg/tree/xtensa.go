@@ -17,10 +17,10 @@ import (
 	"github.com/256dpi/naos/pkg/utils"
 )
 
-// InstallToolchain4 will install the toolchain for v4 projects. An existing
+// InstallToolchain will install the toolchain for v4+ projects. An existing
 // toolchain will be removed if force is set to true. If out is not nil, it will
 // be used to log information about the installation process.
-func InstallToolchain4(naosPath string, force bool, out io.Writer) error {
+func InstallToolchain(naosPath string, force bool, out io.Writer) error {
 	// prepare tools path
 	toolsPath := filepath.Join(Directory(naosPath), "toolchain")
 
@@ -164,7 +164,7 @@ func BinDirectory(naosPath string) (string, error) {
 	}
 
 	// handle 4.x projects
-	if v == 4 {
+	if v >= 4 {
 		// get env variables
 		var buf bytes.Buffer
 		err = Exec(naosPath, &buf, nil, "env")

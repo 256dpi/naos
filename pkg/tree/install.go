@@ -68,9 +68,9 @@ func Install(naosPath, sourcePath, dataPath, version string, force, fixSerial bo
 		}
 	}
 
-	// install toolchain for v4 projects
-	if idfMajorVersion == 4 {
-		err = InstallToolchain4(naosPath, force, out)
+	// install toolchain for new projects
+	if idfMajorVersion >= 4 {
+		err = InstallToolchain(naosPath, force, out)
 		if err != nil {
 			return err
 		}

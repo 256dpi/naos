@@ -31,6 +31,8 @@ func IDFMajorVersion(naosPath string) (int, error) {
 		return 3, nil
 	} else if strings.HasPrefix(string(bytes), "v4.") {
 		return 4, nil
+	} else if strings.HasPrefix(string(bytes), "v5.") {
+		return 5, nil
 	}
 
 	return 0, fmt.Errorf("unknown version")

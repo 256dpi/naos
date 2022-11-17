@@ -38,8 +38,8 @@ func Exec(naosPath string, out io.Writer, in io.Reader, name string, arg ...stri
 		cmd = exec.Command(name, arg...)
 	}
 
-	// construct command for v4 projects
-	if idfMajorVersion == 4 {
+	// construct command for new projects
+	if idfMajorVersion >= 4 {
 		source := filepath.Join(IDFDirectory(naosPath), "export.sh")
 		cmd = exec.Command("bash", "-c", fmt.Sprintf("source %s; %s %s", source, name, strings.Join(arg, " ")))
 	}
@@ -77,8 +77,8 @@ func Exec(naosPath string, out io.Writer, in io.Reader, name string, arg ...stri
 		cmd.Env = append(cmd.Env, "IDF_PATH="+IDFDirectory(naosPath))
 	}
 
-	// add IDF tools path for v4 projects
-	if idfMajorVersion == 4 {
+	// add IDF tools path for new projects
+	if idfMajorVersion >= 4 {
 		cmd.Env = append(cmd.Env, "IDF_TOOLS_PATH="+filepath.Join(Directory(naosPath), "toolchain"))
 	}
 

@@ -31,7 +31,7 @@ func Config(naosPath string, values map[string]string, port string, out io.Write
 	tempDir := filepath.Join(os.TempDir(), "naos")
 	valuesCSV := filepath.Join(tempDir, "values.csv")
 	nvsImage := filepath.Join(tempDir, "nvs.img")
-	if idfMajorVersion == 4 {
+	if idfMajorVersion >= 4 {
 		nvsImage = filepath.Join(tempDir, "nvs.bin")
 	}
 	nvsPartGen := filepath.Join(IDFDirectory(naosPath), "components", "nvs_flash", "nvs_partition_generator", "nvs_partition_gen.py")
@@ -59,7 +59,7 @@ func Config(naosPath string, values map[string]string, port string, out io.Write
 			"--output", nvsImage,
 			"--size", "0x4000",
 		}
-	} else if idfMajorVersion == 4 {
+	} else if idfMajorVersion >= 4 {
 		nvsPartGenArgs = []string{
 			nvsPartGen,
 			"generate",

@@ -20,7 +20,7 @@ func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) 
 	bootLoaderBinary := filepath.Join(Directory(naosPath), "build", "bootloader", "bootloader.bin")
 	projectBinary := filepath.Join(Directory(naosPath), "build", "naos-project.bin")
 	partitionsBinary := filepath.Join(Directory(naosPath), "build", "partitions.bin")
-	if idfMajorVersion == 4 {
+	if idfMajorVersion >= 4 {
 		partitionsBinary = filepath.Join(Directory(naosPath), "build", "partition_table", "partition-table.bin")
 	}
 
