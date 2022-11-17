@@ -5,8 +5,8 @@ go 1.17
 require (
 	code.cloudfoundry.org/bytefmt v0.0.0-20210524144015-27119551aaea
 	github.com/256dpi/gomqtt v0.14.3
+	github.com/creack/pty v1.1.18
 	github.com/docopt/docopt-go v0.0.0-20160216232012-784ddc588536
-	github.com/kr/pty v1.1.1
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/ryanuber/go-glob v0.0.0-20170128012129-256dc444b735
 	github.com/stretchr/testify v1.5.1

@@ -181,19 +181,19 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly bool, out i
 }
 
 // Attach will attach to the attached device.
-func (p *Project) Attach(device string, simple bool, out io.Writer, in io.Reader) error {
+func (p *Project) Attach(device string, out io.Writer, in io.Reader) error {
 	// set missing device
 	if device == "" {
 		device = utils.FindPort(out)
 	}
 
-	return tree.Attach(p.Tree(), device, simple, out, in)
+	return tree.Attach(p.Tree(), device, out, in)
 }
 
 // Exec will execute a command withing the tree.
 func (p *Project) Exec(cmd string, out io.Writer, in io.Reader) error {
 	// execute command
-	return tree.Exec(p.Tree(), out, in, cmd)
+	return tree.Exec(p.Tree(), out, in, false, cmd)
 }
 
 // Config will write settings and parameters to an attached device.

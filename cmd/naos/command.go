@@ -41,8 +41,8 @@ Usage:
   naos install [--force]
   naos build [--clean --app-only]
   naos flash [<device>] [--baud=<rate> --erase --app-only]
-  naos attach [<device>] [--simple]
-  naos run [<device>] [--clean --app-only --baud=<rate> --erase --simple]
+  naos attach [<device>]
+  naos run [<device>] [--clean --app-only --baud=<rate> --erase]
   naos exec <command>
   naos config <file> [<device>]
   naos format
@@ -66,7 +66,6 @@ Options:
   --clean               Clean all build artifacts before building again.
   --erase               Erase completely before flashing new image.
   --app-only            Only build or flash the application.
-  --simple              Use simple serial tool.
   --clear               Remove not available devices from inventory.
   --delete              Delete loaded coredumps from the devices.
   -b --baud=<rate>      The baud rate.
@@ -118,7 +117,6 @@ type command struct {
 	oClean    bool
 	oErase    bool
 	oAppOnly  bool
-	oSimple   bool
 	oClear    bool
 	oDelete   bool
 	oDuration time.Duration
@@ -173,7 +171,6 @@ func parseCommand() *command {
 		oBaudRate: getString(a["--baud"]),
 		oErase:    getBool(a["--erase"]),
 		oAppOnly:  getBool(a["--app-only"]),
-		oSimple:   getBool(a["--simple"]),
 		oClear:    getBool(a["--clear"]),
 		oDelete:   getBool(a["--delete"]),
 		oDuration: getDuration(a["--duration"]),

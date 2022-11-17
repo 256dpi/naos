@@ -83,7 +83,7 @@ func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) 
 	// erase if requested
 	if erase {
 		utils.Log(out, "Erasing flash...")
-		err := Exec(naosPath, out, nil, "python", eraseFlash...)
+		err := Exec(naosPath, out, nil, false, "python", eraseFlash...)
 		if err != nil {
 			return err
 		}
@@ -92,7 +92,7 @@ func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) 
 	// flash app only
 	if appOnly {
 		utils.Log(out, "Flashing (app only)...")
-		err := Exec(naosPath, out, nil, "python", flashApp...)
+		err := Exec(naosPath, out, nil, false, "python", flashApp...)
 		if err != nil {
 			return err
 		}
@@ -102,7 +102,7 @@ func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) 
 
 	// flash all
 	utils.Log(out, "Flashing...")
-	err = Exec(naosPath, out, nil, "python", flashAll...)
+	err = Exec(naosPath, out, nil, false, "python", flashAll...)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) 
 	// erase ota if not already erased
 	if !erase {
 		utils.Log(out, "Erasing OTA config...")
-		err := Exec(naosPath, out, nil, "python", eraseOTA...)
+		err := Exec(naosPath, out, nil, false, "python", eraseOTA...)
 		if err != nil {
 			return err
 		}

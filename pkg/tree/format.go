@@ -17,7 +17,7 @@ func Format(naosPath string, out io.Writer) error {
 	arguments = append(arguments, headerFiles...)
 
 	// format source files
-	err = Exec(naosPath, out, nil, "clang-format", arguments...)
+	err = Exec(naosPath, out, nil, false, "clang-format", arguments...)
 	if err != nil {
 		return err
 	}

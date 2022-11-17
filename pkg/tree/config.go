@@ -71,14 +71,14 @@ func Config(naosPath string, values map[string]string, port string, out io.Write
 
 	// generating image
 	utils.Log(out, "Generating image...")
-	err = Exec(naosPath, out, nil, "python", nvsPartGenArgs...)
+	err = Exec(naosPath, out, nil, false, "python", nvsPartGenArgs...)
 	if err != nil {
 		return err
 	}
 
 	// flashing image
 	utils.Log(out, "Flashing...")
-	err = Exec(naosPath, out, nil, "python", []string{
+	err = Exec(naosPath, out, nil, false, "python", []string{
 		espTool,
 		"--chip", "esp32",
 		"--port", port,

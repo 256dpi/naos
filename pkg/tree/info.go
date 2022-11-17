@@ -50,7 +50,7 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 	// handle old projects
 	if idfMajorVersion == 3 {
 		// update includes.list
-		err = Exec(naosPath, nil, nil, "make", "generate_component_includes")
+		err = Exec(naosPath, nil, nil, false, "make", "generate_component_includes")
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +73,7 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 	/* handle new projects */
 
 	// reconfigure project
-	err = Exec(naosPath, io.Discard, nil, "idf.py", "reconfigure")
+	err = Exec(naosPath, io.Discard, nil, false, "idf.py", "reconfigure")
 	if err != nil {
 		return nil, err
 	}

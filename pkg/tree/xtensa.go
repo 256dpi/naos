@@ -167,7 +167,7 @@ func BinDirectory(naosPath string) (string, error) {
 	if v >= 4 {
 		// get env variables
 		var buf bytes.Buffer
-		err = Exec(naosPath, &buf, nil, "env")
+		err = Exec(naosPath, &buf, nil, false, "env")
 		if err != nil {
 			println(err.Error())
 			return "", err

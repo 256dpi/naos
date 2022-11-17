@@ -39,7 +39,7 @@ func ParseCoredump(naosPath string, coredump []byte) ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	// parse coredump
-	err = Exec(naosPath, buf, nil, espCoredump, "info_corefile", "-t", "raw", "-c", file.Name(), projectELF)
+	err = Exec(naosPath, buf, nil, false, espCoredump, "info_corefile", "-t", "raw", "-c", file.Name(), projectELF)
 	if err != nil {
 		return nil, err
 	}

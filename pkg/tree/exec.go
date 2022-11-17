@@ -5,8 +5,12 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
+
+	"github.com/creack/pty"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
@@ -20,7 +24,7 @@ func IDFDirectory(naosPath string) string {
 
 // Exec runs a named command in the build tree. All xtensa toolchain binaries are
 // made available in the path transparently.
-func Exec(naosPath string, out io.Writer, in io.Reader, name string, arg ...string) error {
+func Exec(naosPath string, out io.Writer, in io.Reader, usePty bool, name string, arg ...string) error {
 	// print command
 	utils.Log(out, fmt.Sprintf("%s %s", name, strings.Join(arg, " ")))
 
@@ -46,11 +50,6 @@ func Exec(naosPath string, out io.Writer, in io.Reader, name string, arg ...stri
 
 	// set working directory
 	cmd.Dir = Directory(naosPath)
-
-	// connect output and inputs
-	cmd.Stdout = out
-	cmd.Stderr = out
-	cmd.Stdin = in
 
 	// inherit current environment
 	cmd.Env = os.Environ()
@@ -82,11 +81,53 @@ func Exec(naosPath string, out io.Writer, in io.Reader, name string, arg ...stri
 		cmd.Env = append(cmd.Env, "IDF_TOOLS_PATH="+filepath.Join(Directory(naosPath), "toolchain"))
 	}
 
+	// run command without PTY
+	if !usePty {
+		// connect input and outputs
+		cmd.Stdin = in
+		cmd.Stdout = out
+		cmd.Stderr = out
+
+		// run command
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	/* run command with PTY */
+
 	// run command
-	err = cmd.Run()
+	tty, err := pty.Start(cmd)
 	if err != nil {
 		return err
 	}
+
+	// make sure tty gets closed
+	defer tty.Close()
+
+	// prepare channel
+	quit := make(chan os.Signal, 1)
+
+	// read data until EOF
+	go func() {
+		_, _ = io.Copy(out, tty)
+		quit <- os.Interrupt
+	}()
+
+	// write data until EOF
+	go func() {
+		_, _ = io.Copy(tty, in)
+		quit <- os.Interrupt
+	}()
+
+	// handle interrupts
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
+	// wait for interrupt
+	<-quit
 
 	return nil
 }
