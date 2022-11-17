@@ -171,6 +171,102 @@ func (p *Project) Build(overrides map[string]string, clean, appOnly bool, out io
 	return tree.Build(p.Tree(), or, p.Inventory.Embeds, clean, appOnly, out)
 }
 
+// BuildTrace will build the project with tracing enabled.
+func (p *Project) BuildTrace(cpuCore, baudRate string, clean, appOnly bool, out io.Writer) error {
+	// ensure baud rate
+	if baudRate == "" {
+		baudRate = p.Inventory.BaudRate
+		if baudRate == "" {
+			baudRate = "921600"
+		}
+	}
+
+	// merge overrides with inventory overrides
+	or := map[string]string{}
+	for k, v := range p.Inventory.Overrides {
+		or[k] = v
+	}
+	for k, v := range map[string]string{
+		// app trace
+		"CONFIG_APPTRACE_DEST_UART":               "y",
+		"CONFIG_APPTRACE_DEST_UART_NOUSB":         "y",
+		"CONFIG_APPTRACE_DEST_UART0":              "y",
+		"CONFIG_APPTRACE_DEST_UART_NONE":          "",
+		"CONFIG_APPTRACE_UART_TX_GPIO":            "1",
+		"CONFIG_APPTRACE_UART_RX_GPIO":            "3",
+		"CONFIG_APPTRACE_UART_BAUDRATE":           baudRate,
+		"CONFIG_APPTRACE_UART_RX_BUFF_SIZE":       "128",
+		"CONFIG_APPTRACE_UART_TX_BUFF_SIZE":       "4096",
+		"CONFIG_APPTRACE_UART_TX_MSG_SIZE":        "128",
+		"CONFIG_APPTRACE_LOCK_ENABLE":             "",
+		"CONFIG_APPTRACE_ENABLE":                  "y",
+		"CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO":  "-1",
+		"CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH": "0",
+		// system view
+		"CONFIG_APPTRACE_SV_ENABLE":                      "y",
+		"CONFIG_APPTRACE_SV_DEST_UART":                   "y",
+		"CONFIG_APPTRACE_SV_DEST_CPU_" + cpuCore:         "y",
+		"CONFIG_APPTRACE_SV_TS_SOURCE_ESP_TIMER":         "y",
+		"CONFIG_APPTRACE_SV_MAX_TASKS":                   "32",
+		"CONFIG_APPTRACE_SV_BUF_WAIT_TMO":                "500",
+		"CONFIG_APPTRACE_SV_EVT_OVERFLOW_ENABLE":         "y",
+		"CONFIG_APPTRACE_SV_EVT_ISR_ENTER_ENABLE":        "y",
+		"CONFIG_APPTRACE_SV_EVT_ISR_EXIT_ENABLE":         "y",
+		"CONFIG_APPTRACE_SV_EVT_ISR_TO_SCHED_ENABLE":     "y",
+		"CONFIG_APPTRACE_SV_EVT_TASK_START_EXEC_ENABLE":  "y",
+		"CONFIG_APPTRACE_SV_EVT_TASK_STOP_EXEC_ENABLE":   "y",
+		"CONFIG_APPTRACE_SV_EVT_TASK_START_READY_ENABLE": "y",
+		"CONFIG_APPTRACE_SV_EVT_TASK_STOP_READY_ENABLE":  "y",
+		"CONFIG_APPTRACE_SV_EVT_TASK_CREATE_ENABLE":      "y",
+		"CONFIG_APPTRACE_SV_EVT_TASK_TERMINATE_ENABLE":   "y",
+		"CONFIG_APPTRACE_SV_EVT_IDLE_ENABLE":             "y",
+		"CONFIG_APPTRACE_SV_EVT_TIMER_ENTER_ENABLE":      "y",
+		"CONFIG_APPTRACE_SV_EVT_TIMER_EXIT_ENABLE":       "y",
+		// console
+		"CONFIG_ESP_CONSOLE_UART_DEFAULT":  "",
+		"CONFIG_ESP_CONSOLE_UART":          "",
+		"CONFIG_ESP_CONSOLE_NONE":          "y",
+		"CONFIG_ESP_CONSOLE_UART_BAUDRATE": "",
+		"CONFIG_ESP_CONSOLE_UART_NUM":      "-1",
+		"CONFIG_ESP_IPC_TASK_STACK_SIZE":   "2048",
+		// apptrace 2
+		"CONFIG_ESP32_APPTRACE_LOCK_ENABLE":                  "",
+		"CONFIG_ESP32_APPTRACE_ENABLE":                       "y",
+		"CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO":       "-1",
+		"CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH": "0",
+		// sysview 2
+		"CONFIG_SYSVIEW_ENABLE":                      "y",
+		"CONFIG_SYSVIEW_TS_SOURCE_ESP_TIMER":         "y",
+		"CONFIG_SYSVIEW_MAX_TASKS":                   "32",
+		"CONFIG_SYSVIEW_BUF_WAIT_TMO":                "500",
+		"CONFIG_SYSVIEW_EVT_OVERFLOW_ENABLE":         "y",
+		"CONFIG_SYSVIEW_EVT_ISR_ENTER_ENABLE":        "y",
+		"CONFIG_SYSVIEW_EVT_ISR_EXIT_ENABLE":         "y",
+		"CONFIG_SYSVIEW_EVT_ISR_TO_SCHEDULER_ENABLE": "y",
+		"CONFIG_SYSVIEW_EVT_TASK_START_EXEC_ENABLE":  "y",
+		"CONFIG_SYSVIEW_EVT_TASK_STOP_EXEC_ENABLE":   "y",
+		"CONFIG_SYSVIEW_EVT_TASK_START_READY_ENABLE": "y",
+		"CONFIG_SYSVIEW_EVT_TASK_STOP_READY_ENABLE":  "y",
+		"CONFIG_SYSVIEW_EVT_TASK_CREATE_ENABLE":      "y",
+		"CONFIG_SYSVIEW_EVT_TASK_TERMINATE_ENABLE":   "y",
+		"CONFIG_SYSVIEW_EVT_IDLE_ENABLE":             "y",
+		"CONFIG_SYSVIEW_EVT_TIMER_ENTER_ENABLE":      "y",
+		"CONFIG_SYSVIEW_EVT_TIMER_EXIT_ENABLE":       "y",
+		// console 2
+		"CONFIG_CONSOLE_UART_DEFAULT":  "",
+		"CONFIG_CONSOLE_UART":          "",
+		"CONFIG_CONSOLE_UART_BAUDRATE": "",
+		"CONFIG_CONSOLE_UART_NONE":     "y",
+		"CONFIG_ESP_CONSOLE_UART_NONE": "y",
+		"CONFIG_CONSOLE_UART_NUM":      "-1",
+		"CONFIG_IPC_TASK_STACK_SIZE":   "2048",
+	} {
+		or[k] = v
+	}
+
+	return tree.Build(p.Tree(), or, p.Inventory.Embeds, clean, appOnly, out)
+}
+
 // Flash will flash the project to the attached device.
 func (p *Project) Flash(device, baudRate string, erase bool, appOnly bool, out io.Writer) error {
 	// ensure baud rate
