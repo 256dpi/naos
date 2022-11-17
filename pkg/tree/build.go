@@ -35,13 +35,16 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 
 	// update files
 	utils.Log(out, "Updating files...")
-	err = os.WriteFile(filepath.Join(Directory(naosPath), "main", "files.mk"), []byte(filesContent), 0644)
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(filepath.Join(Directory(naosPath), "main", "files.list"), []byte(filesContent2), 0644)
-	if err != nil {
-		return err
+	if idfMajorVersion == 3 {
+		err = os.WriteFile(filepath.Join(Directory(naosPath), "main", "files.mk"), []byte(filesContent), 0644)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = os.WriteFile(filepath.Join(Directory(naosPath), "main", "files.list"), []byte(filesContent2), 0644)
+		if err != nil {
+			return err
+		}
 	}
 
 	// apply overrides
