@@ -1,13 +1,21 @@
 package tree
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 )
+
+type compileCommand struct {
+	Directory string `json:"directory"`
+	Command   string `json:"command"`
+	File      string `json:"file"`
+}
 
 // IDFMajorVersion will detect and return the major IDF version from the
 // specified path.
@@ -31,25 +39,74 @@ func IDFMajorVersion(naosPath string) (int, error) {
 // IncludeDirectories returns a list of directories that will be included in the
 // build process.
 func IncludeDirectories(naosPath string) ([]string, error) {
-	// update includes.list
-	err := Exec(naosPath, nil, nil, "make", "generate_component_includes")
+	// get idf major version
+	idfMajorVersion, err := IDFMajorVersion(naosPath)
 	if err != nil {
 		return nil, err
 	}
 
-	// read file
-	bytes, err := ioutil.ReadFile(filepath.Join(Directory(naosPath), "includes.list"))
+	// handle old projects
+	if idfMajorVersion == 3 {
+		// update includes.list
+		err = Exec(naosPath, nil, nil, "make", "generate_component_includes")
+		if err != nil {
+			return nil, err
+		}
+
+		// read file
+		bytes, err := ioutil.ReadFile(filepath.Join(Directory(naosPath), "includes.list"))
+		if err != nil {
+			return nil, err
+		}
+
+		// split lines and trim whitespace
+		list := strings.Split(strings.TrimSpace(string(bytes)), "\n")
+		for i, item := range list {
+			list[i] = strings.TrimSpace(item)
+		}
+
+		return list, nil
+	}
+
+	/* handle new projects */
+
+	// reconfigure project
+	err = Exec(naosPath, io.Discard, nil, "idf.py", "reconfigure")
 	if err != nil {
 		return nil, err
 	}
 
-	// split lines and trim whitespace
-	list := strings.Split(strings.TrimSpace(string(bytes)), "\n")
-	for i, item := range list {
-		list[i] = strings.TrimSpace(item)
+	// read compile commands
+	data, err := ioutil.ReadFile(filepath.Join(Directory(naosPath), "build", "compile_commands.json"))
+	if err != nil {
+		return nil, err
 	}
 
-	return list, nil
+	// parse compile commands
+	var compileCommands []compileCommand
+	err = json.Unmarshal(data, &compileCommands)
+	if err != nil {
+		return nil, err
+	}
+
+	// find main compile command
+	suffix := filepath.Join("tree", "build", "esp-idf", "main")
+	var cmd compileCommand
+	for _, cmd = range compileCommands {
+		if strings.HasSuffix(cmd.Directory, suffix) {
+			break
+		}
+	}
+
+	// collect include options
+	var includes []string
+	for _, opt := range strings.Split(cmd.Command, " ") {
+		if strings.HasPrefix(opt, "-I") {
+			includes = append(includes, opt[2:])
+		}
+	}
+
+	return includes, nil
 }
 
 // RequiredToolchain returns the required toolchain version by the current
