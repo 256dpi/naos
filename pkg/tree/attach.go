@@ -24,6 +24,8 @@ func Attach(naosPath, port string, out io.Writer, in io.Reader) error {
 		elf := filepath.Join(Directory(naosPath), "build", "naos-project.elf")
 		err = Exec(naosPath, out, in, true, "python", tool, "--baud", "115200", "--port", port, elf)
 
+	} else if idfMajorVersion == 4 {
+		err = Exec(naosPath, out, in, true, "idf.py", "monitor", "-B", "115200", "-p", port)
 	} else {
 		err = Exec(naosPath, out, in, true, "idf.py", "monitor", "-b", "115200", "-p", port)
 	}
