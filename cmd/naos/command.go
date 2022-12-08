@@ -72,8 +72,8 @@ Options:
   --delete              Delete loaded coredumps from the devices.
   -b --baud=<rate>      The baud rate.
   -c --cpu=<core>       The CPU core to trace (0: Protocol, 1: Application) [default: 1].
-  -d --duration=<time>  Operation duration [default: 2s].
-  -t --timeout=<time>   Operation timeout [default: 5s].
+  -d --duration=<time>  Operation duration [default: 5s].
+  -t --timeout=<time>   Operation timeout [default: 30s].
   -j --jobs=<count>     Number of simultaneous update jobs [default: 10].
 `
 
