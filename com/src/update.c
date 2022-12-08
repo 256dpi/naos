@@ -37,7 +37,7 @@ void naos_update_begin(size_t size) {
   }
 
   // begin update
-  ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, OTA_WITH_SEQUENTIAL_WRITES, &naos_update_handle));
+  ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, size, &naos_update_handle));
 
   // release mutex
   NAOS_UNLOCK(naos_update_mutex);
