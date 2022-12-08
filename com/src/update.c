@@ -31,8 +31,9 @@ void naos_update_begin(size_t size) {
 
   // get update partition
   naos_update_partition = esp_ota_get_next_update_partition(NULL);
-  if (naos_update_partition != NULL) {
-    ESP_ERROR_CHECK(ESP_FAIL);
+  if (naos_update_partition == NULL) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_begin: no partition available");
+    NAOS_UNLOCK(naos_update_mutex);
   }
 
   // begin update
