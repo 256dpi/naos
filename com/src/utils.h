@@ -6,8 +6,8 @@
 
 #define NAOS_LOG_TAG "naos"
 
-const char *naos_i2str(int32_t num);
-const char *naos_d2str(double num);
+const char *naos_i2str(char buf[16], int32_t num);
+const char *naos_d2str(char buf[16], double num);
 char *naos_format(char *fmt, ...);
 char *naos_concat(const char *str1, const char *str2);
 

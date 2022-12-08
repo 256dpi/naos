@@ -42,9 +42,9 @@ void naos_update_begin(size_t size) {
 
   // increase task WDT timeout if enabled
 #ifdef CONFIG_ESP_TASK_WDT_PANIC
-    ESP_ERROR_CHECK(esp_task_wdt_init(30, true));
+  ESP_ERROR_CHECK(esp_task_wdt_init(30, true));
 #elif CONFIG_ESP_TASK_WDT
-    ESP_ERROR_CHECK(esp_task_wdt_init(30, false));
+  ESP_ERROR_CHECK(esp_task_wdt_init(30, false));
 #endif
 
   // begin update
@@ -52,9 +52,9 @@ void naos_update_begin(size_t size) {
 
   // restore original task WDT timeout if enabled
 #ifdef CONFIG_ESP_TASK_WDT_PANIC
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
+  ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
 #elif CONFIG_ESP_TASK_WDT
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
+  ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
 #endif
 
   // release mutex

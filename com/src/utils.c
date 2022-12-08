@@ -6,20 +6,14 @@
 #include "naos.h"
 #include "utils.h"
 
-const char *naos_i2str(int32_t num) {
-  // convert
-  static char str[16] = {0};
-  snprintf(str, 16, "%d", num);
-
-  return str;
+const char *naos_i2str(char buf[16], int32_t num) {
+  snprintf(buf, 16, "%d", num);
+  return buf;
 }
 
-const char *naos_d2str(double num) {
-  // convert
-  static char str[16] = {0};
-  snprintf(str, 16, "%.4f", num);
-
-  return str;
+const char *naos_d2str(char buf[16], double num) {
+  snprintf(buf, 16, "%.4f", num);
+  return buf;
 }
 
 char *naos_format(char *fmt, ...) {

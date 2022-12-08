@@ -432,15 +432,18 @@ void naos_set(const char *name, const char *value) {
 
 void naos_set_b(const char *param, bool value) {
   // set parameter
-  naos_set(param, naos_i2str(value));
+  char buf[16] = {0};
+  naos_set(param, naos_i2str(buf, value));
 }
 
 void naos_set_l(const char *param, int32_t value) {
   // set parameter
-  naos_set(param, naos_i2str(value));
+  char buf[16] = {0};
+  naos_set(param, naos_i2str(buf, value));
 }
 
 void naos_set_d(const char *param, double value) {
   // set parameter
-  naos_set(param, naos_d2str(value));
+  char buf[16] = {0};
+  naos_set(param, naos_d2str(buf, value));
 }

@@ -210,7 +210,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     naos_update_begin(total);
 
     // request first chunk
-    naos_publish("naos/update/request", naos_i2str(CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE), 0, false, NAOS_LOCAL);
+    naos_publish_l("naos/update/request", CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE, 0, false, NAOS_LOCAL);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
@@ -225,7 +225,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     ESP_LOGI(NAOS_LOG_TAG, "naos_manager_handle: wrote chunk of %zu bytes", len);
 
     // request next chunk
-    naos_publish("naos/update/request", naos_i2str(CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE), 0, false, NAOS_LOCAL);
+    naos_publish_l("naos/update/request", CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE, 0, false, NAOS_LOCAL);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
