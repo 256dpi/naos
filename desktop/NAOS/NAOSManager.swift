@@ -27,17 +27,17 @@ public class NAOSManager: NSObject {
 		self.delegate = delegate
 
 		// initialize arrays
-		allDevices = []
-		availableDevices = []
+		self.allDevices = []
+		self.availableDevices = []
 
 		// call superclass
 		super.init()
 
 		// central manager
-		centralManager = CentralManager()
+		self.centralManager = CentralManager()
 		
 		// subscribe events
-		subscription = centralManager.eventPublisher.sink { event in
+		self.subscription = self.centralManager.eventPublisher.sink { event in
 			switch event {
 			case .didUpdateState(let state):
 				switch state {
@@ -73,6 +73,19 @@ public class NAOSManager: NSObject {
 				}
 			default:
 				break
+			}
+		}
+	}
+	
+	public func reset() {
+		// clear devices
+		self.allDevices.removeAll()
+		self.availableDevices.removeAll()
+		
+		// call callback if present
+		if let d = self.delegate {
+			DispatchQueue.main.async {
+				d.naosManagerDidReset(manager: self)
 			}
 		}
 	}
@@ -115,9 +128,6 @@ public class NAOSManager: NSObject {
 						} catch {
 							// disconnect
 							try? await centralManager.cancelPeripheralConnection(scanData.peripheral)
-							
-							// remove device
-							allDevices.remove(at: allDevices.firstIndex(of: device)!)
 							
 							// handle error
 							if let d = delegate {

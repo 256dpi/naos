@@ -54,6 +54,11 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		// configure device and manager
 		controller.configure(device: device, manager: self)
 	}
+	
+	@IBAction func reset(_: AnyObject) {
+		// reset manager
+		self.manager.reset();
+	}
 
 	// SettingsWindowController
 
