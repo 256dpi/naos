@@ -98,7 +98,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 					let f = NumberFormatter()
 					f.numberStyle = .decimal
 					f.usesGroupingSeparator = false
-					f.maximumFractionDigits = 8
+					f.maximumFractionDigits = 32
 					v.textField!.formatter = f
 				}
 			}
