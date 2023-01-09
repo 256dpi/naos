@@ -2,6 +2,7 @@
 #include <esp_err.h>
 #include <stdio.h>
 #include <string.h>
+#include <float.h>
 
 #include "naos.h"
 #include "utils.h"
@@ -11,8 +12,8 @@ const char *naos_i2str(char buf[16], int32_t num) {
   return buf;
 }
 
-const char *naos_d2str(char buf[16], double num) {
-  snprintf(buf, 16, "%.4f", num);
+const char *naos_d2str(char buf[32], double num) {
+  snprintf(buf, 32, "%.*g", DBL_DIG, num);
   return buf;
 }
 

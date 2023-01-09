@@ -186,7 +186,7 @@ bool naos_publish_l(const char *topic, int32_t payload, int qos, bool retained, 
 }
 
 bool naos_publish_d(const char *topic, double payload, int qos, bool retained, naos_scope_t scope) {
-  char buf[16] = {0};
+  char buf[32] = {0};
   return naos_publish(topic, naos_d2str(buf, payload), qos, retained, scope);
 }
 

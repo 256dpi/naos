@@ -444,6 +444,6 @@ void naos_set_l(const char *param, int32_t value) {
 
 void naos_set_d(const char *param, double value) {
   // set parameter
-  char buf[16] = {0};
+  char buf[32] = {0};
   naos_set(param, naos_d2str(buf, value));
 }
