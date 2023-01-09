@@ -112,9 +112,10 @@ typedef struct {
   };
 
   /**
-   * The current value.
+   * The current and last value.
    */
   char *value;
+  char *last_value;
 
   /**
    * The changes tracker.

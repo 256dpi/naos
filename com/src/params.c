@@ -416,8 +416,13 @@ void naos_set(const char *name, const char *value) {
     ESP_ERROR_CHECK(nvs_set_str(naos_params_handle, name, value));
   }
 
+  // free last value
+  if (param->last_value != NULL) {
+    free(param->last_value);
+  }
+
   // update value
-  free(param->value);
+  param->last_value = param->value;
   param->value = strdup(value);
 
   // track change
