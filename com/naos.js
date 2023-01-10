@@ -2,7 +2,7 @@ export const Types = {b: 'Bool', s: 'String', l: 'Long', d: 'Double', a: 'Action
 export const Modes = {v: 'Volatile', s: 'System', a: 'Application', p: 'Public', l: 'Locked'};
 
 export default class NAOS {
-    timeout = 500;
+    timeout = 5000;
     debug = false;
     url = '';
     onConnect = () => {};
