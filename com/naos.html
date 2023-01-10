@@ -118,7 +118,7 @@
             loader.style.pointerEvents = ok ? 'all' : 'none';
         }
 
-        let naos = new NAOS(host.replace('http', 'ws') + ".sock");
+        let naos = new NAOS(host.replace('http', 'ws') + '.sock');
         naos.debug = true;
 
         naos.onConnect = async () => {
@@ -147,7 +147,7 @@
                 return;
             }
             if (input.type === 'checkbox') {
-                input.checked = value;
+                input.checked = value === '1';
             } else {
                 input.value = value;
             }
@@ -155,7 +155,7 @@
 
         async function refresh() {
             showLoader(true);
-            rows.innerHTML = "";
+            rows.innerHTML = '';
             let list = await naos.list();
             for (let [name, type, mode] of list) {
                 let value = await naos.read(name);
@@ -170,11 +170,11 @@
                 switch (type) {
                     case 'b': {
                         let input = document.createElement('input');
-                        input.setAttribute('type', 'checkbox');
-                        input.setAttribute('checked', value);
+                        input.type = 'checkbox';
+                        input.checked = value === '1';
                         input.disabled = mode.includes('l');
                         input.onchange = () => {
-                            naos.write(name, input.checked);
+                            naos.write(name, input.checked ? '1': '0');
                         }
                         cell.appendChild(input);
                         break;
@@ -183,7 +183,7 @@
                     case 'l':
                     case 'd': {
                         let input = document.createElement('input');
-                        input.setAttribute('type', 'text');
+                        input.type = 'text'
                         input.value = value;
                         input.disabled = mode.includes('l');
                         input.onchange = () => {
