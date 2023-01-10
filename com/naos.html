@@ -107,6 +107,15 @@
     <script type="module" src="/naos.js"></script>
 
     <script type="module">
+        window.onerror = () => {
+            window.location.reload();
+            return true;
+        }
+        window.onunhandledrejection = () => {
+            window.location.reload();
+            return true;
+        }
+
         import NAOS, { Types } from '/naos.js';
 
         const host = (new URLSearchParams(window.location.search)).get('host') || window.location.toString();
@@ -135,6 +144,10 @@
 
         naos.onDisconnect = () => {
             showLoader(true);
+        }
+
+        naos.onError = () => {
+            window.location.reload();
         }
 
         function update(name, value) {
