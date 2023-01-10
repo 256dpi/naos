@@ -82,7 +82,9 @@ export default class NAOS {
     send(type, value = undefined) {
         return new Promise((resolve, reject) => {
             this.socket.send(type + (value !== undefined ? '#' + value: ''));
-            this.requests[type] ||= [];
+            if (!this.requests[type]) {
+                this.requests[type] = [];
+            }
             this.requests[type].push(resolve);
             setTimeout(() => {
                 reject(new Error('timed out'));
