@@ -307,11 +307,12 @@ static httpd_uri_t naos_http_route_socket = {.uri = "/naos.sock",
                                              .supported_subprotocol = "naos"};
 static httpd_uri_t naos_http_route_file = {.uri = "*", .method = HTTP_GET, .handler = naos_http_file};
 
-void naos_http_init() {
+void naos_http_init(int core) {
   // prepare config
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.max_open_sockets = NAOS_HTTP_MAX_CONNS;
   config.uri_match_fn = httpd_uri_match_wildcard;
+  config.core_id = core;
 
   // start server
   ESP_ERROR_CHECK(httpd_start(&naos_http_handle, &config));

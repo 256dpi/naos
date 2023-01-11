@@ -3,8 +3,10 @@
 
 /**
  * Initialize the HTTP configuration subsystem.
+ *
+ * @param core The core to run the background task on.
  */
-void naos_http_init();
+void naos_http_init(int core);
 
 /**
  * Serve a file with the specified content.

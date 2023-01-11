@@ -178,7 +178,7 @@ void app_main() {
   naos_cpu_init();
   naos_ble_init();
   naos_wifi_init();
-  naos_http_init();
+  naos_http_init(1);
   naos_http_serve("/", "text/html", "<h1>Hello world!</h1>");
   naos_http_serve("/foo", "text/css", "body { color: red; }");
   naos_mqtt_init(1);
