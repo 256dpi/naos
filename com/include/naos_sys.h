@@ -52,10 +52,11 @@ typedef TaskHandle_t naos_task_t;
  *
  * @param name The name.
  * @param stack The stack size.
+ * @param core The CPU core (0: sys, 1: app, -1: no affinity).
  * @param func The function.
  * @return A handle.
  */
-naos_task_t naos_run(const char *name, uint16_t stack, naos_func_t func);
+naos_task_t naos_run(const char *name, uint16_t stack, int core, naos_func_t func);
 
 /**
  * Kill a task using the specified handle.

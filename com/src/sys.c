@@ -29,10 +29,15 @@ static void naos_execute(void *arg) {
   vTaskDelete(NULL);
 }
 
-naos_task_t naos_run(const char *name, uint16_t stack, naos_func_t func) {
+naos_task_t naos_run(const char *name, uint16_t stack, int core, naos_func_t func) {
+  // check core
+  if (core < 0) {
+    core = tskNO_AFFINITY;
+  }
+
   // create task
   TaskHandle_t handle = {0};
-  xTaskCreatePinnedToCore(naos_execute, name, stack, func, 2, &handle, 1);
+  xTaskCreatePinnedToCore(naos_execute, name, stack, func, 2, &handle, core);
 
   return handle;
 }

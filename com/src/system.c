@@ -151,7 +151,7 @@ void naos_system_init() {
   }
 
   // run system task
-  naos_run("naos-system", 4096, naos_system_task);
+  naos_run("naos-system", 4096, 1, naos_system_task);
 }
 
 void naos_system_subscribe(naos_system_handler_t handler) {

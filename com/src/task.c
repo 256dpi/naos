@@ -55,7 +55,7 @@ static void naos_task_status(naos_status_t status) {
     // create task if loop is available
     if (naos_config()->loop_callback != NULL) {
       ESP_LOGI(NAOS_LOG_TAG, "naos_task_start: run task");
-      naos_task_handle = naos_run("naos-task", 8192, naos_task_process);
+      naos_task_handle = naos_run("naos-task", 8192, 1, naos_task_process);
     }
 
     // set flag
@@ -156,7 +156,7 @@ void naos_start() {
 
   // run setup task if provided
   if (naos_config()->setup_callback) {
-    naos_run("naos-setup", 8192, naos_task_setup);
+    naos_run("naos-setup", 8192, 1, naos_task_setup);
   }
 }
 
