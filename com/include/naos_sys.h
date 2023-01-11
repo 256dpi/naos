@@ -27,7 +27,7 @@
  *
  * @return The elapsed milliseconds.
  */
-uint32_t naos_millis();
+int64_t naos_millis();
 
 /**
  * Will delay the current task for the specified amount of milliseconds.

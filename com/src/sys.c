@@ -3,9 +3,9 @@
 #include <esp_log.h>
 #include <esp_debug_helpers.h>
 
-uint32_t naos_millis() {
+int64_t naos_millis() {
   // return timestamp
-  return esp_log_timestamp();
+  return (int64_t)esp_log_timestamp();
 }
 
 void naos_delay(uint32_t millis) {

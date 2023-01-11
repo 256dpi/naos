@@ -54,7 +54,7 @@ static void naos_system_task() {
   uint32_t old_generation = 0;
 
   // prepare updated
-  static uint32_t params_updated = 0;
+  static int64_t params_updated = 0;
 
   for (;;) {
     // wait some time
