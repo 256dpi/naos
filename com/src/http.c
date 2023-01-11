@@ -313,6 +313,7 @@ void naos_http_init(int core) {
   config.max_open_sockets = NAOS_HTTP_MAX_CONNS;
   config.uri_match_fn = httpd_uri_match_wildcard;
   config.core_id = core;
+  config.lru_purge_enable = true;
 
   // start server
   ESP_ERROR_CHECK(httpd_start(&naos_http_handle, &config));
