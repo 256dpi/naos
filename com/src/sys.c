@@ -8,6 +8,11 @@ int64_t naos_millis() {
   return (int64_t)esp_log_timestamp();
 }
 
+int64_t naos_micros() {
+  // return timestamp
+  return esp_timer_get_time();
+}
+
 void naos_delay(uint32_t millis) {
   if (millis >= portTICK_PERIOD_MS) {
     vTaskDelay(millis / portTICK_PERIOD_MS);

@@ -23,11 +23,12 @@
   naos_unlock(mutex)
 
 /**
- * Returns the elapsed milliseconds since boot.
+ * Returns the elapsed milliseconds or microseconds since boot.
  *
- * @return The elapsed milliseconds.
+ * @return The elapsed milliseconds or microseconds.
  */
 int64_t naos_millis();
+int64_t naos_micros();
 
 /**
  * Will delay the current task for the specified amount of milliseconds.
