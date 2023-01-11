@@ -134,13 +134,13 @@ static naos_param_t naos_mqtt_params[] = {
     {.name = "mqtt-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_mqtt_configure},
 };
 
-void naos_mqtt_init() {
+void naos_mqtt_init(int core) {
   // create mutex
   naos_mqtt_mutex = naos_mutex();
 
   // initialize MQTT
   esp_mqtt_init(naos_mqtt_status_handler, naos_mqtt_message_handler, CONFIG_NAOS_MQTT_BUFFER_SIZE,
-                CONFIG_NAOS_MQTT_COMMAND_TIMEOUT);
+                CONFIG_NAOS_MQTT_COMMAND_TIMEOUT, core);
 
   // register parameters
   for (size_t i = 0; i < (sizeof(naos_mqtt_params) / sizeof(naos_mqtt_params[0])); i++) {
