@@ -94,7 +94,7 @@ static naos_param_t naos_osc_params[] = {
     {.name = "osc-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_osc_configure},
 };
 
-void naos_osc_init() {
+void naos_osc_init(int core) {
   // create mutex
   naos_osc_mutex = naos_mutex();
 
@@ -115,7 +115,7 @@ void naos_osc_init() {
   naos_osc_configure();
 
   // run task
-  naos_run("naos-osc", 4096, 1, naos_osc_task);
+  naos_run("naos-osc", 4096, core, naos_osc_task);
 }
 
 void naos_osc_filter(esp_osc_callback_t filter) {

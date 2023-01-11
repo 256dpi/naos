@@ -182,7 +182,7 @@ void app_main() {
   naos_http_serve("/", "text/html", "<h1>Hello world!</h1>");
   naos_http_serve("/foo", "text/css", "body { color: red; }");
   naos_mqtt_init(1);
-  naos_osc_init();
+  naos_osc_init(1);
   naos_osc_filter(osc_filter);
   naos_manager_init();
   if (ETHERNET) {

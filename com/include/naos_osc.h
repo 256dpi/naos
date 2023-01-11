@@ -5,8 +5,10 @@
 
 /**
  * Initialize the OSC communication transport.
+ *
+ * @param core The core to run the background task on.
  */
-void naos_osc_init();
+void naos_osc_init(int core);
 
 /**
  * Install a filter callback to pre-process messages before dispatch.
