@@ -82,19 +82,19 @@ public struct NAOSParameter: Hashable {
 	public static let deviceName = NAOSParameter(name: "device-name", type: .string, mode: .system)
 	public static let deviceType = NAOSParameter(name: "device-type", type: .string, mode: .system)
 	public static let connectionStatus = NAOSParameter(name: "connection-status", type: .string, mode: .system)
-	public static let batteryLevel = NAOSParameter(name: "battery-level", type: .double, mode: .system)
+	public static let battery = NAOSParameter(name: "battery", type: .double, mode: .system)
 	public static let uptime = NAOSParameter(name: "uptime", type: .long, mode: .system)
 	public static let freeHeap = NAOSParameter(name: "free-heap", type: .long, mode: .system)
 	public static let wifiRSSI = NAOSParameter(name: "wifi-rssi", type: .long, mode: .system)
-	public static let monitorCPU0 = NAOSParameter(name: "monitor-cpu0", type: .double, mode: .system)
-	public static let monitorCPU1 = NAOSParameter(name: "monitor-cpu1", type: .double, mode: .system)
+	public static let cpuUsage0 = NAOSParameter(name: "cpu-usage0", type: .double, mode: .system)
+	public static let cpuUsage1 = NAOSParameter(name: "cpu-usage1", type: .double, mode: .system)
 
 	public func format(value: String) -> String {
 		let num = Double(value) ?? 0
 		switch self {
 		case .connectionStatus:
 			return value.capitalized
-		case .batteryLevel:
+		case .battery:
 			return String(format: "%.0f%%", num * 100)
 		case .uptime:
 			let formatter = DateComponentsFormatter()
@@ -111,9 +111,9 @@ public struct NAOSParameter: Hashable {
 				signal = 0
 			}
 			return String(format: "%.0f%%", signal)
-		case .monitorCPU0:
+		case .cpuUsage0:
 			return String(format: "%.0f%% (Sys)", num * 100)
-		case .monitorCPU1:
+		case .cpuUsage1:
 			return String(format: "%.0f%% (App)", num * 100)
 		default:
 			return value
