@@ -87,20 +87,38 @@ naos_signal_t naos_signal() {
   return xEventGroupCreate();
 }
 
-void naos_trigger(naos_signal_t signal, uint16_t bits) {
+void naos_trigger(naos_signal_t signal, uint16_t bits, bool clear) {
   // check bits
   if (bits == 0) {
-    ESP_ERROR_CHECK(ESP_FAIL);
+    return;
   }
 
-  // set bits
-  xEventGroupSetBits(signal, bits);
+  // clear or set bits
+  if (clear) {
+    xEventGroupClearBits(signal, bits);
+  } else {
+    xEventGroupSetBits(signal, bits);
+  }
+}
+
+void naos_trigger_isr(naos_signal_t signal, uint16_t bits, bool clear) {
+  // check bits
+  if (bits == 0) {
+    return;
+  }
+
+  // clear or set bits
+  if (clear) {
+    xEventGroupClearBitsFromISR(signal, bits);
+  } else {
+    xEventGroupSetBitsFromISR(signal, bits, NULL);
+  }
 }
 
 void naos_await(naos_signal_t signal, uint16_t bits, bool clear) {
   // check bits
   if (bits == 0) {
-    ESP_ERROR_CHECK(ESP_FAIL);
+    return;
   }
 
   // await bits

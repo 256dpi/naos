@@ -239,7 +239,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
         // set initialization bit if this is the last characteristic
         if (j + 1 == NAOS_BLE_NUM_CHARS) {
-          naos_trigger(naos_ble_signal, 1);
+          naos_trigger(naos_ble_signal, 1, false);
         }
 
         // exit loop

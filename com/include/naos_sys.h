@@ -122,8 +122,10 @@ naos_signal_t naos_signal();
  *
  * @param signal The signal.
  * @param bits The bits.
+ * @param clear Whether to clear the bits.
  */
-void naos_trigger(naos_signal_t signal, uint16_t bits);
+void naos_trigger(naos_signal_t signal, uint16_t bits, bool clear);
+void naos_trigger_isr(naos_signal_t signal, uint16_t bits, bool clear);
 
 /**
  * Awaits triggering of the specified signal bits.
