@@ -521,7 +521,7 @@ void naos_ble_init() {
   esp_ble_gatts_app_register(0x55);
 
   // wait for initialization to complete
-  naos_await(naos_ble_signal, 1);
+  naos_await(naos_ble_signal, 1, false);
 
   // handle parameters
   naos_params_subscribe(naos_ble_param_handler);

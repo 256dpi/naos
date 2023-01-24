@@ -130,7 +130,8 @@ void naos_trigger(naos_signal_t signal, uint16_t bits);
  *
  * @param signal The signal.
  * @param bits  The bits.
+ * @param clear Whether the bits should be cleared.
  */
-void naos_await(naos_signal_t signal, uint16_t bits);
+void naos_await(naos_signal_t signal, uint16_t bits, bool clear);
 
 #endif  // NAOS_SYS_H

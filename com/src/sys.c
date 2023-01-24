@@ -97,13 +97,13 @@ void naos_trigger(naos_signal_t signal, uint16_t bits) {
   xEventGroupSetBits(signal, bits);
 }
 
-void naos_await(naos_signal_t signal, uint16_t bits) {
+void naos_await(naos_signal_t signal, uint16_t bits, bool clear) {
   // check bits
   if (bits == 0) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
   // await bits
-  while (xEventGroupWaitBits(signal, bits, pdTRUE, pdTRUE, portMAX_DELAY) == 0) {
+  while (xEventGroupWaitBits(signal, bits, clear, pdTRUE, portMAX_DELAY) == 0) {
   }
 }
