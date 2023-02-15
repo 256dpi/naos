@@ -14,10 +14,11 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/manolofdez/AsyncBluetooth", from: "1.4.1"),
+		.package(url: "https://github.com/groue/Semaphore", from: "0.0.6"),
 	],
 	targets: [
 		.target(
 			name: "NAOSKit",
-			dependencies: ["AsyncBluetooth"],
+			dependencies: ["AsyncBluetooth", "Semaphore"],
 			path: "Sources"),
 	])

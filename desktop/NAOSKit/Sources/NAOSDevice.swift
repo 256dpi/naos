@@ -7,6 +7,7 @@ import Cocoa
 import Combine
 import CoreBluetooth
 import AsyncBluetooth
+import Semaphore
 
 internal let NAOSService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
 
@@ -144,7 +145,7 @@ public class NAOSDevice: NSObject {
 	internal var peripheral: Peripheral
 	private var manager: NAOSManager
 	private var service: Service?
-	private var mutex = DispatchSemaphore(value: 1)
+	private var mutex = AsyncSemaphore(value: 1)
 	private var connected: Bool = false
 	private var refreshing: Bool = false
 	private var subscription: AnyCancellable?
@@ -189,7 +190,7 @@ public class NAOSDevice: NSObject {
 
 	public func connect() async throws {
 		// acquire mutex
-		mutex.wait()
+		await mutex.wait()
 		defer { mutex.signal() }
 
 		// connect
@@ -262,7 +263,7 @@ public class NAOSDevice: NSObject {
 
 	public func refresh() async throws {
 		// acquire mutex
-		mutex.wait()
+		await mutex.wait()
 		defer { mutex.signal() }
 
 		// manage flag
@@ -326,7 +327,7 @@ public class NAOSDevice: NSObject {
 
 	public func unlock(password: String) async throws -> Bool {
 		// acquire mutex
-		mutex.wait()
+		await mutex.wait()
 		defer { mutex.signal() }
 
 		// write lock
@@ -340,7 +341,7 @@ public class NAOSDevice: NSObject {
 
 	public func read(parameter: NAOSParameter) async throws {
 		// acquire mutex
-		mutex.wait()
+		await mutex.wait()
 		defer { mutex.signal() }
 
 		// select parameter
@@ -362,7 +363,7 @@ public class NAOSDevice: NSObject {
 
 	public func write(parameter: NAOSParameter) async throws {
 		// acquire mutex
-		mutex.wait()
+		await mutex.wait()
 		defer { mutex.signal() }
 
 		// select parameter
@@ -384,7 +385,7 @@ public class NAOSDevice: NSObject {
 
 	public func disconnect() async throws {
 		// acquire mutex
-		mutex.wait()
+		await mutex.wait()
 		defer { mutex.signal() }
 
 		// lock again if protected
@@ -402,9 +403,9 @@ public class NAOSDevice: NSObject {
 		try await manager.centralManager.cancelPeripheralConnection(peripheral)
 	}
 
-	internal func didDisconnect(error: Error) {
+	internal func didDisconnect(error: Error) async {
 		// acquire mutex
-		mutex.wait()
+		await mutex.wait()
 		defer { mutex.signal() }
 
 		// lock again if protected
