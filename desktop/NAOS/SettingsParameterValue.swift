@@ -4,6 +4,7 @@
 //
 
 import Cocoa
+import NAOSKit
 
 public protocol SettingsParameterValueDelegate {
 	func didChangeTextField(parameter: NAOSParameter, value: String)

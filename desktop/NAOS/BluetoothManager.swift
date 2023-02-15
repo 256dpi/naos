@@ -4,6 +4,7 @@
 //
 
 import Cocoa
+import NAOSKit
 
 // TODO: Add multiple menus per device type.
 

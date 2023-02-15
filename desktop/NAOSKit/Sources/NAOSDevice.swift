@@ -3,10 +3,10 @@
 //  Copyright © 2017 Joël Gähwiler. All rights reserved.
 //
 
-import AsyncBluetooth
 import Cocoa
 import Combine
 import CoreBluetooth
+import AsyncBluetooth
 
 internal let NAOSService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
 

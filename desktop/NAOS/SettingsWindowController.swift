@@ -4,6 +4,7 @@
 //
 
 import Cocoa
+import NAOSKit
 
 class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDeviceDelegate {
 	private var device: NAOSDevice!

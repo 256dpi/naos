@@ -7,14 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		52A41B5B29098125003BCB0C /* AsyncBluetooth in Frameworks */ = {isa = PBXBuildFile; productRef = 52A41B5A29098125003BCB0C /* AsyncBluetooth */; };
+		5211B723299D7AC5007F6EAA /* NAOSKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5211B722299D7AC5007F6EAA /* NAOSKit */; };
 		52BD19B92561EA93006D3507 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19B82561EA93006D3507 /* AppDelegate.swift */; };
 		52BD19BD2561EA95006D3507 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 52BD19BC2561EA95006D3507 /* Assets.xcassets */; };
 		52BD19C02561EA95006D3507 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 52BD19BE2561EA95006D3507 /* Main.storyboard */; };
 		52BD19C92561EB20006D3507 /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19C82561EB20006D3507 /* BluetoothManager.swift */; };
 		52BD19CB2561EB27006D3507 /* LoadingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CA2561EB27006D3507 /* LoadingViewController.swift */; };
-		52BD19D62561EB2E006D3507 /* NAOSManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CC2561EB2D006D3507 /* NAOSManager.swift */; };
-		52BD19D72561EB2E006D3507 /* NAOSDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CD2561EB2D006D3507 /* NAOSDevice.swift */; };
 		52BD19D92561EB2E006D3507 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CF2561EB2D006D3507 /* SettingsWindowController.swift */; };
 		52BD19DC2561EB2E006D3507 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19D22561EB2D006D3507 /* SettingsViewController.swift */; };
 		52BD19DD2561EB2E006D3507 /* UnlockViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19D32561EB2D006D3507 /* UnlockViewController.swift */; };
@@ -24,6 +22,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5211B721299D7A7B007F6EAA /* NAOSKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NAOSKit; sourceTree = "<group>"; };
 		52BD19B52561EA93006D3507 /* NAOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NAOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		52BD19B82561EA93006D3507 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		52BD19BC2561EA95006D3507 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -32,8 +31,6 @@
 		52BD19C22561EA95006D3507 /* NAOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NAOS.entitlements; sourceTree = "<group>"; };
 		52BD19C82561EB20006D3507 /* BluetoothManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
 		52BD19CA2561EB27006D3507 /* LoadingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoadingViewController.swift; sourceTree = "<group>"; };
-		52BD19CC2561EB2D006D3507 /* NAOSManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NAOSManager.swift; sourceTree = "<group>"; };
-		52BD19CD2561EB2D006D3507 /* NAOSDevice.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NAOSDevice.swift; sourceTree = "<group>"; };
 		52BD19CF2561EB2D006D3507 /* SettingsWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		52BD19D22561EB2D006D3507 /* SettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		52BD19D32561EB2D006D3507 /* UnlockViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnlockViewController.swift; sourceTree = "<group>"; };
@@ -47,7 +44,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				52A41B5B29098125003BCB0C /* AsyncBluetooth in Frameworks */,
+				5211B723299D7AC5007F6EAA /* NAOSKit in Frameworks */,
 				52BD19E22561EB48006D3507 /* CoreBluetooth.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -58,6 +55,7 @@
 		52BD19AC2561EA93006D3507 = {
 			isa = PBXGroup;
 			children = (
+				5211B721299D7A7B007F6EAA /* NAOSKit */,
 				52BD19B72561EA93006D3507 /* NAOS */,
 				52BD19B62561EA93006D3507 /* Products */,
 				52BD19E02561EB48006D3507 /* Frameworks */,
@@ -82,8 +80,6 @@
 				52BD19D42561EB2D006D3507 /* SettingsParameterValue.swift */,
 				52BD19D22561EB2D006D3507 /* SettingsViewController.swift */,
 				52BD19CF2561EB2D006D3507 /* SettingsWindowController.swift */,
-				52BD19CD2561EB2D006D3507 /* NAOSDevice.swift */,
-				52BD19CC2561EB2D006D3507 /* NAOSManager.swift */,
 				52F8D09D2909D89700F8A59C /* Utils.swift */,
 				52BD19BC2561EA95006D3507 /* Assets.xcassets */,
 				52BD19BE2561EA95006D3507 /* Main.storyboard */,
@@ -118,7 +114,7 @@
 			);
 			name = NAOS;
 			packageProductDependencies = (
-				52A41B5A29098125003BCB0C /* AsyncBluetooth */,
+				5211B722299D7AC5007F6EAA /* NAOSKit */,
 			);
 			productName = NAOS;
 			productReference = 52BD19B52561EA93006D3507 /* NAOS.app */;
@@ -149,7 +145,6 @@
 			);
 			mainGroup = 52BD19AC2561EA93006D3507;
 			packageReferences = (
-				52A41B5929098125003BCB0C /* XCRemoteSwiftPackageReference "AsyncBluetooth" */,
 			);
 			productRefGroup = 52BD19B62561EA93006D3507 /* Products */;
 			projectDirPath = "";
@@ -181,10 +176,8 @@
 				52BD19DE2561EB2E006D3507 /* SettingsParameterValue.swift in Sources */,
 				52BD19C92561EB20006D3507 /* BluetoothManager.swift in Sources */,
 				52BD19DC2561EB2E006D3507 /* SettingsViewController.swift in Sources */,
-				52BD19D62561EB2E006D3507 /* NAOSManager.swift in Sources */,
 				52F8D09E2909D89700F8A59C /* Utils.swift in Sources */,
 				52BD19B92561EA93006D3507 /* AppDelegate.swift in Sources */,
-				52BD19D72561EB2E006D3507 /* NAOSDevice.swift in Sources */,
 				52BD19D92561EB2E006D3507 /* SettingsWindowController.swift in Sources */,
 				52BD19CB2561EB27006D3507 /* LoadingViewController.swift in Sources */,
 			);
@@ -386,22 +379,10 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		52A41B5929098125003BCB0C /* XCRemoteSwiftPackageReference "AsyncBluetooth" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/manolofdez/AsyncBluetooth";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
 /* Begin XCSwiftPackageProductDependency section */
-		52A41B5A29098125003BCB0C /* AsyncBluetooth */ = {
+		5211B722299D7AC5007F6EAA /* NAOSKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 52A41B5929098125003BCB0C /* XCRemoteSwiftPackageReference "AsyncBluetooth" */;
-			productName = AsyncBluetooth;
+			productName = NAOSKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

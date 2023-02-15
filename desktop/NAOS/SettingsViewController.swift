@@ -4,6 +4,7 @@
 //
 
 import Cocoa
+import NAOSKit
 
 class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, SettingsParameterValueDelegate {
 	@IBOutlet var connectionStatusLabel: NSTextField!

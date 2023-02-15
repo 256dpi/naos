@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/manolofdez/AsyncBluetooth",
       "state" : {
-        "branch" : "main",
-        "revision" : "fb709a49e4d27f34567f30cd01e8cbde623e624f"
+        "revision" : "e9aa79269fd1efd82ba2c173e60b0286455b9ea3",
+        "version" : "1.4.1"
       }
     }
   ],

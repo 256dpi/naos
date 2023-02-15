@@ -4,6 +4,7 @@
 //
 
 import Cocoa
+import NAOSKit
 
 class UnlockViewController: NSViewController {
 	@IBOutlet var passwordField: NSSecureTextField!
