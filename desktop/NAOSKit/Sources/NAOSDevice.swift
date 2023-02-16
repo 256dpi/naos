@@ -25,6 +25,7 @@ internal enum NAOSCharacteristic: String {
 	static let all: [NAOSCharacteristic] = [.lock, .list, .select, .value, .update]
 }
 
+/// The available parameter types.
 public enum NAOSType: String {
 	case string = "s"
 	case bool = "b"
@@ -33,6 +34,7 @@ public enum NAOSType: String {
 	case action = "a"
 }
 
+/// The available parameter modes.
 public struct NAOSMode: OptionSet {
 	public let rawValue: Int
 
@@ -67,6 +69,7 @@ public struct NAOSMode: OptionSet {
 	}
 }
 
+/// The object representing a single NAOS parameter.
 public struct NAOSParameter: Hashable {
 	public var name: String
 	public var type: NAOSType
@@ -122,6 +125,7 @@ public struct NAOSParameter: Hashable {
 	}
 }
 
+/// The NAOS specific errors.
 public enum NAOSError: LocalizedError {
 	case serviceNotFound
 	case characteristicNotFound
@@ -136,6 +140,7 @@ public enum NAOSError: LocalizedError {
 	}
 }
 
+/// The delegate implemented by objects
 public protocol NAOSDeviceDelegate {
 	func naosDeviceDidUpdate(device: NAOSDevice, parameter: NAOSParameter)
 	func naosDeviceDidDisconnect(device: NAOSDevice, error: Error)
@@ -149,20 +154,20 @@ public class NAOSDevice: NSObject {
 	private var connected: Bool = false
 	private var refreshing: Bool = false
 	private var subscription: AnyCancellable?
+	internal var updatable: Set<NAOSParameter> = Set()
 
 	public var delegate: NAOSDeviceDelegate?
 	public private(set) var protected: Bool = false
 	public private(set) var locked: Bool = false
 	public private(set) var availableParameters: [NAOSParameter] = []
 	public var parameters: [NAOSParameter: String] = [:]
-	internal var updatable: Set<NAOSParameter> = Set()
 
-	init(peripheral: Peripheral, manager: NAOSManager) {
+	internal init(peripheral: Peripheral, manager: NAOSManager) {
 		// initialize instance
 		self.peripheral = peripheral
 		self.manager = manager
 
-		// initialize super
+		// finish init
 		super.init()
 
 		// run updater
@@ -171,14 +176,23 @@ public class NAOSDevice: NSObject {
 				// wait a second
 				try await Task.sleep(nanoseconds: 1_000_000_000)
 
+				// acquire mutex
+				await mutex.wait()
+
 				// skip if not connected or refreshing
 				if !connected || refreshing {
+					// release mutex
+					mutex.signal()
+
 					continue
 				}
 
 				// copy and clear updatable params
 				let params = updatable
 				updatable = Set()
+
+				// release mutex
+				mutex.signal()
 
 				// attempt to read params
 				for param in params {
@@ -188,6 +202,7 @@ public class NAOSDevice: NSObject {
 		}
 	}
 
+	/// Connect will initiate a connection to a device.
 	public func connect() async throws {
 		// acquire mutex
 		await mutex.wait()
@@ -231,36 +246,39 @@ public class NAOSDevice: NSObject {
 		// subscribe to value updates
 		subscription?.cancel()
 		subscription = peripheral.characteristicValueUpdatedPublisher.sink { char in
-			// skip if refreshing
-			if self.refreshing {
-				return
-			}
+			// subscriptions are handled in separate tasks that wait for other actions to complete first
+			Task {
+				// acquire mutex
+				await self.mutex.wait()
+				defer { self.mutex.signal() }
 
-			// get value
-			var value = ""
-			if char.value != nil {
-				value = String(data: char.value!, encoding: .utf8) ?? ""
-			}
+				// get value
+				var value = ""
+				if char.value != nil {
+					value = String(data: char.value!, encoding: .utf8) ?? ""
+				}
 
-			// get characteristic
-			let char = self.fromRawCharacteristic(char: char)
-			if char != .update {
-				return
-			}
+				// get characteristic
+				let char = self.fromRawCharacteristic(char: char)
+				if char != .update {
+					return
+				}
 
-			// find parameter
-			let param = self.availableParameters.first { param in
-				param.name == value
-			}
-			if param == nil {
-				return
-			}
+				// find parameter
+				let param = self.availableParameters.first { param in
+					param.name == value
+				}
+				if param == nil {
+					return
+				}
 
-			// add to set
-			self.updatable.insert(param!)
+				// add to set
+				self.updatable.insert(param!)
+			}
 		}
 	}
 
+	/// Refresh will perform a full device refresh and update all parameters.
 	public func refresh() async throws {
 		// acquire mutex
 		await mutex.wait()
@@ -321,10 +339,13 @@ public class NAOSDevice: NSObject {
 		manager.didRefreshDevice(device: self)
 	}
 
+	/// Returns the title of the device.
 	public func title() -> String {
-		return (parameters[.deviceName] ?? "") + " (" + (parameters[.deviceType] ?? "") + ")"
+		// TODO: Use mutex?
+		(parameters[.deviceName] ?? "") + " (" + (parameters[.deviceType] ?? "") + ")"
 	}
 
+	/// Unlock will attempt to unlock the device and returns its success.
 	public func unlock(password: String) async throws -> Bool {
 		// acquire mutex
 		await mutex.wait()
@@ -339,6 +360,7 @@ public class NAOSDevice: NSObject {
 		return lock == "unlocked"
 	}
 
+	/// Read will read the specified parameter. The result is place into the parameters dictionary.
 	public func read(parameter: NAOSParameter) async throws {
 		// acquire mutex
 		await mutex.wait()
@@ -361,6 +383,7 @@ public class NAOSDevice: NSObject {
 		}
 	}
 
+	/// Write will write the specified parameter. The value is taken from the parameters dictionary.
 	public func write(parameter: NAOSParameter) async throws {
 		// acquire mutex
 		await mutex.wait()
@@ -383,6 +406,7 @@ public class NAOSDevice: NSObject {
 		}
 	}
 
+	/// Disconnect will close the connection to the device.
 	public func disconnect() async throws {
 		// acquire mutex
 		await mutex.wait()
@@ -402,6 +426,8 @@ public class NAOSDevice: NSObject {
 		// disconnect from device
 		try await manager.centralManager.cancelPeripheralConnection(peripheral)
 	}
+
+	// NAOSManager
 
 	internal func didDisconnect(error: Error) async {
 		// acquire mutex

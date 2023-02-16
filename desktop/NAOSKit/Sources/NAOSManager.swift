@@ -8,20 +8,30 @@ import Cocoa
 import Combine
 import CoreBluetooth
 
+/// The delegate protocol to be implemented to handle NAOSManager events.
 public protocol NAOSManagerDelegate {
+	/// The manager found a new device an was able discover and load its settings.
 	func naosManagerDidPrepareDevice(manager: NAOSManager, device: NAOSDevice)
+
+	/// The manager found a new device but encountered an error when accessing it.
 	func naosManagerDidFailToPrepareDevice(manager: NAOSManager, error: Error)
+
+	/// The settings of a device have been updated because of a read(), write() or refresh() call on a device.
 	func naosManagerDidRefreshDevice(manager: NAOSManager, device: NAOSDevice)
+
+	/// The manager did reset either because of a Bluetooth availability change or a manual reset().
 	func naosManagerDidReset(manager: NAOSManager)
 }
 
+/// The main class that handles NAOS device discovery and handling.
 public class NAOSManager: NSObject {
-	public var delegate: NAOSManagerDelegate?
+	internal var delegate: NAOSManagerDelegate?
 	internal var centralManager: CentralManager!
 	private var allDevices: [NAOSDevice]
 	private var availableDevices: [NAOSDevice]
 	private var subscription: AnyCancellable?
 
+	/// Initializes the manager and sets the specified class as the delegate.
 	public init(delegate: NAOSManagerDelegate?) {
 		// set delegate
 		self.delegate = delegate
@@ -30,10 +40,10 @@ public class NAOSManager: NSObject {
 		self.allDevices = []
 		self.availableDevices = []
 
-		// call superclass
+		// finish init
 		super.init()
 
-		// central manager
+		// create central manager
 		self.centralManager = CentralManager()
 		
 		// subscribe events
@@ -79,6 +89,7 @@ public class NAOSManager: NSObject {
 		}
 	}
 	
+	/// Reset discovered devices.
 	public func reset() {
 		// clear devices
 		self.allDevices.removeAll()
@@ -92,7 +103,7 @@ public class NAOSManager: NSObject {
 		}
 	}
 	
-	func scan() {
+	private func scan() {
 		Task {
 			// run until cancelled
 			while !Task.isCancelled {
