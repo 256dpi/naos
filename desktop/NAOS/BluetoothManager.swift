@@ -83,7 +83,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 
 	// NAOSManagerDelegate
 
-	func naosManagerDidPrepareDevice(manager _: NAOSManager, device: NAOSDevice) {
+	func naosManagerDidDiscoverDevice(manager _: NAOSManager, device: NAOSDevice) {
 		// add menu item for new device
 		let item = NSMenuItem()
 		item.title = device.title()
@@ -103,12 +103,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		}
 	}
 
-	func naosManagerDidFailToPrepareDevice(manager _: NAOSManager, error: Error) {
-		// show error
-		showError(error: error)
-	}
-
-	func naosManagerDidRefreshDevice(manager _: NAOSManager, device: NAOSDevice) {
+	func naosManagerDidUpdateDevice(manager _: NAOSManager, device: NAOSDevice) {
 		// update menu item title
 		devices[device]?.title = device.title()
 

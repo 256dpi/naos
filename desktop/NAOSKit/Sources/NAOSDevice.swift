@@ -347,7 +347,7 @@ public class NAOSDevice: NSObject {
 		}
 
 		// notify manager
-		manager.didRefreshDevice(device: self)
+		manager.didUpdateDevice(device: self)
 	}
 
 	/// Returns the title of the device.
@@ -384,7 +384,7 @@ public class NAOSDevice: NSObject {
 		parameters[parameter] = try await read(char: .value)
 
 		// notify manager
-		manager.didRefreshDevice(device: self)
+		manager.didUpdateDevice(device: self)
 
 		// call delegate if present
 		if let d = delegate {
@@ -407,7 +407,7 @@ public class NAOSDevice: NSObject {
 		try await write(char: .value, data: parameters[parameter]!)
 
 		// notify manager
-		manager.didRefreshDevice(device: self)
+		manager.didUpdateDevice(device: self)
 
 		// call delegate if present
 		if let d = delegate {

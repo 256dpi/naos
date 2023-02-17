@@ -10,14 +10,11 @@ import CoreBluetooth
 
 /// The delegate protocol to be implemented to handle NAOSManager events.
 public protocol NAOSManagerDelegate {
-	/// The manager found a new device an was able discover and load its settings.
-	func naosManagerDidPrepareDevice(manager: NAOSManager, device: NAOSDevice)
-
-	/// The manager found a new device but encountered an error when accessing it.
-	func naosManagerDidFailToPrepareDevice(manager: NAOSManager, error: Error)
+	/// The manager discovered a new device.
+	func naosManagerDidDiscoverDevice(manager: NAOSManager, device: NAOSDevice)
 
 	/// The settings of a device have been updated because of a read(), write() or refresh() call on a device.
-	func naosManagerDidRefreshDevice(manager: NAOSManager, device: NAOSDevice)
+	func naosManagerDidUpdateDevice(manager: NAOSManager, device: NAOSDevice)
 
 	/// The manager did reset either because of a Bluetooth availability change or a manual reset().
 	func naosManagerDidReset(manager: NAOSManager)
@@ -138,7 +135,7 @@ public class NAOSManager: NSObject {
 					// call callback if present
 					if let d = delegate {
 						DispatchQueue.main.async {
-							d.naosManagerDidPrepareDevice(
+							d.naosManagerDidDiscoverDevice(
 								manager: self, device: device)
 						}
 					}
@@ -149,11 +146,11 @@ public class NAOSManager: NSObject {
 
 	// NAOSDevice
 
-	internal func didRefreshDevice(device: NAOSDevice) {
+	internal func didUpdateDevice(device: NAOSDevice) {
 		// call callback if available
 		if let d = delegate {
 			DispatchQueue.main.async {
-				d.naosManagerDidRefreshDevice(manager: self, device: device)
+				d.naosManagerDidUpdateDevice(manager: self, device: device)
 			}
 		}
 	}
