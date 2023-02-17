@@ -20,14 +20,13 @@ public protocol NAOSManagerDelegate {
 	func naosManagerDidReset(manager: NAOSManager)
 }
 
-// TODO: Protect state.
-
 /// The main class that handles NAOS device discovery and handling.
 public class NAOSManager: NSObject {
 	internal var delegate: NAOSManagerDelegate?
 	internal var centralManager: CentralManager!
 	private var devices: [NAOSDevice]
 	private var subscription: AnyCancellable?
+	private var queue = DispatchQueue(label: "devices", attributes: .concurrent)
 
 	/// Initializes the manager and sets the specified class as the delegate.
 	public init(delegate: NAOSManagerDelegate?) {
@@ -58,7 +57,9 @@ public class NAOSManager: NSObject {
 					}
 
 					// clear devices
-					self.devices.removeAll()
+					self.queue.sync {
+						self.devices.removeAll()
+					}
 
 					// call callback if present
 					if let d = self.delegate {
@@ -70,16 +71,11 @@ public class NAOSManager: NSObject {
 					break
 				}
 			case .didDisconnectPeripheral(let peripheral, let error):
-				// forward disconnect error
+				// forward disconnect error to device
 				if error != nil {
-					for device in self.devices {
-						if device.peripheral.identifier
-							== peripheral.identifier
-						{
-							Task {
-								await device.didDisconnect(
-									error: error!)
-							}
+					if let device = self.findDevice(peripheral: peripheral) {
+						Task {
+							await device.didDisconnect(error: error!)
 						}
 					}
 				}
@@ -92,7 +88,9 @@ public class NAOSManager: NSObject {
 	/// Reset discovered devices.
 	public func reset() {
 		// clear devices
-		devices.removeAll()
+		queue.sync {
+			devices.removeAll()
+		}
 
 		// call callback if present
 		if let d = delegate {
@@ -115,16 +113,8 @@ public class NAOSManager: NSObject {
 
 				// handle discovered peripherals
 				for await scanData in stream {
-					// check existing device
-					var existing: NAOSDevice?
-					for device in devices {
-						if device.peripheral.identifier
-							== scanData.peripheral.identifier
-						{
-							existing = device
-						}
-					}
-					if existing != nil {
+					// skip if device exists already
+					if findDevice(peripheral: scanData.peripheral) != nil {
 						continue
 					}
 
@@ -133,7 +123,9 @@ public class NAOSManager: NSObject {
 						peripheral: scanData.peripheral, manager: self)
 
 					// add device
-					devices.append(device)
+					self.queue.sync {
+						devices.append(device)
+					}
 
 					// call callback if present
 					if let d = delegate {
@@ -156,5 +148,24 @@ public class NAOSManager: NSObject {
 				d.naosManagerDidUpdateDevice(manager: self, device: device)
 			}
 		}
+	}
+
+	// Helpers
+
+	private func findDevice(peripheral: Peripheral) -> NAOSDevice? {
+		// copy list
+		var list: [NAOSDevice]?
+		queue.sync {
+			list = devices
+		}
+
+		// find device
+		for device in list! {
+			if device.peripheral.identifier == peripheral.identifier {
+				return device
+			}
+		}
+
+		return nil
 	}
 }
