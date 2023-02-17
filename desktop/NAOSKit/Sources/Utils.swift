@@ -11,7 +11,9 @@ public struct TimedOutError: LocalizedError, Equatable {
 	}
 }
 
-public func withTimeout<R>(seconds: TimeInterval, operation: @escaping @Sendable () async throws -> R) async throws -> R {
+public func withTimeout<R>(
+	seconds: TimeInterval, operation: @escaping @Sendable () async throws -> R
+) async throws -> R {
 	return try await withThrowingTaskGroup(of: R.self) { group in
 		let deadline = Date(timeIntervalSinceNow: seconds)
 

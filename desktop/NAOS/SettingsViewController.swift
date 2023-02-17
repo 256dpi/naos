@@ -6,7 +6,9 @@
 import Cocoa
 import NAOSKit
 
-class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, SettingsParameterValueDelegate {
+class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate,
+	SettingsParameterValueDelegate
+{
 	@IBOutlet var connectionStatusLabel: NSTextField!
 	@IBOutlet var parameterTableView: NSTableView!
 
@@ -16,7 +18,9 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 	@IBAction
 	func refresh(_: AnyObject) {
 		// show loading view controller
-		loadingViewController = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "LoadingViewController") as? LoadingViewController
+		loadingViewController =
+			NSStoryboard(name: "Main", bundle: nil).instantiateController(
+				withIdentifier: "LoadingViewController") as? LoadingViewController
 		loadingViewController!.message = "Refreshing..."
 		loadingViewController!.preferredContentSize = CGSize(width: 200, height: 200)
 		presentAsSheet(loadingViewController!)
@@ -32,7 +36,9 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 			DispatchQueue.main.async {
 				// update connection status
-				self.connectionStatusLabel.stringValue = (self.device.parameters[.connectionStatus] ?? "").capitalized
+				self.connectionStatusLabel.stringValue =
+					(self.device.parameters[.connectionStatus] ?? "")
+					.capitalized
 
 				// reload parameters
 				self.parameterTableView.reloadData()
@@ -50,20 +56,28 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		return device != nil ? device.availableParameters.count : 0
 	}
 
-	func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+	func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int)
+		-> NSView?
+	{
 		// get parameter
 		let p = device.availableParameters[row]
 
 		// return name cell
 		if tableView.tableColumns[0] == tableColumn {
-			let v = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier("NameCell"), owner: nil) as! NSTableCellView
+			let v =
+				tableView.makeView(
+					withIdentifier: NSUserInterfaceItemIdentifier("NameCell"),
+					owner: nil) as! NSTableCellView
 			v.textField!.stringValue = p.name
 			return v
 		}
 
 		// return value cell
 		if tableView.tableColumns[1] == tableColumn {
-			let v = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier("ValueCell"), owner: nil) as! SettingsParameterValue
+			let v =
+				tableView.makeView(
+					withIdentifier: NSUserInterfaceItemIdentifier("ValueCell"),
+					owner: nil) as! SettingsParameterValue
 			v.parameter = p
 			v.delegate = self
 
@@ -82,7 +96,8 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 			} else {
 				v.textField!.isHidden = false
 				v.textField!.formatter = nil
-				v.textField!.stringValue = p.format(value: device.parameters[p] ?? "") 
+				v.textField!.stringValue = p.format(
+					value: device.parameters[p] ?? "")
 				v.textField!.isEnabled = !p.mode.contains(.locked)
 
 				// set appropriate number formatters
@@ -109,7 +124,10 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 		// return type cell
 		if tableView.tableColumns[2] == tableColumn {
-			let v = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier("TypeCell"), owner: nil) as! NSTableCellView
+			let v =
+				tableView.makeView(
+					withIdentifier: NSUserInterfaceItemIdentifier("TypeCell"),
+					owner: nil) as! NSTableCellView
 			switch p.type {
 			case .string:
 				v.textField!.stringValue = "String"
@@ -156,14 +174,17 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 	func didUpdateParameter(parameter: NAOSParameter) {
 		// update connection status
 		if parameter == .connectionStatus {
-			connectionStatusLabel.stringValue = (device.parameters[.connectionStatus] ?? "").capitalized
+			connectionStatusLabel.stringValue =
+				(device.parameters[.connectionStatus] ?? "").capitalized
 		}
 
 		// find index
 		let index = device.availableParameters.firstIndex(of: parameter)!
 
 		// reload paramter
-		parameterTableView.reloadData(forRowIndexes: IndexSet(integer: index), columnIndexes: IndexSet(integer: 1))
+		parameterTableView.reloadData(
+			forRowIndexes: IndexSet(integer: index), columnIndexes: IndexSet(integer: 1)
+		)
 	}
 
 	// SettingsParameterValueDelegate
@@ -184,7 +205,10 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 			// recalculate row height
 			DispatchQueue.main.async {
-				self.parameterTableView.noteHeightOfRows(withIndexesChanged: IndexSet(integer: self.device.availableParameters.firstIndex(of: parameter)!))
+				self.parameterTableView.noteHeightOfRows(
+					withIndexesChanged: IndexSet(
+						integer: self.device.availableParameters.firstIndex(
+							of: parameter)!))
 			}
 		}
 	}

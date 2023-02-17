@@ -31,8 +31,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		NSApp.setActivationPolicy(.accessory)
 
 		// register observers
-		NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.open), name: .open, object: nil)
-		NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.close), name: .close, object: nil)
+		NotificationCenter.default.addObserver(
+			self, selector: #selector(AppDelegate.open), name: .open, object: nil)
+		NotificationCenter.default.addObserver(
+			self, selector: #selector(AppDelegate.close), name: .close, object: nil)
 	}
 
 	@objc func open() {

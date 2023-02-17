@@ -38,7 +38,10 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		}
 
 		// instantiate window controller
-		let controller = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "SettingsWindowController") as! SettingsWindowController
+		let controller =
+			NSStoryboard(name: "Main", bundle: nil).instantiateController(
+				withIdentifier: "SettingsWindowController")
+			as! SettingsWindowController
 
 		// store and show window
 		controllers[device] = controller
@@ -55,10 +58,10 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		// configure device and manager
 		controller.configure(device: device, manager: self)
 	}
-	
+
 	@IBAction func reset(_: AnyObject) {
 		// reset manager
-		self.manager.reset();
+		self.manager.reset()
 	}
 
 	// SettingsWindowController
