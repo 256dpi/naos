@@ -157,12 +157,12 @@ public class NAOSDevice: NSObject {
 	private var manager: NAOSManager
 	private var service: Service?
 	private var mutex = AsyncSemaphore(value: 1)
-	private var connected: Bool = false
 	private var refreshing: Bool = false
 	private var subscription: AnyCancellable?
 	internal var updatable: Set<NAOSParameter> = Set()
 
 	public var delegate: NAOSDeviceDelegate?
+	public private(set) var connected: Bool = false
 	public private(set) var protected: Bool = false
 	public private(set) var locked: Bool = false
 	public private(set) var availableParameters: [NAOSParameter] = []
