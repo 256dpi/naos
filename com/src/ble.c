@@ -146,9 +146,6 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
   switch (e) {
     // handle registration event (status has been handled above)
     case ESP_GATTS_REG_EVT: {
-      // set device name
-      ESP_ERROR_CHECK(esp_ble_gap_set_device_name("naos"));
-
       // set advertisement config
       ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&naos_ble_adv_data));
 
@@ -468,6 +465,13 @@ static void naos_ble_param_handler(naos_param_t *param) {
   NAOS_UNLOCK(naos_ble_mutex);
 }
 
+static void ble_params(naos_param_t *param) {
+  // update device name if changed
+  if (strcmp(param->name, "device-name") == 0) {
+    esp_ble_gap_set_device_name(param->value);
+  }
+}
+
 void naos_ble_init() {
   // create mutex
   naos_ble_mutex = naos_mutex();
@@ -519,6 +523,12 @@ void naos_ble_init() {
 
   // register application
   esp_ble_gatts_app_register(0x55);
+
+  // set device name
+  esp_ble_gap_set_device_name(naos_get("device-name"));
+
+  // subscribe params
+  naos_params_subscribe(ble_params);
 
   // wait for initialization to complete
   naos_await(naos_ble_signal, 1, false);
