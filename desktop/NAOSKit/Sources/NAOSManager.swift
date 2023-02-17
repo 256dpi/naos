@@ -20,6 +20,8 @@ public protocol NAOSManagerDelegate {
 	func naosManagerDidReset(manager: NAOSManager)
 }
 
+// TODO: Protect state.
+
 /// The main class that handles NAOS device discovery and handling.
 public class NAOSManager: NSObject {
 	internal var delegate: NAOSManagerDelegate?
@@ -33,16 +35,16 @@ public class NAOSManager: NSObject {
 		self.delegate = delegate
 
 		// initialize devices
-		self.devices = []
+		devices = []
 
 		// finish init
 		super.init()
 
 		// create central manager
-		self.centralManager = CentralManager()
+		centralManager = CentralManager()
 
 		// subscribe events
-		self.subscription = self.centralManager.eventPublisher.sink { event in
+		subscription = centralManager.eventPublisher.sink { event in
 			switch event {
 			case .didUpdateState(let state):
 				switch state {
@@ -68,6 +70,7 @@ public class NAOSManager: NSObject {
 					break
 				}
 			case .didDisconnectPeripheral(let peripheral, let error):
+				// forward disconnect error
 				if error != nil {
 					for device in self.devices {
 						if device.peripheral.identifier
@@ -89,10 +92,10 @@ public class NAOSManager: NSObject {
 	/// Reset discovered devices.
 	public func reset() {
 		// clear devices
-		self.devices.removeAll()
+		devices.removeAll()
 
 		// call callback if present
-		if let d = self.delegate {
+		if let d = delegate {
 			DispatchQueue.main.async {
 				d.naosManagerDidReset(manager: self)
 			}
