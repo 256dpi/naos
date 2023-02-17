@@ -27,8 +27,7 @@ public protocol NAOSManagerDelegate {
 public class NAOSManager: NSObject {
 	internal var delegate: NAOSManagerDelegate?
 	internal var centralManager: CentralManager!
-	private var allDevices: [NAOSDevice]
-	private var availableDevices: [NAOSDevice]
+	private var devices: [NAOSDevice]
 	private var subscription: AnyCancellable?
 
 	/// Initializes the manager and sets the specified class as the delegate.
@@ -36,16 +35,15 @@ public class NAOSManager: NSObject {
 		// set delegate
 		self.delegate = delegate
 
-		// initialize arrays
-		self.allDevices = []
-		self.availableDevices = []
+		// initialize devices
+		self.devices = []
 
 		// finish init
 		super.init()
 
 		// create central manager
 		self.centralManager = CentralManager()
-		
+
 		// subscribe events
 		self.subscription = self.centralManager.eventPublisher.sink { event in
 			switch event {
@@ -59,11 +57,10 @@ public class NAOSManager: NSObject {
 					Task {
 						await self.centralManager.stopScan()
 					}
-					
-					// clear all arrays
-					self.allDevices.removeAll()
-					self.availableDevices.removeAll()
-		
+
+					// clear devices
+					self.devices.removeAll()
+
 					// call callback if present
 					if let d = self.delegate {
 						DispatchQueue.main.async {
@@ -75,10 +72,13 @@ public class NAOSManager: NSObject {
 				}
 			case .didDisconnectPeripheral(let peripheral, let error):
 				if error != nil {
-					for device in self.allDevices {
-						if device.peripheral.identifier == peripheral.identifier {
+					for device in self.devices {
+						if device.peripheral.identifier
+							== peripheral.identifier
+						{
 							Task {
-								await device.didDisconnect(error: error!)
+								await device.didDisconnect(
+									error: error!)
 							}
 						}
 					}
@@ -88,13 +88,12 @@ public class NAOSManager: NSObject {
 			}
 		}
 	}
-	
+
 	/// Reset discovered devices.
 	public func reset() {
 		// clear devices
-		self.allDevices.removeAll()
-		self.availableDevices.removeAll()
-		
+		self.devices.removeAll()
+
 		// call callback if present
 		if let d = self.delegate {
 			DispatchQueue.main.async {
@@ -102,64 +101,45 @@ public class NAOSManager: NSObject {
 			}
 		}
 	}
-	
+
 	private func scan() {
 		Task {
 			// run until cancelled
 			while !Task.isCancelled {
 				// wait until ready
 				try await centralManager.waitUntilReady()
-				
+
 				// create scan stream
-				let stream = try await centralManager.scanForPeripherals(withServices: [NAOSService])
-				
+				let stream = try await centralManager.scanForPeripherals(
+					withServices: [NAOSService])
+
 				// handle discovered peripherals
 				for await scanData in stream {
-					// check device
-					var found = false
-					for device in allDevices {
-						if device.peripheral.identifier == scanData.peripheral.identifier {
-							found = true
+					// check existing device
+					var existing: NAOSDevice?
+					for device in devices {
+						if device.peripheral.identifier
+							== scanData.peripheral.identifier
+						{
+							existing = device
 						}
 					}
-					if found {
+					if existing != nil {
 						continue
 					}
-			
-					// create new device
-					let device = NAOSDevice(peripheral: scanData.peripheral, manager: self)
-			
+
+					// otherwise, create new device
+					let device = NAOSDevice(
+						peripheral: scanData.peripheral, manager: self)
+
 					// add device
-					allDevices.append(device)
-					
-					Task {
-						// prepare device
-						do {
-							try await device.connect()
-							try await device.refresh()
-							try await device.disconnect()
-						} catch {
-							// disconnect
-							try? await centralManager.cancelPeripheralConnection(scanData.peripheral)
-							
-							// handle error
-							if let d = delegate {
-								DispatchQueue.main.async {
-									d.naosManagerDidFailToPrepareDevice(manager: self, error: error)
-								}
-							}
-							
-							return
-						}
-						
-						// add available device
-						availableDevices.append(device)
-						
-						// call callback if present
-						if let d = delegate {
-							DispatchQueue.main.async {
-								d.naosManagerDidPrepareDevice(manager: self, device: device)
-							}
+					devices.append(device)
+
+					// call callback if present
+					if let d = delegate {
+						DispatchQueue.main.async {
+							d.naosManagerDidPrepareDevice(
+								manager: self, device: device)
 						}
 					}
 				}

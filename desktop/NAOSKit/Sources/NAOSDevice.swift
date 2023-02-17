@@ -3,10 +3,10 @@
 //  Copyright © 2017 Joël Gähwiler. All rights reserved.
 //
 
+import AsyncBluetooth
 import Cocoa
 import Combine
 import CoreBluetooth
-import AsyncBluetooth
 import Semaphore
 
 internal let NAOSService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
@@ -47,7 +47,7 @@ public struct NAOSMode: OptionSet {
 	public static let application = NAOSMode(rawValue: 1 << 2)
 	public static let _public = NAOSMode(rawValue: 1 << 3)
 	public static let locked = NAOSMode(rawValue: 1 << 4)
-	
+
 	public static func parse(str: String) -> NAOSMode {
 		var mode = NAOSMode()
 		if str.contains("v") {
@@ -83,15 +83,20 @@ public struct NAOSParameter: Hashable {
 		return lhs.name == rhs.name && lhs.type == rhs.type
 	}
 
-	public static let deviceName = NAOSParameter(name: "device-name", type: .string, mode: .system)
-	public static let deviceType = NAOSParameter(name: "device-type", type: .string, mode: .system)
-	public static let connectionStatus = NAOSParameter(name: "connection-status", type: .string, mode: .system)
+	public static let deviceName = NAOSParameter(
+		name: "device-name", type: .string, mode: .system)
+	public static let deviceType = NAOSParameter(
+		name: "device-type", type: .string, mode: .system)
+	public static let connectionStatus = NAOSParameter(
+		name: "connection-status", type: .string, mode: .system)
 	public static let battery = NAOSParameter(name: "battery", type: .double, mode: .system)
 	public static let uptime = NAOSParameter(name: "uptime", type: .long, mode: .system)
 	public static let freeHeap = NAOSParameter(name: "free-heap", type: .long, mode: .system)
 	public static let wifiRSSI = NAOSParameter(name: "wifi-rssi", type: .long, mode: .system)
-	public static let cpuUsage0 = NAOSParameter(name: "cpu-usage0", type: .double, mode: .system)
-	public static let cpuUsage1 = NAOSParameter(name: "cpu-usage1", type: .double, mode: .system)
+	public static let cpuUsage0 = NAOSParameter(
+		name: "cpu-usage0", type: .double, mode: .system)
+	public static let cpuUsage1 = NAOSParameter(
+		name: "cpu-usage1", type: .double, mode: .system)
 
 	public func format(value: String) -> String {
 		let num = Double(value) ?? 0
@@ -106,7 +111,8 @@ public struct NAOSParameter: Hashable {
 			formatter.unitsStyle = .abbreviated
 			return formatter.string(from: num / 1000) ?? ""
 		case .freeHeap:
-			return ByteCountFormatter.string(from: Measurement(value: num, unit: .bytes), countStyle: .memory)
+			return ByteCountFormatter.string(
+				from: Measurement(value: num, unit: .bytes), countStyle: .memory)
 		case .wifiRSSI:
 			var signal = (100 - (num * -1)) * 2
 			if signal > 100 {
@@ -169,6 +175,10 @@ public class NAOSDevice: NSObject {
 
 		// finish init
 		super.init()
+
+		// initialize device name
+		parameters[.deviceName] = peripheral.name
+		parameters[.deviceType] = "unknown"
 
 		// run updater
 		Task {
@@ -298,11 +308,11 @@ public class NAOSDevice: NSObject {
 		if locked {
 			protected = true
 		}
-		
+
 		// read system parameters
 		try await write(char: .list, data: "system")
 		let system = try await read(char: .list)
-		
+
 		// read application parameters
 		try await write(char: .list, data: "application")
 		let application = try await read(char: .list)
@@ -323,7 +333,8 @@ public class NAOSDevice: NSObject {
 			let name = String(subSegments[0])
 			let type = NAOSType(rawValue: String(subSegments[1])) ?? .string
 			let mode = NAOSMode.parse(str: String(subSegments[2]))
-			availableParameters.append(NAOSParameter(name: name, type: type, mode: mode))
+			availableParameters.append(
+				NAOSParameter(name: name, type: type, mode: mode))
 		}
 
 		// refresh parameters
@@ -480,7 +491,8 @@ public class NAOSDevice: NSObject {
 
 		// read value
 		try await withTimeout(seconds: 2) {
-			try await self.peripheral.writeValue(data.data(using: .utf8)!, for: char, type: .withResponse)
+			try await self.peripheral.writeValue(
+				data.data(using: .utf8)!, for: char, type: .withResponse)
 		}
 	}
 
