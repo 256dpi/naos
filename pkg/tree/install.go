@@ -116,7 +116,7 @@ func Install(naosPath, sourcePath, dataPath, version string, force, fixSerial bo
 // InstallComponent will install the specified component in the build tree.
 func InstallComponent(projectPath, naosPath, name, path, repository, version string, force bool, out io.Writer) error {
 	// check component name
-	if name == "esp-mqtt" || name == "naos" {
+	if name == "esp-mqtt" || name == "esp-osc" || name == "naos" {
 		return errors.New("illegal component name")
 	}
 
