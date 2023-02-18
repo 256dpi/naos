@@ -176,3 +176,54 @@ func InstallComponent(projectPath, naosPath, name, path, repository, version str
 
 	return nil
 }
+
+// InstallAudioFramework will manage the esp-adf installation.
+func InstallAudioFramework(naosPath, version string, force bool, out io.Writer) error {
+	// handle removal
+	if version == "" {
+		utils.Log(out, fmt.Sprintf("Removing audio framework..."))
+		err := os.RemoveAll(ADFDirectory(naosPath))
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	/* otherwise, handle install */
+
+	// remove existing directory if force has been set
+	if force {
+		utils.Log(out, fmt.Sprintf("Removing existing audio framework (forced)."))
+		err := os.RemoveAll(ADFDirectory(naosPath))
+		if err != nil {
+			return err
+		}
+	}
+
+	// check if framework already exists
+	ok, err := utils.Exists(ADFDirectory(naosPath))
+	if err != nil {
+		return err
+	}
+
+	// check existence
+	if !ok {
+		// perform initial repo clone
+		utils.Log(out, fmt.Sprintf("Installing audio framework '%s'...", version))
+		err = utils.Clone("https://github.com/espressif/esp-adf.git", ADFDirectory(naosPath), version, out)
+		if err != nil {
+			return err
+
+		}
+	} else {
+		// perform repo update
+		utils.Log(out, fmt.Sprintf("Updating audio framework '%s'...", version))
+		err = utils.Fetch(ADFDirectory(naosPath), version, out)
+		if err != nil {
+			return err
+
+		}
+	}
+
+	return nil
+}

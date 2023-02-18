@@ -28,6 +28,11 @@ type Component struct {
 	Version    string `json:"version"`
 }
 
+// Frameworks represents the official frameworks.
+type Frameworks struct {
+	Audio string `json:"audio"`
+}
+
 // An Inventory represents the contents of the inventory file.
 type Inventory struct {
 	Version    string                `json:"version"`
@@ -36,6 +41,7 @@ type Inventory struct {
 	Embeds     []string              `json:"embeds"`
 	Overrides  map[string]string     `json:"overrides"`
 	Components map[string]*Component `json:"components"`
+	Frameworks Frameworks            `json:"frameworks"`
 	Broker     string                `json:"broker"`
 	Devices    map[string]*Device    `json:"devices"`
 }

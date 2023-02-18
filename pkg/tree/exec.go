@@ -22,6 +22,13 @@ func IDFDirectory(naosPath string) string {
 	return filepath.Join(Directory(naosPath), "esp-idf")
 }
 
+// ADFDirectory returns the assumed location of the esp-adf directory.
+//
+// Note: It will not check if the directory exists.
+func ADFDirectory(naosPath string) string {
+	return filepath.Join(Directory(naosPath), "esp-adf")
+}
+
 // Exec runs a named command in the build tree. All xtensa toolchain binaries are
 // made available in the path transparently.
 func Exec(naosPath string, out io.Writer, in io.Reader, usePty bool, name string, arg ...string) error {
@@ -79,6 +86,15 @@ func Exec(naosPath string, out io.Writer, in io.Reader, usePty bool, name string
 	// add IDF tools path for new projects
 	if idfMajorVersion >= 4 {
 		cmd.Env = append(cmd.Env, "IDF_TOOLS_PATH="+filepath.Join(Directory(naosPath), "toolchain"))
+	}
+
+	// add ADF path if existing
+	ok, err := utils.Exists(ADFDirectory(naosPath))
+	if err != nil {
+		return err
+	}
+	if ok {
+		cmd.Env = append(cmd.Env, "ADF_PATH="+ADFDirectory(naosPath))
 	}
 
 	// run command without PTY

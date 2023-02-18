@@ -148,6 +148,12 @@ func (p *Project) Install(force bool, out io.Writer) error {
 		}
 	}
 
+	// install audio framework
+	err = tree.InstallAudioFramework(p.Tree(), p.Inventory.Frameworks.Audio, force, out)
+	if err != nil {
+		return err
+	}
+
 	// update cmake lists file
 	err = tree.WriteCMakeLists(p.Tree(), out)
 	if err != nil {
