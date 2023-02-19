@@ -8,38 +8,18 @@ import (
 
 // Clone will check out the provided repository set it to the specified version
 // and properly checkout all submodules.
-func Clone(repo, path, commit string, out io.Writer) error {
-	// construct clone command
-	cmd := exec.Command("git", "clone", "--recursive", repo, path)
+func Clone(repo, path, commit string, ignoredSubmodules []string, out io.Writer) error {
+	// clone repo
+	cmd := exec.Command("git", "clone", repo, path)
 	cmd.Stdout = out
 	cmd.Stderr = out
-
-	// clone repo
 	err := cmd.Run()
 	if err != nil {
 		return err
 	}
 
-	// construct reset command
-	cmd = exec.Command("git", "reset", "--hard", "origin/"+commit)
-	cmd.Stderr = out
-	cmd.Stdout = out
-	cmd.Dir = path
-
-	// reset repo to specific version
-	err = cmd.Run()
-	if err != nil {
-		return err
-	}
-
-	// construct update command
-	cmd = exec.Command("git", "submodule", "update", "--recursive", "--init", "-f")
-	cmd.Stderr = out
-	cmd.Stdout = out
-	cmd.Dir = path
-
-	// set submodules to proper version
-	err = cmd.Run()
+	// run fetch
+	err = Fetch(path, commit, ignoredSubmodules, out)
 	if err != nil {
 		return err
 	}
@@ -49,14 +29,12 @@ func Clone(repo, path, commit string, out io.Writer) error {
 
 // Fetch will update the remote repository and update all submodules
 // accordingly.
-func Fetch(path, commit string, out io.Writer) error {
-	// construct fetch command
+func Fetch(path, commit string, ignoredSubmodules []string, out io.Writer) error {
+	// fetch repo
 	cmd := exec.Command("git", "fetch", "origin")
 	cmd.Stdout = out
 	cmd.Stderr = out
 	cmd.Dir = path
-
-	// clone repo
 	err := cmd.Run()
 	if err != nil {
 		return err
@@ -67,25 +45,33 @@ func Fetch(path, commit string, out io.Writer) error {
 		commit = "origin/" + commit
 	}
 
-	// construct reset command
+	// reset repo to specific version
 	cmd = exec.Command("git", "reset", "--hard", commit)
 	cmd.Stderr = out
 	cmd.Stdout = out
 	cmd.Dir = path
-
-	// reset repo to specific version
 	err = cmd.Run()
 	if err != nil {
 		return err
 	}
 
-	// construct update command
+	// remove not needed submodules
+	for _, ism := range ignoredSubmodules {
+		cmd = exec.Command("git", "rm", ism)
+		cmd.Stderr = out
+		cmd.Stdout = out
+		cmd.Dir = path
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+	}
+
+	// set submodules to proper version
 	cmd = exec.Command("git", "submodule", "update", "--recursive", "--init")
 	cmd.Stderr = out
 	cmd.Stdout = out
 	cmd.Dir = path
-
-	// set submodules to proper version
 	err = cmd.Run()
 	if err != nil {
 		return err

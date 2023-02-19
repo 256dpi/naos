@@ -33,7 +33,7 @@ func Install(naosPath, sourcePath, dataPath, version string, force, fixSerial bo
 	if !ok {
 		// perform initial repo clone
 		utils.Log(out, fmt.Sprintf("Installing NAOS '%s'...", version))
-		err = utils.Clone("https://github.com/256dpi/naos.git", naosPath, version, out)
+		err = utils.Clone("https://github.com/256dpi/naos.git", naosPath, version, nil, out)
 		if err != nil {
 			return err
 
@@ -41,7 +41,7 @@ func Install(naosPath, sourcePath, dataPath, version string, force, fixSerial bo
 	} else {
 		// perform repo update
 		utils.Log(out, fmt.Sprintf("Updating NAOS '%s'...", version))
-		err = utils.Fetch(naosPath, version, out)
+		err = utils.Fetch(naosPath, version, nil, out)
 		if err != nil {
 			return err
 		}
@@ -159,7 +159,7 @@ func InstallComponent(projectPath, naosPath, name, path, repository, version str
 	if !ok {
 		// perform initial repo clone
 		utils.Log(out, fmt.Sprintf("Installing component '%s' '%s'...", name, version))
-		err = utils.Clone(repository, comPath, version, out)
+		err = utils.Clone(repository, comPath, version, nil, out)
 		if err != nil {
 			return err
 
@@ -167,7 +167,7 @@ func InstallComponent(projectPath, naosPath, name, path, repository, version str
 	} else {
 		// perform repo update
 		utils.Log(out, fmt.Sprintf("Updating component '%s' '%s'...", name, version))
-		err = utils.Fetch(comPath, version, out)
+		err = utils.Fetch(comPath, version, nil, out)
 		if err != nil {
 			return err
 
@@ -210,7 +210,7 @@ func InstallAudioFramework(naosPath, version string, force bool, out io.Writer) 
 	if !ok {
 		// perform initial repo clone
 		utils.Log(out, fmt.Sprintf("Installing audio framework '%s'...", version))
-		err = utils.Clone("https://github.com/espressif/esp-adf.git", ADFDirectory(naosPath), version, out)
+		err = utils.Clone("https://github.com/espressif/esp-adf.git", ADFDirectory(naosPath), version, []string{"esp-idf"}, out)
 		if err != nil {
 			return err
 
@@ -218,7 +218,7 @@ func InstallAudioFramework(naosPath, version string, force bool, out io.Writer) 
 	} else {
 		// perform repo update
 		utils.Log(out, fmt.Sprintf("Updating audio framework '%s'...", version))
-		err = utils.Fetch(ADFDirectory(naosPath), version, out)
+		err = utils.Fetch(ADFDirectory(naosPath), version, []string{"esp-idf"}, out)
 		if err != nil {
 			return err
 
