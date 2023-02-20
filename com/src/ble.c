@@ -462,7 +462,7 @@ static void naos_ble_param_handler(naos_param_t *param) {
 static void ble_params(naos_param_t *param) {
   // update device name if changed
   if (strcmp(param->name, "device-name") == 0) {
-    ESP_ERROR_CHECK(esp_ble_gap_set_device_name(param->value));
+    ESP_ERROR_CHECK(esp_ble_gap_set_device_name(strlen(param->value) > 0 ? param->value : "naos"));
   }
 }
 
@@ -517,7 +517,8 @@ void naos_ble_init(naos_ble_config_t cfg) {
   ESP_ERROR_CHECK(esp_ble_gatts_app_register(0x55));
 
   // set device name
-  ESP_ERROR_CHECK(esp_ble_gap_set_device_name(naos_get("device-name")));
+  const char *name = naos_get("device-name");
+  ESP_ERROR_CHECK(esp_ble_gap_set_device_name(strlen(name) > 0 ? name : "naos"));
 
   // subscribe params
   naos_params_subscribe(ble_params);
