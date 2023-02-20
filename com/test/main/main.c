@@ -176,7 +176,7 @@ void app_main() {
   // initialize naos
   naos_init(&config);
   naos_cpu_init();
-  naos_ble_init();
+  naos_ble_init((naos_ble_config_t){});
   naos_wifi_init();
   naos_http_init(1);
   naos_http_serve("/", "text/html", "<h1>Hello world!</h1>");

@@ -8,6 +8,7 @@
 #include <esp_gatts_api.h>
 #include <string.h>
 
+#include "naos_ble.h"
 #include "naos.h"
 #include "params.h"
 #include "utils.h"
@@ -96,7 +97,7 @@ static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
 static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
   switch (e) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT: {
-      // begin with advertisement
+      // begin advertising
       ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
 
       break;
@@ -125,7 +126,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
   if (e == ESP_GATTS_REG_EVT) {
     ESP_ERROR_CHECK(p->reg.status);
 
-    // store gatts interface after registration
+    // store GATTS interface after registration
     naos_ble_gatts_profile.interface = i;
   }
 
@@ -461,64 +462,62 @@ static void naos_ble_param_handler(naos_param_t *param) {
 static void ble_params(naos_param_t *param) {
   // update device name if changed
   if (strcmp(param->name, "device-name") == 0) {
-    esp_ble_gap_set_device_name(param->value);
+    ESP_ERROR_CHECK(esp_ble_gap_set_device_name(param->value));
   }
 }
 
-void naos_ble_init() {
+void naos_ble_init(naos_ble_config_t cfg) {
   // create mutex
   naos_ble_mutex = naos_mutex();
 
   // create even group
   naos_ble_signal = naos_signal();
 
-  // iterate through all characteristics
-  for (int i = 0; i < NAOS_BLE_NUM_CHARS; i++) {
-    // get pointer of current characteristic
-    naos_ble_gatts_char_t *c = naos_ble_gatts_chars[i];
+  // initialize bluetooth
+  if (!cfg.skip_bt_init) {
+    // initialize controller
+    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
 
-    // setup uuid
+    // enable bluetooth
+    ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BTDM));
+
+    // initialize bluedroid stack
+    ESP_ERROR_CHECK(esp_bluedroid_init());
+
+    // enable bluedroid stack
+    ESP_ERROR_CHECK(esp_bluedroid_enable());
+  }
+
+  // prepare characteristic UUIDs
+  for (int i = 0; i < NAOS_BLE_NUM_CHARS; i++) {
+    naos_ble_gatts_char_t *c = naos_ble_gatts_chars[i];
     c->_uuid.len = ESP_UUID_LEN_128;
     memcpy(c->_uuid.uuid.uuid128, c->uuid, ESP_UUID_LEN_128);
   }
 
-  // add primary service uuid to advertisement
+  // add primary service UUID to advertisement
   naos_ble_adv_data.service_uuid_len = ESP_UUID_LEN_128;
   naos_ble_adv_data.p_service_uuid = naos_ble_gatts_profile.service_id.id.uuid.uuid.uuid128;
 
-  // initialize controller
-  esp_bt_controller_config_t cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-  esp_bt_controller_init(&cfg);
-
-  // enable bluetooth
-  ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BTDM));
-
-  // initialize bluedroid stack
-  ESP_ERROR_CHECK(esp_bluedroid_init());
-
-  // enable bluedroid stack
-  ESP_ERROR_CHECK(esp_bluedroid_enable());
-
-  // register gatts handler
+  // register GATTS handler
   ESP_ERROR_CHECK(esp_ble_gatts_register_callback(naos_ble_gatts_handler));
 
-  // register gap handler
+  // register GAP handler
   ESP_ERROR_CHECK(esp_ble_gap_register_callback(naos_ble_gap_handler));
 
-  // configure profile
+  // configure GATTS profile
   naos_ble_gatts_profile.interface = ESP_GATT_IF_NONE;
   naos_ble_gatts_profile.service_id.is_primary = true;
   naos_ble_gatts_profile.service_id.id.inst_id = 0;
-
-  // set uuid
   naos_ble_gatts_profile.service_id.id.uuid.len = ESP_UUID_LEN_128;
   memcpy(naos_ble_gatts_profile.service_id.id.uuid.uuid.uuid128, naos_ble_gatts_profile.uuid, ESP_UUID_LEN_128);
 
   // register application
-  esp_ble_gatts_app_register(0x55);
+  ESP_ERROR_CHECK(esp_ble_gatts_app_register(0x55));
 
   // set device name
-  esp_ble_gap_set_device_name(naos_get("device-name"));
+  ESP_ERROR_CHECK(esp_ble_gap_set_device_name(naos_get("device-name")));
 
   // subscribe params
   naos_params_subscribe(ble_params);
