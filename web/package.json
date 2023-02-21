@@ -1,0 +1,14 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "run": "parcel --https index.html",
+    "fmt": "prettier --write ."
+  },
+  "devDependencies": {
+    "parcel": "^2.8.3",
+    "prettier": "^2.8.4"
+  }
+}
