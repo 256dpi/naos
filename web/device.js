@@ -35,7 +35,7 @@ export const Modes = {
   Locked: "l",
 };
 
-export default class Device {
+export default class Device extends EventTarget {
   device;
   service;
   lockChar;
@@ -50,6 +50,8 @@ export default class Device {
   cache = {};
 
   constructor(device) {
+    super();
+
     // set device
     this.device = device;
   }
@@ -80,7 +82,11 @@ export default class Device {
 
     // handle updates
     this.updateChar.addEventListener("characteristicvaluechanged", (event) => {
-      // TODO: Forward.
+      // get name
+      const name = utf8Dec.decode(event.target.value);
+
+      // dispatch event
+      this.dispatchEvent(new CustomEvent("updated", { detail: name }));
     });
 
     // subscribe to updates

@@ -11,9 +11,14 @@ export async function run() {
   await device.refresh();
   await device.unlock("secret");
   await device.refresh();
-  await device.disconnect();
 
   console.log(device);
+
+  device.addEventListener("updated", (event) => {
+    console.log(event.detail);
+  });
+
+  // await device.disconnect();
 }
 
 window._run = run;
