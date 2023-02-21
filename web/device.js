@@ -51,7 +51,9 @@ export default class Device extends EventTarget {
   protected = false;
   locked = false;
   parameters;
+  updated = new Set();
   cache = {};
+  timer;
 
   constructor(device) {
     super();
@@ -89,16 +91,35 @@ export default class Device extends EventTarget {
       this.updateChar.addEventListener(
         "characteristicvaluechanged",
         (event) => {
-          // get name
-          const name = utf8Dec.decode(event.target.value);
-
-          // dispatch event
-          this.dispatchEvent(new CustomEvent("updated", { detail: name }));
+          this.updated.add(utf8Dec.decode(event.target.value));
         }
       );
 
       // subscribe to updates
       await this.updateChar.startNotifications();
+
+      // create timer
+      this.timer = setInterval(() => {
+        this.queue.run(async () => {
+          // get and replace updated
+          const updated = this.updated;
+          this.updated = new Set();
+
+          // skip empty sets
+          if (updated.length === 0) {
+            return;
+          }
+
+          // update values
+          for (let name of updated) {
+            await write(this.selectChar, name);
+            this.cache[name] = await read(this.valueChar);
+          }
+
+          // dispatch event
+          this.dispatchEvent(new CustomEvent("updated", { detail: updated }));
+        });
+      }, 1000);
     });
   }
 
@@ -146,14 +167,8 @@ export default class Device extends EventTarget {
 
       // read all parameters
       for (let param of this.parameters) {
-        // select parameter
         await write(this.selectChar, name);
-
-        // read parameter
-        const value = await read(this.valueChar);
-
-        // update cache
-        this.cache[name] = value;
+        this.cache[name] = await read(this.valueChar);
       }
     });
   }
