@@ -747,6 +747,11 @@ ansi-styles@^4.1.0:
   dependencies:
     color-convert "^2.0.1"
 
+async-await-queue@^2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/async-await-queue/-/async-await-queue-2.1.2.tgz#c256fb30c3a4d91fa5599bbf24eaf812600a4f8d"
+  integrity sha512-/fgjMz0XxSX9KeQlpRXV71LUa8wAhlymMt1ZJssVF5l1/ghKKDgqdC9M4AvfFbsPxFxHNLJAvxnKGo3+x0R1cg==
+
 base-x@^3.0.8:
   version "3.0.9"
   resolved "https://registry.yarnpkg.com/base-x/-/base-x-3.0.9.tgz#6349aaabb58526332de9f60995e548a53fe21320"

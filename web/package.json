@@ -10,5 +10,8 @@
   "devDependencies": {
     "parcel": "^2.8.3",
     "prettier": "^2.8.4"
+  },
+  "dependencies": {
+    "async-await-queue": "^2.1.2"
   }
 }

@@ -1,3 +1,5 @@
+import { Queue } from "async-await-queue";
+
 const utf8End = new TextEncoder();
 const utf8Dec = new TextDecoder();
 
@@ -36,6 +38,8 @@ export const Modes = {
 };
 
 export default class Device extends EventTarget {
+  queue = new Queue();
+
   device;
   service;
   lockChar;
@@ -67,140 +71,160 @@ export default class Device extends EventTarget {
   }
 
   async connect() {
-    // connect
-    await this.device.gatt.connect();
+    await this.queue.run(async () => {
+      // connect
+      await this.device.gatt.connect();
 
-    // get service
-    this.service = await this.device.gatt.getPrimaryService(UUIDs.service);
+      // get service
+      this.service = await this.device.gatt.getPrimaryService(UUIDs.service);
 
-    // get characteristics
-    this.lockChar = await this.service.getCharacteristic(UUIDs.lockChar);
-    this.listChar = await this.service.getCharacteristic(UUIDs.listChar);
-    this.selectChar = await this.service.getCharacteristic(UUIDs.selectChar);
-    this.valueChar = await this.service.getCharacteristic(UUIDs.valueChar);
-    this.updateChar = await this.service.getCharacteristic(UUIDs.updateChar);
+      // get characteristics
+      this.lockChar = await this.service.getCharacteristic(UUIDs.lockChar);
+      this.listChar = await this.service.getCharacteristic(UUIDs.listChar);
+      this.selectChar = await this.service.getCharacteristic(UUIDs.selectChar);
+      this.valueChar = await this.service.getCharacteristic(UUIDs.valueChar);
+      this.updateChar = await this.service.getCharacteristic(UUIDs.updateChar);
 
-    // handle updates
-    this.updateChar.addEventListener("characteristicvaluechanged", (event) => {
-      // get name
-      const name = utf8Dec.decode(event.target.value);
+      // handle updates
+      this.updateChar.addEventListener(
+        "characteristicvaluechanged",
+        (event) => {
+          // get name
+          const name = utf8Dec.decode(event.target.value);
 
-      // dispatch event
-      this.dispatchEvent(new CustomEvent("updated", { detail: name }));
+          // dispatch event
+          this.dispatchEvent(new CustomEvent("updated", { detail: name }));
+        }
+      );
+
+      // subscribe to updates
+      await this.updateChar.startNotifications();
     });
-
-    // subscribe to updates
-    await this.updateChar.startNotifications();
   }
 
   async refresh() {
-    // check state
-    if (!this.connected) {
-      throw new Error("not connected");
-    }
+    await this.queue.run(async () => {
+      // check state
+      if (!this.connected) {
+        throw new Error("not connected");
+      }
 
-    // TODO: Prevent other actions from interfering with refresh.
+      // update locked
+      this.locked = (await read(this.lockChar)) === "locked";
 
-    // update locked
-    this.locked = (await read(this.lockChar)) === "locked";
+      // save if this device is protected
+      if (this.locked) {
+        this.protected = true;
+      }
 
-    // save if this device is protected
-    if (this.locked) {
-      this.protected = true;
-    }
+      // read system parameters
+      await write(this.listChar, "system");
+      let system = await read(this.listChar);
 
-    // read system parameters
-    await write(this.listChar, "system");
-    let system = await read(this.listChar);
+      // read application parameters
+      await write(this.listChar, "application");
+      let application = await read(this.listChar);
 
-    // read application parameters
-    await write(this.listChar, "application");
-    let application = await read(this.listChar);
+      // read list
+      let list = system + "," + application;
 
-    // read list
-    let list = system + "," + application;
+      // parse parameters
+      this.parameters = list
+        .split(",")
+        .map((str) => {
+          const seg = str.split(":");
+          if (seg.length !== 3) {
+            return null;
+          }
+          return {
+            name: seg[0],
+            type: seg[1],
+            mode: seg[2],
+          };
+        })
+        .filter((item) => !!item);
 
-    // parse parameters
-    this.parameters = list
-      .split(",")
-      .map((str) => {
-        const seg = str.split(":");
-        if (seg.length !== 3) {
-          return null;
-        }
-        return {
-          name: seg[0],
-          type: seg[1],
-          mode: seg[2],
-        };
-      })
-      .filter((item) => !!item);
+      // read all parameters
+      for (let param of this.parameters) {
+        // select parameter
+        await write(this.selectChar, name);
 
-    // read all parameters
-    for (let param of this.parameters) {
-      await this.read(param.name);
-    }
+        // read parameter
+        const value = await read(this.valueChar);
+
+        // update cache
+        this.cache[name] = value;
+      }
+    });
   }
 
   async unlock(password) {
-    // check state
-    if (!this.connected) {
-      throw new Error("not connected");
-    }
+    return this.queue.run(async () => {
+      // check state
+      if (!this.connected) {
+        throw new Error("not connected");
+      }
 
-    // write lock
-    await write(this.lockChar, password);
+      // write lock
+      await write(this.lockChar, password);
 
-    // read lock
-    const lock = await read(this.lockChar);
+      // read lock
+      const lock = await read(this.lockChar);
 
-    // update state
-    this.locked = lock === "locked";
+      // update state
+      this.locked = lock === "locked";
 
-    return lock === "unlocked";
+      return lock === "unlocked";
+    });
   }
 
   async read(name) {
-    // check state
-    if (!this.connected) {
-      throw new Error("not connected");
-    }
+    return this.queue.run(async () => {
+      // check state
+      if (!this.connected) {
+        throw new Error("not connected");
+      }
 
-    // select parameter
-    await write(this.selectChar, name);
+      // select parameter
+      await write(this.selectChar, name);
 
-    // read parameter
-    const value = await read(this.valueChar);
+      // read parameter
+      const value = await read(this.valueChar);
 
-    // update cache
-    this.cache[name] = value;
+      // update cache
+      this.cache[name] = value;
 
-    return value;
+      return value;
+    });
   }
 
   async write(name, value) {
-    // check state
-    if (!this.connected) {
-      throw new Error("not connected");
-    }
+    return this.queue.run(async () => {
+      // check state
+      if (!this.connected) {
+        throw new Error("not connected");
+      }
 
-    // select parameter
-    await write(this.selectChar, name);
+      // select parameter
+      await write(this.selectChar, name);
 
-    // write parameter
-    await write(this.valueChar, value);
+      // write parameter
+      await write(this.valueChar, value);
 
-    // update cache
-    this.cache[name] = value;
+      // update cache
+      this.cache[name] = value;
+    });
   }
 
   async disconnect() {
-    // lock again if protected
-    if (this.protected) {
-      this.locked = true;
-    }
+    return this.queue.run(async () => {
+      // lock again if protected
+      if (this.protected) {
+        this.locked = true;
+      }
 
-    // disconnect
-    await this.device.gatt.disconnect();
+      // disconnect
+      await this.device.gatt.disconnect();
+    });
   }
 }
