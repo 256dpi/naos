@@ -191,7 +191,7 @@ func BinDirectory(naosPath string) (string, error) {
 		return "", fmt.Errorf("toolchain not found")
 	}
 
-	// get required toolchain version
+	// get required toolchain version for v3 projects
 	version, err := RequiredToolchain(naosPath)
 	if err != nil {
 		return "", err
