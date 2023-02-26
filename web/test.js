@@ -1,4 +1,4 @@
-import Manager from "./manager.js";
+import Manager from "./index.js";
 
 async function run() {
   const manager = new Manager();
