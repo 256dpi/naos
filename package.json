@@ -1,6 +1,6 @@
 {
-  "name": "web",
-  "version": "1.0.0",
+  "name": "naos",
+  "version": "0.1.0",
   "main": "index.js",
   "license": "MIT",
   "type": "module",
@@ -9,11 +9,11 @@
     "run": "parcel --https web/test.html --dist-dir web/dist",
     "fmt": "prettier --write web"
   },
+  "dependencies": {
+    "async-await-queue": "^2.1.2"
+  },
   "devDependencies": {
     "parcel": "^2.8.3",
     "prettier": "^2.8.4"
-  },
-  "dependencies": {
-    "async-await-queue": "^2.1.2"
   }
 }
