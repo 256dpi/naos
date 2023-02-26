@@ -4,8 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "run": "parcel --https index.html",
-    "fmt": "prettier --write ."
+    "run": "parcel --https web/index.html --dist-dir web/dist",
+    "fmt": "prettier --write web"
   },
   "devDependencies": {
     "parcel": "^2.8.3",
