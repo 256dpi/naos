@@ -37,7 +37,7 @@ export const Modes = {
   Locked: "l",
 };
 
-export default class Device extends EventTarget {
+export class Device extends EventTarget {
   queue = new Queue();
 
   device;

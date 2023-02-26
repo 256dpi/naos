@@ -1,6 +1,6 @@
-import Device, { UUIDs } from "./device.js";
+import { Device, UUIDs } from "./device.js";
 
-export default class Manager extends EventTarget {
+export class Manager extends EventTarget {
   device;
 
   async request() {
