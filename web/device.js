@@ -60,6 +60,11 @@ export default class Device extends EventTarget {
 
     // set device
     this.device = device;
+
+    // handle disconnects
+    this.device.addEventListener("gattserverdisconnected", () => {
+      this.dispatchEvent(new CustomEvent("disconnected"));
+    });
   }
 
   /* Connection */
@@ -106,7 +111,7 @@ export default class Device extends EventTarget {
           this.updated = new Set();
 
           // skip empty sets
-          if (updated.length === 0) {
+          if (updated.size === 0) {
             return;
           }
 
@@ -120,6 +125,9 @@ export default class Device extends EventTarget {
           this.dispatchEvent(new CustomEvent("updated", { detail: updated }));
         });
       }, 1000);
+
+      // dispatch event
+      this.dispatchEvent(new CustomEvent("connected"));
     });
   }
 
@@ -240,6 +248,9 @@ export default class Device extends EventTarget {
 
       // disconnect
       await this.device.gatt.disconnect();
+
+      // dispatch event
+      this.dispatchEvent(new CustomEvent("disconnected"));
     });
   }
 }
