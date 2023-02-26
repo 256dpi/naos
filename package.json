@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "type": "module",
+  "exports": "./web/index.js",
   "scripts": {
     "run": "parcel --https web/index.html --dist-dir web/dist",
     "fmt": "prettier --write web"
