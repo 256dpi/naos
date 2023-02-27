@@ -3,7 +3,7 @@ import { Device, UUIDs } from "./device.js";
 export class Manager extends EventTarget {
   device;
 
-  async request() {
+  async request(options = {}) {
     // release existing device
     if (this.device) {
       if (this.device.connected) {
@@ -26,7 +26,7 @@ export class Manager extends EventTarget {
     }
 
     // create device
-    device = new Device(device);
+    device = new Device(device, options);
 
     // set device
     this.device = device;

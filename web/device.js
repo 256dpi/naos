@@ -44,6 +44,7 @@ export const Modes = {
 export class Device extends EventTarget {
   queue = new Queue();
 
+  options;
   device;
   service;
   lockChar;
@@ -59,11 +60,20 @@ export class Device extends EventTarget {
   cache = {};
   timer;
 
-  constructor(device) {
+  constructor(device, options = {}) {
     super();
 
     // set device
     this.device = device;
+
+    // set options
+    this.options = {
+      ...{
+        subscribe: true,
+        autoUpdate: true,
+      },
+      ...options,
+    };
 
     // handle disconnects
     this.device.addEventListener("gattserverdisconnected", () => {
@@ -100,35 +110,43 @@ export class Device extends EventTarget {
       this.updateChar.addEventListener(
         "characteristicvaluechanged",
         (event) => {
-          this.updated.add(utf8Dec.decode(event.target.value));
+          const name = utf8Dec.decode(event.target.value);
+          this.updated.add(name);
+          this.dispatchEvent(new CustomEvent("changed", { detail: name }));
         }
       );
 
       // subscribe to updates
-      await this.updateChar.startNotifications();
+      if (this.options.subscribe) {
+        await this.updateChar.startNotifications();
+      }
 
       // create timer
-      this.timer = setInterval(() => {
-        this.queue.run(async () => {
-          // get and replace updated
-          const updated = this.updated;
-          this.updated = new Set();
+      if (this.options.autoUpdate) {
+        this.timer = setInterval(() => {
+          this.queue.run(async () => {
+            // get and replace updated
+            const updated = this.updated;
+            this.updated = new Set();
 
-          // skip empty sets
-          if (updated.size === 0) {
-            return;
-          }
+            // skip empty sets
+            if (updated.size === 0) {
+              return;
+            }
 
-          // update values
-          for (let name of updated) {
-            await write(this.selectChar, name);
-            this.cache[name] = await read(this.valueChar);
-          }
+            // update values
+            const updates = {};
+            for (let name of updated) {
+              await write(this.selectChar, name);
+              this.cache[name] = await read(this.valueChar);
+              updates[name] = this.cache[name];
+            }
 
-          // dispatch event
-          this.dispatchEvent(new CustomEvent("updated", { detail: updated }));
-        });
-      }, 1000);
+            // dispatch event
+            this.dispatchEvent(new CustomEvent("updated", { detail: updates }));
+          });
+        }, 1000);
+      }
 
       // dispatch event
       this.dispatchEvent(new CustomEvent("connected"));
