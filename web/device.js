@@ -3,8 +3,12 @@ import { Queue } from "async-await-queue";
 const utf8End = new TextEncoder();
 const utf8Dec = new TextDecoder();
 
-async function write(char, str) {
-  await char.writeValueWithResponse(utf8End.encode(str));
+async function write(char, str, confirm = true) {
+  if (confirm) {
+    await char.writeValueWithResponse(utf8End.encode(str));
+  } else {
+    await char.writeValueWithoutResponse(utf8End.encode(str));
+  }
 }
 
 async function read(char) {
@@ -236,6 +240,27 @@ export class Device extends EventTarget {
 
       // update cache
       this.cache[name] = value;
+    });
+  }
+
+  async quickWrite(name, values) {
+    return this.queue.run(async () => {
+      // check state
+      if (!this.connected) {
+        throw new Error("not connected");
+      }
+
+      // select parameter
+      await write(this.selectChar, name, false);
+
+      // write value
+      for (const value of values) {
+        // write parameter
+        await write(this.valueChar, value, false);
+
+        // update cache
+        this.cache[name] = value;
+      }
     });
   }
 
