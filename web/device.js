@@ -261,7 +261,7 @@ export class Device extends EventTarget {
     });
   }
 
-  async quickWrite(name, values) {
+  async quickWrite(name, values, confirm = false) {
     return this.queue.run(async () => {
       // check state
       if (!this.connected) {
@@ -269,12 +269,12 @@ export class Device extends EventTarget {
       }
 
       // select parameter
-      await write(this.selectChar, name, false);
+      await write(this.selectChar, name, confirm);
 
       // write value
       for (const value of values) {
         // write parameter
-        await write(this.valueChar, value, false);
+        await write(this.valueChar, value, confirm);
 
         // update cache
         this.cache[name] = value;
