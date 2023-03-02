@@ -1,13 +1,13 @@
 import { Queue } from "async-await-queue";
 
-const utf8End = new TextEncoder();
+const utf8Enc = new TextEncoder();
 const utf8Dec = new TextDecoder();
 
 async function write(char, str, confirm = true) {
   if (confirm) {
-    await char.writeValueWithResponse(utf8End.encode(str));
+    await char.writeValueWithResponse(utf8Enc.encode(str));
   } else {
-    await char.writeValueWithoutResponse(utf8End.encode(str));
+    await char.writeValueWithoutResponse(utf8Enc.encode(str));
   }
 }
 
