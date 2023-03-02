@@ -12,6 +12,7 @@
 #include "naos.h"
 #include "params.h"
 #include "utils.h"
+#include "update.h"
 
 #define NAOS_BLE_MAX_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
 
@@ -21,6 +22,7 @@ typedef struct {
   bool locked;
   naos_mode_t mode;
   naos_param_t *param;
+  bool flash_ready;
 } naos_ble_conn_t;
 
 static naos_mutex_t naos_ble_mutex;
@@ -86,13 +88,46 @@ static naos_ble_gatts_char_t naos_ble_char_update = {
     .uuid = {0x26, 0x17, 0x8c, 0xbc, 0x61, 0x7a, 0x4a, 0x9c, 0xa2, 0x22, 0x04, 0x07, 0xcf, 0xfd, 0xbf, 0x87},
     .prop = ESP_GATT_CHAR_PROP_BIT_INDICATE};
 
-#define NAOS_BLE_NUM_CHARS 5
+static naos_ble_gatts_char_t naos_ble_char_flash = {
+    .uuid = {0x90, 0x13, 0x99, 0x4c, 0xfe, 0xa1, 0x41, 0x53, 0x87, 0x16, 0xa9, 0x9a, 0xa1, 0x4d, 0x11, 0x6c},
+    .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR |
+            ESP_GATT_CHAR_PROP_BIT_INDICATE,
+    .max_write_len = 512,
+};
+
+#define NAOS_BLE_NUM_CHARS 6
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
-    &naos_ble_char_lock, &naos_ble_char_list, &naos_ble_char_select, &naos_ble_char_value, &naos_ble_char_update,
+    &naos_ble_char_lock,  &naos_ble_char_list,   &naos_ble_char_select,
+    &naos_ble_char_value, &naos_ble_char_update, &naos_ble_char_flash,
 };
 
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
+static naos_ble_conn_t *naos_ble_flash_conn = NULL;
+
+static void naos_ble_update(naos_update_event_t event) {
+  // skip non-ready events
+  if (event != NAOS_UPDATE_READY) {
+    return;
+  }
+
+  // acquire mutex
+  NAOS_LOCK(naos_ble_mutex);
+
+  // get conn
+  naos_ble_conn_t *conn = naos_ble_flash_conn;
+
+  // indicate readiness if still connected
+  if (conn->connected) {
+    conn->flash_ready = true;
+    const char *value = "1";
+    ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, conn->id, naos_ble_char_flash.handle,
+                                                1, (uint8_t *)value, false));
+  }
+
+  // release mutex
+  NAOS_UNLOCK(naos_ble_mutex);
+}
 
 static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
   switch (e) {
@@ -308,6 +343,10 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
           if (conn->param != NULL) {
             value = strdup(naos_get(conn->param->name));
           }
+        } else if (c == &naos_ble_char_flash) {
+          if (!conn->locked) {
+            value = strdup(conn->flash_ready ? "1" : "0");
+          }
         }
 
         // set value
@@ -402,6 +441,26 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
         } else if (c == &naos_ble_char_value) {
           if (conn->param != NULL && (conn->param->mode & NAOS_LOCKED) == 0) {
             naos_set(conn->param->name, value);
+          }
+        } else if (c == &naos_ble_char_flash) {
+          if (!conn->locked && p->write.len > 0) {
+            switch (value[0]) {
+              case 'b': {  // begin
+                size_t size = strtoul(value + 1, NULL, 10);
+                naos_ble_flash_conn = conn;
+                naos_update_begin(size, naos_ble_update);
+                break;
+              }
+              case 'w': {  // write
+                naos_update_write((uint8_t *)(value + 1), p->write.len - 1);
+                break;
+              }
+              case 'f': {  // finish
+                naos_update_finish();
+                naos_ble_flash_conn = NULL;
+                break;
+              }
+            }
           }
         }
 
