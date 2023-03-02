@@ -450,9 +450,9 @@ static void naos_ble_param_handler(naos_param_t *param) {
   for (int j = 0; j < NAOS_BLE_MAX_CONNECTIONS; j++) {
     naos_ble_conn_t *conn = &naos_ble_conns[j];
     if (conn->connected && !conn->locked) {
-      ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, conn->id,
-                                                  naos_ble_char_update.handle, (uint16_t)strlen(param->name),
-                                                  (uint8_t *)param->name, false));
+      ESP_ERROR_CHECK_WITHOUT_ABORT(
+          esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, conn->id, naos_ble_char_update.handle,
+                                      (uint16_t)strlen(param->name), (uint8_t *)param->name, false));
     }
   }
 

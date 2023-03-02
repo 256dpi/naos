@@ -2,7 +2,6 @@
 #define NAOS_UTILS_H
 
 #include <stdint.h>
-#include <esp_log.h>
 
 #define NAOS_LOG_TAG "naos"
 

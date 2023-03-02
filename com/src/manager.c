@@ -1,6 +1,5 @@
 #include <naos/sys.h>
 
-#include <esp_log.h>
 #include <esp_ota_ops.h>
 #include <string.h>
 

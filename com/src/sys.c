@@ -1,6 +1,5 @@
 #include <naos/sys.h>
 
-#include <esp_log.h>
 #include <esp_debug_helpers.h>
 
 int64_t naos_millis() {
