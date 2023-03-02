@@ -5,4 +5,5 @@ test/tools
 test/components/esp-mqtt/
 test/components/esp-osc/
 test/build/
+test/dependencies.lock
 doc/
