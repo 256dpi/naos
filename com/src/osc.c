@@ -1,5 +1,5 @@
-#include <naos_osc.h>
-#include <naos_sys.h>
+#include <naos/osc.h>
+#include <naos/sys.h>
 
 #include "naos.h"
 #include "com.h"

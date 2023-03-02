@@ -1,4 +1,4 @@
-#include <naos_sys.h>
+#include <naos/sys.h>
 
 #include "log.h"
 #include "utils.h"

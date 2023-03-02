@@ -1,4 +1,4 @@
-#include <naos_sys.h>
+#include <naos/sys.h>
 
 #include <esp_log.h>
 #include <esp_debug_helpers.h>

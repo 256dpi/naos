@@ -2,14 +2,14 @@
 #include <string.h>
 
 #include <naos.h>
-#include <naos_ble.h>
-#include <naos_cpu.h>
-#include <naos_wifi.h>
-#include <naos_http.h>
-#include <naos_eth.h>
-#include <naos_mqtt.h>
-#include <naos_osc.h>
-#include <naos_manager.h>
+#include <naos/ble.h>
+#include <naos/cpu.h>
+#include <naos/wifi.h>
+#include <naos/http.h>
+#include <naos/eth.h>
+#include <naos/mqtt.h>
+#include <naos/osc.h>
+#include <naos/manager.h>
 
 #define ETHERNET false
 

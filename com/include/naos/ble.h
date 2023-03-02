@@ -1,6 +1,8 @@
 #ifndef NAOS_BLE_H
 #define NAOS_BLE_H
 
+#include <stdbool.h>
+
 typedef struct {
   /**
    * Whether to skip bluetooth initialization.

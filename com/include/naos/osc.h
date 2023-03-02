@@ -1,7 +1,7 @@
 #ifndef NAOS_OSC_H
 #define NAOS_OSC_H
 
-#include <esp_osc.h>
+#include "esp_osc.h"
 
 /**
  * Initialize the OSC communication transport.
