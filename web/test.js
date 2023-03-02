@@ -1,9 +1,11 @@
-import { Manager } from "./index.js";
+import { Manager, readFile } from "./index.js";
+
+let device;
 
 async function run() {
   const manager = new Manager();
 
-  const device = await manager.request({
+  device = await manager.request({
     subscribe: true,
     autoUpdate: true,
   });
@@ -19,7 +21,7 @@ async function run() {
     console.log("updated", event.detail);
   });
 
-  device.addEventListener("connected", async (event) => {
+  device.addEventListener("connected", async () => {
     console.log("Online!");
 
     console.log("Refreshing...");
@@ -30,6 +32,8 @@ async function run() {
 
     console.log("Refreshing...");
     await device.refresh();
+
+    console.log("Ready!");
   });
 
   device.addEventListener("disconnected", () => {
@@ -37,4 +41,20 @@ async function run() {
   });
 }
 
+async function flash(input) {
+  if (!device || !input.files.length) {
+    return;
+  }
+
+  const data = await readFile(input.files[0]);
+
+  console.log("Flashing...", data);
+  await device.flash(data, (progress) => {
+    console.log(progress);
+  });
+
+  console.log("Flashing done!");
+}
+
 window._run = run;
+window._flash = flash;

@@ -16,6 +16,13 @@ async function read(char) {
   return utf8Dec.decode(value);
 }
 
+function concat(buf1, buf2) {
+  const buf = new Uint8Array(buf1.byteLength + buf2.byteLength);
+  buf.set(new Uint8Array(buf1), 0);
+  buf.set(new Uint8Array(buf2), buf1.byteLength);
+  return buf.buffer;
+}
+
 export const UUIDs = {
   service: "632fba1b-4861-4e4f-8103-ffee9d5033b5",
   lockChar: "f7a5fba4-4084-239b-684d-07d5902eb591",
@@ -23,6 +30,7 @@ export const UUIDs = {
   selectChar: "cfc9706d-406f-ccbe-4240-f88d6ed4bacd",
   valueChar: "01ca5446-8ee1-7e99-2041-6884b01e71b3",
   updateChar: "87bffdcf-0704-22a2-9c4a-7a61bc8c1726",
+  flashChar: "6c114da1-9aa9-1687-5341-a1fe4c991390",
 };
 
 export const Types = {
@@ -52,6 +60,7 @@ export class Device extends EventTarget {
   selectChar;
   valueChar;
   updateChar;
+  flashChar;
 
   protected = false;
   locked = false;
@@ -105,6 +114,7 @@ export class Device extends EventTarget {
       this.selectChar = await this.service.getCharacteristic(UUIDs.selectChar);
       this.valueChar = await this.service.getCharacteristic(UUIDs.valueChar);
       this.updateChar = await this.service.getCharacteristic(UUIDs.updateChar);
+      this.flashChar = await this.service.getCharacteristic(UUIDs.flashChar);
 
       // handle updates
       this.updateChar.addEventListener(
@@ -279,6 +289,87 @@ export class Device extends EventTarget {
         // update cache
         this.cache[name] = value;
       }
+    });
+  }
+
+  async flash(data, progress) {
+    return this.queue.run(async () => {
+      // check state
+      if (!this.connected) {
+        throw new Error("not connected");
+      }
+
+      // subscribe signal
+      await this.flashChar.startNotifications();
+
+      // prepare signal
+      const signal = new Promise((resolve) => {
+        const listener = (event) => {
+          const res = utf8Dec.decode(event.target.value);
+          this.flashChar.removeEventListener(
+            "characteristicvaluechanged",
+            listener
+          );
+          resolve(res === "1");
+        };
+        this.flashChar.addEventListener("characteristicvaluechanged", listener);
+      });
+
+      // begin update
+      await write(this.flashChar, `b${data.byteLength}`, true);
+
+      // await signal
+      await signal;
+
+      // unsubscribe signal
+      await this.flashChar.stopNotifications();
+
+      // get start
+      const start = Date.now();
+
+      // call progress
+      if (progress) {
+        progress({
+          done: 0,
+          total: data.byteLength,
+          rate: 0,
+          percent: 0,
+        });
+      }
+
+      // write update
+      let chunks = 0;
+      for (let i = 0; i < data.byteLength; i += 500) {
+        const buf = concat(utf8Enc.encode("w"), data.slice(i, i + 500));
+        if (chunks >= 5) {
+          chunks = 0;
+          await this.flashChar.writeValueWithResponse(buf);
+        } else {
+          await this.flashChar.writeValueWithoutResponse(buf);
+        }
+        chunks++;
+        if (progress) {
+          progress({
+            done: i,
+            total: data.byteLength,
+            rate: (i + buf.byteLength) / ((Date.now() - start) / 1000),
+            percent: (100 / data.byteLength) * (i + buf.byteLength),
+          });
+        }
+      }
+
+      // call progress
+      if (progress) {
+        progress({
+          done: data.byteLength,
+          total: data.byteLength,
+          rate: data.byteLength / ((Date.now() - start) / 1000),
+          percent: 100,
+        });
+      }
+
+      // finish update
+      await write(this.flashChar, "f", true);
     });
   }
 
