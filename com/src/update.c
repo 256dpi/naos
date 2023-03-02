@@ -8,33 +8,14 @@
 #include "utils.h"
 
 static naos_mutex_t naos_update_mutex;
+static naos_update_callback_t naos_update_callback = NULL;
 static const esp_partition_t *naos_update_partition = NULL;
+static size_t naos_update_size = 0;
 static esp_ota_handle_t naos_update_handle = 0;
 
-void naos_update_init() {
-  // create mutex
-  naos_update_mutex = naos_mutex();
-}
-
-void naos_update_begin(size_t size) {
+static void naos_update_begin_task() {
   // acquire mutex
   NAOS_LOCK(naos_update_mutex);
-
-  // abort a previous update and discard its result
-  if (naos_update_handle != 0) {
-    esp_ota_abort(naos_update_handle);
-    naos_update_handle = 0;
-  }
-
-  // log message
-  ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin: start update");
-
-  // get update partition
-  naos_update_partition = esp_ota_get_next_update_partition(NULL);
-  if (naos_update_partition == NULL) {
-    ESP_LOGE(NAOS_LOG_TAG, "naos_update_begin: no partition available");
-    NAOS_UNLOCK(naos_update_mutex);
-  }
 
   // esp_ota_begin will erase flash, which may take up to 10s for 2MB,
   // we conservatively increase the task WDT timeout to 30s if enabled
@@ -47,7 +28,7 @@ void naos_update_begin(size_t size) {
 #endif
 
   // begin update
-  ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, size, &naos_update_handle));
+  ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, naos_update_size, &naos_update_handle));
 
   // restore original task WDT timeout if enabled
 #ifdef CONFIG_ESP_TASK_WDT_PANIC
@@ -58,6 +39,78 @@ void naos_update_begin(size_t size) {
 
   // release mutex
   NAOS_UNLOCK(naos_update_mutex);
+
+  // call callback if available
+  if (naos_update_callback != NULL) {
+    naos_update_callback(NAOS_UPDATE_READY);
+  }
+}
+
+static void naos_update_finish_task() {
+  // acquire mutex
+  NAOS_LOCK(naos_update_mutex);
+
+  // end update
+  ESP_ERROR_CHECK(esp_ota_end(naos_update_handle));
+
+  // reset handle
+  naos_update_handle = 0;
+
+  // set boot partition
+  ESP_ERROR_CHECK(esp_ota_set_boot_partition(naos_update_partition));
+
+  // log message
+  ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish: update finished");
+
+  // release mutex
+  NAOS_UNLOCK(naos_update_mutex);
+
+  // call callback if available
+  if (naos_update_callback != NULL) {
+    naos_update_callback(NAOS_UPDATE_DONE);
+  }
+
+  // restart system
+  esp_restart();
+}
+
+void naos_update_init() {
+  // create mutex
+  naos_update_mutex = naos_mutex();
+}
+
+void naos_update_begin(size_t size, naos_update_callback_t cb) {
+  // acquire mutex
+  NAOS_LOCK(naos_update_mutex);
+
+  // abort a previous update and discard its result
+  if (naos_update_handle != 0) {
+    esp_ota_abort(naos_update_handle);
+    naos_update_handle = 0;
+  }
+
+  // log message
+  ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin: start update");
+
+  // store callback
+  naos_update_callback = cb;
+
+  // get update partition
+  naos_update_partition = esp_ota_get_next_update_partition(NULL);
+  if (naos_update_partition == NULL) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_begin: no partition available");
+    NAOS_UNLOCK(naos_update_mutex);
+    return;
+  }
+
+  // store size
+  naos_update_size = size;
+
+  // release mutex
+  NAOS_UNLOCK(naos_update_mutex);
+
+  // run begin task
+  naos_run("update-begin", 4096, 1, naos_update_begin_task);
 }
 
 void naos_update_write(const uint8_t *chunk, size_t len) {
@@ -89,21 +142,9 @@ void naos_update_finish() {
     return;
   }
 
-  // end update
-  ESP_ERROR_CHECK(esp_ota_end(naos_update_handle));
-
-  // reset handle
-  naos_update_handle = 0;
-
-  // set boot partition
-  ESP_ERROR_CHECK(esp_ota_set_boot_partition(naos_update_partition));
-
-  // log message
-  ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish: update finished");
-
   // release mutex
   NAOS_UNLOCK(naos_update_mutex);
 
-  // restart system
-  esp_restart();
+  // run finish task
+  naos_run("update-finish", 4096, 1, naos_update_finish_task);
 }

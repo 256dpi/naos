@@ -58,6 +58,22 @@ static void naos_manager_announce() {
   naos_publish("naos/announcement", buf, 0, false, NAOS_GLOBAL);
 }
 
+static void naos_manager_update(naos_update_event_t event) {
+  // skip non-ready events
+  if (event != NAOS_UPDATE_READY) {
+    return;
+  }
+
+  // acquire mutex
+  NAOS_LOCK(naos_manager_mutex);
+
+  // request first chunk
+  naos_publish_l("naos/update/request", CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE, 0, false, NAOS_LOCAL);
+
+  // release mutex
+  NAOS_UNLOCK(naos_manager_mutex);
+}
+
 static void naos_manager_handler(naos_scope_t scope, const char *topic, const uint8_t *payload, size_t len, int qos,
                                  bool retained) {
   // skip other messages
@@ -206,10 +222,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     ESP_LOGI(NAOS_LOG_TAG, "naos_manager_handle: begin update with size %zu", total);
 
     // begin update
-    naos_update_begin(total);
-
-    // request first chunk
-    naos_publish_l("naos/update/request", CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE, 0, false, NAOS_LOCAL);
+    naos_update_begin(total, naos_manager_update);
 
     // release mutex
     NAOS_UNLOCK(naos_manager_mutex);
