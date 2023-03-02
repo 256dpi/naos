@@ -54,6 +54,11 @@ static void update(const char *param, const char *value) {
 }
 
 static void handle(const char *topic, const uint8_t *payload, size_t len, naos_scope_t scope) {
+  // skip system messages
+  if (strncmp(topic, "naos/", 5) == 0) {
+    return;
+  }
+
   // handle fail
   if (strcmp(topic, "fail") == 0 && scope == NAOS_LOCAL) {
     // cause error
