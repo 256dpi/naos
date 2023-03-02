@@ -232,7 +232,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
 
   // handle update write
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/update/write") == 0) {
-    // write chunk (very time expensive)
+    // write chunk
     naos_update_write(payload, len);
     ESP_LOGI(NAOS_LOG_TAG, "naos_manager_handle: wrote chunk of %zu bytes", len);
 
