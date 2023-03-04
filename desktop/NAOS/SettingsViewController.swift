@@ -38,7 +38,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				// update connection status
 				self.connectionStatusLabel.stringValue =
 					(self.device.parameters[.connectionStatus] ?? "")
-					.capitalized
+						.capitalized
 
 				// reload parameters
 				self.parameterTableView.reloadData()
@@ -46,6 +46,58 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				// dismiss sheet
 				self.dismiss(self.loadingViewController!)
 			}
+		}
+	}
+
+	@IBAction
+	func flash(_: AnyObject) {
+		// prepare dialog
+		let dialog = NSOpenPanel()
+		dialog.showsResizeIndicator = true
+		dialog.allowedFileTypes = ["bin"]
+
+		// run dialog
+		let res = dialog.runModal()
+		if res != .OK {
+			return
+		}
+
+		// get path
+		let path = dialog.url
+		if path == nil {
+			showError(error: CustomError(title: "Failed to obtain path."))
+			return
+		}
+
+		// get data
+		let data = FileManager.default.contents(atPath: path!.path)
+		if data == nil {
+			showError(error: CustomError(title: "Failed to load file."))
+			return
+		}
+
+		// show loading view controller
+		loadingViewController = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "LoadingViewController") as? LoadingViewController
+		loadingViewController!.message = "Flashing..."
+		loadingViewController!.preferredContentSize = CGSize(width: 200, height: 200)
+		presentAsSheet(loadingViewController!)
+
+		// flash device
+		Task {
+			// perform flash
+			do {
+				try await device.flash(data: data!, progress: { (progress: NAOSProgress) in
+					DispatchQueue.main.async {
+						self.loadingViewController!.progressIndicator.isIndeterminate = false
+						self.loadingViewController!.progressIndicator.doubleValue = progress.percent
+					}
+				})
+			} catch {
+				showError(error: error)
+			}
+
+			// dismiss sheet
+			self.dismiss(self.loadingViewController!)
 		}
 	}
 
@@ -183,8 +235,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 		// reload paramter
 		parameterTableView.reloadData(
-			forRowIndexes: IndexSet(integer: index), columnIndexes: IndexSet(integer: 1)
-		)
+			forRowIndexes: IndexSet(integer: index), columnIndexes: IndexSet(integer: 1))
 	}
 
 	// SettingsParameterValueDelegate

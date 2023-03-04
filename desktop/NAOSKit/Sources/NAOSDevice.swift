@@ -17,12 +17,13 @@ internal enum NAOSCharacteristic: String {
 	case select = "CFC9706D-406F-CCBE-4240-F88D6ED4BACD"
 	case value = "01CA5446-8EE1-7E99-2041-6884B01E71B3"
 	case update = "87BFFDCF-0704-22A2-9C4A-7A61BC8C1726"
+	case flash = "6C114DA1-9AA9-1687-5341-A1fE4C991390"
 
 	func cbuuid() -> CBUUID {
 		return CBUUID(string: rawValue)
 	}
 
-	static let all: [NAOSCharacteristic] = [.lock, .list, .select, .value, .update]
+	static let all: [NAOSCharacteristic] = [.lock, .list, .select, .value, .update, .flash]
 }
 
 /// The available parameter types.
@@ -146,6 +147,14 @@ public enum NAOSError: LocalizedError {
 	}
 }
 
+/// The NAOS update progress.
+public struct NAOSProgress {
+	public var done: Int
+	public var total: Int
+	public var rate: Double
+	public var percent: Double
+}
+
 /// The delegate implemented by objects
 public protocol NAOSDeviceDelegate {
 	func naosDeviceDidUpdate(device: NAOSDevice, parameter: NAOSParameter)
@@ -159,6 +168,7 @@ public class NAOSDevice: NSObject {
 	private var mutex = AsyncSemaphore(value: 1)
 	private var refreshing: Bool = false
 	private var subscription: AnyCancellable?
+	private var updateReady: CheckedContinuation<Void, Never>?
 	internal var updatable: Set<NAOSParameter> = Set()
 
 	public var delegate: NAOSDeviceDelegate?
@@ -270,6 +280,14 @@ public class NAOSDevice: NSObject {
 
 				// get characteristic
 				let char = self.fromRawCharacteristic(char: char)
+
+				// handle flash
+				if char == .flash {
+					self.updateReady?.resume()
+					return
+				}
+
+				// check update
 				if char != .update {
 					return
 				}
@@ -417,6 +435,68 @@ public class NAOSDevice: NSObject {
 		}
 	}
 
+	/// Flash will upload the provided firmware to the device and reset the device when done.
+	public func flash(data: Data, progress: (NAOSProgress) -> Void) async throws {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+
+		// begin flash
+		try await write(char: .flash, data: String(format: "b%d", data.count))
+
+		// await signal (without holding mutex)
+		mutex.signal()
+		do {
+			try await withTimeout(seconds: 30) {
+				await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+					self.updateReady = continuation
+				}
+			}
+		} catch {
+			await mutex.wait()
+			throw error
+		}
+		await mutex.wait()
+
+		// get time
+		let start = Date()
+
+		// call progress callback
+		progress(NAOSProgress(done: 0, total: data.count, rate: 0, percent: 0))
+
+		// write chunks
+		var num = 0
+		for i in stride(from: 0, to: data.count, by: 500) {
+			// determine end
+			var end = i + 500
+			if end > data.count {
+				end = data.count
+			}
+
+			// prepare data
+			var buf = Data()
+			buf.append("w".data(using: .utf8)!)
+			buf.append(data[i ..< end])
+
+			// write data
+			try await write(char: .flash, data: buf, confirm: num % 5 == 0)
+
+			// increment
+			num += 1
+
+			// call progress callback
+			let diff = Date().timeIntervalSince(start)
+			progress(NAOSProgress(done: end, total: data.count, rate: Double(end) / diff, percent: 100 / Double(data.count) * Double(end)))
+		}
+
+		// call progress callback
+		let diff = Date().timeIntervalSince(start)
+		progress(NAOSProgress(done: data.count, total: data.count, rate: Double(data.count) / diff, percent: 100))
+
+		// finish flash
+		try await write(char: .flash, data: "f")
+	}
+
 	/// Disconnect will close the connection to the device.
 	public func disconnect() async throws {
 		// acquire mutex
@@ -484,6 +564,10 @@ public class NAOSDevice: NSObject {
 	}
 
 	internal func write(char: NAOSCharacteristic, data: String) async throws {
+		try await write(char: char, data: data.data(using: .utf8)!, confirm: true)
+	}
+
+	internal func write(char: NAOSCharacteristic, data: Data, confirm: Bool) async throws {
 		// get characteristic
 		guard let char = towRawCharacteristic(char: char) else {
 			throw NAOSError.characteristicNotFound
@@ -491,8 +575,7 @@ public class NAOSDevice: NSObject {
 
 		// read value
 		try await withTimeout(seconds: 2) {
-			try await self.peripheral.writeValue(
-				data.data(using: .utf8)!, for: char, type: .withResponse)
+			try await self.peripheral.writeValue(data, for: char, type: confirm ? .withResponse : .withoutResponse)
 		}
 	}
 

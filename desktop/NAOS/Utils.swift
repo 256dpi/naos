@@ -8,6 +8,16 @@
 
 import Cocoa
 
+struct CustomError: LocalizedError {
+	var title: String?
+	var errorDescription: String?
+
+	init(title: String) {
+		self.title = title
+		self.errorDescription = title
+	}
+}
+
 public func showError(error: Error) {
 	// show error
 	DispatchQueue.main.async {
