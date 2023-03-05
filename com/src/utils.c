@@ -36,6 +36,15 @@ char *naos_format(char *fmt, ...) {
   return buf;
 }
 
+char *naos_copy(uint8_t *buf, size_t len) {
+  // copy buffer and null terminate
+  char *value = malloc(len + 1);
+  memcpy(value, buf, len);
+  value[len] = 0;
+
+  return value;
+}
+
 char *naos_concat(const char *str1, const char *str2) {
   // copy strings
   char *str = malloc(strlen(str1) + strlen(str2) + 1);
@@ -43,4 +52,13 @@ char *naos_concat(const char *str1, const char *str2) {
   strcat(str, str2);
 
   return str;
+}
+
+bool naos_equal(uint8_t *buf, size_t len, const char *str) {
+  // compare buffer to string
+  if (strlen(str) == len) {
+    return memcmp(buf, str, len) == 0;
+  } else {
+    return false;
+  }
 }
