@@ -8,13 +8,13 @@
 #include "params.h"
 #include "utils.h"
 
-#define NAOS_PARAMS_MAX_RECEIVERS 8
+#define NAOS_PARAMS_MAX_HANDLERS 8
 
 static nvs_handle naos_params_handle;
 static naos_mutex_t naos_params_mutex;
 static naos_param_t *naos_params[CONFIG_NAOS_PARAM_REGISTRY_SIZE] = {0};
 static size_t naos_params_count = 0;
-static naos_params_handler_t naos_params_handlers[NAOS_PARAMS_MAX_RECEIVERS] = {0};
+static naos_params_handler_t naos_params_handlers[NAOS_PARAMS_MAX_HANDLERS] = {0};
 static uint8_t naos_params_handler_count = 0;
 
 static void naos_params_update(naos_param_t *param) {
@@ -153,9 +153,9 @@ void naos_register(naos_param_t *param) {
   naos_params[naos_params_count] = param;
   naos_params_count++;
 
-  // check parameter
-  size_t required_size;
-  esp_err_t err = nvs_get_blob(naos_params_handle, param->name, NULL, &required_size);
+  // check existence
+  size_t length;
+  esp_err_t err = nvs_get_blob(naos_params_handle, param->name, NULL, &length);
   if ((param->mode & NAOS_VOLATILE) != 0 || err == ESP_ERR_NVS_NOT_FOUND) {
     // set default value if missing or volatile
     NAOS_UNLOCK(naos_params_mutex);
@@ -185,12 +185,12 @@ void naos_register(naos_param_t *param) {
     NAOS_LOCK(naos_params_mutex);
   } else if (err == ESP_OK) {
     // otherwise, read stored value
-    uint8_t *buf = malloc(required_size + 1);
-    ESP_ERROR_CHECK(nvs_get_blob(naos_params_handle, param->name, buf, &required_size));
-    buf[required_size] = 0;
+    uint8_t *buf = malloc(length + 1);
+    ESP_ERROR_CHECK(nvs_get_blob(naos_params_handle, param->name, buf, &length));
+    buf[length] = 0;
     param->current = (naos_value_t){
         .buf = buf,
-        .len = required_size,
+        .len = length,
     };
   } else {
     ESP_ERROR_CHECK(err);
@@ -234,12 +234,6 @@ char *naos_params_list(naos_mode_t mode) {
   // acquire mutex
   NAOS_LOCK(naos_params_mutex);
 
-  // return empty string if there are no params
-  if (naos_params_count == 0) {
-    NAOS_UNLOCK(naos_params_mutex);
-    return strdup("");
-  }
-
   // determine list length
   size_t length = 0;
   size_t count = 0;
@@ -264,6 +258,12 @@ char *naos_params_list(naos_mode_t mode) {
         length++;
       }
     }
+  }
+
+  // return empty string if there are no params
+  if (count == 0) {
+    NAOS_UNLOCK(naos_params_mutex);
+    return strdup("");
   }
 
   // allocate buffer
@@ -359,7 +359,7 @@ void naos_params_subscribe(naos_params_handler_t handler) {
   NAOS_LOCK(naos_params_mutex);
 
   // check count
-  if (naos_params_handler_count >= NAOS_PARAMS_MAX_RECEIVERS) {
+  if (naos_params_handler_count >= NAOS_PARAMS_MAX_HANDLERS) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
@@ -437,13 +437,13 @@ void naos_set(const char *name, uint8_t *value, size_t length) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
-  // acquire mutex
-  NAOS_LOCK(naos_params_mutex);
-
   // check value
   if (value == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
+
+  // acquire mutex
+  NAOS_LOCK(naos_params_mutex);
 
   // set parameter if not volatile
   if ((param->mode & NAOS_VOLATILE) == 0) {

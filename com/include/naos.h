@@ -90,7 +90,7 @@ typedef struct {
   naos_mode_t mode;
 
   /**
-   * The default values set if the parameter is missing.
+   * The default value is set when the parameter is missing.
    */
   union {
     naos_value_t default_r;
@@ -265,7 +265,7 @@ int32_t naos_get_l(const char *param);
 double naos_get_d(const char *param);
 
 /**
- * Will set the value of the requested parameter with a copy if the provided value. Synchronized parameters are
+ * Will set the value of the requested parameter with a copy of the provided value. Synchronized parameters are
  * automatically updated.
  *
  * @param param The parameter.
@@ -279,8 +279,9 @@ void naos_set_d(const char *param, double value);
 
 /**
  * Will lookup the specified parameter.
+ *
  * @param name The parameter.
- * @return A reference of NULL if not found.
+ * @return A reference or NULL if not found.
  */
 naos_param_t *naos_lookup(const char *name);
 
