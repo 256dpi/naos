@@ -20,6 +20,19 @@ static uint8_t naos_params_handler_count = 0;
 static void naos_params_update(naos_param_t *param) {
   // handle type
   switch (param->type) {
+    case NAOS_RAW: {
+      // update pointer
+      if (param->sync_r != NULL) {
+        *param->sync_r = param->current;
+      }
+
+      // yield value
+      if (param->func_r != NULL) {
+        param->func_r(param->current);
+      }
+
+      break;
+    }
     case NAOS_STRING: {
       // update pointer
       if (param->sync_s != NULL) {
@@ -147,6 +160,9 @@ void naos_register(naos_param_t *param) {
     // set default value if missing or volatile
     NAOS_UNLOCK(naos_params_mutex);
     switch (param->type) {
+      case NAOS_RAW:
+        naos_set(param->name, param->default_r.buf, param->default_r.len);
+        break;
       case NAOS_STRING:
         naos_set_s(param->name, param->default_s != NULL ? param->default_s : "");
         break;
@@ -277,6 +293,9 @@ char *naos_params_list(naos_mode_t mode) {
 
     // write type
     switch (param->type) {
+      case NAOS_RAW:
+        buf[pos] = 'r';
+        break;
       case NAOS_STRING:
         buf[pos] = 's';
         break;

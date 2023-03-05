@@ -43,6 +43,7 @@ const char *naos_status_str(naos_status_t status);
  * The parameter types.
  */
 typedef enum {
+  NAOS_RAW,
   NAOS_STRING,
   NAOS_BOOL,
   NAOS_LONG,
@@ -92,6 +93,7 @@ typedef struct {
    * The default values set if the parameter is missing.
    */
   union {
+    naos_value_t default_r;
     const char *default_s;
     bool default_b;
     int32_t default_l;
@@ -100,8 +102,11 @@ typedef struct {
 
   /**
    * The synchronized variables.
+   *
+   * @note: While raw values are directly assigned, strings are copied.
    */
   union {
+    naos_value_t *sync_r;
     char **sync_s;
     bool *sync_b;
     int32_t *sync_l;
@@ -112,6 +117,7 @@ typedef struct {
    * The synchronization functions.
    */
   union {
+    void (*func_r)(naos_value_t);
     void (*func_s)(const char *);
     void (*func_b)(bool);
     void (*func_l)(int32_t);
