@@ -300,7 +300,6 @@ static void naos_manager_status(naos_status_t status) {
     naos_subscribe("naos/discover", 0, NAOS_LOCAL);
     naos_subscribe("naos/get/+", 0, NAOS_LOCAL);
     naos_subscribe("naos/set/+", 0, NAOS_LOCAL);
-    naos_subscribe("naos/unset/+", 0, NAOS_LOCAL);
     naos_subscribe("naos/record", 0, NAOS_LOCAL);
     naos_subscribe("naos/debug", 0, NAOS_LOCAL);
     naos_subscribe("naos/update/begin", 0, NAOS_LOCAL);
