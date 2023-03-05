@@ -17,7 +17,7 @@ static bool naos_manager_recording = false;
 
 static void naos_manager_heartbeat() {
   // get device name
-  const char *device_name = naos_get("device-name");
+  const char *device_name = naos_get_s("device-name");
 
   // get battery level
   double battery = -1;
@@ -48,8 +48,8 @@ static void naos_manager_heartbeat() {
 
 static void naos_manager_announce() {
   // get device name and base topic
-  const char *device_name = naos_get("device-name");
-  const char *base_topic = naos_get("base-topic");
+  const char *device_name = naos_get_s("device-name");
+  const char *base_topic = naos_get_s("base-topic");
 
   // send announcement
   char buf[64];
@@ -97,11 +97,11 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
 
   // handle ping
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/ping") == 0) {
-    // release mutex (conflict with naos_set)
+    // release mutex (conflict with naos_set_s)
     NAOS_UNLOCK(naos_manager_mutex);
 
     // trigger ping
-    naos_set("ping", "");
+    naos_set_s("ping", "");
 
     return;
   }
@@ -126,7 +126,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
 
     // send value
     char *t = naos_concat("naos/value/", param);
-    naos_publish(t, naos_get(param), 0, false, NAOS_LOCAL);
+    naos_publish(t, naos_get_s(param), 0, false, NAOS_LOCAL);
     free(t);
 
     // release mutex
@@ -137,18 +137,18 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
 
   // handle set
   if (scope == NAOS_LOCAL && strncmp(topic, "naos/set/", 9) == 0) {
-    // release mutex (conflict with naos_set)
+    // release mutex (conflict with naos_set_s)
     NAOS_UNLOCK(naos_manager_mutex);
 
     // get param
     char *param = (char *)topic + 9;
 
     // save param
-    naos_set(param, (const char *)payload);
+    naos_set_s(param, (const char *)payload);
 
     // send value
     char *t = naos_concat("naos/value/", param);
-    naos_publish(t, naos_get(param), 0, false, NAOS_LOCAL);
+    naos_publish(t, naos_get_s(param), 0, false, NAOS_LOCAL);
     free(t);
 
     return;

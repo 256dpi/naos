@@ -12,7 +12,7 @@ void naos_params_dispatch();
 
 // naos_register
 // naos_lookup
-// naos_get{b,l,d}
-// naos_set{b,l,d}
+// naos_get{s,b,l,d}
+// naos_set{s,b,l,d}
 
 #endif  // NAOS_PARAMS_H

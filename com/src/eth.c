@@ -32,7 +32,7 @@ static void naos_eth_configure() {
   naos_eth_connected = false;
 
   // configure network
-  const char *manual = naos_get("eth-manual");
+  const char *manual = naos_get_s("eth-manual");
   naos_net_configure(naos_eth_netif, manual);
 
   // start driver
@@ -56,7 +56,7 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
 
         // clear addr
         memset(naos_eth_addr, 0, 16);
-        naos_set("eth-addr", "");
+        naos_set_s("eth-addr", "");
 
         break;
       }
@@ -78,7 +78,7 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
         // set addr
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
         naos_net_ip2str(&event->ip_info.ip, naos_eth_addr);
-        naos_set("eth-addr", naos_eth_addr);
+        naos_set_s("eth-addr", naos_eth_addr);
 
         break;
       }

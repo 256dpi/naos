@@ -68,7 +68,7 @@ static void naos_osc_configure() {
 
   // parse targets
   naos_osc_target_count = 0;
-  char *targets = strdup(naos_get("osc-targets"));
+  char *targets = strdup(naos_get_s("osc-targets"));
   char *target = strtok(targets, ",");
   while (target != NULL && naos_osc_target_count < NAOS_OSC_MAX_TARGETS) {
     char target_addr[16];

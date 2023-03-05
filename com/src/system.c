@@ -42,7 +42,7 @@ static void naos_system_set_status(naos_status_t status) {
   NAOS_UNLOCK(naos_system_mutex);
 
   // set status
-  naos_set("connection-status", name);
+  naos_set_s("connection-status", name);
 
   // log new status
   ESP_LOGI(NAOS_LOG_TAG, "naos_system_set_status: %s", name);
@@ -124,13 +124,13 @@ void naos_system_init() {
   }
 
   // initialize system parameters
-  naos_set("device-type", naos_config()->device_type);
-  naos_set("device-version", naos_config()->device_version);
-  naos_set("running-partition", esp_ota_get_running_partition()->label);
+  naos_set_s("device-type", naos_config()->device_type);
+  naos_set_s("device-version", naos_config()->device_version);
+  naos_set_s("running-partition", esp_ota_get_running_partition()->label);
 
   // ensure default password
-  if (naos_config()->default_password != NULL && strlen(naos_get("device-password")) == 0) {
-    naos_set("device-password", naos_config()->default_password);
+  if (naos_config()->default_password != NULL && strlen(naos_get_s("device-password")) == 0) {
+    naos_set_s("device-password", naos_config()->default_password);
   }
 
   // initialize subsystems

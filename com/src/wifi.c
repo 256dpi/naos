@@ -30,9 +30,9 @@ static void naos_wifi_configure() {
   }
 
   // get SSID, password and manual config
-  const char *ssid = naos_get("wifi-ssid");
-  const char *password = naos_get("wifi-password");
-  const char *manual = naos_get("wifi-manual");
+  const char *ssid = naos_get_s("wifi-ssid");
+  const char *password = naos_get_s("wifi-password");
+  const char *manual = naos_get_s("wifi-manual");
 
   // return if SSID is missing
   if (strlen(ssid) == 0) {
@@ -77,7 +77,7 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
 
         // clear addr
         memset(naos_wifi_addr, 0, 16);
-        naos_set("wifi-addr", "");
+        naos_set_s("wifi-addr", "");
 
         // attempt to reconnect if started
         if (naos_wifi_started) {
@@ -104,7 +104,7 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
         // set addr
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
         naos_net_ip2str(&event->ip_info.ip, naos_wifi_addr);
-        naos_set("wifi-addr", naos_wifi_addr);
+        naos_set_s("wifi-addr", naos_wifi_addr);
 
         break;
       }

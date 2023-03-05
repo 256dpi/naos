@@ -61,11 +61,11 @@ static bool naos_mqtt_publish(const char *topic, const uint8_t *payload, size_t 
 
 static void naos_mqtt_start() {
   // get settings
-  const char *host = naos_get("mqtt-host");
-  const char *port = naos_get("mqtt-port");
-  const char *client_id = naos_get("mqtt-client-id");
-  const char *username = naos_get("mqtt-username");
-  const char *password = naos_get("mqtt-password");
+  const char *host = naos_get_s("mqtt-host");
+  const char *port = naos_get_s("mqtt-port");
+  const char *client_id = naos_get_s("mqtt-client-id");
+  const char *username = naos_get_s("mqtt-username");
+  const char *password = naos_get_s("mqtt-password");
 
   // return if host is empty
   if (strlen(host) == 0) {

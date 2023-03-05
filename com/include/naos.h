@@ -246,7 +246,7 @@ void naos_register(naos_param_t *param);
  * @param param The parameter.
  * @return Pointer to value.
  */
-const char *naos_get(const char *param);
+const char *naos_get_s(const char *param);
 bool naos_get_b(const char *param);
 int32_t naos_get_l(const char *param);
 double naos_get_d(const char *param);
@@ -257,7 +257,7 @@ double naos_get_d(const char *param);
  * @param param The parameter.
  * @param value The value.
  */
-void naos_set(const char *param, const char *value);
+void naos_set_s(const char *param, const char *value);
 void naos_set_b(const char *param, bool value);
 void naos_set_l(const char *param, int32_t value);
 void naos_set_d(const char *param, double value);

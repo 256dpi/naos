@@ -67,7 +67,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   if (conn->method == HTTP_GET) {
     // set context
     naos_http_ctx_t *ctx = malloc(sizeof(naos_http_ctx_t));
-    ctx->locked = strlen(naos_get("device-password")) > 0;
+    ctx->locked = strlen(naos_get_s("device-password")) > 0;
     conn->sess_ctx = ctx;
 
     return ESP_OK;
@@ -121,7 +121,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   if (strncmp((char *)req.payload, "unlock", 6) == 0) {
     const char *password = (char *)req.payload + 7;
     if (ctx->locked) {
-      ctx->locked = strcmp(password, naos_get("device-password")) != 0;
+      ctx->locked = strcmp(password, naos_get_s("device-password")) != 0;
     }
     res.payload = (uint8_t *)strdup(ctx->locked ? "unlock#locked" : "unlock#unlocked");
   }
@@ -146,7 +146,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     }
 
     // set value
-    char *value = strdup(naos_get(param->name));
+    char *value = strdup(naos_get_s(param->name));
     res.payload = (uint8_t *)naos_format("read:%s#%s", name, value);
     free(value);
   }
@@ -171,10 +171,10 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     }
 
     // set value
-    naos_set(param->name, value);
+    naos_set_s(param->name, value);
 
     // set value
-    value = strdup(naos_get(param->name));
+    value = strdup(naos_get_s(param->name));
     res.payload = (uint8_t *)naos_format("write:%s#%s", name, value);
     free(value);
   }

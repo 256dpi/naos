@@ -288,7 +288,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       // mark connection
       naos_ble_conns[p->connect.conn_id].id = p->connect.conn_id;
       naos_ble_conns[p->connect.conn_id].connected = true;
-      naos_ble_conns[p->connect.conn_id].locked = strlen(naos_get("device-password")) > 0;
+      naos_ble_conns[p->connect.conn_id].locked = strlen(naos_get_s("device-password")) > 0;
 
       // restart advertisement
       ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
@@ -341,7 +341,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
           }
         } else if (c == &naos_ble_char_value) {
           if (conn->param != NULL) {
-            value = strdup(naos_get(conn->param->name));
+            value = strdup(naos_get_s(conn->param->name));
           }
         } else if (c == &naos_ble_char_flash) {
           if (!conn->locked) {
@@ -422,7 +422,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
         // handle characteristic
         if (c == &naos_ble_char_lock) {
-          if (conn->locked && strcmp(value, naos_get("device-password")) == 0) {
+          if (conn->locked && strcmp(value, naos_get_s("device-password")) == 0) {
             conn->locked = false;
           }
         } else if (c == &naos_ble_char_list) {
@@ -440,7 +440,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
           }
         } else if (c == &naos_ble_char_value) {
           if (conn->param != NULL && (conn->param->mode & NAOS_LOCKED) == 0) {
-            naos_set(conn->param->name, value);
+            naos_set_s(conn->param->name, value);
           }
         } else if (c == &naos_ble_char_flash) {
           if (!conn->locked && p->write.len > 0) {
@@ -577,7 +577,7 @@ void naos_ble_init(naos_ble_config_t cfg) {
   ESP_ERROR_CHECK(esp_ble_gatts_app_register(0x55));
 
   // set device name
-  const char *name = naos_get("device-name");
+  const char *name = naos_get_s("device-name");
   ESP_ERROR_CHECK(esp_ble_gap_set_device_name(strlen(name) > 0 ? name : "naos"));
 
   // subscribe params

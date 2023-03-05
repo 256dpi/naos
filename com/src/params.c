@@ -144,7 +144,7 @@ void naos_register(naos_param_t *param) {
     NAOS_UNLOCK(naos_params_mutex);
     switch (param->type) {
       case NAOS_STRING:
-        naos_set(param->name, param->default_s != NULL ? param->default_s : "");
+        naos_set_s(param->name, param->default_s != NULL ? param->default_s : "");
         break;
       case NAOS_BOOL:
         naos_set_b(param->name, param->default_b);
@@ -370,9 +370,9 @@ void naos_params_dispatch() {
   NAOS_UNLOCK(naos_params_mutex);
 }
 
-const char *naos_get(const char *name) {
+const char *naos_get_s(const char *name) {
   // lookup parameter
-  naos_param_t *param = naos_lookup(name);
+  naos_param_t *param = naos_lookup(param);
   if (param == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
@@ -382,22 +382,22 @@ const char *naos_get(const char *name) {
 
 bool naos_get_b(const char *param) {
   // get parameter
-  return strtol(naos_get(param), NULL, 10) == 1;
+  return strtol(naos_get_s(param), NULL, 10) == 1;
 }
 
 int32_t naos_get_l(const char *param) {
   // get parameter
-  return (int32_t)strtol(naos_get(param), NULL, 10);
+  return (int32_t)strtol(naos_get_s(param), NULL, 10);
 }
 
 double naos_get_d(const char *param) {
   // get parameter
-  return strtod(naos_get(param), NULL);
+  return strtod(naos_get_s(param), NULL);
 }
 
-void naos_set(const char *name, const char *value) {
+void naos_set_s(const char *name, const char *value) {
   // lookup parameter
-  naos_param_t *param = naos_lookup(name);
+  naos_param_t *param = naos_lookup(param);
   if (param == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
@@ -412,7 +412,7 @@ void naos_set(const char *name, const char *value) {
 
   // set parameter if not volatile
   if ((param->mode & NAOS_VOLATILE) == 0) {
-    ESP_ERROR_CHECK(nvs_set_str(naos_params_handle, name, value));
+    ESP_ERROR_CHECK(nvs_set_str(naos_params_handle, param, value));
   }
 
   // free last value
@@ -437,17 +437,17 @@ void naos_set(const char *name, const char *value) {
 void naos_set_b(const char *param, bool value) {
   // set parameter
   char buf[16] = {0};
-  naos_set(param, naos_i2str(buf, value));
+  naos_set_s(param, naos_i2str(buf, value));
 }
 
 void naos_set_l(const char *param, int32_t value) {
   // set parameter
   char buf[16] = {0};
-  naos_set(param, naos_i2str(buf, value));
+  naos_set_s(param, naos_i2str(buf, value));
 }
 
 void naos_set_d(const char *param, double value) {
   // set parameter
   char buf[32] = {0};
-  naos_set(param, naos_d2str(buf, value));
+  naos_set_s(param, naos_d2str(buf, value));
 }
