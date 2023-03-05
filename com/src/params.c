@@ -18,7 +18,7 @@ static naos_params_handler_t naos_params_handlers[NAOS_PARAMS_MAX_RECEIVERS] = {
 static uint8_t naos_params_handler_count = 0;
 
 static void naos_params_update(naos_param_t *param) {
-  // update pointer
+  // handle type
   switch (param->type) {
     case NAOS_STRING: {
       // update pointer
@@ -26,19 +26,23 @@ static void naos_params_update(naos_param_t *param) {
         if (*param->sync_s != NULL) {
           free(*param->sync_s);
         }
-        *param->sync_s = strdup(param->value);
+        if (param->current.buf != NULL) {
+          *param->sync_s = strdup((const char *)param->current.buf);
+        } else {
+          *param->sync_s = strdup("");
+        }
       }
 
       // yield value
       if (param->func_s != NULL) {
-        param->func_s(param->value);
+        param->func_s((const char *)param->current.buf);
       }
 
       break;
     }
     case NAOS_BOOL: {
       // get value
-      bool value = strtol(param->value, NULL, 10) == 1;
+      bool value = strtol((const char *)param->current.buf, NULL, 10) == 1;
 
       // update pointer
       if (param->sync_b != NULL) {
@@ -54,7 +58,7 @@ static void naos_params_update(naos_param_t *param) {
     }
     case NAOS_LONG: {
       // get value
-      int32_t value = (int32_t)strtol(param->value, NULL, 10);
+      int32_t value = (int32_t)strtol((const char *)param->current.buf, NULL, 10);
 
       // update pointer
       if (param->sync_l != NULL) {
@@ -70,7 +74,7 @@ static void naos_params_update(naos_param_t *param) {
     }
     case NAOS_DOUBLE: {
       // get value
-      double value = strtod(param->value, NULL);
+      double value = strtod((const char *)param->current.buf, NULL);
 
       // update pointer
       if (param->sync_d != NULL) {
@@ -138,7 +142,7 @@ void naos_register(naos_param_t *param) {
 
   // check parameter
   size_t required_size;
-  esp_err_t err = nvs_get_str(naos_params_handle, param->name, NULL, &required_size);
+  esp_err_t err = nvs_get_blob(naos_params_handle, param->name, NULL, &required_size);
   if ((param->mode & NAOS_VOLATILE) != 0 || err == ESP_ERR_NVS_NOT_FOUND) {
     // set default value if missing or volatile
     NAOS_UNLOCK(naos_params_mutex);
@@ -156,15 +160,22 @@ void naos_register(naos_param_t *param) {
         naos_set_d(param->name, param->default_d);
         break;
       case NAOS_ACTION:
-        param->value = strdup("");
+        param->current = (naos_value_t){
+            .buf = (uint8_t *)strdup(""),
+            .len = 0,
+        };
         break;
     }
     NAOS_LOCK(naos_params_mutex);
   } else if (err == ESP_OK) {
     // otherwise, read stored value
-    char *buf = malloc(required_size);
-    ESP_ERROR_CHECK(nvs_get_str(naos_params_handle, param->name, buf, &required_size));
-    param->value = buf;
+    uint8_t *buf = malloc(required_size + 1);
+    ESP_ERROR_CHECK(nvs_get_blob(naos_params_handle, param->name, buf, &required_size));
+    buf[required_size] = 0;
+    param->current = (naos_value_t){
+        .buf = buf,
+        .len = required_size,
+    };
   } else {
     ESP_ERROR_CHECK(err);
   }
@@ -370,14 +381,19 @@ void naos_params_dispatch() {
   NAOS_UNLOCK(naos_params_mutex);
 }
 
-const char *naos_get_s(const char *name) {
+naos_value_t naos_get(const char *name) {
   // lookup parameter
-  naos_param_t *param = naos_lookup(param);
+  naos_param_t *param = naos_lookup(name);
   if (param == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
-  return param->value;
+  return param->current;
+}
+
+const char *naos_get_s(const char *name) {
+  // get parameter
+  return (const char *)naos_get(name).buf;
 }
 
 bool naos_get_b(const char *param) {
@@ -395,9 +411,9 @@ double naos_get_d(const char *param) {
   return strtod(naos_get_s(param), NULL);
 }
 
-void naos_set_s(const char *name, const char *value) {
+void naos_set(const char *name, uint8_t *value, size_t length) {
   // lookup parameter
-  naos_param_t *param = naos_lookup(param);
+  naos_param_t *param = naos_lookup(name);
   if (param == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
@@ -412,17 +428,27 @@ void naos_set_s(const char *name, const char *value) {
 
   // set parameter if not volatile
   if ((param->mode & NAOS_VOLATILE) == 0) {
-    ESP_ERROR_CHECK(nvs_set_str(naos_params_handle, param, value));
+    ESP_ERROR_CHECK(nvs_set_blob(naos_params_handle, name, value, length));
   }
 
   // free last value
-  if (param->last_value != NULL) {
-    free(param->last_value);
+  if (param->last.buf != NULL) {
+    free(param->last.buf);
   }
 
+  // move current to last
+  param->last = param->current;
+
+  // copy value
+  uint8_t *copy = malloc(length + 1);
+  memcpy(copy, value, length);
+  copy[length] = 0;
+
   // update value
-  param->last_value = param->value;
-  param->value = strdup(value);
+  param->current = (naos_value_t){
+      .buf = copy,
+      .len = length,
+  };
 
   // track change
   param->changed = true;
@@ -432,6 +458,11 @@ void naos_set_s(const char *name, const char *value) {
 
   // update parameter
   naos_params_update(param);
+}
+
+void naos_set_s(const char *param, const char *value) {
+  // set parameter
+  naos_set(param, (uint8_t *)value, strlen(value));
 }
 
 void naos_set_b(const char *param, bool value) {

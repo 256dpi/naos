@@ -39,17 +39,17 @@ static void online() {
   naos_subscribe("fail", 0, NAOS_LOCAL);
 }
 
-static void update(const char *param, const char *value) {
+static void update(naos_param_t *param) {
   // log param change
-  if (value != NULL) {
-    naos_log("param %s updated to %s", param, value);
+  if (param->current.len > 0) {
+    naos_log("param %s updated to %s", param->name, param->current.buf);
   } else {
-    naos_log("param %s updated to NULL", param);
+    naos_log("param %s cleared", param->name);
   }
 
   // set counter
-  if (strcmp(param, "counter") == 0) {
-    counter = (int)strtol(value, NULL, 0);
+  if (strcmp(param->name, "counter") == 0) {
+    counter = (int)strtol((const char *)param->current.buf, NULL, 0);
   }
 }
 

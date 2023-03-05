@@ -62,6 +62,14 @@ typedef enum {
 } naos_mode_t;
 
 /**
+ * The parameter value.
+ */
+typedef struct {
+  uint8_t *buf;
+  size_t len;
+} naos_value_t;
+
+/**
  * A single parameter.
  */
 typedef struct {
@@ -114,8 +122,8 @@ typedef struct {
   /**
    * The current and last value.
    */
-  char *value;
-  char *last_value;
+  naos_value_t current;
+  naos_value_t last;
 
   /**
    * The changes tracker.
@@ -166,9 +174,8 @@ typedef struct {
    * The callback that is called when a parameter has been updated.
    *
    * @param param The parameter.
-   * @param value The value.
    */
-  void (*update_callback)(const char *param, const char *value);
+  void (*update_callback)(naos_param_t *param);
 
   /**
    * The message callback is called with incoming messages.
@@ -245,17 +252,20 @@ void naos_register(naos_param_t *param);
  * @param param The parameter.
  * @return Pointer to value.
  */
+naos_value_t naos_get(const char *param);
 const char *naos_get_s(const char *param);
 bool naos_get_b(const char *param);
 int32_t naos_get_l(const char *param);
 double naos_get_d(const char *param);
 
 /**
- * Will set the value of the requested parameter. Synchronized parameters are automatically updated.
+ * Will set the value of the requested parameter with a copy if the provided value. Synchronized parameters are
+ * automatically updated.
  *
  * @param param The parameter.
  * @param value The value.
  */
+void naos_set(const char *param, uint8_t *value, size_t length);
 void naos_set_s(const char *param, const char *value);
 void naos_set_b(const char *param, bool value);
 void naos_set_l(const char *param, int32_t value);

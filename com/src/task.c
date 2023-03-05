@@ -77,7 +77,7 @@ static void naos_task_update(naos_param_t *param) {
 
   // yield update
   NAOS_LOCK(naos_task_mutex);
-  naos_config()->update_callback(param->name, param->value);
+  naos_config()->update_callback(param);
   NAOS_UNLOCK(naos_task_mutex);
 }
 

@@ -17,12 +17,12 @@ static naos_param_t *naos_com_base_topic = {0};
 
 static char *naos_com_with_base_topic(const char *topic) {
   // prefix base topic
-  return naos_format("%s/%s", naos_com_base_topic->value, topic);
+  return naos_format("%s/%s", naos_com_base_topic->current.buf, topic);
 }
 
 static naos_scope_t naos_com_scope_from_topic(const char *topic) {
   // determine scope
-  if (strncmp(topic, naos_com_base_topic->value, strlen(naos_com_base_topic->value)) == 0) {
+  if (strncmp(topic, (const char *)naos_com_base_topic->current.buf, naos_com_base_topic->current.len) == 0) {
     return NAOS_LOCAL;
   } else {
     return NAOS_GLOBAL;
@@ -36,7 +36,7 @@ static const char *naos_com_without_base_topic(const char *topic) {
   }
 
   // return adjusted pointer
-  return topic + strlen(naos_com_base_topic->value) + 1;
+  return topic + naos_com_base_topic->current.len + 1;
 }
 
 void naos_com_init() {

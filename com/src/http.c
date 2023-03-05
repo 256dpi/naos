@@ -269,7 +269,7 @@ static void naos_http_update(void *arg) {
 
   // prepare frame
   httpd_ws_frame_t frame = {.type = HTTPD_WS_TYPE_TEXT};
-  frame.payload = (uint8_t *)naos_format("update:%s#%s", param->name, param->value);
+  frame.payload = (uint8_t *)naos_format("update:%s#%s", param->name, param->current.buf);
   frame.len = strlen((char *)frame.payload);
 
   // iterate sessions
