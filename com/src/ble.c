@@ -330,30 +330,30 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
         rsp.attr_value.handle = c->handle;
 
         // handle characteristic
-        char *value = NULL;
         if (c == &naos_ble_char_lock) {
-          value = strdup(conn->locked ? "locked" : "unlocked");
+          strcpy((char *)rsp.attr_value.value, conn->locked ? "locked" : "unlocked");
         } else if (c == &naos_ble_char_list) {
-          value = naos_params_list(conn->mode | (conn->locked ? NAOS_PUBLIC : 0));
+          char *list = naos_params_list(conn->mode | (conn->locked ? NAOS_PUBLIC : 0));
+          strcpy((char *)rsp.attr_value.value, list);
+          free(list);
         } else if (c == &naos_ble_char_select) {
           if (conn->param != NULL) {
-            value = strdup(conn->param->name);
+            strcpy((char *)rsp.attr_value.value, conn->param->name);
           }
         } else if (c == &naos_ble_char_value) {
           if (conn->param != NULL) {
-            value = strdup(naos_get_s(conn->param->name));
+            memcpy(rsp.attr_value.value, conn->param->current.buf, conn->param->current.len);
+            rsp.attr_value.len = conn->param->current.len;
           }
         } else if (c == &naos_ble_char_flash) {
           if (!conn->locked) {
-            value = strdup(conn->flash_ready ? "1" : "0");
+            strcpy((char *)rsp.attr_value.value, conn->flash_ready ? "1" : "0");
           }
         }
 
-        // set value
-        if (value != NULL) {
-          strcpy((char *)rsp.attr_value.value, value);
-          rsp.attr_value.len = (uint16_t)strlen(value);
-          free(value);
+        // set string length
+        if (rsp.attr_value.len == 0 && rsp.attr_value.value[0] != 0) {
+          rsp.attr_value.len = strlen((char *)rsp.attr_value.value);
         }
 
         // send response
@@ -415,44 +415,41 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
           return;
         }
 
-        // allocate value
-        char *value = malloc(p->write.len + 1);
-        memcpy(value, (char *)p->write.value, p->write.len);
-        value[p->write.len] = '\0';
-
         // handle characteristic
         if (c == &naos_ble_char_lock) {
-          if (conn->locked && strcmp(value, naos_get_s("device-password")) == 0) {
+          if (conn->locked && naos_equal(p->write.value, p->write.len, naos_get_s("device-password"))) {
             conn->locked = false;
           }
         } else if (c == &naos_ble_char_list) {
-          if (strcmp(value, "system") == 0) {
+          if (naos_equal(p->write.value, p->write.len, "system")) {
             conn->mode = NAOS_SYSTEM;
-          } else if (strcmp(value, "application") == 0) {
+          } else if (naos_equal(p->write.value, p->write.len, "application")) {
             conn->mode = NAOS_APPLICATION;
           } else {
             conn->mode = 0;
           }
         } else if (c == &naos_ble_char_select) {
+          char *value = naos_copy(p->write.value, p->write.len);
           naos_param_t *param = naos_lookup(value);
+          free(value);
           if (param != NULL && (!conn->locked || (param->mode & NAOS_PUBLIC) != 0)) {
             conn->param = param;
           }
         } else if (c == &naos_ble_char_value) {
           if (conn->param != NULL && (conn->param->mode & NAOS_LOCKED) == 0) {
-            naos_set_s(conn->param->name, value);
+            naos_set(conn->param->name, p->write.value, p->write.len);
           }
         } else if (c == &naos_ble_char_flash) {
           if (!conn->locked && p->write.len > 0) {
-            switch (value[0]) {
+            switch (p->write.value[0]) {
               case 'b': {  // begin
-                size_t size = strtoul(value + 1, NULL, 10);
+                size_t size = strtoul((char *)(p->write.value + 1), NULL, 10);
                 naos_ble_flash_conn = conn;
                 naos_update_begin(size, naos_ble_update);
                 break;
               }
               case 'w': {  // write
-                naos_update_write((uint8_t *)(value + 1), p->write.len - 1);
+                naos_update_write((uint8_t *)(p->write.value + 1), p->write.len - 1);
                 break;
               }
               case 'f': {  // finish
@@ -463,9 +460,6 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
             }
           }
         }
-
-        // free value
-        free(value);
 
         // send response if requested
         if (p->write.need_rsp) {
