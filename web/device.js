@@ -3,11 +3,14 @@ import { Queue } from "async-await-queue";
 const utf8Enc = new TextEncoder();
 const utf8Dec = new TextDecoder();
 
-async function write(char, str, confirm = true) {
+async function write(char, data, confirm = true) {
+  if (typeof data === "string") {
+    data = utf8Enc.encode(data);
+  }
   if (confirm) {
-    await char.writeValueWithResponse(utf8Enc.encode(str));
+    await char.writeValueWithResponse(data);
   } else {
-    await char.writeValueWithoutResponse(utf8Enc.encode(str));
+    await char.writeValueWithoutResponse(data);
   }
 }
 
@@ -341,12 +344,7 @@ export class Device extends EventTarget {
       let chunks = 0;
       for (let i = 0; i < data.byteLength; i += 500) {
         const buf = concat(utf8Enc.encode("w"), data.slice(i, i + 500));
-        if (chunks >= 5) {
-          chunks = 0;
-          await this.flashChar.writeValueWithResponse(buf);
-        } else {
-          await this.flashChar.writeValueWithoutResponse(buf);
-        }
+        await write(this.flashChar, buf, chunks % 5 === 0);
         chunks++;
         if (progress) {
           progress({
