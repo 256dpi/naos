@@ -36,9 +36,9 @@ char *naos_format(char *fmt, ...) {
   return buf;
 }
 
-char *naos_copy(uint8_t *buf, size_t len) {
+uint8_t *naos_copy(uint8_t *buf, size_t len) {
   // copy buffer and null terminate
-  char *value = malloc(len + 1);
+  uint8_t *value = malloc(len + 1);
   memcpy(value, buf, len);
   value[len] = 0;
 

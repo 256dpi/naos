@@ -428,7 +428,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
             conn->mode = 0;
           }
         } else if (c == &naos_ble_char_select) {
-          char *value = naos_copy(p->write.value, p->write.len);
+          char *value = (char *)naos_copy(p->write.value, p->write.len);
           naos_param_t *param = naos_lookup(value);
           free(value);
           if (param != NULL && (!conn->locked || (param->mode & NAOS_PUBLIC) != 0)) {
