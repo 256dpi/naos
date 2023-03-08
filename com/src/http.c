@@ -146,9 +146,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     }
 
     // set value
-    char *value = strdup(naos_get_s(param->name));
-    res.payload = (uint8_t *)naos_format("read:%s#%s", name, value);
-    free(value);
+    res.payload = (uint8_t *)naos_format("read:%s#%s", name, param->current.buf);
   }
 
   // handle write
@@ -174,9 +172,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     naos_set_s(param->name, value);
 
     // set value
-    value = strdup(naos_get_s(param->name));
-    res.payload = (uint8_t *)naos_format("write:%s#%s", name, value);
-    free(value);
+    res.payload = (uint8_t *)naos_format("write:%s#%s", name, param->current.buf);
   }
 
   // free request payload
