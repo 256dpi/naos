@@ -171,26 +171,7 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope) {
   return ok;
 }
 
-bool naos_publish(const char *topic, const char *payload, int qos, bool retained, naos_scope_t scope) {
-  return naos_publish_r(topic, (char *)payload, strlen(payload), qos, retained, scope);
-}
-
-bool naos_publish_b(const char *topic, bool payload, int qos, bool retained, naos_scope_t scope) {
-  char buf[16] = {0};
-  return naos_publish(topic, naos_i2str(buf, payload), qos, retained, scope);
-}
-
-bool naos_publish_l(const char *topic, int32_t payload, int qos, bool retained, naos_scope_t scope) {
-  char buf[16] = {0};
-  return naos_publish(topic, naos_i2str(buf, payload), qos, retained, scope);
-}
-
-bool naos_publish_d(const char *topic, double payload, int qos, bool retained, naos_scope_t scope) {
-  char buf[32] = {0};
-  return naos_publish(topic, naos_d2str(buf, payload), qos, retained, scope);
-}
-
-bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool retained, naos_scope_t scope) {
+bool naos_publish(const char *topic, void *payload, size_t len, int qos, bool retained, naos_scope_t scope) {
   // add base topic if scope is local
   if (scope == NAOS_LOCAL) {
     topic = naos_com_with_base_topic(topic);
@@ -203,7 +184,7 @@ bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool 
     naos_com_status_t status = transport.status();
     if (status.networked && transport.publish != NULL) {
       if (!transport.publish(topic, payload, len, qos, retained)) {
-        ESP_LOGW(NAOS_LOG_TAG, "naos_publish: transport '%s' failed", transport.name);
+        ESP_LOGW(NAOS_LOG_TAG, "naos_publish_s: transport '%s' failed", transport.name);
         ok = false;
       }
     }
@@ -215,4 +196,23 @@ bool naos_publish_r(const char *topic, void *payload, size_t len, int qos, bool 
   }
 
   return ok;
+}
+
+bool naos_publish_s(const char *topic, const char *payload, int qos, bool retained, naos_scope_t scope) {
+  return naos_publish(topic, (char *)payload, strlen(payload), qos, retained, scope);
+}
+
+bool naos_publish_b(const char *topic, bool payload, int qos, bool retained, naos_scope_t scope) {
+  char buf[16] = {0};
+  return naos_publish_s(topic, naos_i2str(buf, payload), qos, retained, scope);
+}
+
+bool naos_publish_l(const char *topic, int32_t payload, int qos, bool retained, naos_scope_t scope) {
+  char buf[16] = {0};
+  return naos_publish_s(topic, naos_i2str(buf, payload), qos, retained, scope);
+}
+
+bool naos_publish_d(const char *topic, double payload, int qos, bool retained, naos_scope_t scope) {
+  char buf[32] = {0};
+  return naos_publish_s(topic, naos_d2str(buf, payload), qos, retained, scope);
 }

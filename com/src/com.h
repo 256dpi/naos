@@ -27,6 +27,6 @@ bool naos_com_networked(uint32_t *generation);
 
 // naos_subscribe
 // naos_unsubscribe
-// naos_publish{b,l,d,r}
+// naos_publish{s,b,l,d}
 
 #endif  // NAOS_COM_H

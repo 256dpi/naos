@@ -80,7 +80,7 @@ static void loop() {
   naos_log("loop callback called (%d)", counter);
 
   // publish message
-  naos_publish("hello", naos_get_s("message"), 0, false, NAOS_LOCAL);
+  naos_publish_s("hello", naos_get_s("message"), 0, false, NAOS_LOCAL);
 
   // send osc message
   naos_osc_send("counter", "i", counter);

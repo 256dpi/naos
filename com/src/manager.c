@@ -43,7 +43,7 @@ static void naos_manager_heartbeat() {
   snprintf(buf, sizeof buf, "%s,%s,%s,%d,%lld,%s,%.2f,%d,%.2f,%.2f", naos_config()->device_type,
            naos_config()->device_version, device_name, esp_get_free_heap_size(), naos_millis(),
            esp_ota_get_running_partition()->label, battery, rssi, cpu0, cpu1);
-  naos_publish("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
+  naos_publish_s("naos/heartbeat", buf, 0, false, NAOS_LOCAL);
 }
 
 static void naos_manager_announce() {
@@ -55,7 +55,7 @@ static void naos_manager_announce() {
   char buf[64];
   snprintf(buf, sizeof buf, "%s,%s,%s,%s", naos_config()->device_type, naos_config()->device_version, device_name,
            base_topic);
-  naos_publish("naos/announcement", buf, 0, false, NAOS_GLOBAL);
+  naos_publish_s("naos/announcement", buf, 0, false, NAOS_GLOBAL);
 }
 
 static void naos_manager_update(naos_update_event_t event) {
@@ -110,7 +110,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/discover") == 0) {
     // send list
     char *list = naos_params_list(NAOS_APPLICATION);
-    naos_publish("naos/parameters", list, 0, false, NAOS_LOCAL);
+    naos_publish_s("naos/parameters", list, 0, false, NAOS_LOCAL);
     free(list);
 
     // release mutex
@@ -126,7 +126,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
 
     // send value
     char *t = naos_concat("naos/value/", param);
-    naos_publish(t, naos_get_s(param), 0, false, NAOS_LOCAL);
+    naos_publish_s(t, naos_get_s(param), 0, false, NAOS_LOCAL);
     free(t);
 
     // release mutex
@@ -148,7 +148,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
 
     // send value
     char *t = naos_concat("naos/value/", param);
-    naos_publish(t, naos_get_s(param), 0, false, NAOS_LOCAL);
+    naos_publish_s(t, naos_get_s(param), 0, false, NAOS_LOCAL);
     free(t);
 
     return;
@@ -174,7 +174,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     // get coredump size
     uint32_t size = naos_coredump_size();
     if (size == 0) {
-      naos_publish("naos/coredump", "", 0, false, NAOS_LOCAL);
+      naos_publish_s("naos/coredump", "", 0, false, NAOS_LOCAL);
       NAOS_UNLOCK(naos_manager_mutex);
       return;
     }
@@ -195,7 +195,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
       naos_coredump_read(sent, chunk, buf);
 
       // publish chunk
-      naos_publish_r("naos/coredump", buf, chunk, 0, false, NAOS_LOCAL);
+      naos_publish("naos/coredump", buf, chunk, 0, false, NAOS_LOCAL);
 
       // increment counter
       sent += chunk;
@@ -266,7 +266,7 @@ static void naos_manager_sink(const char *msg) {
 
   // publish message if networked and recording
   if (naos_com_networked(NULL) && naos_manager_recording) {
-    naos_publish("naos/log", msg, 0, false, NAOS_LOCAL);
+    naos_publish_s("naos/log", msg, 0, false, NAOS_LOCAL);
   }
 
   // release mutex
