@@ -14,7 +14,7 @@
 #include "utils.h"
 #include "update.h"
 
-#define NAOS_BLE_MAX_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
+#define NAOS_BLE_MAX_CONNECTIONS CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF
 
 typedef struct {
   uint16_t id;
