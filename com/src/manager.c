@@ -124,9 +124,12 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     // get param
     char *param = (char *)topic + 9;
 
+    // get value
+    naos_value_t value = naos_get(param);
+
     // send value
     char *t = naos_concat("naos/value/", param);
-    naos_publish_s(t, naos_get_s(param), 0, false, NAOS_LOCAL);
+    naos_publish(t, value.buf, value.len, 0, false, NAOS_LOCAL);
     free(t);
 
     // release mutex
@@ -137,18 +140,21 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
 
   // handle set
   if (scope == NAOS_LOCAL && strncmp(topic, "naos/set/", 9) == 0) {
-    // release mutex (conflict with naos_set_s)
+    // release mutex (conflict with naos_set)
     NAOS_UNLOCK(naos_manager_mutex);
 
     // get param
     char *param = (char *)topic + 9;
 
-    // save param
-    naos_set_s(param, (const char *)payload);
+    // set value
+    naos_set(param, (uint8_t *)payload, len);
+
+    // get value
+    naos_value_t value = naos_get(param);
 
     // send value
     char *t = naos_concat("naos/value/", param);
-    naos_publish_s(t, naos_get_s(param), 0, false, NAOS_LOCAL);
+    naos_publish(t, value.buf, value.len, 0, false, NAOS_LOCAL);
     free(t);
 
     return;
