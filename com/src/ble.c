@@ -22,7 +22,6 @@ typedef struct {
   bool locked;
   naos_mode_t mode;
   naos_param_t *param;
-  bool flash_ready;
 } naos_ble_conn_t;
 
 static naos_mutex_t naos_ble_mutex;
@@ -104,6 +103,7 @@ static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
 
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
 static naos_ble_conn_t *naos_ble_flash_conn = NULL;
+static bool naos_ble_flash_ready = false;
 
 static void naos_ble_update(naos_update_event_t event) {
   // skip non-ready events
@@ -114,15 +114,13 @@ static void naos_ble_update(naos_update_event_t event) {
   // acquire mutex
   NAOS_LOCK(naos_ble_mutex);
 
-  // get conn
-  naos_ble_conn_t *conn = naos_ble_flash_conn;
+  // set flag
+  naos_ble_flash_ready = true;
 
   // indicate readiness if still connected
-  if (conn->connected) {
-    conn->flash_ready = true;
-    const char *value = "1";
-    ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, conn->id, naos_ble_char_flash.handle,
-                                                1, (uint8_t *)value, false));
+  if (naos_ble_flash_conn->connected) {
+    ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, naos_ble_flash_conn->id,
+                                                naos_ble_char_flash.handle, 1, (uint8_t *)"1", false));
   }
 
   // release mutex
@@ -346,8 +344,8 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
             rsp.attr_value.len = conn->param->current.len;
           }
         } else if (c == &naos_ble_char_flash) {
-          if (!conn->locked) {
-            strcpy((char *)rsp.attr_value.value, conn->flash_ready ? "1" : "0");
+          if (!conn->locked && naos_ble_flash_conn == conn) {
+            strcpy((char *)rsp.attr_value.value, naos_ble_flash_ready ? "1" : "0");
           }
         }
 
@@ -445,6 +443,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
               case 'b': {  // begin
                 size_t size = strtoul((char *)(p->write.value + 1), NULL, 10);
                 naos_ble_flash_conn = conn;
+                naos_ble_flash_ready = false;
                 naos_update_begin(size, naos_ble_update);
                 break;
               }
@@ -455,6 +454,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
               case 'f': {  // finish
                 naos_update_finish();
                 naos_ble_flash_conn = NULL;
+                naos_ble_flash_ready = false;
                 break;
               }
             }
