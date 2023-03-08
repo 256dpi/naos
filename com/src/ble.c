@@ -14,8 +14,6 @@
 #include "utils.h"
 #include "update.h"
 
-#define NAOS_BLE_MAX_CONNECTIONS CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF
-
 typedef struct {
   uint16_t id;
   bool connected;
@@ -52,7 +50,8 @@ static struct {
   esp_gatt_srvc_id_t service_id;
   uint16_t service_handle;
 } naos_ble_gatts_profile = {
-    .uuid = {0xB5, 0x33, 0x50, 0x9D, 0xEE, 0xFF, 0x03, 0x81, 0x4F, 0x4E, 0x61, 0x48, 0x1B, 0xBA, 0x2F, 0x63}};
+    .uuid = {0xB5, 0x33, 0x50, 0x9D, 0xEE, 0xFF, 0x03, 0x81, 0x4F, 0x4E, 0x61, 0x48, 0x1B, 0xBA, 0x2F, 0x63},
+};
 
 typedef struct {
   uint8_t uuid[16];
@@ -95,6 +94,7 @@ static naos_ble_gatts_char_t naos_ble_char_flash = {
 };
 
 #define NAOS_BLE_NUM_CHARS 6
+#define NAOS_BLE_MAX_CONNECTIONS CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
     &naos_ble_char_lock,  &naos_ble_char_list,   &naos_ble_char_select,
@@ -119,8 +119,8 @@ static void naos_ble_update(naos_update_event_t event) {
 
   // indicate readiness if still connected
   if (naos_ble_flash_conn->connected) {
-    ESP_ERROR_CHECK(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, naos_ble_flash_conn->id,
-                                                naos_ble_char_flash.handle, 1, (uint8_t *)"1", false));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, naos_ble_flash_conn->id,
+                                                              naos_ble_char_flash.handle, 1, (uint8_t *)"1", false));
   }
 
   // release mutex
@@ -157,6 +157,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
   // pre-check for registration event
   if (e == ESP_GATTS_REG_EVT) {
+    // check status
     ESP_ERROR_CHECK(p->reg.status);
 
     // store GATTS interface after registration
@@ -529,17 +530,13 @@ void naos_ble_init(naos_ble_config_t cfg) {
 
   // initialize bluetooth
   if (!cfg.skip_bt_init) {
-    // initialize controller
+    // enable controller
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
-
-    // enable bluetooth
     ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BTDM));
 
-    // initialize bluedroid stack
+    // enable bluedroid
     ESP_ERROR_CHECK(esp_bluedroid_init());
-
-    // enable bluedroid stack
     ESP_ERROR_CHECK(esp_bluedroid_enable());
   }
 
