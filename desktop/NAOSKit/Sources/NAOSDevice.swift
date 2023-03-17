@@ -4,7 +4,6 @@
 //
 
 import AsyncBluetooth
-import Cocoa
 import Combine
 import CoreBluetooth
 import Semaphore
