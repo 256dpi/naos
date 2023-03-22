@@ -7,6 +7,7 @@
 #include <esp_gap_ble_api.h>
 #include <esp_gatt_defs.h>
 #include <esp_gatts_api.h>
+#include <esp_bt_device.h>
 #include <string.h>
 
 #include "naos.h"
@@ -35,11 +36,7 @@ static esp_ble_adv_params_t naos_ble_adv_params = {
 };
 
 static esp_ble_adv_data_t naos_ble_adv_data = {
-    .set_scan_rsp = false,
     .include_name = true,
-    .include_txpower = true,
-    .min_interval = 0x20,  // 40ms
-    .max_interval = 0x40,  // 80ms
     .flag = ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT,
 };
 
@@ -496,6 +493,28 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
   NAOS_UNLOCK(naos_ble_mutex);
 }
 
+static void naos_ble_set_name() {
+  // prepare name
+  const char *name = naos_get_s("device-name");
+
+  // use device type if absent
+  if (strlen(name) == 0) {
+    name = naos_config()->device_type;
+  }
+
+  // cap name to not exceed adv packet
+  if (strlen(name) > 8) {
+    char copy[9] = {0};
+    strncpy(copy, name, 8);
+    name = copy;
+  }
+
+  // set name
+  ESP_ERROR_CHECK(esp_bt_dev_set_device_name(name));
+  ESP_ERROR_CHECK(esp_ble_gap_set_device_name(name));
+  ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&naos_ble_adv_data));
+}
+
 static void naos_ble_param_handler(naos_param_t *param) {
   // acquire mutex
   NAOS_LOCK(naos_ble_mutex);
@@ -517,7 +536,7 @@ static void naos_ble_param_handler(naos_param_t *param) {
 static void ble_params(naos_param_t *param) {
   // update device name if changed
   if (strcmp(param->name, "device-name") == 0) {
-    ESP_ERROR_CHECK(esp_ble_gap_set_device_name(param->current.len > 0 ? (char *)param->current.buf : "naos"));
+    naos_ble_set_name(true);
   }
 }
 
@@ -566,16 +585,13 @@ void naos_ble_init(naos_ble_config_t cfg) {
 
   // register application
   ESP_ERROR_CHECK(esp_ble_gatts_app_register(0x55));
+  naos_await(naos_ble_signal, 1, false);
 
   // set device name
-  const char *name = naos_get_s("device-name");
-  ESP_ERROR_CHECK(esp_ble_gap_set_device_name(strlen(name) > 0 ? name : "naos"));
+  naos_ble_set_name(true);
 
   // subscribe params
   naos_params_subscribe(ble_params);
-
-  // wait for initialization to complete
-  naos_await(naos_ble_signal, 1, false);
 
   // handle parameters
   naos_params_subscribe(naos_ble_param_handler);
