@@ -40,11 +40,6 @@ func Fetch(path, commit string, ignoredSubmodules []string, out io.Writer) error
 		return err
 	}
 
-	// prepend origin if not tag
-	if !strings.HasPrefix(commit, "v") {
-		commit = "origin/" + commit
-	}
-
 	// reset repo to specific version
 	cmd = exec.Command("git", "reset", "--hard", commit)
 	cmd.Stderr = out
