@@ -2,7 +2,7 @@ package tree
 
 import (
 	"io"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/256dpi/naos/pkg/utils"
@@ -31,7 +31,7 @@ func WriteCMakeLists(naosPath string, out io.Writer) error {
 	file += ")\n"
 
 	// update cmake config
-	err = ioutil.WriteFile(filepath.Join(naosPath, "CMakeLists.txt"), []byte(file), 0644)
+	err = os.WriteFile(filepath.Join(naosPath, "CMakeLists.txt"), []byte(file), 0644)
 	if err != nil {
 		return err
 	}

@@ -3,7 +3,6 @@ package tree
 import (
 	"bufio"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -88,14 +87,14 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 		}
 
 		// get existing
-		existing, err := ioutil.ReadFile(configPath)
+		existing, err := os.ReadFile(configPath)
 		if err != nil {
 			return err
 		}
 
 		// overwrite if changed
 		if string(existing) != original {
-			err = ioutil.WriteFile(configPath, []byte(original), 0644)
+			err = os.WriteFile(configPath, []byte(original), 0644)
 			if err != nil {
 				return err
 			}
@@ -155,7 +154,7 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 
 // AppBinary will return the bytes of the built app binary.
 func AppBinary(naosPath string) ([]byte, error) {
-	return ioutil.ReadFile(filepath.Join(Directory(naosPath), "build", "naos-project.bin"))
+	return os.ReadFile(filepath.Join(Directory(naosPath), "build", "naos-project.bin"))
 }
 
 func hasOverrides(sdkconfig string, overrides map[string]string) bool {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -45,7 +44,7 @@ func Config(naosPath string, values map[string]string, port string, out io.Write
 
 	// writing CSV
 	utils.Log(out, "Writing values...")
-	err = ioutil.WriteFile(valuesCSV, buf.Bytes(), 0644)
+	err = os.WriteFile(valuesCSV, buf.Bytes(), 0644)
 	if err != nil {
 		return err
 	}

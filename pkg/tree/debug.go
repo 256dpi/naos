@@ -2,7 +2,6 @@ package tree
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -15,7 +14,7 @@ func ParseCoredump(naosPath string, coredump []byte) ([]byte, error) {
 	projectELF := filepath.Join(Directory(naosPath), "build", "naos-project.elf")
 
 	// get a temporary file
-	file, err := ioutil.TempFile("", "coredump")
+	file, err := os.CreateTemp("", "coredump")
 	if err != nil {
 		return nil, err
 	}

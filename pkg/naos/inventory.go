@@ -3,7 +3,7 @@ package naos
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -64,7 +64,7 @@ func ReadInventory(path string) (*Inventory, error) {
 	var inv Inventory
 
 	// read file
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (i *Inventory) Save(path string) error {
 	}
 
 	// write config
-	err = ioutil.WriteFile(path, append(data, '\n'), 0644)
+	err = os.WriteFile(path, append(data, '\n'), 0644)
 	if err != nil {
 		return err
 	}

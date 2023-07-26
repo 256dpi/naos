@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +20,7 @@ type compileCommand struct {
 // specified path.
 func IDFMajorVersion(naosPath string) (int, error) {
 	// read version
-	bytes, err := ioutil.ReadFile(filepath.Join(Directory(naosPath), "esp-idf.version"))
+	bytes, err := os.ReadFile(filepath.Join(Directory(naosPath), "esp-idf.version"))
 	if err != nil {
 		return 0, err
 	}
@@ -56,7 +55,7 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 		}
 
 		// read file
-		bytes, err := ioutil.ReadFile(filepath.Join(Directory(naosPath), "includes.list"))
+		bytes, err := os.ReadFile(filepath.Join(Directory(naosPath), "includes.list"))
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +78,7 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 	}
 
 	// read compile commands
-	data, err := ioutil.ReadFile(filepath.Join(Directory(naosPath), "build", "compile_commands.json"))
+	data, err := os.ReadFile(filepath.Join(Directory(naosPath), "build", "compile_commands.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +114,7 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 // NAOS installation.
 func RequiredToolchain(naosPath string) (string, error) {
 	// read version
-	bytes, err := ioutil.ReadFile(filepath.Join(Directory(naosPath), "toolchain.version"))
+	bytes, err := os.ReadFile(filepath.Join(Directory(naosPath), "toolchain.version"))
 	if err != nil {
 		return "", err
 	}

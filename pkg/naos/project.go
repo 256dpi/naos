@@ -3,7 +3,6 @@ package naos
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -72,7 +71,7 @@ func CreateProject(path string, force, cmake bool, out io.Writer) (*Project, err
 	// create main source file if it not already exists
 	if !ok || force {
 		utils.Log(out, "Creating default source file.")
-		err = ioutil.WriteFile(mainSourcePath, []byte(mainSourceFile), 0644)
+		err = os.WriteFile(mainSourcePath, []byte(mainSourceFile), 0644)
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +86,7 @@ func CreateProject(path string, force, cmake bool, out io.Writer) (*Project, err
 
 		// update CMake file anyway
 		utils.Log(out, "Ensuring project CMake file.")
-		err = ioutil.WriteFile(projectPath, []byte(projectCMakeListsFile), 0644)
+		err = os.WriteFile(projectPath, []byte(projectCMakeListsFile), 0644)
 		if err != nil {
 			return nil, err
 		}
@@ -310,7 +309,7 @@ func (p *Project) Exec(cmd string, out io.Writer, in io.Reader) error {
 // Config will write settings and parameters to an attached device.
 func (p *Project) Config(file, device string, out io.Writer) error {
 	// load file
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -367,7 +366,7 @@ func (p *Project) Debug(pattern string, delete bool, duration time.Duration, out
 
 		// write parsed data
 		utils.Log(out, fmt.Sprintf("Writing coredump to '%s", path))
-		err = ioutil.WriteFile(path, data, 0644)
+		err = os.WriteFile(path, data, 0644)
 		if err != nil {
 			return err
 		}
