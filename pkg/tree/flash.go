@@ -8,7 +8,12 @@ import (
 )
 
 // Flash will flash the project using the specified serial port.
-func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) error {
+func Flash(naosPath, target, port, baudRate string, erase, appOnly bool, out io.Writer) error {
+	// ensure target
+	if target == "" {
+		target = "esp32"
+	}
+
 	// get idf major version
 	idfMajorVersion, err := IDFMajorVersion(naosPath)
 	if err != nil {
@@ -44,6 +49,12 @@ func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) 
 		"erase_region", "0xd000", "0x2000",
 	}
 
+	// prepare boot loader offset
+	bootLoader := "0x1000"
+	if target == "esp32s3" {
+		bootLoader = "0x0"
+	}
+
 	// prepare flash all command
 	flashAll := []string{
 		espTool,
@@ -56,7 +67,7 @@ func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) 
 		"--flash_mode", "dio",
 		"--flash_freq", "40m",
 		"--flash_size", "detect",
-		"0x1000", bootLoaderBinary,
+		bootLoader, bootLoaderBinary,
 		"0x8000", partitionsBinary,
 		"0x10000", projectBinary,
 	}

@@ -173,7 +173,7 @@ func (p *Project) Build(overrides map[string]string, clean, reconfigure, appOnly
 		or[k] = v
 	}
 
-	return tree.Build(p.Tree(), or, p.Inventory.Embeds, clean, reconfigure, appOnly, out)
+	return tree.Build(p.Tree(), p.Inventory.Target, or, p.Inventory.Embeds, clean, reconfigure, appOnly, out)
 }
 
 // BuildTrace will build the project with tracing enabled.
@@ -269,7 +269,7 @@ func (p *Project) BuildTrace(cpuCore, baudRate string, clean, reconfigure, appOn
 		or[k] = v
 	}
 
-	return tree.Build(p.Tree(), or, p.Inventory.Embeds, clean, reconfigure, appOnly, out)
+	return tree.Build(p.Tree(), p.Inventory.Target, or, p.Inventory.Embeds, clean, reconfigure, appOnly, out)
 }
 
 // Flash will flash the project to the attached device.
@@ -287,7 +287,7 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly bool, out i
 		device = utils.FindPort(out)
 	}
 
-	return tree.Flash(p.Tree(), device, baudRate, erase, appOnly, out)
+	return tree.Flash(p.Tree(), p.Inventory.Target, device, baudRate, erase, appOnly, out)
 }
 
 // Attach will attach to the attached device.

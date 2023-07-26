@@ -13,9 +13,15 @@ import (
 
 // TODO: Changing embeds in a v4 projects requires a clean.
 // TODO: Updating sdkconfig.overrides requires a reconfigure.
+// TODO: Changing target needs a reconfigure and clean.
 
 // Build will build the project.
-func Build(naosPath string, overrides map[string]string, files []string, clean, reconfigure, appOnly bool, out io.Writer) error {
+func Build(naosPath, target string, overrides map[string]string, files []string, clean, reconfigure, appOnly bool, out io.Writer) error {
+	// ensure target
+	if target == "" {
+		target = "esp32"
+	}
+
 	// get idf major version
 	idfMajorVersion, err := IDFMajorVersion(naosPath)
 	if err != nil {
@@ -137,7 +143,7 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 	if clean {
 		utils.Log(out, "Cleaning project...")
 		if idfMajorVersion >= 4 {
-			err = Exec(naosPath, out, nil, false, "idf.py", "clean")
+			err = Exec(naosPath, out, nil, false, "idf.py", "fullclean")
 		} else {
 			err = Exec(naosPath, out, nil, false, "make", "clean")
 		}
@@ -153,7 +159,7 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 		if err != nil {
 			return err
 		}
-		err = Exec(naosPath, out, nil, false, "idf.py", "reconfigure")
+		err = Exec(naosPath, out, nil, false, "idf.py", "-DIDF_TARGET="+target, "reconfigure")
 		if err != nil {
 			return err
 		}

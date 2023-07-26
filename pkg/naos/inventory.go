@@ -36,6 +36,7 @@ type Frameworks struct {
 // An Inventory represents the contents of the inventory file.
 type Inventory struct {
 	Version    string                `json:"version"`
+	Target     string                `bson:"target"`
 	FixSerial  bool                  `json:"fix_serial"`
 	BaudRate   string                `json:"baud_rate"`
 	Embeds     []string              `json:"embeds"`
@@ -50,7 +51,8 @@ type Inventory struct {
 func NewInventory() *Inventory {
 	return &Inventory{
 		Version:    "master",
-		FixSerial:  true,
+		Target:     "esp32",
+		FixSerial:  true, // TODO: Remove?
 		Overrides:  nil,
 		Components: make(map[string]*Component),
 		Broker:     "mqtts://key:secret@example.org",
