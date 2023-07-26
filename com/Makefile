@@ -27,7 +27,6 @@ install:
 
 sync:
 	cp ../tree/partitions.csv ./test/partitions.csv
-	cp ../tree/sdkconfig ./test/sdkconfig
 
 clean:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py clean

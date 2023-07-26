@@ -16,9 +16,6 @@ cd components/esp-mqtt; git fetch; git checkout ${ESP_MQTT_VERSION}; git submodu
 cd components/esp-osc; git fetch; git checkout ${ESP_OSC_VERSION}; git submodule update --recursive; cd ../..
 cd ..
 
-printf "\nCopying sdkconfig...\n"
-cp com/test/sdkconfig tree/sdkconfig
-
 printf "\nUpdating naos com...\n"
 cd com
 make update

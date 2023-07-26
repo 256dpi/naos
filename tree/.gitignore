@@ -3,3 +3,4 @@ toolchain/
 build/
 main/src/
 includes.list
+sdkconfig
