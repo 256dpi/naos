@@ -40,10 +40,10 @@ Fleet Management:
 Usage:
   naos create [--cmake --force]
   naos install [--force]
-  naos build [--clean --app-only]
+  naos build [--clean --reconfigure --app-only]
   naos flash [<device>] [--baud=<rate> --erase --app-only]
   naos attach [<device>]
-  naos run [<device>] [--clean --app-only --baud=<rate> --erase]
+  naos run [<device>] [--clean --reconfigure --app-only --baud=<rate> --erase]
   naos trace [<device>] [--cpu=<core> --clean --app-only --baud=<rate> --erase]
   naos exec <command>
   naos config <file> [<device>]
@@ -66,6 +66,7 @@ Options:
   --cmake               Create required CMake files for IDEs like CLion.
   --force               Reinstall dependencies when they already exist.
   --clean               Clean all build artifacts before building again.
+  --reconfigure         Reconfigure will recalculate the sdkconfig file.
   --erase               Erase completely before flashing new image.
   --app-only            Only build or flash the application.
   --clear               Remove not available devices from inventory.
@@ -115,18 +116,19 @@ type command struct {
 	aVersion string
 
 	// options
-	oForce    bool
-	oBaudRate string
-	oCMake    bool
-	oClean    bool
-	oErase    bool
-	oAppOnly  bool
-	oCPUCore  string
-	oClear    bool
-	oDelete   bool
-	oDuration time.Duration
-	oTimeout  time.Duration
-	oJobs     int
+	oForce       bool
+	oBaudRate    string
+	oCMake       bool
+	oClean       bool
+	oReconfigure bool
+	oErase       bool
+	oAppOnly     bool
+	oCPUCore     string
+	oClear       bool
+	oDelete      bool
+	oDuration    time.Duration
+	oTimeout     time.Duration
+	oJobs        int
 }
 
 func parseCommand() *command {
@@ -171,18 +173,19 @@ func parseCommand() *command {
 		aVersion: getString(a["<version>"]),
 
 		// options
-		oForce:    getBool(a["--force"]),
-		oCMake:    getBool(a["--cmake"]),
-		oClean:    getBool(a["--clean"]),
-		oBaudRate: getString(a["--baud"]),
-		oErase:    getBool(a["--erase"]),
-		oAppOnly:  getBool(a["--app-only"]),
-		oCPUCore:  getString(a["--cpu"]),
-		oClear:    getBool(a["--clear"]),
-		oDelete:   getBool(a["--delete"]),
-		oDuration: getDuration(a["--duration"]),
-		oTimeout:  getDuration(a["--timeout"]),
-		oJobs:     getInt(a["--jobs"]),
+		oForce:       getBool(a["--force"]),
+		oCMake:       getBool(a["--cmake"]),
+		oClean:       getBool(a["--clean"]),
+		oReconfigure: getBool(a["--reconfigure"]),
+		oBaudRate:    getString(a["--baud"]),
+		oErase:       getBool(a["--erase"]),
+		oAppOnly:     getBool(a["--app-only"]),
+		oCPUCore:     getString(a["--cpu"]),
+		oClear:       getBool(a["--clear"]),
+		oDelete:      getBool(a["--delete"]),
+		oDuration:    getDuration(a["--duration"]),
+		oTimeout:     getDuration(a["--timeout"]),
+		oJobs:        getInt(a["--jobs"]),
 	}
 }
 
