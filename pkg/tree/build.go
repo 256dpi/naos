@@ -46,32 +46,45 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 
 	// determine path
 	configPath := filepath.Join(Directory(naosPath), "sdkconfig")
+	overridesPath := filepath.Join(Directory(naosPath), "sdkconfig.overrides")
+
+	// check if sdkconfig is layered
+	isLayered, err := utils.Exists(filepath.Join(Directory(naosPath), "sdkconfig.defaults"))
 
 	// apply overrides
 	if len(overrides) > 0 {
 		utils.Log(out, "Overriding sdkconfig...")
 
-		// read config
-		data, err := os.ReadFile(configPath)
-		if err != nil {
-			return err
-		}
-
-		// get config
-		sdkconfig := string(data)
-
-		// recreate if no match
-		if !hasOverrides(sdkconfig, overrides) {
-			// apply overrides
-			sdkconfig, err = applyOverrides(naosPath, overrides)
+		// check if layered
+		if isLayered {
+			// update overrides file
+			err = utils.Update(overridesPath, joinOverrides(overrides))
+			if err != nil {
+				return err
+			}
+		} else {
+			// read config
+			data, err := os.ReadFile(configPath)
 			if err != nil {
 				return err
 			}
 
-			// write config
-			err = os.WriteFile(configPath, []byte(sdkconfig), 0644)
-			if err != nil {
-				return err
+			// get config
+			sdkconfig := string(data)
+
+			// recreate if no match
+			if !hasOverrides(sdkconfig, overrides) {
+				// apply overrides
+				sdkconfig, err = applyOverrides(naosPath, overrides)
+				if err != nil {
+					return err
+				}
+
+				// write config
+				err = utils.Update(configPath, sdkconfig)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -80,23 +93,32 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 	if len(overrides) == 0 {
 		utils.Log(out, "Ensure sdkconfig...")
 
-		// get original
-		original, err := utils.Original(naosPath, filepath.Join("tree", "sdkconfig"))
-		if err != nil {
-			return err
-		}
-
-		// get existing
-		existing, err := os.ReadFile(configPath)
-		if err != nil {
-			return err
-		}
-
-		// overwrite if changed
-		if string(existing) != original {
-			err = os.WriteFile(configPath, []byte(original), 0644)
+		// check if layered
+		if isLayered {
+			// remove overrides file
+			err = os.Remove(overridesPath)
 			if err != nil {
 				return err
+			}
+		} else {
+			// get original
+			original, err := utils.Original(naosPath, filepath.Join("tree", "sdkconfig"))
+			if err != nil {
+				return err
+			}
+
+			// get existing
+			existing, err := os.ReadFile(configPath)
+			if err != nil {
+				return err
+			}
+
+			// overwrite if changed
+			if string(existing) != original {
+				err = os.WriteFile(configPath, []byte(original), 0644)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -230,4 +252,14 @@ func applyOverrides(naosPath string, overrides map[string]string) (string, error
 	}
 
 	return sdkconfig, nil
+}
+
+func joinOverrides(overrides map[string]string) string {
+	sdkconfig := ""
+	for key, value := range overrides {
+		if value != "" {
+			sdkconfig += key + "=" + value + "\n"
+		}
+	}
+	return sdkconfig
 }
