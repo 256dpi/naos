@@ -163,7 +163,7 @@ func (p *Project) Install(force bool, out io.Writer) error {
 }
 
 // Build will build the project.
-func (p *Project) Build(overrides map[string]string, clean, appOnly bool, out io.Writer) error {
+func (p *Project) Build(overrides map[string]string, clean, reconfigure, appOnly bool, out io.Writer) error {
 	// merge overrides with inventory overrides
 	or := map[string]string{}
 	for k, v := range p.Inventory.Overrides {
@@ -173,11 +173,11 @@ func (p *Project) Build(overrides map[string]string, clean, appOnly bool, out io
 		or[k] = v
 	}
 
-	return tree.Build(p.Tree(), or, p.Inventory.Embeds, clean, appOnly, out)
+	return tree.Build(p.Tree(), p.Inventory.Target, or, p.Inventory.Embeds, clean, reconfigure, appOnly, out)
 }
 
 // BuildTrace will build the project with tracing enabled.
-func (p *Project) BuildTrace(cpuCore, baudRate string, clean, appOnly bool, out io.Writer) error {
+func (p *Project) BuildTrace(cpuCore, baudRate string, clean, reconfigure, appOnly bool, out io.Writer) error {
 	// ensure baud rate
 	if baudRate == "" {
 		baudRate = p.Inventory.BaudRate
@@ -269,7 +269,7 @@ func (p *Project) BuildTrace(cpuCore, baudRate string, clean, appOnly bool, out 
 		or[k] = v
 	}
 
-	return tree.Build(p.Tree(), or, p.Inventory.Embeds, clean, appOnly, out)
+	return tree.Build(p.Tree(), p.Inventory.Target, or, p.Inventory.Embeds, clean, reconfigure, appOnly, out)
 }
 
 // Flash will flash the project to the attached device.
@@ -287,7 +287,7 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly bool, out i
 		device = utils.FindPort(out)
 	}
 
-	return tree.Flash(p.Tree(), device, baudRate, erase, appOnly, out)
+	return tree.Flash(p.Tree(), p.Inventory.Target, device, baudRate, erase, appOnly, out)
 }
 
 // Attach will attach to the attached device.

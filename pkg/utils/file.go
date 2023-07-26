@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Exists will check if the provided file or directory exists.
@@ -119,6 +120,28 @@ func Sync(src, dst string) error {
 
 	// write file
 	err = os.WriteFile(dst, srcData, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Update will write a file if the contents have changed.
+func Update(path, content string) error {
+	// read file
+	data, err := os.ReadFile(path)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	// check if content has changed
+	if data != nil && strings.TrimSpace(string(data)) == strings.TrimSpace(content) {
+		return nil
+	}
+
+	// write file
+	err = os.WriteFile(path, []byte(content), 0644)
 	if err != nil {
 		return err
 	}
