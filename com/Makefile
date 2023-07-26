@@ -25,9 +25,6 @@ update:
 install:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; cd test/esp-idf; ./install.sh all
 
-sync:
-	cp ../tree/partitions.csv ./test/partitions.csv
-
 clean:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py clean
 
