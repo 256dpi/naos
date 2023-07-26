@@ -145,6 +145,8 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
       return ESP_FAIL;
     }
 
+    // TODO: Raw param handling.
+
     // set value
     res.payload = (uint8_t *)naos_format("read:%s#%s", name, param->current.buf);
   }
@@ -170,6 +172,8 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
 
     // set value
     naos_set_s(param->name, value);
+
+    // TODO: Raw param handling.
 
     // set value
     res.payload = (uint8_t *)naos_format("write:%s#%s", name, param->current.buf);
