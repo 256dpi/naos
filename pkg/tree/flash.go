@@ -27,7 +27,6 @@ func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) 
 	// prepare erase flash command
 	eraseFlash := []string{
 		espTool,
-		"--chip", "esp32",
 		"--port", port,
 		"--baud", baudRate,
 		"--before", "default_reset",
@@ -38,7 +37,6 @@ func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) 
 	// prepare erase ota command
 	eraseOTA := []string{
 		espTool,
-		"--chip", "esp32",
 		"--port", port,
 		"--baud", baudRate,
 		"--before", "default_reset",
@@ -49,7 +47,6 @@ func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) 
 	// prepare flash all command
 	flashAll := []string{
 		espTool,
-		"--chip", "esp32",
 		"--port", port,
 		"--baud", baudRate,
 		"--before", "default_reset",
@@ -67,7 +64,6 @@ func Flash(naosPath, port, baudRate string, erase, appOnly bool, out io.Writer) 
 	// prepare flash app command
 	flashApp := []string{
 		espTool,
-		"--chip", "esp32",
 		"--port", port,
 		"--baud", baudRate,
 		"--before", "default_reset",

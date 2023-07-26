@@ -80,7 +80,6 @@ func Config(naosPath string, values map[string]string, port string, out io.Write
 	utils.Log(out, "Flashing...")
 	err = Exec(naosPath, out, nil, false, "python", []string{
 		espTool,
-		"--chip", "esp32",
 		"--port", port,
 		"--baud", "921600",
 		"--before", "default_reset",
