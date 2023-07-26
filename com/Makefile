@@ -21,7 +21,7 @@ update:
 	cd test/components/esp-osc; git fetch; git checkout $(ESP_OSC_VERSION); git submodule update --recursive --init
 
 install:
-	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; cd test/esp-idf; ./install.sh esp32
+	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; cd test/esp-idf; ./install.sh all
 
 sync:
 	cp ../tree/partitions.csv ./test/partitions.csv
