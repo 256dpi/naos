@@ -46,7 +46,7 @@ func InstallToolchain(naosPath string, force bool, out io.Writer) error {
 	}
 
 	// prepare command
-	cmd := exec.Command(filepath.Join(IDFDirectory(naosPath), "install.sh"), "esp32")
+	cmd := exec.Command(filepath.Join(IDFDirectory(naosPath), "install.sh"), "all")
 
 	// set working directory
 	cmd.Dir = Directory(naosPath)
