@@ -131,12 +131,12 @@ func Sync(src, dst string) error {
 func Update(path, content string) error {
 	// read file
 	data, err := os.ReadFile(path)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
 	// check if content has changed
-	if strings.TrimSpace(string(data)) == strings.TrimSpace(content) {
+	if data != nil && strings.TrimSpace(string(data)) == strings.TrimSpace(content) {
 		return nil
 	}
 
