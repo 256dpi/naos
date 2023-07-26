@@ -95,8 +95,8 @@ func Build(naosPath string, overrides map[string]string, files []string, clean, 
 
 		// check if layered
 		if isLayered {
-			// remove overrides file
-			err = os.Remove(overridesPath)
+			// update overrides file
+			err = utils.Update(overridesPath, "")
 			if err != nil {
 				return err
 			}
