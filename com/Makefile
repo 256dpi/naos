@@ -1,5 +1,7 @@
 SHELL := /bin/bash
 
+TARGET := "esp32" # run reconfigure when changed
+
 ESP_IDF_VERSION := $(shell cat ../tree/esp-idf.version)
 ESP_MQTT_VERSION := $(shell cat ../tree/esp-mqtt.version)
 ESP_OSC_VERSION := $(shell cat ../tree/esp-osc.version)
@@ -50,7 +52,8 @@ config:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py menuconfig
 
 reconfigure:
-	rm ./test/sdkconfig
+	rm -f ./test/sdkconfig
+	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py set-target $(TARGET)
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py reconfigure
 
 info:
