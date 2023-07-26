@@ -91,7 +91,14 @@ static naos_ble_gatts_char_t naos_ble_char_flash = {
 };
 
 #define NAOS_BLE_NUM_CHARS 6
+
+#if defined(CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF)
 #define NAOS_BLE_MAX_CONNECTIONS CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF
+#elif defined(CONFIG_BT_ACL_CONNECTIONS)
+#define NAOS_BLE_MAX_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
+#else
+#define NAOS_BLE_MAX_CONNECTIONS 1
+#endif
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
     &naos_ble_char_lock,  &naos_ble_char_list,   &naos_ble_char_select,
@@ -552,7 +559,11 @@ void naos_ble_init(naos_ble_config_t cfg) {
     // enable controller
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
+#if defined(CONFIG_BTDM_CTRL_MODE_BTDM)
     ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BTDM));
+#else
+    ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BLE));
+#endif
 
     // enable bluedroid
     ESP_ERROR_CHECK(esp_bluedroid_init());
