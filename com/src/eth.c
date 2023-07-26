@@ -111,6 +111,7 @@ static naos_param_t naos_eth_params[] = {
     {.name = "eth-addr", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
 };
 
+#if defined(CONFIG_IDF_TARGET_ESP32)
 void naos_eth_olimex() {
   // prepare mac
   eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
@@ -134,6 +135,7 @@ void naos_eth_olimex() {
   // attach ethernet
   ESP_ERROR_CHECK(esp_netif_attach(naos_eth_netif, esp_eth_new_netif_glue(naos_eth_handle)));
 }
+#endif
 
 void naos_eth_init() {
   // create mutex
