@@ -506,6 +506,11 @@ static void naos_ble_set_name() {
 }
 
 static void naos_ble_param_handler(naos_param_t *param) {
+  // update device name if changed
+  if (strcmp(param->name, "device-name") == 0) {
+    naos_ble_set_name();
+  }
+
   // send indicate to all unlocked connections
   for (int j = 0; j < NAOS_BLE_MAX_CONNECTIONS; j++) {
     naos_ble_conn_t *conn = &naos_ble_conns[j];
@@ -514,13 +519,6 @@ static void naos_ble_param_handler(naos_param_t *param) {
           esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, conn->id, naos_ble_char_update.handle,
                                       (uint16_t)strlen(param->name), (uint8_t *)param->name, false));
     }
-  }
-}
-
-static void ble_params(naos_param_t *param) {
-  // update device name if changed
-  if (strcmp(param->name, "device-name") == 0) {
-    naos_ble_set_name();
   }
 }
 
@@ -579,9 +577,6 @@ void naos_ble_init(naos_ble_config_t cfg) {
 
   // set device name
   naos_ble_set_name();
-
-  // subscribe params
-  naos_params_subscribe(ble_params);
 
   // handle parameters
   naos_params_subscribe(naos_ble_param_handler);
