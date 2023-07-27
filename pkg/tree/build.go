@@ -156,7 +156,7 @@ func Build(naosPath, target string, overrides map[string]string, files []string,
 	if reconfigure {
 		utils.Log(out, "Reconfiguring project...")
 		err = os.Remove(configPath)
-		if err != nil {
+		if err != nil && !os.IsNotExist(err) {
 			return err
 		}
 		err = Exec(naosPath, out, nil, false, "idf.py", "-DIDF_TARGET="+target, "reconfigure")
