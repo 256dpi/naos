@@ -23,7 +23,6 @@ typedef struct {
   naos_param_t *param;
 } naos_ble_conn_t;
 
-static naos_mutex_t naos_ble_mutex;
 static naos_signal_t naos_ble_signal;
 
 static esp_ble_adv_params_t naos_ble_adv_params = {
@@ -115,9 +114,6 @@ static void naos_ble_update(naos_update_event_t event) {
     return;
   }
 
-  // acquire mutex
-  NAOS_LOCK(naos_ble_mutex);
-
   // set flag
   naos_ble_flash_ready = true;
 
@@ -126,9 +122,6 @@ static void naos_ble_update(naos_update_event_t event) {
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, naos_ble_flash_conn->id,
                                                               naos_ble_char_flash.handle, 1, (uint8_t *)"1", false));
   }
-
-  // release mutex
-  NAOS_UNLOCK(naos_ble_mutex);
 }
 
 static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
@@ -156,9 +149,6 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
 }
 
 static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_ble_gatts_cb_param_t *p) {
-  // acquire mutex
-  NAOS_LOCK(naos_ble_mutex);
-
   // pre-check for registration event
   if (e == ESP_GATTS_REG_EVT) {
     // check status
@@ -170,7 +160,6 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
   // return immediately if event is not general or does not belong to our interface
   if (i != ESP_GATT_IF_NONE && i != naos_ble_gatts_profile.interface) {
-    NAOS_UNLOCK(naos_ble_mutex);
     return;
   }
 
@@ -324,7 +313,6 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
           // send error response
           ESP_ERROR_CHECK(
               esp_ble_gatts_send_response(i, p->read.conn_id, p->read.trans_id, ESP_GATT_READ_NOT_PERMIT, NULL));
-          NAOS_UNLOCK(naos_ble_mutex);
           return;
         }
 
@@ -405,7 +393,6 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
           // send error response
           ESP_ERROR_CHECK(
               esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, ESP_GATT_WRITE_NOT_PERMIT, NULL));
-          NAOS_UNLOCK(naos_ble_mutex);
           return;
         }
 
@@ -414,7 +401,6 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
           // send error response
           ESP_ERROR_CHECK(
               esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, ESP_GATT_INVALID_ATTR_LEN, NULL));
-          NAOS_UNLOCK(naos_ble_mutex);
           return;
         }
 
@@ -495,9 +481,6 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       // ESP_LOGI(NAOS_LOG_TAG, "unhandled GATTS event: %d", e);
     }
   }
-
-  // release mutex
-  NAOS_UNLOCK(naos_ble_mutex);
 }
 
 static void naos_ble_set_name() {
@@ -523,9 +506,6 @@ static void naos_ble_set_name() {
 }
 
 static void naos_ble_param_handler(naos_param_t *param) {
-  // acquire mutex
-  NAOS_LOCK(naos_ble_mutex);
-
   // send indicate to all unlocked connections
   for (int j = 0; j < NAOS_BLE_MAX_CONNECTIONS; j++) {
     naos_ble_conn_t *conn = &naos_ble_conns[j];
@@ -535,23 +515,22 @@ static void naos_ble_param_handler(naos_param_t *param) {
                                       (uint16_t)strlen(param->name), (uint8_t *)param->name, false));
     }
   }
-
-  // release mutex
-  NAOS_UNLOCK(naos_ble_mutex);
 }
 
 static void ble_params(naos_param_t *param) {
   // update device name if changed
   if (strcmp(param->name, "device-name") == 0) {
-    naos_ble_set_name(true);
+    naos_ble_set_name();
   }
 }
 
 void naos_ble_init(naos_ble_config_t cfg) {
-  // create mutex
-  naos_ble_mutex = naos_mutex();
+  // Note: The BLE subsystem is not protected by a mutex to prevent deadlocks of
+  // the bluetooth task. Most BLE calls block until the bluetooth task replies,
+  // but other work items issues beforehand may call into our code before the
+  // reply is issued. Therefore, we opt for a careful lock-free usage.
 
-  // create even group
+  // create signal
   naos_ble_signal = naos_signal();
 
   // initialize bluetooth
@@ -599,7 +578,7 @@ void naos_ble_init(naos_ble_config_t cfg) {
   naos_await(naos_ble_signal, 1, false);
 
   // set device name
-  naos_ble_set_name(true);
+  naos_ble_set_name();
 
   // subscribe params
   naos_params_subscribe(ble_params);
