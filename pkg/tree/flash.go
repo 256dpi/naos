@@ -55,6 +55,8 @@ func Flash(naosPath, target, port, baudRate string, erase, appOnly bool, out io.
 		bootLoader = "0x0"
 	}
 
+	// TODO: Can we increase flash frequency and mode for some chips?
+
 	// prepare flash all command
 	flashAll := []string{
 		espTool,
