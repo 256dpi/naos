@@ -136,4 +136,38 @@ void naos_trigger_isr(naos_signal_t signal, uint16_t bits, bool clear);
  */
 void naos_await(naos_signal_t signal, uint16_t bits, bool clear);
 
+/**
+ * A queue handle.
+ */
+typedef QueueHandle_t naos_queue_t;
+
+/**
+ * Creates and returns a queue.
+ *
+ * @param length The queue length.
+ * @param size The item length.
+ * @return The queue.
+ */
+naos_queue_t naos_queue(uint16_t length, uint16_t size);
+
+/**
+ * Pushes an item into the specified queue.
+ *
+ * @param queue The queue.
+ * @param item The item.
+ * @param timeout_ms The timeout in milliseconds or -1 for none.
+ * @return Whether the item was pushed.
+ */
+bool naos_push(naos_queue_t queue, void *item, int32_t timeout_ms);
+
+/**
+ * Pops an item from the specified queue.
+ *
+ * @param queue The queue.
+ * @param item The item.
+ * @param timeout_ms The timeout in milliseconds or -1 for none.
+ * @return Whether the item was popped.
+ */
+bool naos_pop(naos_queue_t queue, void *item, int32_t timeout_ms);
+
 #endif  // NAOS_SYS_H

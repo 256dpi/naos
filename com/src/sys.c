@@ -92,9 +92,9 @@ void naos_kill(naos_task_t task) {
   vTaskDelete(task);
 }
 
-void naos_repeat(const char *name, uint32_t millis, naos_func_t func) {
+void naos_repeat(const char *name, uint32_t period_ms, naos_func_t func) {
   // create and start timer
-  TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(millis), pdTRUE, 0, func);
+  TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(period_ms), pdTRUE, 0, func);
   while (xTimerStart(timer, portMAX_DELAY) != pdPASS) {
   }
 }
@@ -179,4 +179,27 @@ void naos_await(naos_signal_t signal, uint16_t bits, bool clear) {
   // await bits
   while (xEventGroupWaitBits(signal, bits, clear, pdTRUE, portMAX_DELAY) == 0) {
   }
+}
+
+naos_queue_t naos_queue(uint16_t length, uint16_t size) {
+  // create queue
+  return xQueueCreate(length, size);
+}
+
+bool naos_push(naos_queue_t queue, void *item, int32_t timeout_ms) {
+  if (timeout_ms >= 0) {
+    return xQueueSend(queue, item, timeout_ms / portTICK_PERIOD_MS) == pdPASS;
+  }
+  while (xQueueSend(queue, item, portMAX_DELAY) != pdPASS) {
+  }
+  return true;
+}
+
+bool naos_pop(naos_queue_t queue, void *item, int32_t timeout_ms) {
+  if (timeout_ms >= 0) {
+    return xQueueReceive(queue, item, timeout_ms / portTICK_PERIOD_MS) == pdPASS;
+  }
+  while (xQueueReceive(queue, item, portMAX_DELAY) != pdPASS) {
+  }
+  return true;
 }
