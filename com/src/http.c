@@ -3,11 +3,13 @@
 #include "params.h"
 #include "utils.h"
 #include "naos.h"
+#include "msg.h"
 
 #define NAOS_HTTP_MAX_CONNS 7
 #define NAOS_HTTP_MAX_FILES 8
 
 typedef struct {
+  int fd;
   bool locked;
 } naos_http_ctx_t;
 
@@ -17,12 +19,19 @@ typedef struct {
   const char *content;
 } naos_http_file_t;
 
+typedef struct {
+  uint8_t *payload;
+  size_t len;
+  naos_http_ctx_t *ctx;
+} naos_http_msg_t;
+
 extern const char naos_http_index_html[] asm("_binary_naos_html_start");
 extern const char naos_http_script_js[] asm("_binary_naos_js_start");
 
 static httpd_handle_t naos_http_handle = {0};
 static naos_http_file_t naos_http_files[NAOS_HTTP_MAX_FILES] = {0};
 static size_t naos_http_file_count = 0;
+static uint8_t naos_http_channel = 0;
 
 static esp_err_t naos_http_index(httpd_req_t *req) {
   // set response header
@@ -67,6 +76,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   if (conn->method == HTTP_GET) {
     // set context
     naos_http_ctx_t *ctx = malloc(sizeof(naos_http_ctx_t));
+    ctx->fd = httpd_req_to_sockfd(conn);
     ctx->locked = strlen(naos_get_s("device-password")) > 0;
     conn->sess_ctx = ctx;
 
@@ -75,6 +85,9 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
 
   // get context
   naos_http_ctx_t *ctx = conn->sess_ctx;
+
+  // update fd
+  ctx->fd = httpd_req_to_sockfd(conn);
 
   // prepare request frame
   httpd_ws_frame_t req = {.type = HTTPD_WS_TYPE_TEXT};
@@ -179,8 +192,19 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     res.payload = (uint8_t *)naos_format("write:%s#%s", name, param->current.buf);
   }
 
+  // handle message
+  if (strncmp((char *)req.payload, "msg", 3) == 0) {
+    // dispatch message
+    naos_msg_channel_dispatch(naos_http_channel, req.payload + 4, req.len - 4, ctx);
+  }
+
   // free request payload
   free(req.payload);
+
+  // return if no response payload
+  if (res.payload == NULL) {
+    return ESP_OK;
+  }
 
   // send response frame
   res.len = strlen((char *)res.payload);
@@ -298,6 +322,41 @@ static void naos_http_param_handler(naos_param_t *param) {
   ESP_ERROR_CHECK(httpd_queue_work(naos_http_handle, naos_http_update, param));
 }
 
+static void naos_http_send_frame(void *arg) {
+  // get message
+  naos_http_msg_t *msg = arg;
+
+  // prepare frame
+  httpd_ws_frame_t frame = {
+      .type = HTTPD_WS_TYPE_BINARY,
+      .payload = msg->payload,
+      .len = msg->len,
+  };
+
+  // send frame
+  ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_ws_send_frame_async(naos_http_handle, msg->ctx->fd, &frame));
+
+  // free message
+  free(msg);
+}
+
+static bool naos_http_msg_send(const uint8_t *data, size_t len, void *ctx) {
+  // prepare message
+  naos_http_msg_t *msg = malloc(sizeof(naos_http_msg_t) + 4 + len);
+  msg->payload = (void *)msg + sizeof(naos_http_msg_t);
+  msg->len = 4 + len;
+  msg->ctx = ctx;
+
+  // prepare payload
+  memcpy(msg->payload, "msg#", 4);
+  memcpy(msg->payload + 4, data, len);
+
+  // queue function
+  ESP_ERROR_CHECK(httpd_queue_work(naos_http_handle, naos_http_send_frame, msg));
+
+  return true;
+}
+
 static httpd_uri_t naos_http_route_index = {.uri = "/naos", .method = HTTP_GET, .handler = naos_http_index};
 static httpd_uri_t naos_http_route_script = {.uri = "/naos.js", .method = HTTP_GET, .handler = naos_http_script};
 static httpd_uri_t naos_http_route_socket = {.uri = "/naos.sock",
@@ -326,6 +385,13 @@ void naos_http_init(int core) {
 
   // handle parameters
   naos_params_subscribe(naos_http_param_handler);
+
+  // register channel
+  naos_http_channel = naos_msg_channel_register((naos_msg_channel_t){
+      .name = "http",
+      .mtu = 4096,
+      .send = naos_http_msg_send,
+  });
 }
 
 void naos_http_serve(const char *path, const char *type, const char *content) {
