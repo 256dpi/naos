@@ -20,12 +20,14 @@
  * Endpoints can further define the structure of the remaining data.
  *
  * The system employs three special endpoints: 0x00, 0xFE and 0xFF. The first is
- * used to begin a session and obtain its ID. The second is used to report
- * generic acknowledgements and errors. And the last is used to end a session
- * and clean up resources. The message flow is a follows:
+ * used to begin a session and obtain its ID. The second is used to handle pings
+ * and report generic acknowledgements and errors. And the last is used to end a
+ * session and clean up resources. The message flow is a follows:
  *
  * > Begin: Session=0, Endpoint=0, Data=Handle(*)
  * < Begin: Session=ID, Endpoint=0, Data=Handle(*)
+ * > Ping: Session=ID, Endpoint=0xFE
+ * < Ack: Session=ID, Endpoint=0xFE
  * < Error: Session=ID, Endpoint=0xFE, Data=Error(1)
  * > End: Session=ID, Endpoint=0xFF
  */

@@ -243,6 +243,24 @@ bool naos_msg_channel_dispatch(uint8_t channel, uint8_t* data, size_t len, void*
     return false;
   }
 
+  // handle "ping" command
+  if (eid == 0xFE) {
+    // update last message
+    session->last_msg = naos_millis();
+
+    // release mutex
+    NAOS_UNLOCK(naos_msg_mutex);
+
+    // prepare reply
+    uint8_t reply[] = {1, 0, 0, NAOS_MSG_ACK};
+    memcpy(reply + 1, &session->id, 2);
+
+    // send reply
+    naos_msg_channels[channel].send(reply, 4, ctx);
+
+    return true;
+  }
+
   // handle "end" command
   if (eid == 0xFF) {
     // clean up endpoints
