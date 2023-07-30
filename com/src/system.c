@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "com.h"
 #include "log.h"
+#include "msg.h"
 
 #define NAOS_SYSTEM_MAX_HANDLERS 16
 
@@ -137,6 +138,7 @@ void naos_system_init() {
   naos_log_init();
   naos_net_init();
   naos_com_init();
+  naos_msg_init();
 
   // initialize OTA
   naos_update_init();
