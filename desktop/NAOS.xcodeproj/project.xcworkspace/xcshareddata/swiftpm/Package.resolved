@@ -3,10 +3,10 @@
     {
       "identity" : "asyncbluetooth",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/manolofdez/AsyncBluetooth",
+      "location" : "https://github.com/256dpi/AsyncBluetooth",
       "state" : {
-        "revision" : "e9aa79269fd1efd82ba2c173e60b0286455b9ea3",
-        "version" : "1.4.1"
+        "branch" : "main",
+        "revision" : "8c937e5528c13cc71a8a7cbcc66300a3e159620c"
       }
     },
     {
