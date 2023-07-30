@@ -466,10 +466,11 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
     // handle client disconnect event
     case ESP_GATTS_DISCONNECT_EVT: {
-      // mark connection
-      naos_ble_conns[p->disconnect.conn_id].id = 0;
-      naos_ble_conns[p->disconnect.conn_id].connected = false;
-      naos_ble_conns[p->connect.conn_id].locked = false;
+      // get connection
+      naos_ble_conn_t *conn = &naos_ble_conns[p->disconnect.conn_id];
+
+      // clear connection
+      *conn = (naos_ble_conn_t){0};
 
       // restart advertisement
       ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
