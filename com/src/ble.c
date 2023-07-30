@@ -14,6 +14,7 @@
 #include "params.h"
 #include "utils.h"
 #include "update.h"
+#include "msg.h"
 
 typedef struct {
   uint16_t id;
@@ -26,8 +27,8 @@ typedef struct {
 static naos_signal_t naos_ble_signal;
 
 static esp_ble_adv_params_t naos_ble_adv_params = {
-    .adv_int_min = 0x20,
-    .adv_int_max = 0x40,
+    .adv_int_min = 0x20,  // 20 ms
+    .adv_int_max = 0x40,  // 40 ms
     .adv_type = ADV_TYPE_IND,
     .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
     .channel_map = ADV_CHNL_ALL,
@@ -89,7 +90,13 @@ static naos_ble_gatts_char_t naos_ble_char_flash = {
     .max_write_len = 512,
 };
 
-#define NAOS_BLE_NUM_CHARS 6
+static naos_ble_gatts_char_t naos_ble_char_msg = {
+    .uuid = {0xf3, 0x30, 0x41, 0x63, 0xf3, 0x37, 0x45, 0xc9, 0xad, 0x00, 0x1b, 0xa6, 0x4b, 0x74, 0x60, 0x03},
+    .prop = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_INDICATE,
+    .max_write_len = 512,
+};
+
+#define NAOS_BLE_NUM_CHARS 7
 
 #if defined(CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF)
 #define NAOS_BLE_MAX_CONNECTIONS CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF
@@ -100,13 +107,14 @@ static naos_ble_gatts_char_t naos_ble_char_flash = {
 #endif
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
-    &naos_ble_char_lock,  &naos_ble_char_list,   &naos_ble_char_select,
-    &naos_ble_char_value, &naos_ble_char_update, &naos_ble_char_flash,
+    &naos_ble_char_lock,   &naos_ble_char_list,  &naos_ble_char_select, &naos_ble_char_value,
+    &naos_ble_char_update, &naos_ble_char_flash, &naos_ble_char_msg,
 };
 
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
 static naos_ble_conn_t *naos_ble_flash_conn = NULL;
 static bool naos_ble_flash_ready = false;
+static uint8_t naos_ble_msg_channel_id = 0;
 
 static void naos_ble_update(naos_update_event_t event) {
   // skip non-ready events
@@ -404,6 +412,9 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
           return;
         }
 
+        // prepare status
+        esp_gatt_status_t status = ESP_GATT_OK;
+
         // handle characteristic
         if (c == &naos_ble_char_lock) {
           if (conn->locked && naos_equal(p->write.value, p->write.len, naos_get_s("device-password"))) {
@@ -450,11 +461,18 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
               }
             }
           }
+        } else if (c == &naos_ble_char_msg) {
+          if (!conn->locked && p->write.len > 0) {
+            bool ok = naos_msg_channel_dispatch(naos_ble_msg_channel_id, p->write.value, p->write.len, conn);
+            if (!ok) {
+              status = ESP_GATT_UNKNOWN_ERROR;
+            }
+          }
         }
 
         // send response if requested
         if (p->write.need_rsp) {
-          ESP_ERROR_CHECK(esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, ESP_GATT_OK, NULL));
+          ESP_ERROR_CHECK(esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, status, NULL));
         }
 
         // exit loop
@@ -523,6 +541,21 @@ static void naos_ble_param_handler(naos_param_t *param) {
   }
 }
 
+static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
+  // get conn
+  naos_ble_conn_t *conn = ctx;
+  if (!conn->connected || conn->locked) {
+    return false;
+  }
+
+  // send indicate
+  esp_err_t err = esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, conn->id, naos_ble_char_msg.handle,
+                                              (uint16_t)len, (uint8_t *)data, false);
+  ESP_ERROR_CHECK_WITHOUT_ABORT(err);
+
+  return err == ESP_OK;
+}
+
 void naos_ble_init(naos_ble_config_t cfg) {
   // Note: The BLE subsystem is not protected by a mutex to prevent deadlocks of
   // the bluetooth task. Most BLE calls block until the bluetooth task replies,
@@ -581,4 +614,11 @@ void naos_ble_init(naos_ble_config_t cfg) {
 
   // handle parameters
   naos_params_subscribe(naos_ble_param_handler);
+
+  // register channel
+  naos_ble_msg_channel_id = naos_msg_channel_register((naos_msg_channel_t){
+      .name = "ble",
+      .mtu = 512,
+      .send = naos_ble_msg_send,
+  });
 }
