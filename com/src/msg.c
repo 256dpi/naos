@@ -336,6 +336,11 @@ bool naos_msg_endpoint_send(naos_msg_t msg) {
   // release mutex
   NAOS_UNLOCK(naos_msg_mutex);
 
+  // check channel MTU
+  if (4 + msg.len > channel.mtu) {
+    return false;
+  }
+
   // re-frame message
   uint8_t* frame = malloc(4 + msg.len);
   frame[0] = 1;  // version
