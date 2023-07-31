@@ -1,7 +1,7 @@
 #include <naos/sys.h>
-#include <string.h>
+#include <naos/msg.h>
 
-#include "msg.h"
+#include <string.h>
 
 #define NAOS_MSG_MAX_CHANNELS 8
 #define NAOS_MSG_MAX_ENDPOINTS 32

@@ -1,9 +1,10 @@
+#include <naos/msg.h>
+
 #include <esp_http_server.h>
 
 #include "params.h"
 #include "utils.h"
 #include "naos.h"
-#include "msg.h"
 
 #define NAOS_HTTP_MAX_CONNS 7
 #define NAOS_HTTP_MAX_FILES 8

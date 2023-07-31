@@ -1,4 +1,5 @@
 #include <naos/sys.h>
+#include <naos/msg.h>
 
 #include <esp_ota_ops.h>
 #include <string.h>
@@ -11,7 +12,6 @@
 #include "utils.h"
 #include "com.h"
 #include "log.h"
-#include "msg.h"
 
 #define NAOS_SYSTEM_MAX_HANDLERS 16
 

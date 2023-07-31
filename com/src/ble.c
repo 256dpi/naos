@@ -1,5 +1,6 @@
 #include <naos/ble.h>
 #include <naos/sys.h>
+#include <naos/msg.h>
 
 #include <esp_bt.h>
 #include <esp_bt_defs.h>
@@ -14,7 +15,6 @@
 #include "params.h"
 #include "utils.h"
 #include "update.h"
-#include "msg.h"
 
 typedef struct {
   uint16_t id;
