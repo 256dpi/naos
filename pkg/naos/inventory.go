@@ -36,7 +36,7 @@ type Frameworks struct {
 // An Inventory represents the contents of the inventory file.
 type Inventory struct {
 	Version    string                `json:"version"`
-	Target     string                `bson:"target"`
+	Target     string                `json:"target"`
 	FixSerial  bool                  `json:"fix_serial"`
 	BaudRate   string                `json:"baud_rate"`
 	Embeds     []string              `json:"embeds"`
