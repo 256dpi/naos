@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// TODO: Prefix commit with "origin/" to ensure we get the latest updates for
+//  branches?
+
 // Clone will check out the provided repository set it to the specified version
 // and properly checkout all submodules.
 func Clone(repo, path, commit string, ignoredSubmodules []string, out io.Writer) error {

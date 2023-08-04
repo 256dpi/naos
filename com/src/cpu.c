@@ -3,6 +3,9 @@
 
 #include <esp_freertos_hooks.h>
 
+// TODO: Use ulTaskGetIdleRunTimePercent() instead of hooks when FreeRTOS is
+//  updated to version 10.5.1 or later.
+
 #if defined(CONFIG_ESP32_DEFAULT_CPU_FREQ_240) || defined(CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240)
 #define NAOS_CPU_MAX_IDLE_CALLS 368000.f
 #elif defined(CONFIG_ESP32_DEFAULT_CPU_FREQ_160) || defined(CONFIG_ESP32S3_DEFAULT_CPU_FREQ_160)
