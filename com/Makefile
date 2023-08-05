@@ -33,9 +33,15 @@ build:
 
 flash:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py flash
+	# For ESP32-S3 flashing over USB-JTag should just work. Alternatively, we may use OpenOCD:
+	# export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; openocd -f board/esp32s3-builtin.cfg -c "program_esp test/build/bootloader/bootloader.bin 0x0 verify exit"
+	# export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; openocd -f board/esp32s3-builtin.cfg -c "program_esp test/build/partition_table/partition-table.bin 0x8000 verify exit"
+	# export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; openocd -f board/esp32s3-builtin.cfg -c "program_esp test/build/naos.bin 0x10000 verify exit"
 
 erase:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py erase-flash
+	# For ESP32-S3 erasing over USB-JTag should just work. Alternatively, we may use OpenOCD:
+	# export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; openocd -f board/esp32s3-builtin.cfg -c "flash init; init; reset halt; flash erase_sector 0 1 last; exit"
 
 monitor:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py monitor
@@ -55,6 +61,9 @@ reconfigure:
 info:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py size-components
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py size
+
+exec:
+	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; bash
 
 debug:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; ./esp-idf/components/espcoredump/espcoredump.py -p /dev/cu.SLAB_USBtoUART info_corefile ./build/naos.elf
