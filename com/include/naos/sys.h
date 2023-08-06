@@ -118,7 +118,7 @@ typedef EventGroupHandle_t naos_signal_t;
 naos_signal_t naos_signal();
 
 /**
- * Triggers the specified signal bits.
+ * Sets or clears the specified signal bits.
  *
  * @param signal The signal.
  * @param bits The bits.
@@ -159,6 +159,7 @@ naos_queue_t naos_queue(uint16_t length, uint16_t size);
  * @return Whether the item was pushed.
  */
 bool naos_push(naos_queue_t queue, void *item, int32_t timeout_ms);
+bool naos_push_isr(naos_queue_t queue, void *item);
 
 /**
  * Pops an item from the specified queue.
