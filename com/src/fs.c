@@ -286,9 +286,16 @@ static naos_msg_err_t naos_fs_handle_create(naos_msg_t msg) {
 
 static naos_msg_err_t naos_fs_handle_write(naos_msg_t msg) {
   // command structure:
-  // DATA (*)
+  // OFFSET (4) | DATA (*)
 
-  // TODO: Support writing to offset.
+  // check path
+  if (msg.len < 4) {
+    return NAOS_MSG_INCOMPLETE;
+  }
+
+  // get offset
+  uint32_t offset;
+  memcpy(&offset, msg.data, sizeof(offset));
 
   // find file
   naos_fs_file_t *file = NULL;
@@ -303,19 +310,27 @@ static naos_msg_err_t naos_fs_handle_write(naos_msg_t msg) {
   }
 
   // handle zero write as close
-  if (msg.len == 0) {
+  if (msg.len == 4) {
     close(file->fd);
     *file = (naos_fs_file_t){0};
     return NAOS_MSG_ACK;
   }
 
-  // write data
-  ssize_t ret = write(file->fd, msg.data, msg.len);
+  // seek offset
+  off_t ret = lseek(file->fd, offset, SEEK_SET);
   if (ret < 0) {
     return naos_fs_send_error(msg.session, errno);
   }
 
-  // TODO: Handle half-written data.
+  // write all data
+  size_t total = 0;
+  while (total < msg.len - 4) {
+    ret = write(file->fd, msg.data + 4 + total, msg.len - 4 - total);
+    if (ret < 0) {
+      return naos_fs_send_error(msg.session, errno);
+    }
+    total += ret;
+  }
 
   return NAOS_MSG_ACK;
 }
