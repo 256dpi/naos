@@ -32,10 +32,15 @@ public func withTimeout<R>(
 			throw TimedOutError()
 		}
 
-		// get first result, cancel the other
-		let result = try await group.next()!
+		// get first result
+		let result = await group.nextResult()!
+
+		// cancel other tasks
 		group.cancelAll()
 
-		return result
+		// get value
+		let value = try result.get()
+
+		return value
 	}
 }
