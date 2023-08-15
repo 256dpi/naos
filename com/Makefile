@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-TARGET := "esp32" # run reconfigure when changed
+TARGET := "esp32" # run "reconfigure" when changed
 
 ESP_IDF_VERSION := $(shell cat ../tree/esp-idf.version)
 ESP_MQTT_VERSION := $(shell cat ../tree/esp-mqtt.version)

@@ -69,7 +69,7 @@ typedef struct {
   uint8_t ref;
   const char *name;
   naos_msg_err_t (*handle)(naos_msg_t);
-  bool (*cleanup)(uint16_t session);
+  void (*cleanup)(uint16_t session);
 } naos_msg_endpoint_t;
 
 /**

@@ -24,10 +24,10 @@ CONFIG_HTTPD_WS_SUPPORT=y
 # panic on watchdog alerts
 CONFIG_ESP_TASK_WDT_PANIC=y
 
-# always write coredumps to flash
+# always write core-dumps to flash
 CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y
 
-# make some crypto preemtable
+# make some crypto preempt-able
 # https://mbed-tls.readthedocs.io/en/latest/kb/development/restartable-ecc/
 CONFIG_MBEDTLS_ECP_RESTARTABLE=y
 
