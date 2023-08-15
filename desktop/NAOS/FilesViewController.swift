@@ -38,8 +38,10 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			let path = self.root() + "/" + file.0
 			
 			// write file
-			await run(title: "Uploading...") {
-				try await self.endpoint.write(path: path, data: file.1)
+			await process(title: "Uploading...") { progress in
+				try await self.endpoint.write(path: path, data: file.1, report: { (done) in
+					progress(Double(done) / Double(file.1.count))
+				})
 			}
 			
 			// re-list
@@ -59,8 +61,10 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 		Task {
 			// read file
 			var data: Data?
-			await run(title: "Downloading...") {
-				data = try await self.endpoint.read(path: self.root() + "/" + file.name)
+			await process(title: "Downloading...") { progress in
+				data = try await self.endpoint.read(path: self.root() + "/" + file.name, report: { (done) in
+					progress(Double(done) / Double(file.size))
+				})
 			}
 			
 			// save file

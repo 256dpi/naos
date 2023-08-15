@@ -82,7 +82,7 @@ public class NAOSFSEndpoint {
 	}
 	
 	/// Read a full file.
-	public func read(path: String) async throws -> Data {
+	public func read(path: String, report: ((Int) -> Void)?) async throws -> Data {
 		// prepare command
 		var cmd = Data([2, 0, 0, 0, 0, 0, 0, 0, 0])
 		cmd.append(path.data(using: .utf8)!)
@@ -106,13 +106,18 @@ public class NAOSFSEndpoint {
 			
 			// append data
 			data.append(Data(reply[1...]))
+			
+			// report length
+			if report != nil {
+				report!(data.count)
+			}
 		}
 		
 		return data
 	}
 	
 	/// Write a full file.
-	public func write(path: String, data: Data) async throws {
+	public func write(path: String, data: Data, report: ((Int) -> Void)?) async throws {
 		// prepare "create" command
 		var cmd = Data([3])
 		cmd.append(path.data(using: .utf8)!)
@@ -142,6 +147,11 @@ public class NAOSFSEndpoint {
 			
 			// increment offset
 			offset += chunkSize
+			
+			// report offset
+			if report != nil {
+				report!(offset)
+			}
 		}
 		
 		// send final "write" comamnd
