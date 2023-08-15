@@ -54,7 +54,7 @@ static void update(naos_param_t *param) {
   }
 }
 
-static void handle(const char *topic, const uint8_t *payload, size_t len, naos_scope_t scope) {
+static void message(const char *topic, const uint8_t *payload, size_t len, naos_scope_t scope) {
   // skip system messages
   if (strncmp(topic, "naos/", 5) == 0) {
     return;
@@ -87,11 +87,6 @@ static void loop() {
   naos_osc_send("counter", "i", counter);
 }
 
-static float battery() {
-  // return level
-  return 0.42f;
-}
-
 static void offline() {
   // log info
   naos_log("offline callback called");
@@ -100,6 +95,11 @@ static void offline() {
 static void status(naos_status_t status) {
   // log new status
   naos_log("status changed to %s", naos_status_str(status));
+}
+
+static float battery() {
+  // return level
+  return 0.42f;
 }
 
 static void fun_s(const char *str) {
@@ -152,19 +152,19 @@ static naos_param_t params[] = {
 static naos_config_t config = {
     .device_type = "naos-test",
     .device_version = "0.0.1",
-    .default_password = "secret",
+    .default_password = "",
     .parameters = params,
     .num_parameters = sizeof(params) / sizeof(params[0]),
     .setup_callback = setup,
     .ping_callback = ping,
     .online_callback = online,
-    .message_callback = handle,
     .update_callback = update,
+    .message_callback = message,
     .loop_callback = loop,
     .loop_interval = 1000,
-    .battery_callback = battery,
     .offline_callback = offline,
     .status_callback = status,
+    .battery_callback = battery,
 };
 
 static naos_param_t param_counter = {
