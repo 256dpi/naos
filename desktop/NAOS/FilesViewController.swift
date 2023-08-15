@@ -64,7 +64,9 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			}
 			
 			// save file
-			try await saveFile(withName: file.name, data: data!)
+			if data != nil {
+				try await saveFile(withName: file.name, data: data!)
+			}
 		}
 	}
 	

@@ -135,7 +135,10 @@ public class NAOSFSEndpoint {
 			cmd.append(chunkData)
 			
 			// send "write" command
-			try await send(data: cmd, ack: true)
+			try await send(data: cmd, ack: false)
+			
+			// receive ack or "error" replies
+			let _ = try await receive(ack: true)
 			
 			// increment offset
 			offset += chunkSize
