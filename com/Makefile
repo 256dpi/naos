@@ -55,6 +55,7 @@ config:
 
 reconfigure:
 	rm -f ./test/sdkconfig
+	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py fullclean
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py set-target $(TARGET)
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py reconfigure
 
