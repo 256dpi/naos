@@ -8,6 +8,7 @@
 #include <esp_gap_ble_api.h>
 #include <esp_gatt_defs.h>
 #include <esp_gatts_api.h>
+#include <esp_gatt_common_api.h>
 #include <esp_bt_device.h>
 #include <string.h>
 
@@ -546,6 +547,12 @@ static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
   naos_ble_conn_t *conn = ctx;
   if (!conn->connected || conn->locked) {
     return false;
+  }
+
+  // wait up to 1 second until packet can be sent
+  int attempts = 0;
+  while(esp_ble_get_cur_sendable_packets_num(conn->id) == 0 && attempts++ < 1000) {
+    naos_delay(1);
   }
 
   // send indicate
