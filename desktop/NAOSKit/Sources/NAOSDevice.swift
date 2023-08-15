@@ -264,7 +264,10 @@ public class NAOSDevice: NSObject {
 
 		// subscribe to value updates
 		subscription?.cancel()
-		subscription = peripheral.characteristicValueUpdatedPublisher.sink { char in
+		subscription = peripheral.characteristicValueUpdatedPublisher.sink { rawChar in
+			// get value
+			let rawValue = rawChar.value
+
 			// subscriptions are handled in separate tasks that wait for other actions to complete first
 			Task {
 				// acquire mutex
@@ -273,12 +276,12 @@ public class NAOSDevice: NSObject {
 
 				// get value
 				var value = ""
-				if char.value != nil {
-					value = String(data: char.value!, encoding: .utf8) ?? ""
+				if rawValue != nil {
+					value = String(data: rawValue!, encoding: .utf8) ?? ""
 				}
 
 				// get characteristic
-				let char = self.fromRawCharacteristic(char: char)
+				let char = self.fromRawCharacteristic(char: rawChar)
 
 				// handle flash
 				if char == .flash {
