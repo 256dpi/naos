@@ -6,7 +6,7 @@
 import Cocoa
 import NAOSKit
 
-class FilesViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
+class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTableViewDelegate {
 	internal var endpoint: NAOSFSEndpoint!
 	@IBOutlet var pathField: NSTextField!
 	@IBOutlet var listTable: NSTableView!
@@ -19,106 +19,97 @@ class FilesViewController: NSViewController, NSTableViewDataSource, NSTableViewD
 	
 	@IBAction public func list(_: AnyObject) {
 		Task {
-			do {
+			await run(title: "Listing...") {
 				// list directory
-				files = try await endpoint.list(path: root())
+				self.files = try await self.endpoint.list(path: self.root())
 				
 				// reload list
-				listTable.reloadData()
-			} catch {
-				showError(error: error)
+				self.listTable.reloadData()
 			}
 		}
 	}
 	
 	@IBAction public func upload(_: AnyObject) {
 		Task {
-			do {
-				// open file
-				let file = try await openFile()
-				
-				// prepare path
-				let path = root() + "/" + file.0
-				
-				// write file
-				try await endpoint.write(path: path, data: file.1)
-				
-				// re-list
-				list(self)
-			} catch {
-				showError(error: error)
+			// open file
+			let file = try await openFile()
+			
+			// prepare path
+			let path = self.root() + "/" + file.0
+			
+			// write file
+			await run(title: "Uploading...") {
+				try await self.endpoint.write(path: path, data: file.1)
 			}
+			
+			// re-list
+			self.list(self)
 		}
 	}
 	
 	@IBAction public func download(_: AnyObject) {
+		// check selected row
+		if listTable.selectedRow < 0 {
+			return
+		}
+		
+		// get file
+		let file = files[listTable.selectedRow]
+		
 		Task {
-			do {
-				// check selected row
-				if listTable.selectedRow < 0 {
-					return
-				}
-				
-				// get file
-				let file = files[listTable.selectedRow]
-				
-				// read file
-				let data = try await endpoint.read(path: root() + "/" + file.name)
-				
-				// save file
-				try await saveFile(withName: file.name, data: data)
-			} catch {
-				showError(error: error)
+			// read file
+			var data: Data?
+			await run(title: "Downloading...") {
+				data = try await self.endpoint.read(path: self.root() + "/" + file.name)
 			}
+			
+			// save file
+			try await saveFile(withName: file.name, data: data!)
 		}
 	}
 	
 	@IBAction public func rename(_: AnyObject) {
+		// check selected row
+		if listTable.selectedRow < 0 {
+			return
+		}
+		
+		// get file
+		let file = files[listTable.selectedRow]
+		
 		Task {
-			do {
-				// check selected row
-				if listTable.selectedRow < 0 {
-					return
-				}
-				
-				// get file
-				let file = files[listTable.selectedRow]
-				
-				// request new name
-				guard let name = await prompt(message: "New Name:", defaultValue: file.name) else {
-					return
-				}
-				
-				// rename file
-				try await endpoint.rename(from: root() + "/" + file.name, to: root() + "/" + name)
-				
-				// re-list
-				list(self)
-			} catch {
-				showError(error: error)
+			// request new name
+			guard let name = await prompt(message: "New Name:", defaultValue: file.name) else {
+				return
 			}
+			
+			// rename file
+			await run(title: "Renaming...") {
+				try await self.endpoint.rename(from: self.root() + "/" + file.name, to: self.root() + "/" + name)
+			}
+			
+			// re-list
+			self.list(self)
 		}
 	}
 	
 	@IBAction public func remove(_: AnyObject) {
+		// check selected row
+		if listTable.selectedRow < 0 {
+			return
+		}
+		
+		// get file
+		let file = files[listTable.selectedRow]
+		
 		Task {
-			do {
-				// check selected row
-				if listTable.selectedRow < 0 {
-					return
-				}
-				
-				// get file
-				let file = files[listTable.selectedRow]
-				
-				// rename file
-				try await endpoint.remove(path: root() + "/" + file.name)
-				
-				// re-list
-				list(self)
-			} catch {
-				showError(error: error)
+			// rename file
+			await run(title: "Removing...") {
+				try await self.endpoint.remove(path: self.root() + "/" + file.name)
 			}
+			
+			// re-list
+			self.list(self)
 		}
 	}
 	
