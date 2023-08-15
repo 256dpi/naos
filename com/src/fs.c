@@ -214,33 +214,46 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
     }
   }
 
+  // get session MTU
+  size_t mtu = naos_msg_session_mtu(msg.session);
+
+  // limit MTU to requested length
+  if (mtu > length) {
+    mtu = length;
+  }
+
   // reply structure:
   // TYPE (1) | DATA (*)
 
   // prepare data
-  uint8_t *data = calloc(1 + length, 1);
+  uint8_t *data = calloc(1 + mtu, 1);
   data[0] = NAOS_FS_REPLY_CHUNK;
 
-  // TODO: Read in a loop up to (MAX_MESSAGE_SIZE) bytes and yield chunks.
+  // read and reply with chunks
+  off_t total = 0;
+  while (total < length) {
+    size_t chunk = (length - total) < mtu ? (length - total) : mtu;
+    ssize_t ret = read(file, data + 1, chunk);
+    if (ret < 0) {
+      close(file);
+      free(data);
+      return naos_fs_send_error(msg.session, errno);
+    }
 
-  // read data
-  ssize_t ret = read(file, data + 1, length);
-  if (ret < 0) {
-    close(file);
-    free(data);
-    return naos_fs_send_error(msg.session, errno);
+    // send reply
+    naos_msg_endpoint_send((naos_msg_t){
+        .session = msg.session,
+        .endpoint = NAOS_FS_ENDPOINT,
+        .data = data,
+        .len = 1 + chunk,
+    });
+
+    // increment total
+    total += ret;
   }
 
   // close file
   close(file);
-
-  // send reply
-  naos_msg_endpoint_send((naos_msg_t){
-      .session = msg.session,
-      .endpoint = NAOS_FS_ENDPOINT,
-      .data = data,
-      .len = 1 + length,
-  });
 
   // free data
   free(data);
