@@ -101,6 +101,28 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		}
 	}
 
+	@IBAction func files(_: AnyObject) {
+		Task {
+			do {
+				// open a new session
+				guard let sess = try await self.device.session(timeout: 5) else {
+					throw CustomError(title: "Failed to open session!")
+				}
+
+				// load files view controller
+				let fvc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "FilesViewController") as! FilesViewController
+
+				// assign endpoint
+				fvc.endpoint = NAOSFSEndpoint(session: sess, timeout: 2)
+
+				// present view controller
+				self.presentAsSheet(fvc)
+			} catch {
+				showError(error: error)
+			}
+		}
+	}
+
 	// NSTableView
 
 	func numberOfRows(in _: NSTableView) -> Int {
