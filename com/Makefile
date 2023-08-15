@@ -18,7 +18,6 @@ prepare:
 update:
 	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
 	cd test/esp-idf; git submodule update --recursive --init
-	cd test/esp-idf/components/esptool_py/esptool; git remote add fork https://github.com/256dpi/esptool.git; git checkout fork/dtr-rts-fix
 	cd test/components/esp-mqtt; git fetch; git checkout $(ESP_MQTT_VERSION); git submodule update --recursive --init
 	cd test/components/esp-osc; git fetch; git checkout $(ESP_OSC_VERSION); git submodule update --recursive --init
 
