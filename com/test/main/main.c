@@ -11,6 +11,7 @@
 #include <naos/osc.h>
 #include <naos/manager.h>
 #include <naos/bridge.h>
+#include <naos/fs.h>
 
 #define ETHERNET false
 
@@ -198,6 +199,12 @@ void app_main() {
 
   // install bridge channel
   naos_bridge_install();
+
+  // mount FAT file system
+  naos_fs_mount_fat("/data", "storage", 5);
+
+  // install file system endpoint
+  naos_fs_install();
 
   // register parameters
   naos_register(&param_counter);
