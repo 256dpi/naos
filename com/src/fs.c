@@ -215,7 +215,7 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
   }
 
   // get session MTU
-  size_t mtu = naos_msg_session_mtu(msg.session);
+  size_t mtu = naos_msg_session_mtu(msg.session) - 8;
 
   // limit MTU to requested length
   if (mtu > length) {
@@ -232,7 +232,10 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
   // read and reply with chunks
   off_t total = 0;
   while (total < length) {
+    // determine chunk
     size_t chunk = (length - total) < mtu ? (length - total) : mtu;
+
+    // read chunk
     ssize_t ret = read(file, data + 1, chunk);
     if (ret < 0) {
       close(file);
@@ -250,6 +253,9 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
 
     // increment total
     total += ret;
+
+    // yield to system
+    naos_delay(1);
   }
 
   // close file
@@ -344,6 +350,9 @@ static naos_msg_err_t naos_fs_handle_write(naos_msg_t msg) {
     }
     total += ret;
   }
+
+  // update timestamp
+  file->ts = naos_millis();
 
   return NAOS_MSG_ACK;
 }
