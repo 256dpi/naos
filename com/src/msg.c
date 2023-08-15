@@ -3,6 +3,7 @@
 
 #include <string.h>
 
+#define NAOS_MSG_DEBUG CONFIG_NAOS_MSG_DEBUG
 #define NAOS_MSG_MAX_CHANNELS 8
 #define NAOS_MSG_MAX_ENDPOINTS 32
 #define NAOS_MSG_MAX_SESSIONS 64
@@ -89,6 +90,9 @@ void naos_msg_cleaner() {
       continue;
     }
 
+    // log error
+    ESP_LOGE("MSG", "naos_msg_cleaner: session %d timed out", session->id);
+
     // clean up endpoints
     for (size_t j = 0; j < naos_msg_endpoint_count; j++) {
       if (naos_msg_endpoints[j].cleanup != NULL) {
@@ -158,13 +162,20 @@ void naos_msg_endpoint_register(naos_msg_endpoint_t endpoint) {
 }
 
 bool naos_msg_channel_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
+#if NAOS_MSG_DEBUG
+  ESP_LOGI("MSG", "incoming message:");
+  ESP_LOG_BUFFER_HEX("MSG", data, len);
+#endif
+
   // check length
   if (len < 4) {
+    ESP_LOGE("MSG", "naos_msg_channel_dispatch: message too short");
     return false;
   }
 
   // check version
   if (data[0] != 1) {
+    ESP_LOGE("MSG", "naos_msg_channel_dispatch: invalid version");
     return false;
   }
 
@@ -183,6 +194,7 @@ bool naos_msg_channel_dispatch(uint8_t channel, uint8_t* data, size_t len, void*
     // check sid
     if (sid != 0) {
       NAOS_UNLOCK(naos_msg_mutex);
+      ESP_LOGE("MSG", "naos_msg_channel_dispatch: invalid session ID");
       return false;
     }
 
@@ -196,6 +208,7 @@ bool naos_msg_channel_dispatch(uint8_t channel, uint8_t* data, size_t len, void*
     }
     if (session == NULL) {
       NAOS_UNLOCK(naos_msg_mutex);
+      ESP_LOGE("MSG", "naos_msg_channel_dispatch: no free session");
       return false;
     }
 
@@ -221,8 +234,15 @@ bool naos_msg_channel_dispatch(uint8_t channel, uint8_t* data, size_t len, void*
     // release mutex
     NAOS_UNLOCK(naos_msg_mutex);
 
+#if NAOS_MSG_DEBUG
+    ESP_LOGI("MSG", "outgoing message:");
+    ESP_LOG_BUFFER_HEX("MSG", data, len);
+#endif
+
     // send reply
-    naos_msg_channels[channel].send(data, len, ctx);
+    if (!naos_msg_channels[channel].send(data, len, ctx)) {
+      ESP_LOGE("MSG", "naos_msg_channel_dispatch: failed to send reply");
+    }
 
     return true;
   }
@@ -237,12 +257,14 @@ bool naos_msg_channel_dispatch(uint8_t channel, uint8_t* data, size_t len, void*
   }
   if (session == NULL) {
     NAOS_UNLOCK(naos_msg_mutex);
+    ESP_LOGE("MSG", "naos_msg_channel_dispatch: session not found");
     return false;
   }
 
   // verify session
   if (!session->active || session->channel != channel) {
     NAOS_UNLOCK(naos_msg_mutex);
+    ESP_LOGE("MSG", "naos_msg_channel_dispatch: session not active");
     return false;
   }
 
@@ -258,8 +280,15 @@ bool naos_msg_channel_dispatch(uint8_t channel, uint8_t* data, size_t len, void*
     uint8_t reply[] = {1, 0, 0, NAOS_MSG_ACK};
     memcpy(reply + 1, &session->id, 2);
 
+#if NAOS_MSG_DEBUG
+    ESP_LOGI("MSG", "outgoing message:");
+    ESP_LOG_BUFFER_HEX("MSG", reply, 4);
+#endif
+
     // send reply
-    naos_msg_channels[channel].send(reply, 4, ctx);
+    if (!naos_msg_channels[channel].send(reply, 4, ctx)) {
+      ESP_LOGE("MSG", "naos_msg_channel_dispatch: failed to send reply");
+    }
 
     return true;
   }
@@ -279,8 +308,15 @@ bool naos_msg_channel_dispatch(uint8_t channel, uint8_t* data, size_t len, void*
     // release mutex
     NAOS_UNLOCK(naos_msg_mutex);
 
+#if NAOS_MSG_DEBUG
+    ESP_LOGI("MSG", "outgoing message:");
+    ESP_LOG_BUFFER_HEX("MSG", data, 4);
+#endif
+
     // send reply
-    naos_msg_channels[channel].send(data, 4, ctx);
+    if (!naos_msg_channels[channel].send(data, 4, ctx)) {
+      ESP_LOGE("MSG", "naos_msg_channel_dispatch: failed to send reply");
+    }
 
     return true;
   }
@@ -327,6 +363,7 @@ bool naos_msg_endpoint_send(naos_msg_t msg) {
   }
   if (session == NULL) {
     NAOS_UNLOCK(naos_msg_mutex);
+    ESP_LOGE("MSG", "naos_msg_endpoint_send: session not found");
     return false;
   }
 
@@ -341,6 +378,7 @@ bool naos_msg_endpoint_send(naos_msg_t msg) {
 
   // check channel MTU
   if (4 + msg.len > channel.mtu) {
+    ESP_LOGE("MSG", "naos_msg_endpoint_send: message too large");
     return false;
   }
 
@@ -351,8 +389,16 @@ bool naos_msg_endpoint_send(naos_msg_t msg) {
   frame[3] = msg.endpoint;
   memcpy(&frame[4], msg.data, msg.len);
 
+#if NAOS_MSG_DEBUG
+  ESP_LOGI("MSG", "outgoing message:");
+  ESP_LOG_BUFFER_HEX("MSG", frame, 4 + msg.len);
+#endif
+
   // send message via channel
   bool ok = channel.send(frame, 4 + msg.len, session->context);
+  if (!ok) {
+    ESP_LOGE("MSG", "naos_msg_endpoint_send: failed to send message");
+  }
 
   // free frame
   free(frame);
@@ -374,6 +420,7 @@ size_t naos_msg_session_mtu(uint16_t id) {
   }
   if (session == NULL) {
     NAOS_UNLOCK(naos_msg_mutex);
+    ESP_LOGE("MSG", "naos_msg_session_mtu: session not found");
     return 0;
   }
 

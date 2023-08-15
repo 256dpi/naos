@@ -28,4 +28,8 @@ config NAOS_PARAM_REGISTRY_SIZE
     int "The size of the parameter registry"
     default 64
 
+config NAOS_MSG_DEBUG
+    bool "Enable debug messages"
+    default n
+
 endmenu
