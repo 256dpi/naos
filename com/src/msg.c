@@ -212,6 +212,9 @@ bool naos_msg_channel_dispatch(uint8_t channel, uint8_t* data, size_t len, void*
     // set context
     session->context = ctx;
 
+    // set time
+    session->last_msg = naos_millis();
+
     // prepare reply
     memcpy(data + 1, &session->id, 2);
 
