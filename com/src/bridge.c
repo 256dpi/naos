@@ -35,7 +35,7 @@ static bool naos_bridge_send(const uint8_t *data, size_t len, void *ctx) {
   return ok;
 }
 
-void naos_msg_bridge_init() {
+void naos_bridge_install() {
   // subscribe status
   naos_system_subscribe(naos_bridge_status);
 

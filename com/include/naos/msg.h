@@ -118,11 +118,3 @@ bool naos_msg_endpoint_send(naos_msg_t msg);
  * @return The channel MTU in bytes.
  */
 size_t naos_msg_session_mtu(uint16_t id);
-
-/**
- * Initializes the bridge channel for all com transports (MQTT, OSC).
- *
- * Incoming messages are received on the local "naos/inbox" topic and outgoing
- * messages are sent to the local "naos/outbox" topic.
- */
-void naos_msg_bridge_init();

@@ -10,6 +10,7 @@
 #include <naos/mqtt.h>
 #include <naos/osc.h>
 #include <naos/manager.h>
+#include <naos/bridge.h>
 
 #define ETHERNET false
 
@@ -194,6 +195,9 @@ void app_main() {
     naos_eth_olimex();
     naos_eth_init();
   }
+
+  // install bridge channel
+  naos_bridge_install();
 
   // register parameters
   naos_register(&param_counter);
