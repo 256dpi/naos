@@ -17,12 +17,13 @@ internal enum NAOSCharacteristic: String {
 	case value = "01CA5446-8EE1-7E99-2041-6884B01E71B3"
 	case update = "87BFFDCF-0704-22A2-9C4A-7A61BC8C1726"
 	case flash = "6C114DA1-9AA9-1687-5341-A1fE4C991390"
+	case msg = "0360744B-A61B-00AD-C945-37f3634130F3"
 
 	func cbuuid() -> CBUUID {
 		return CBUUID(string: rawValue)
 	}
 
-	static let all: [NAOSCharacteristic] = [.lock, .list, .select, .value, .update, .flash]
+	static let all: [NAOSCharacteristic] = [.lock, .list, .select, .value, .update, .flash, .msg]
 }
 
 /// The available parameter types.
@@ -135,6 +136,10 @@ public struct NAOSParameter: Hashable {
 public enum NAOSError: LocalizedError {
 	case serviceNotFound
 	case characteristicNotFound
+	case sessionTimeout
+	case invalidMessage
+	case sessionClosed
+	case expectedAck
 
 	public var errorDescription: String? {
 		switch self {
@@ -142,6 +147,14 @@ public enum NAOSError: LocalizedError {
 			return "Device service not found."
 		case .characteristicNotFound:
 			return "Device characteristic not found."
+		case .sessionTimeout:
+			return "Session timed out."
+		case .invalidMessage:
+			return "Message was invalid."
+		case .sessionClosed:
+			return "Session has been closed."
+		case .expectedAck:
+			return "Expected acknowledgemnt."
 		}
 	}
 }
@@ -176,6 +189,8 @@ public class NAOSDevice: NSObject {
 	public private(set) var locked: Bool = false
 	public private(set) var availableParameters: [NAOSParameter] = []
 	public var parameters: [NAOSParameter: String] = [:]
+	internal var begins: [String: CheckedContinuation<UInt16, Never>] = [:]
+	internal var sessions: [UInt16: NAOSSession] = [:]
 
 	internal init(peripheral: Peripheral, manager: NAOSManager) {
 		// initialize instance
@@ -268,7 +283,7 @@ public class NAOSDevice: NSObject {
 			// get value
 			let rawValue = rawChar.value
 
-			// subscriptions are handled in separate tasks that wait for other actions to complete first
+			// subscriptions are handled in separate tasks that waist for other actions to complete first
 			Task {
 				// acquire mutex
 				await self.mutex.wait()
@@ -286,6 +301,54 @@ public class NAOSDevice: NSObject {
 				// handle flash
 				if char == .flash {
 					self.updateReady?.resume()
+					return
+				}
+
+				// handle msg
+				if char == .msg {
+					// verify data
+					guard let data = rawValue else {
+						return
+					}
+
+					// verify size and version
+					if data.count < 4 || data[0] != 1 {
+						print("invalid message")
+						return
+					}
+
+					// read session ID
+					let sid = readUint16(data: Data(data[1 ... 2]))
+
+					// read endpoint ID
+					let eid = data[3]
+
+					// handle "begin" replies
+					if eid == 0 {
+						// get handle
+						let handle = String(data: Data(data[4...]), encoding: .utf8)!
+
+						// get continuation
+						guard let continuation = self.begins[handle] else {
+							print("missing continuation for message")
+							return
+						}
+
+						// resume continuation
+						continuation.resume(returning: sid)
+
+						return
+					}
+
+					// get session
+					guard let session = self.sessions[sid] else {
+						print("missing session for message")
+						return
+					}
+
+					// dispatch message
+					session.dispatch(msg: NAOSMessage(endpoint: eid, data: Data(data[4...])))
+
 					return
 				}
 
@@ -497,6 +560,40 @@ public class NAOSDevice: NSObject {
 
 		// finish flash
 		try await write(char: .flash, data: "f")
+	}
+
+	/// Session will create a new session and return it.
+	public func session(timeout: TimeInterval) async throws -> NAOSSession? {
+		// TODO: Lock mutex (arrange with async updates).
+
+		// genereate handle
+		let handle = randomString(length: 16)
+
+		// prepare message
+		var msg = Data([1, 0, 0, 0])
+		msg.append(handle.data(using: .utf8)!)
+
+		// send "begin" command
+		try await write(char: .msg, data: msg, confirm: false)
+
+		// await response
+		let sid = try await withTimeout(seconds: timeout) {
+			await withCheckedContinuation { (continuation: CheckedContinuation<UInt16, Never>) in
+				// store continuation
+				self.begins[handle] = continuation
+			}
+		}
+
+		// clear continuation
+		begins[handle] = nil
+
+		// create session
+		let session = NAOSSession(device: self, id: sid)
+
+		// store session
+		sessions[sid] = session
+
+		return session
 	}
 
 	/// Disconnect will close the connection to the device.

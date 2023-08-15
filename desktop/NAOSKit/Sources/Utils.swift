@@ -44,3 +44,39 @@ public func withTimeout<R>(
 		return value
 	}
 }
+
+func readUint16(data: Data) -> UInt16 {
+	return UInt16(data[0]) | (UInt16(data[1]) << 8)
+}
+
+func readUint32(data: Data) -> UInt32 {
+	return UInt32(data[0]) | (UInt32(data[1]) << 8) | (UInt32(data[2]) << 16) | (UInt32(data[3]) << 24)
+}
+
+func writeUint16(value: UInt16) -> Data {
+	return Data([
+		UInt8(value & 0xFF),
+		UInt8((value >> 8) & 0xFF)
+	])
+}
+
+func writeUint32(value: UInt32) -> Data {
+	return Data([
+		UInt8(value & 0xFF),
+		UInt8((value >> 8) & 0xFF),
+		UInt8((value >> 16) & 0xFF),
+		UInt8((value >> 24) & 0xFF)
+	])
+}
+
+func randomString(length: Int) -> String {
+	let letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	return String((0 ..< length).map { _ in letters.randomElement()! })
+}
+
+func concatData(a: Data, b: Data) -> Data {
+	var c = Data()
+	c.append(a)
+	c.append(b)
+	return c
+}

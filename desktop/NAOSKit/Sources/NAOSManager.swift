@@ -129,8 +129,7 @@ public class NAOSManager: NSObject {
 					// call callback if present
 					if let d = delegate {
 						DispatchQueue.main.async {
-							d.naosManagerDidDiscoverDevice(
-								manager: self, device: device)
+							d.naosManagerDidDiscoverDevice(manager: self, device: device)
 						}
 					}
 				}
