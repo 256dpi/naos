@@ -4,6 +4,7 @@
 //
 
 import Cocoa
+import CryptoKit
 import NAOSKit
 
 class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTableViewDelegate {
@@ -19,13 +20,13 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 	
 	@IBAction public func list(_: AnyObject) {
 		Task {
+			// list directory
 			await run(title: "Listing...") {
-				// list directory
 				self.files = try await self.endpoint.list(path: self.root())
-				
-				// reload list
-				self.listTable.reloadData()
 			}
+			
+			// reload list
+			self.listTable.reloadData()
 		}
 	}
 	
@@ -39,7 +40,7 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			
 			// write file
 			await process(title: "Uploading...") { progress in
-				try await self.endpoint.write(path: path, data: file.1, report: { (done) in
+				try await self.endpoint.write(path: path, data: file.1, report: { done in
 					progress(Double(done) / Double(file.1.count))
 				})
 			}
@@ -62,7 +63,7 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			// read file
 			var data: Data?
 			await process(title: "Downloading...") { progress in
-				data = try await self.endpoint.read(path: self.root() + "/" + file.name, report: { (done) in
+				data = try await self.endpoint.read(path: self.root() + "/" + file.name, report: { done in
 					progress(Double(done) / Double(file.size))
 				})
 			}
@@ -116,6 +117,37 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			
 			// re-list
 			self.list(self)
+		}
+	}
+	
+	@IBAction public func verify(_: AnyObject) {
+		// check selected row
+		if listTable.selectedRow < 0 {
+			return
+		}
+		
+		// get file
+		let file = files[listTable.selectedRow]
+		
+		Task {
+			// hash file
+			var sum: Data?
+			await run(title: "Hashing...") {
+				sum = try await self.endpoint.sha256(path: self.root() + "/" + file.name)
+			}
+			if sum == nil {
+				return
+			}
+			
+			// open file
+			let (_, content) = try await openFile()
+			
+			// compare checksums
+			if sum!.elementsEqual(SHA256.hash(data: content)) {
+				showError(error: CustomError(title: "Files are equal."))
+			} else {
+				showError(error: CustomError(title: "Files are not equal."))
+			}
 		}
 	}
 	

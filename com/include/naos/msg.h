@@ -66,6 +66,7 @@ typedef enum {
   NAOS_MSG_INCOMPLETE,
   NAOS_MSG_INVALID,
   NAOS_MSG_UNKNOWN,
+  NAOS_MSG_ERROR,
 } naos_msg_err_t;
 
 /**

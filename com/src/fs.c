@@ -11,6 +11,7 @@
 #include <sys/dirent.h>
 #include <sys/syslimits.h>
 #include <esp_vfs_fat.h>
+#include <mbedtls/sha256.h>
 
 #define NAOS_FS_ENDPOINT 0x03
 #define NAOS_FS_MAX_FILES 4
@@ -24,12 +25,14 @@ typedef enum {
   NAOS_FS_CMD_CLOSE,
   NAOS_FS_CMD_RENAME,
   NAOS_FS_CMD_REMOVE,
+  NAOS_FS_CMD_SHA256,
 } naos_fs_cmd_t;
 
 typedef enum {
   NAOS_FS_REPLY_ERROR,
   NAOS_FS_REPLY_INFO,
   NAOS_FS_REPLY_CHUNK,
+  NAOS_FS_REPLY_SHA256,
 } naos_fs_reply_t;
 
 typedef enum {
@@ -479,6 +482,96 @@ static naos_msg_err_t naos_fs_handle_remove(naos_msg_t msg) {
   return NAOS_MSG_ACK;
 }
 
+static naos_msg_err_t naos_fs_handle_sha256(naos_msg_t msg) {
+  // command structure:
+  // PATH (*)
+
+  // check length
+  if (msg.len == 0) {
+    return NAOS_MSG_INCOMPLETE;
+  }
+
+  // get path
+  const char *path = (const char *)msg.data;
+
+  // open file
+  int fd = open(path, O_RDONLY, 0);
+  if (fd < 0) {
+    return naos_fs_send_error(msg.session, errno);
+  }
+
+  // prepare context
+  mbedtls_sha256_context ctx;
+  mbedtls_sha256_init(&ctx);
+
+  // start checksum
+  int ret = mbedtls_sha256_starts_ret(&ctx, false);
+  if (ret != 0) {
+    close(fd);
+    mbedtls_sha256_free(&ctx);
+    return NAOS_MSG_ERROR;
+  }
+
+  // prepare data
+  uint8_t data[1024];
+
+  for (int i = 1;; i++) {
+    // read data
+    ssize_t len = read(fd, data, sizeof(data));
+    if (len < 0) {
+      close(fd);
+      mbedtls_sha256_free(&ctx);
+      return naos_fs_send_error(msg.session, errno);
+    }
+
+    // check for EOF
+    if (len == 0) {
+      break;
+    }
+
+    // update checksum
+    ret = mbedtls_sha256_update_ret(&ctx, data, len);
+    if (ret != 0) {
+      close(fd);
+      mbedtls_sha256_free(&ctx);
+      return NAOS_MSG_ERROR;
+    }
+
+    // yield to system every 10th iteration
+    if (i % 10 == 0) {
+      naos_delay(1);
+    }
+  }
+
+  // reply structure:
+  // TYPE (1) | DATA (32)
+
+  // prepare reply
+  uint8_t reply[33] = {NAOS_FS_REPLY_SHA256};
+
+  // finish checksum
+  ret = mbedtls_sha256_finish_ret(&ctx, reply + 1);
+  if (ret != 0) {
+    close(fd);
+    mbedtls_sha256_free(&ctx);
+    return NAOS_MSG_ERROR;
+  }
+
+  // close file and free context
+  close(fd);
+  mbedtls_sha256_free(&ctx);
+
+  // send reply
+  naos_msg_endpoint_send((naos_msg_t){
+      .session = msg.session,
+      .endpoint = NAOS_FS_ENDPOINT,
+      .data = reply,
+      .len = 33,
+  });
+
+  return NAOS_MSG_OK;
+}
+
 static naos_msg_err_t naos_fs_handle(naos_msg_t msg) {
   // message structure:
   // CMD (1) | *
@@ -524,6 +617,9 @@ static naos_msg_err_t naos_fs_handle(naos_msg_t msg) {
       break;
     case NAOS_FS_CMD_REMOVE:
       err = naos_fs_handle_remove(msg);
+      break;
+    case NAOS_FS_CMD_SHA256:
+      err = naos_fs_handle_sha256(msg);
       break;
     default:
       err = NAOS_MSG_UNKNOWN;

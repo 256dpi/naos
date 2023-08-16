@@ -206,6 +206,29 @@ public class NAOSFSEndpoint {
 		try await send(data: cmd, ack: true)
 	}
 	
+	/// Calculate the SHA256 checksum of a file.
+	public func sha256(path: String) async throws -> Data {
+		// prepare command
+		var cmd = Data([8])
+		cmd.append(path.data(using: .utf8)!)
+		
+		// send comamnd
+		try await send(data: cmd, ack: false)
+		
+		// await reply
+		let reply = try await receive(ack: true)!
+		
+		// verify "chunk" reply
+		if reply.count != 33 || reply[0] != 3 {
+			throw NAOSError.invalidMessage
+		}
+		
+		// get sum
+		let sum = Data(reply[1...])
+		
+		return sum
+	}
+	
 	/// End the underlying session.
 	public func end() async throws {
 		// end session
