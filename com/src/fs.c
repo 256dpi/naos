@@ -31,11 +31,18 @@ typedef enum {
   NAOS_FS_REPLY_CHUNK,
 } naos_fs_reply_t;
 
+typedef enum {
+  NAOS_FS_FLAG_APPEND = 1 << 1,
+  NAOS_FS_FLAG_TRUNCATE = 1 << 2,
+  NAOS_FS_FLAG_EXCLUSIVE = 1 << 3,
+} naos_fs_flags_t;
+
 typedef struct {
   bool active;
   int fd;
   uint16_t sid;
   int64_t ts;
+  naos_fs_flags_t flags;
 } naos_fs_file_t;
 
 static naos_mutex_t naos_fs_mutex = 0;
@@ -270,10 +277,10 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
 
 static naos_msg_err_t naos_fs_handle_create(naos_msg_t msg) {
   // command structure:
-  // PATH (*)
+  // FLAGS (1) | PATH (*)
 
   // check path
-  if (msg.len == 0) {
+  if (msg.len <= 1) {
     return NAOS_MSG_INCOMPLETE;
   }
 
@@ -289,8 +296,23 @@ static naos_msg_err_t naos_fs_handle_create(naos_msg_t msg) {
     return naos_fs_send_error(msg.session, ENFILE);
   }
 
+  // get flags
+  naos_fs_flags_t flags = msg.data[0];
+
+  // prepare open flags
+  int open_flags = O_WRONLY | O_CREAT;
+  if (flags & NAOS_FS_FLAG_APPEND) {
+    open_flags |= O_APPEND;
+  }
+  if (flags & NAOS_FS_FLAG_TRUNCATE) {
+    open_flags |= O_TRUNC;
+  }
+  if (flags & NAOS_FS_FLAG_EXCLUSIVE) {
+    open_flags |= O_EXCL;
+  }
+
   // create file
-  int fd = creat((const char *)msg.data, 0644);
+  int fd = open((const char *)(msg.data + 1), open_flags, 0644);
   if (fd < 0) {
     return naos_fs_send_error(msg.session, errno);
   }
@@ -300,6 +322,7 @@ static naos_msg_err_t naos_fs_handle_create(naos_msg_t msg) {
   file->fd = fd;
   file->sid = msg.session;
   file->ts = naos_millis();
+  file->flags = flags;
 
   return NAOS_MSG_ACK;
 }

@@ -127,7 +127,7 @@ public class NAOSFSEndpoint {
 	/// Write a full file.
 	public func write(path: String, data: Data, report: ((Int) -> Void)?) async throws {
 		// prepare "create" command
-		var cmd = Data([3])
+		var cmd = Data([3, 1 << 2])
 		cmd.append(path.data(using: .utf8)!)
 		
 		// send "create" comamnd
