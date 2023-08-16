@@ -27,13 +27,17 @@
  *
  * > Begin: Session=0, Endpoint=0, Data=Handle(*)
  * < Begin: Session=ID, Endpoint=0, Data=Handle(*)
+ *
  * > Query: Session=ID, Endpoint=7
- * < Ack: Session=ID, Endpoint=0xFE, Data=1
+ * < Reply: Session=ID, Endpoint=0xFE, Data=[ACK|INVALID]
+ *
  * > Ping: Session=ID, Endpoint=0xFE
- * < Ack: Session=ID, Endpoint=0xFE, Data=1
+ * < Reply: Session=ID, Endpoint=0xFE, Data=ACK
+ *
  * > Command: Session=ID, Endpoint=1, Data=Any(*)
- * < Ack: Session=ID, Endpoint=0xFE, Data=1
- * < Error: Session=ID, Endpoint=0xFE, Data=Error(1)
+ * < Command: Session=ID, Endpoint=1, Data=Any(*)
+ * < Reply: Session=ID, Endpoint=0xFE, Data=[ACK|INVALID|UNKNOWN|ERROR]
+ *
  * > End: Session=ID, Endpoint=0xFF
  * < End: Session=ID, Endpoint=0xFF
  */
