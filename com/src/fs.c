@@ -44,7 +44,6 @@ typedef struct {
   int fd;
   uint16_t sid;
   int64_t ts;
-  naos_fs_flags_t flags;
 } naos_fs_file_t;
 
 static naos_mutex_t naos_fs_mutex = 0;
@@ -228,7 +227,6 @@ static naos_msg_err_t naos_fs_handle_open(naos_msg_t msg) {
   file->fd = fd;
   file->sid = msg.session;
   file->ts = naos_millis();
-  file->flags = flags;
 
   return NAOS_MSG_ACK;
 }
