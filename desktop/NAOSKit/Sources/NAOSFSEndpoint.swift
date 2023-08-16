@@ -162,14 +162,14 @@ public class NAOSFSEndpoint {
 			}
 		}
 		
-		// send final "write" comamnd
-		try await send(data: Data([4, 0, 0, 0, 0]), ack: true)
+		// send "close" comamnd
+		try await send(data: Data([5]), ack: true)
 	}
 	
 	/// Rename a file.
 	public func rename(from: String, to: String) async throws {
 		// prepare command
-		var cmd = Data([5])
+		var cmd = Data([6])
 		cmd.append(from.data(using: .utf8)!)
 		cmd.append(Data([0]))
 		cmd.append(to.data(using: .utf8)!)
@@ -181,7 +181,7 @@ public class NAOSFSEndpoint {
 	/// Remove a file.
 	public func remove(path: String) async throws {
 		// prepare command
-		var cmd = Data([6])
+		var cmd = Data([7])
 		cmd.append(path.data(using: .utf8)!)
 		
 		// send comamnd

@@ -21,6 +21,7 @@ typedef enum {
   NAOS_FS_CMD_READ,
   NAOS_FS_CMD_CREATE,
   NAOS_FS_CMD_WRITE,
+  NAOS_FS_CMD_CLOSE,
   NAOS_FS_CMD_RENAME,
   NAOS_FS_CMD_REMOVE,
 } naos_fs_cmd_t;
@@ -332,7 +333,7 @@ static naos_msg_err_t naos_fs_handle_write(naos_msg_t msg) {
   // OFFSET (4) | DATA (*)
 
   // check path
-  if (msg.len < 4) {
+  if (msg.len <= 4) {
     return NAOS_MSG_INCOMPLETE;
   }
 
@@ -350,13 +351,6 @@ static naos_msg_err_t naos_fs_handle_write(naos_msg_t msg) {
   }
   if (file == NULL) {
     return naos_fs_send_error(msg.session, EBADF);
-  }
-
-  // handle zero write as close
-  if (msg.len == 4) {
-    close(file->fd);
-    *file = (naos_fs_file_t){0};
-    return NAOS_MSG_ACK;
   }
 
   // seek offset
@@ -377,6 +371,33 @@ static naos_msg_err_t naos_fs_handle_write(naos_msg_t msg) {
 
   // update timestamp
   file->ts = naos_millis();
+
+  return NAOS_MSG_ACK;
+}
+
+static naos_msg_err_t naos_fs_handle_close(naos_msg_t msg) {
+  // check msg
+  if (msg.len != 0) {
+    return NAOS_MSG_INVALID;
+  }
+
+  // find file
+  naos_fs_file_t *file = NULL;
+  for (size_t i = 0; i < NAOS_FS_MAX_FILES; i++) {
+    if (naos_fs_files[i].active && naos_fs_files[i].sid == msg.session) {
+      file = &naos_fs_files[i];
+      break;
+    }
+  }
+  if (file == NULL) {
+    return naos_fs_send_error(msg.session, EBADF);
+  }
+
+  // close file
+  close(file->fd);
+
+  // reset descriptor
+  *file = (naos_fs_file_t){0};
 
   return NAOS_MSG_ACK;
 }
@@ -464,6 +485,9 @@ static naos_msg_err_t naos_fs_handle(naos_msg_t msg) {
       break;
     case NAOS_FS_CMD_WRITE:
       err = naos_fs_handle_write(msg);
+      break;
+    case NAOS_FS_CMD_CLOSE:
+      err = naos_fs_handle_close(msg);
       break;
     case NAOS_FS_CMD_RENAME:
       err = naos_fs_handle_rename(msg);
