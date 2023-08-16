@@ -551,7 +551,7 @@ static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
 
   // wait up to 1 second until packet can be sent
   int attempts = 0;
-  while(esp_ble_get_cur_sendable_packets_num(conn->id) == 0 && attempts++ < 1000) {
+  while (esp_ble_get_cur_sendable_packets_num(conn->id) == 0 && attempts++ < 1000) {
     naos_delay(1);
   }
 
