@@ -192,10 +192,18 @@ static naos_msg_err_t naos_fs_handle_open(naos_msg_t msg) {
     return NAOS_MSG_INCOMPLETE;
   }
 
-  // find free file
+  // close already open files
+  for (size_t i = 0; i < NAOS_FS_MAX_FILES; i++) {
+    if (naos_fs_files[i].active && naos_fs_files[i].sid == msg.session) {
+      close(naos_fs_files[i].fd);
+      naos_fs_files[i].active = false;
+    }
+  }
+
+  // find first free file
   naos_fs_file_t *file = NULL;
   for (size_t i = 0; i < NAOS_FS_MAX_FILES; i++) {
-    if (naos_fs_files[i].ts == 0) {
+    if (!naos_fs_files[i].active) {
       file = &naos_fs_files[i];
       break;
     }
@@ -534,15 +542,9 @@ static void naos_fs_cleanup() {
   // get time
   int64_t now = naos_millis();
 
-  // close left open files
+  // close unused open files
   for (int i = 0; i < NAOS_FS_MAX_FILES; i++) {
-    // skip inactive files
-    if (!naos_fs_files[i].active) {
-      continue;
-    }
-
-    // clear if unused for 5 seconds
-    if (now - naos_fs_files[i].ts > 5000) {
+    if (naos_fs_files[i].active && now - naos_fs_files[i].ts > 5000) {
       close(naos_fs_files[i].fd);
       naos_fs_files[i] = (naos_fs_file_t){0};
     }
