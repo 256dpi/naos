@@ -18,8 +18,8 @@
 typedef enum {
   NAOS_FS_CMD_STAT,
   NAOS_FS_CMD_LIST,
+  NAOS_FS_CMD_OPEN,
   NAOS_FS_CMD_READ,
-  NAOS_FS_CMD_CREATE,
   NAOS_FS_CMD_WRITE,
   NAOS_FS_CMD_CLOSE,
   NAOS_FS_CMD_RENAME,
@@ -33,6 +33,7 @@ typedef enum {
 } naos_fs_reply_t;
 
 typedef enum {
+  NAOS_FS_FLAG_CREATE = 1 << 0,
   NAOS_FS_FLAG_APPEND = 1 << 1,
   NAOS_FS_FLAG_TRUNCATE = 1 << 2,
   NAOS_FS_FLAG_EXCLUSIVE = 1 << 3,
@@ -177,6 +178,61 @@ static naos_msg_err_t naos_fs_handle_list(naos_msg_t msg) {
   return NAOS_MSG_ACK;
 }
 
+static naos_msg_err_t naos_fs_handle_open(naos_msg_t msg) {
+  // command structure:
+  // FLAGS (1) | PATH (*)
+
+  // check path
+  if (msg.len <= 1) {
+    return NAOS_MSG_INCOMPLETE;
+  }
+
+  // find free file
+  naos_fs_file_t *file = NULL;
+  for (size_t i = 0; i < NAOS_FS_MAX_FILES; i++) {
+    if (naos_fs_files[i].ts == 0) {
+      file = &naos_fs_files[i];
+      break;
+    }
+  }
+  if (file == NULL) {
+    return naos_fs_send_error(msg.session, ENFILE);
+  }
+
+  // get flags
+  naos_fs_flags_t flags = msg.data[0];
+
+  // prepare open flags
+  int open_flags = O_RDWR;
+  if (flags & NAOS_FS_FLAG_CREATE) {
+    open_flags |= O_CREAT;
+  }
+  if (flags & NAOS_FS_FLAG_APPEND) {
+    open_flags |= O_APPEND;
+  }
+  if (flags & NAOS_FS_FLAG_TRUNCATE) {
+    open_flags |= O_TRUNC;
+  }
+  if (flags & NAOS_FS_FLAG_EXCLUSIVE) {
+    open_flags |= O_EXCL;
+  }
+
+  // create file
+  int fd = open((const char *)(msg.data + 1), open_flags, 0644);
+  if (fd < 0) {
+    return naos_fs_send_error(msg.session, errno);
+  }
+
+  // set file
+  file->active = true;
+  file->fd = fd;
+  file->sid = msg.session;
+  file->ts = naos_millis();
+  file->flags = flags;
+
+  return NAOS_MSG_ACK;
+}
+
 static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
   // command structure:
   // OFFSET (4) | LENGTH (4) | PATH (*)
@@ -272,58 +328,6 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
 
   // free data
   free(data);
-
-  return NAOS_MSG_ACK;
-}
-
-static naos_msg_err_t naos_fs_handle_create(naos_msg_t msg) {
-  // command structure:
-  // FLAGS (1) | PATH (*)
-
-  // check path
-  if (msg.len <= 1) {
-    return NAOS_MSG_INCOMPLETE;
-  }
-
-  // find free file
-  naos_fs_file_t *file = NULL;
-  for (size_t i = 0; i < NAOS_FS_MAX_FILES; i++) {
-    if (naos_fs_files[i].ts == 0) {
-      file = &naos_fs_files[i];
-      break;
-    }
-  }
-  if (file == NULL) {
-    return naos_fs_send_error(msg.session, ENFILE);
-  }
-
-  // get flags
-  naos_fs_flags_t flags = msg.data[0];
-
-  // prepare open flags
-  int open_flags = O_WRONLY | O_CREAT;
-  if (flags & NAOS_FS_FLAG_APPEND) {
-    open_flags |= O_APPEND;
-  }
-  if (flags & NAOS_FS_FLAG_TRUNCATE) {
-    open_flags |= O_TRUNC;
-  }
-  if (flags & NAOS_FS_FLAG_EXCLUSIVE) {
-    open_flags |= O_EXCL;
-  }
-
-  // create file
-  int fd = open((const char *)(msg.data + 1), open_flags, 0644);
-  if (fd < 0) {
-    return naos_fs_send_error(msg.session, errno);
-  }
-
-  // set file
-  file->active = true;
-  file->fd = fd;
-  file->sid = msg.session;
-  file->ts = naos_millis();
-  file->flags = flags;
 
   return NAOS_MSG_ACK;
 }
@@ -477,11 +481,11 @@ static naos_msg_err_t naos_fs_handle(naos_msg_t msg) {
     case NAOS_FS_CMD_LIST:
       err = naos_fs_handle_list(msg);
       break;
+    case NAOS_FS_CMD_OPEN:
+      err = naos_fs_handle_open(msg);
+      break;
     case NAOS_FS_CMD_READ:
       err = naos_fs_handle_read(msg);
-      break;
-    case NAOS_FS_CMD_CREATE:
-      err = naos_fs_handle_create(msg);
       break;
     case NAOS_FS_CMD_WRITE:
       err = naos_fs_handle_write(msg);
