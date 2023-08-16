@@ -83,11 +83,17 @@ public class NAOSFSEndpoint {
 	
 	/// Read a full file.
 	public func read(path: String, report: ((Int) -> Void)?) async throws -> Data {
-		// prepare command
-		var cmd = Data([3, 0, 0, 0, 0, 0, 0, 0, 0])
+		// prepare "open" command
+		var cmd = Data([2, 0])
 		cmd.append(path.data(using: .utf8)!)
 		
-		// send comamnd
+		// send "open" comamnd
+		try await send(data: cmd, ack: true)
+		
+		// prepare "read" command
+		cmd = Data([3, 0, 0, 0, 0, 0, 0, 0, 0])
+		
+		// send "read" comamnd
 		try await send(data: cmd, ack: false)
 		
 		// prepare data

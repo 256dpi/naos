@@ -235,11 +235,23 @@ static naos_msg_err_t naos_fs_handle_open(naos_msg_t msg) {
 
 static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
   // command structure:
-  // OFFSET (4) | LENGTH (4) | PATH (*)
+  // OFFSET (4) | LENGTH (4)
 
   // check path
-  if (msg.len < 9) {
-    return NAOS_MSG_INCOMPLETE;
+  if (msg.len != 8) {
+    return NAOS_MSG_INVALID;
+  }
+
+  // find file
+  naos_fs_file_t *file = NULL;
+  for (size_t i = 0; i < NAOS_FS_MAX_FILES; i++) {
+    if (naos_fs_files[i].active && naos_fs_files[i].sid == msg.session) {
+      file = &naos_fs_files[i];
+      break;
+    }
+  }
+  if (file == NULL) {
+    return naos_fs_send_error(msg.session, EBADF);
   }
 
   // get offset and length
@@ -248,13 +260,10 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
   memcpy(&offset, msg.data, sizeof(offset));
   memcpy(&length, &msg.data[4], sizeof(length));
 
-  // get path
-  const char *path = (char *)&msg.data[8];
-
   // determine length if zero
   if (length == 0) {
     struct stat info;
-    int ret = stat(path, &info);
+    int ret = fstat(file->fd, &info);
     if (ret != 0) {
       return naos_fs_send_error(msg.session, errno);
     }
@@ -263,26 +272,17 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
     }
   }
 
-  // open file
-  int file = open(path, O_RDONLY);
-  if (file < 0) {
-    return naos_fs_send_error(msg.session, errno);
-  }
-
   // seek to offset
-  if (offset > 0) {
-    off_t ret = lseek(file, offset, SEEK_SET);
-    if (ret < 0) {
-      close(file);
-      return naos_fs_send_error(msg.session, errno);
-    }
+  off_t ret = lseek(file->fd, offset, SEEK_SET);
+  if (ret < 0) {
+    return naos_fs_send_error(msg.session, errno);
   }
 
   // determine max chunk size
   size_t max_chunk_size = naos_msg_session_mtu(msg.session) - 16;
 
   // reply structure:
-  // TYPE (1) | OFFSET (4) |  DATA (*)
+  // TYPE (1) | OFFSET (4) | DATA (*)
 
   // prepare data
   uint8_t *data = calloc(5 + max_chunk_size, 1);
@@ -299,9 +299,8 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
     memcpy(&data[1], &chunk_offset, sizeof(chunk_offset));
 
     // read chunk
-    ssize_t ret = read(file, data + 5, chunk_size);
+    ret = read(file->fd, data + 5, chunk_size);
     if (ret < 0) {
-      close(file);
       free(data);
       return naos_fs_send_error(msg.session, errno);
     }
@@ -322,9 +321,6 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
     naos_delay(1);
     NAOS_LOCK(naos_fs_mutex);
   }
-
-  // close file
-  close(file);
 
   // free data
   free(data);
