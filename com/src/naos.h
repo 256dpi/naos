@@ -5,6 +5,7 @@
 
 const naos_config_t *naos_config();
 
+// naos_init
 // naos_scope_str
 // naos_status_str
 
