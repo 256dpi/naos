@@ -82,7 +82,7 @@ static naos_msg_err_t naos_fs_handle_stat(naos_msg_t msg) {
 
   // check path
   if (msg.len == 0) {
-    return NAOS_MSG_INCOMPLETE;
+    return NAOS_MSG_INVALID;
   }
 
   // stat path
@@ -120,7 +120,7 @@ static naos_msg_err_t naos_fs_handle_list(naos_msg_t msg) {
 
   // check path
   if (msg.len == 0) {
-    return NAOS_MSG_INCOMPLETE;
+    return NAOS_MSG_INVALID;
   }
 
   // open directory
@@ -192,7 +192,7 @@ static naos_msg_err_t naos_fs_handle_open(naos_msg_t msg) {
 
   // check path
   if (msg.len <= 1) {
-    return NAOS_MSG_INCOMPLETE;
+    return NAOS_MSG_INVALID;
   }
 
   // close already open files
@@ -353,7 +353,7 @@ static naos_msg_err_t naos_fs_handle_write(naos_msg_t msg) {
 
   // check path
   if (msg.len <= 5) {
-    return NAOS_MSG_INCOMPLETE;
+    return NAOS_MSG_INVALID;
   }
 
   // get flags
@@ -443,7 +443,7 @@ static naos_msg_err_t naos_fs_handle_rename(naos_msg_t msg) {
   size_t from_len = strlen((const char *)msg.data);
   size_t to_len = strlen((const char *)&msg.data[from_len + 1]);
   if (from_len == 0 || to_len == 0) {
-    return NAOS_MSG_INCOMPLETE;
+    return NAOS_MSG_INVALID;
   } else if (from_len + 1 + to_len > msg.len) {
     return NAOS_MSG_INVALID;
   }
@@ -467,7 +467,7 @@ static naos_msg_err_t naos_fs_handle_remove(naos_msg_t msg) {
 
   // check path
   if (msg.len == 0) {
-    return NAOS_MSG_INCOMPLETE;
+    return NAOS_MSG_INVALID;
   }
 
   // get path
@@ -488,7 +488,7 @@ static naos_msg_err_t naos_fs_handle_sha256(naos_msg_t msg) {
 
   // check length
   if (msg.len == 0) {
-    return NAOS_MSG_INCOMPLETE;
+    return NAOS_MSG_INVALID;
   }
 
   // get path
@@ -578,7 +578,7 @@ static naos_msg_err_t naos_fs_handle(naos_msg_t msg) {
 
   // check length
   if (msg.len == 0) {
-    return NAOS_MSG_INCOMPLETE;
+    return NAOS_MSG_INVALID;
   }
 
   // get command

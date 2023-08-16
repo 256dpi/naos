@@ -63,7 +63,6 @@ typedef struct {
 typedef enum {
   NAOS_MSG_OK,
   NAOS_MSG_ACK,
-  NAOS_MSG_INCOMPLETE,
   NAOS_MSG_INVALID,
   NAOS_MSG_UNKNOWN,
   NAOS_MSG_ERROR,
