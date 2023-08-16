@@ -39,11 +39,17 @@ typedef enum {
   NAOS_FS_OPEN_FLAG_EXCLUSIVE = 1 << 3,
 } naos_fs_open_flags_t;
 
+typedef enum {
+  NAOS_FS_WRITE_FLAG_SILENT = 1 << 0,
+  NAOS_FS_WRITE_FLAG_SEQUENTIAL = 1 << 1,
+} naos_fs_write_flags_t;
+
 typedef struct {
   bool active;
   int fd;
   uint16_t sid;
   int64_t ts;
+  uint32_t off;
 } naos_fs_file_t;
 
 static naos_mutex_t naos_fs_mutex = 0;
@@ -227,6 +233,7 @@ static naos_msg_err_t naos_fs_handle_open(naos_msg_t msg) {
   file->fd = fd;
   file->sid = msg.session;
   file->ts = naos_millis();
+  file->off = 0;
 
   return NAOS_MSG_ACK;
 }
@@ -328,16 +335,21 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
 
 static naos_msg_err_t naos_fs_handle_write(naos_msg_t msg) {
   // command structure:
-  // OFFSET (4) | DATA (*)
+  // FLAGS (1) | OFFSET (4) | DATA (*)
 
   // check path
-  if (msg.len <= 4) {
+  if (msg.len <= 5) {
     return NAOS_MSG_INCOMPLETE;
   }
 
+  // get flags
+  naos_fs_write_flags_t flags = msg.data[0];
+  bool silent = flags & NAOS_FS_WRITE_FLAG_SILENT;
+  bool sequential = flags & NAOS_FS_WRITE_FLAG_SEQUENTIAL;
+
   // get offset
   uint32_t offset;
-  memcpy(&offset, msg.data, sizeof(offset));
+  memcpy(&offset, msg.data + 1, sizeof(offset));
 
   // find file
   naos_fs_file_t *file = NULL;
@@ -348,29 +360,38 @@ static naos_msg_err_t naos_fs_handle_write(naos_msg_t msg) {
     }
   }
   if (file == NULL) {
-    return naos_fs_send_error(msg.session, EBADF);
+    return silent ? NAOS_MSG_OK : naos_fs_send_error(msg.session, EBADF);
   }
 
-  // seek offset
-  off_t ret = lseek(file->fd, offset, SEEK_SET);
-  if (ret < 0) {
-    return naos_fs_send_error(msg.session, errno);
+  // verify sequential offset
+  if (sequential && offset != file->off) {
+    return silent ? NAOS_MSG_OK : naos_fs_send_error(msg.session, EINVAL);
+  }
+
+  // otherwise, seek random offset
+  if (!sequential) {
+    off_t ret = lseek(file->fd, offset, SEEK_SET);
+    if (ret < 0) {
+      return silent ? NAOS_MSG_OK : naos_fs_send_error(msg.session, errno);
+    }
+    file->off = offset;
   }
 
   // write all data
-  size_t total = 0;
-  while (total < msg.len - 4) {
-    ret = write(file->fd, msg.data + 4 + total, msg.len - 4 - total);
+  uint32_t total = 0;
+  while (total < msg.len - 5) {
+    ssize_t ret = write(file->fd, msg.data + 5 + total, msg.len - 5 - total);
     if (ret < 0) {
-      return naos_fs_send_error(msg.session, errno);
+      return silent ? NAOS_MSG_OK : naos_fs_send_error(msg.session, errno);
     }
     total += ret;
   }
 
-  // update timestamp
+  // update timestamp and offset
   file->ts = naos_millis();
+  file->off = offset + total;
 
-  return NAOS_MSG_ACK;
+  return silent ? NAOS_MSG_OK : NAOS_MSG_ACK;
 }
 
 static naos_msg_err_t naos_fs_handle_close(naos_msg_t msg) {

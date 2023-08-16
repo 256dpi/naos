@@ -142,14 +142,18 @@ public class NAOSFSEndpoint {
 		// TODO: Dynamically determine channel MTU?
 		
 		// write data in 500-byte chunks
+		var num = 0
 		var offset = 0
 		while offset < data.count {
 			// determine chunk size and chunk data
 			let chunkSize = min(500, data.count - offset)
 			let chunkData = data.subdata(in: offset ..< offset + chunkSize)
 			
-			// prepare "write" command
-			cmd = Data([4])
+			// determine mode
+			let acked = num % 10 == 0;
+			
+			// prepare "write" command (acked or silent & sequential)
+			cmd = Data([4, acked ? 0 : 1 << 0 | 1 << 1])
 			cmd.append(writeUint32(value: UInt32(offset)))
 			cmd.append(chunkData)
 			
@@ -157,7 +161,9 @@ public class NAOSFSEndpoint {
 			try await send(data: cmd, ack: false)
 			
 			// receive ack or "error" replies
-			let _ = try await receive(ack: true)
+			if acked {
+				let _ = try await receive(ack: true)
+			}
 			
 			// increment offset
 			offset += chunkSize
@@ -166,6 +172,9 @@ public class NAOSFSEndpoint {
 			if report != nil {
 				report!(offset)
 			}
+			
+			// increment count
+			num += 1
 		}
 		
 		// send "close" comamnd
