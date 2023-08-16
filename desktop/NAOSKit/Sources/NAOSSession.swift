@@ -33,6 +33,36 @@ public class NAOSSession {
 		}
 	}
 	
+	/// Ping will check the session and keep it alive.
+	public func ping(timeout: TimeInterval) async throws {
+		// send command
+		try await self.send(msg: NAOSMessage(endpoint: 0xFE, data: nil))
+		
+		// await message
+		let msg = try await self.receive(timeout: timeout)
+		
+		// verify message
+		if msg.endpoint != 0xFE || msg.size() != 1 || msg.data![0] != 1 {
+			throw NAOSError.invalidMessage
+		}
+	}
+	
+	/// Query will check an endpoints existence.
+	public func query(endpoint: UInt8, timeout: TimeInterval) async throws -> Bool {
+		// send command
+		try await self.send(msg: NAOSMessage(endpoint: endpoint, data: nil))
+		
+		// await message
+		let msg = try await self.receive(timeout: timeout)
+		
+		// verify message
+		if msg.endpoint != 0xFE || msg.size() != 1 {
+			throw NAOSError.invalidMessage
+		}
+		
+		return msg.data![0] == 1
+	}
+	
 	/// Wait and receive a message.
 	public func receive(timeout: TimeInterval) async throws -> NAOSMessage {
 		// return next message from channel

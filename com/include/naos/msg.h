@@ -22,14 +22,20 @@
  * The system employs three special endpoints: 0x00, 0xFE and 0xFF. The first is
  * used to begin a session and obtain its ID. The second is used to handle pings
  * and report generic acknowledgements and errors. And the last is used to end a
- * session and clean up resources. The message flow is a follows:
+ * session and clean up resources. Existence of endpoints may also be queried by
+ * sending an empty message. The message flow is a follows:
  *
  * > Begin: Session=0, Endpoint=0, Data=Handle(*)
  * < Begin: Session=ID, Endpoint=0, Data=Handle(*)
+ * > Query: Session=ID, Endpoint=7
+ * < Ack: Session=ID, Endpoint=0xFE, Data=1
  * > Ping: Session=ID, Endpoint=0xFE
- * < Ack: Session=ID, Endpoint=0xFE
+ * < Ack: Session=ID, Endpoint=0xFE, Data=1
+ * > Command: Session=ID, Endpoint=1, Data=Any(*)
+ * < Ack: Session=ID, Endpoint=0xFE, Data=1
  * < Error: Session=ID, Endpoint=0xFE, Data=Error(1)
  * > End: Session=ID, Endpoint=0xFF
+ * < End: Session=ID, Endpoint=0xFF
  */
 
 /**

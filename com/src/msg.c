@@ -264,7 +264,7 @@ bool naos_msg_channel_dispatch(uint8_t channel, uint8_t* data, size_t len, void*
   // verify session
   if (!session->active || session->channel != channel) {
     NAOS_UNLOCK(naos_msg_mutex);
-    ESP_LOGE("MSG", "naos_msg_channel_dispatch: session not active");
+    ESP_LOGE("MSG", "naos_msg_channel_dispatch: session state invalid");
     return false;
   }
 
@@ -277,16 +277,16 @@ bool naos_msg_channel_dispatch(uint8_t channel, uint8_t* data, size_t len, void*
     NAOS_UNLOCK(naos_msg_mutex);
 
     // prepare reply
-    uint8_t reply[] = {1, 0, 0, NAOS_MSG_ACK};
+    uint8_t reply[] = {1, 0, 0, 0xFE, NAOS_MSG_ACK};
     memcpy(reply + 1, &session->id, 2);
 
 #if NAOS_MSG_DEBUG
     ESP_LOGI("MSG", "outgoing message:");
-    ESP_LOG_BUFFER_HEX("MSG", reply, 4);
+    ESP_LOG_BUFFER_HEX("MSG", reply, 5);
 #endif
 
     // send reply
-    if (!naos_msg_channels[channel].send(reply, 4, ctx)) {
+    if (!naos_msg_channels[channel].send(reply, 5, ctx)) {
       ESP_LOGE("MSG", "naos_msg_channel_dispatch: failed to send reply");
     }
 
@@ -321,13 +321,44 @@ bool naos_msg_channel_dispatch(uint8_t channel, uint8_t* data, size_t len, void*
     return true;
   }
 
-  // copy data
-  uint8_t* copy = NULL;
-  if (len > 4) {
-    copy = malloc(len - 4 + 1);
-    memcpy(copy, data + 4, len - 4);
-    copy[len - 4] = 0;
+  // handle "query" command
+  if (len == 4) {
+    // update last message
+    session->last_msg = naos_millis();
+
+    // find endpoint
+    bool found = false;
+    for (size_t i = 0; i < naos_msg_endpoint_count; i++) {
+      if (naos_msg_endpoints[i].ref == eid) {
+        found = true;
+        break;
+      }
+    }
+
+    // release mutex
+    NAOS_UNLOCK(naos_msg_mutex);
+
+    // prepare reply
+    uint8_t reply[] = {1, 0, 0, 0xFE, found ? NAOS_MSG_ACK : NAOS_MSG_INVALID};
+    memcpy(reply + 1, &session->id, 2);
+
+#if NAOS_MSG_DEBUG
+    ESP_LOGI("MSG", "outgoing message:");
+    ESP_LOG_BUFFER_HEX("MSG", reply, 5);
+#endif
+
+    // send reply
+    if (!naos_msg_channels[channel].send(reply, 5, ctx)) {
+      ESP_LOGE("MSG", "naos_msg_channel_dispatch: failed to send reply");
+    }
+
+    return true;
   }
+
+  // copy data
+  uint8_t* copy = malloc(len - 4 + 1);
+  memcpy(copy, data + 4, len - 4);
+  copy[len - 4] = 0;
 
   // prepare message
   naos_msg_t msg = {
