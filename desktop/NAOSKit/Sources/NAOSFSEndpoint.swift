@@ -100,12 +100,20 @@ public class NAOSFSEndpoint {
 			}
 			
 			// verify "chunk" reply
-			if reply.count == 0 || reply[0] != 2 {
+			if reply.count <= 5 || reply[0] != 2 {
+				throw NAOSError.invalidMessage
+			}
+			
+			// get offset
+			let offset = readUint32(data: Data(reply[1 ... 5]))
+			
+			// verify offset
+			if offset != data.count {
 				throw NAOSError.invalidMessage
 			}
 			
 			// append data
-			data.append(Data(reply[1...]))
+			data.append(Data(reply[5...]))
 			
 			// report length
 			if report != nil {
