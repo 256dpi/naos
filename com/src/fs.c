@@ -321,6 +321,9 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
     // increment total
     total += ret;
 
+    // update timestamp
+    file->ts = naos_millis();
+
     // yield to system
     NAOS_UNLOCK(naos_fs_mutex);
     naos_delay(1);

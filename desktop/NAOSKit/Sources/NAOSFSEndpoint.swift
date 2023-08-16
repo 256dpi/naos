@@ -127,6 +127,9 @@ public class NAOSFSEndpoint {
 			}
 		}
 		
+		// send "close" comamnd
+		try await send(data: Data([5]), ack: true)
+		
 		return data
 	}
 	
