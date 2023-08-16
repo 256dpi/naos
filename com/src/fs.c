@@ -33,11 +33,11 @@ typedef enum {
 } naos_fs_reply_t;
 
 typedef enum {
-  NAOS_FS_FLAG_CREATE = 1 << 0,
-  NAOS_FS_FLAG_APPEND = 1 << 1,
-  NAOS_FS_FLAG_TRUNCATE = 1 << 2,
-  NAOS_FS_FLAG_EXCLUSIVE = 1 << 3,
-} naos_fs_flags_t;
+  NAOS_FS_OPEN_FLAG_CREATE = 1 << 0,
+  NAOS_FS_OPEN_FLAG_APPEND = 1 << 1,
+  NAOS_FS_OPEN_FLAG_TRUNCATE = 1 << 2,
+  NAOS_FS_OPEN_FLAG_EXCLUSIVE = 1 << 3,
+} naos_fs_open_flags_t;
 
 typedef struct {
   bool active;
@@ -199,20 +199,20 @@ static naos_msg_err_t naos_fs_handle_open(naos_msg_t msg) {
   }
 
   // get flags
-  naos_fs_flags_t flags = msg.data[0];
+  naos_fs_open_flags_t flags = msg.data[0];
 
   // prepare open flags
   int open_flags = O_RDWR;
-  if (flags & NAOS_FS_FLAG_CREATE) {
+  if (flags & NAOS_FS_OPEN_FLAG_CREATE) {
     open_flags |= O_CREAT;
   }
-  if (flags & NAOS_FS_FLAG_APPEND) {
+  if (flags & NAOS_FS_OPEN_FLAG_APPEND) {
     open_flags |= O_APPEND;
   }
-  if (flags & NAOS_FS_FLAG_TRUNCATE) {
+  if (flags & NAOS_FS_OPEN_FLAG_TRUNCATE) {
     open_flags |= O_TRUNC;
   }
-  if (flags & NAOS_FS_FLAG_EXCLUSIVE) {
+  if (flags & NAOS_FS_OPEN_FLAG_EXCLUSIVE) {
     open_flags |= O_EXCL;
   }
 
