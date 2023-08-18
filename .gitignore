@@ -3,4 +3,3 @@
 node_modules/
 .parcel-cache/
 web/dist
-.swiftpm

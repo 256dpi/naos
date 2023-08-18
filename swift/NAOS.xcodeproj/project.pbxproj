@@ -24,8 +24,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5211B721299D7A7B007F6EAA /* NAOSKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NAOSKit; sourceTree = "<group>"; };
 		5224D3C62A8BF554003D5484 /* EndpointViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndpointViewController.swift; sourceTree = "<group>"; };
-		526319AA2A8F79D200FF5FE7 /* naos */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = naos; path = ..; sourceTree = "<group>"; };
 		52BD19B52561EA93006D3507 /* NAOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NAOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		52BD19B82561EA93006D3507 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		52BD19BC2561EA95006D3507 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -56,18 +56,10 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		526319A92A8F79D200FF5FE7 /* Packages */ = {
-			isa = PBXGroup;
-			children = (
-				526319AA2A8F79D200FF5FE7 /* naos */,
-			);
-			name = Packages;
-			sourceTree = "<group>";
-		};
 		52BD19AC2561EA93006D3507 = {
 			isa = PBXGroup;
 			children = (
-				526319A92A8F79D200FF5FE7 /* Packages */,
+				5211B721299D7A7B007F6EAA /* NAOSKit */,
 				52BD19B72561EA93006D3507 /* NAOSDesktop */,
 				52BD19B62561EA93006D3507 /* Products */,
 				52BD19E02561EB48006D3507 /* Frameworks */,
