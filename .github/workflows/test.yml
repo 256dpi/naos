@@ -22,6 +22,7 @@ jobs:
       - name: Build CLI
         run: |
           env GOOS=darwin GOARCH=amd64 go build -o naos-darwin-amd64 ./cmd/naos
+          env GOOS=darwin GOARCH=arm64 go build -o naos-darwin-arm64 ./cmd/naos
           env GOOS=linux GOARCH=amd64 go build -o naos-linux-amd64 ./cmd/naos
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -29,6 +30,7 @@ jobs:
         with:
           files: |
             naos-darwin-amd64
+            naos-darwin-arm64
             naos-linux-amd64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
