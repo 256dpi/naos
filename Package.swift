@@ -21,5 +21,5 @@ let package = Package(
 		.target(
 			name: "NAOSKit",
 			dependencies: ["AsyncBluetooth", "Semaphore"],
-			path: "Sources")
+			path: "swift/NAOSKit"),
 	])
