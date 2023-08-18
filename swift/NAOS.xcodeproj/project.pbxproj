@@ -60,7 +60,7 @@
 			isa = PBXGroup;
 			children = (
 				5211B721299D7A7B007F6EAA /* NAOSKit */,
-				52BD19B72561EA93006D3507 /* NAOS */,
+				52BD19B72561EA93006D3507 /* NAOSDesktop */,
 				52BD19B62561EA93006D3507 /* Products */,
 				52BD19E02561EB48006D3507 /* Frameworks */,
 			);
@@ -74,7 +74,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		52BD19B72561EA93006D3507 /* NAOS */ = {
+		52BD19B72561EA93006D3507 /* NAOSDesktop */ = {
 			isa = PBXGroup;
 			children = (
 				52BD19B82561EA93006D3507 /* AppDelegate.swift */,
@@ -92,7 +92,7 @@
 				52BD19C12561EA95006D3507 /* Info.plist */,
 				52BD19C22561EA95006D3507 /* NAOS.entitlements */,
 			);
-			path = NAOS;
+			path = NAOSDesktop;
 			sourceTree = "<group>";
 		};
 		52BD19E02561EB48006D3507 /* Frameworks */ = {
