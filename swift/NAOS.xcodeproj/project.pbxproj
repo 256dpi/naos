@@ -327,14 +327,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = NAOS/NAOS.entitlements;
+				CODE_SIGN_ENTITLEMENTS = NAOSDesktop/NAOS.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = W34GXY8GHC;
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_FILE = NAOS/Info.plist;
+				INFOPLIST_FILE = NAOSDesktop/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -350,14 +350,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = NAOS/NAOS.entitlements;
+				CODE_SIGN_ENTITLEMENTS = NAOSDesktop/NAOS.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = W34GXY8GHC;
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_FILE = NAOS/Info.plist;
+				INFOPLIST_FILE = NAOSDesktop/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
