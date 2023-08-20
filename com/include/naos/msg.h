@@ -62,7 +62,7 @@ typedef struct {
 } naos_msg_channel_t;
 
 /**
- * A message error.
+ * A message reply.
  */
 typedef enum {
   NAOS_MSG_OK,
@@ -70,7 +70,7 @@ typedef enum {
   NAOS_MSG_INVALID,
   NAOS_MSG_UNKNOWN,
   NAOS_MSG_ERROR,
-} naos_msg_err_t;
+} naos_msg_reply_t;
 
 /**
  * A message endpoint.
@@ -78,7 +78,7 @@ typedef enum {
 typedef struct {
   uint8_t ref;
   const char *name;
-  naos_msg_err_t (*handle)(naos_msg_t);
+  naos_msg_reply_t (*handle)(naos_msg_t);
   void (*cleanup)(uint16_t session);
 } naos_msg_endpoint_t;
 

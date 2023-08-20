@@ -58,7 +58,7 @@ typedef struct {
 static naos_mutex_t naos_fs_mutex = 0;
 static naos_fs_file_t naos_fs_files[NAOS_FS_MAX_FILES] = {0};
 
-static naos_msg_err_t naos_fs_send_error(uint16_t session, int error) {
+static naos_msg_reply_t naos_fs_send_error(uint16_t session, int error) {
   // reply structure:
   // TYPE (1) | ERRNO (1)
 
@@ -76,7 +76,7 @@ static naos_msg_err_t naos_fs_send_error(uint16_t session, int error) {
   return NAOS_MSG_OK;
 }
 
-static naos_msg_err_t naos_fs_handle_stat(naos_msg_t msg) {
+static naos_msg_reply_t naos_fs_handle_stat(naos_msg_t msg) {
   // command structure:
   // PATH (*)
 
@@ -114,7 +114,7 @@ static naos_msg_err_t naos_fs_handle_stat(naos_msg_t msg) {
   return NAOS_MSG_OK;
 }
 
-static naos_msg_err_t naos_fs_handle_list(naos_msg_t msg) {
+static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {
   // command structure:
   // PATH (*)
 
@@ -186,7 +186,7 @@ static naos_msg_err_t naos_fs_handle_list(naos_msg_t msg) {
   return NAOS_MSG_ACK;
 }
 
-static naos_msg_err_t naos_fs_handle_open(naos_msg_t msg) {
+static naos_msg_reply_t naos_fs_handle_open(naos_msg_t msg) {
   // command structure:
   // FLAGS (1) | PATH (*)
 
@@ -249,7 +249,7 @@ static naos_msg_err_t naos_fs_handle_open(naos_msg_t msg) {
   return NAOS_MSG_ACK;
 }
 
-static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
+static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
   // command structure:
   // OFFSET (4) | LENGTH (4)
 
@@ -347,7 +347,7 @@ static naos_msg_err_t naos_fs_handle_read(naos_msg_t msg) {
   return NAOS_MSG_ACK;
 }
 
-static naos_msg_err_t naos_fs_handle_write(naos_msg_t msg) {
+static naos_msg_reply_t naos_fs_handle_write(naos_msg_t msg) {
   // command structure:
   // FLAGS (1) | OFFSET (4) | DATA (*)
 
@@ -408,7 +408,7 @@ static naos_msg_err_t naos_fs_handle_write(naos_msg_t msg) {
   return silent ? NAOS_MSG_OK : NAOS_MSG_ACK;
 }
 
-static naos_msg_err_t naos_fs_handle_close(naos_msg_t msg) {
+static naos_msg_reply_t naos_fs_handle_close(naos_msg_t msg) {
   // check msg
   if (msg.len != 0) {
     return NAOS_MSG_INVALID;
@@ -435,7 +435,7 @@ static naos_msg_err_t naos_fs_handle_close(naos_msg_t msg) {
   return NAOS_MSG_ACK;
 }
 
-static naos_msg_err_t naos_fs_handle_rename(naos_msg_t msg) {
+static naos_msg_reply_t naos_fs_handle_rename(naos_msg_t msg) {
   // command structure:
   // FROM (*) | 0 | TO (*)
 
@@ -461,7 +461,7 @@ static naos_msg_err_t naos_fs_handle_rename(naos_msg_t msg) {
   return NAOS_MSG_ACK;
 }
 
-static naos_msg_err_t naos_fs_handle_remove(naos_msg_t msg) {
+static naos_msg_reply_t naos_fs_handle_remove(naos_msg_t msg) {
   // command structure:
   // PATH (*)
 
@@ -482,7 +482,7 @@ static naos_msg_err_t naos_fs_handle_remove(naos_msg_t msg) {
   return NAOS_MSG_ACK;
 }
 
-static naos_msg_err_t naos_fs_handle_sha256(naos_msg_t msg) {
+static naos_msg_reply_t naos_fs_handle_sha256(naos_msg_t msg) {
   // command structure:
   // PATH (*)
 
@@ -572,7 +572,7 @@ static naos_msg_err_t naos_fs_handle_sha256(naos_msg_t msg) {
   return NAOS_MSG_OK;
 }
 
-static naos_msg_err_t naos_fs_handle(naos_msg_t msg) {
+static naos_msg_reply_t naos_fs_handle(naos_msg_t msg) {
   // message structure:
   // CMD (1) | *
 
@@ -592,43 +592,43 @@ static naos_msg_err_t naos_fs_handle(naos_msg_t msg) {
   NAOS_LOCK(naos_fs_mutex);
 
   // handle command
-  naos_msg_err_t err;
+  naos_msg_reply_t reply;
   switch (cmd) {
     case NAOS_FS_CMD_STAT:
-      err = naos_fs_handle_stat(msg);
+      reply = naos_fs_handle_stat(msg);
       break;
     case NAOS_FS_CMD_LIST:
-      err = naos_fs_handle_list(msg);
+      reply = naos_fs_handle_list(msg);
       break;
     case NAOS_FS_CMD_OPEN:
-      err = naos_fs_handle_open(msg);
+      reply = naos_fs_handle_open(msg);
       break;
     case NAOS_FS_CMD_READ:
-      err = naos_fs_handle_read(msg);
+      reply = naos_fs_handle_read(msg);
       break;
     case NAOS_FS_CMD_WRITE:
-      err = naos_fs_handle_write(msg);
+      reply = naos_fs_handle_write(msg);
       break;
     case NAOS_FS_CMD_CLOSE:
-      err = naos_fs_handle_close(msg);
+      reply = naos_fs_handle_close(msg);
       break;
     case NAOS_FS_CMD_RENAME:
-      err = naos_fs_handle_rename(msg);
+      reply = naos_fs_handle_rename(msg);
       break;
     case NAOS_FS_CMD_REMOVE:
-      err = naos_fs_handle_remove(msg);
+      reply = naos_fs_handle_remove(msg);
       break;
     case NAOS_FS_CMD_SHA256:
-      err = naos_fs_handle_sha256(msg);
+      reply = naos_fs_handle_sha256(msg);
       break;
     default:
-      err = NAOS_MSG_UNKNOWN;
+      reply = NAOS_MSG_UNKNOWN;
   }
 
   // acquire mutex
   NAOS_UNLOCK(naos_fs_mutex);
 
-  return err;
+  return reply;
 }
 
 static void naos_fs_cleanup() {

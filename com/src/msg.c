@@ -56,14 +56,14 @@ static void naos_msg_worker() {
     // most likely calls back into us to send a message to the session
 
     // handle message
-    naos_msg_err_t err = endpoint->handle(msg);
+    naos_msg_reply_t reply = endpoint->handle(msg);
 
     // send error
-    if (err != NAOS_MSG_OK) {
+    if (reply != NAOS_MSG_OK) {
       naos_msg_endpoint_send((naos_msg_t){
           .session = msg.session,
           .endpoint = 0xFE,
-          .data = (uint8_t*)&err,
+          .data = (uint8_t*)&reply,
           .len = 1,
       });
     }
