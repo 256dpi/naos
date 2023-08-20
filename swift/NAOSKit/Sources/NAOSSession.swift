@@ -35,25 +35,27 @@ public class NAOSSession {
 	
 	/// Ping will check the session and keep it alive.
 	public func ping(timeout: TimeInterval) async throws {
-		// send command
-		try await self.send(msg: NAOSMessage(endpoint: 0xFE, data: nil))
+		// write command
+		try await self.write(msg: NAOSMessage(endpoint: 0xFE, data: nil))
 		
-		// await message
-		let msg = try await self.receive(timeout: timeout)
+		// read reply
+		let msg = try await self.read(timeout: timeout)
 		
-		// verify message
-		if msg.endpoint != 0xFE || msg.size() != 1 || msg.data![0] != 1 {
+		// verify reply
+		if msg.endpoint != 0xFE || msg.size() != 1 {
 			throw NAOSError.invalidMessage
+		} else if msg.data![0] != 1 {
+			throw NAOSError.expectedAck
 		}
 	}
 	
 	/// Query will check an endpoints existence.
 	public func query(endpoint: UInt8, timeout: TimeInterval) async throws -> Bool {
-		// send command
-		try await self.send(msg: NAOSMessage(endpoint: endpoint, data: nil))
+		// write command
+		try await self.write(msg: NAOSMessage(endpoint: endpoint, data: nil))
 		
-		// await message
-		let msg = try await self.receive(timeout: timeout)
+		// erad reply
+		let msg = try await self.read(timeout: timeout)
 		
 		// verify message
 		if msg.endpoint != 0xFE || msg.size() != 1 {
@@ -63,8 +65,8 @@ public class NAOSSession {
 		return msg.data![0] == 1
 	}
 	
-	/// Wait and receive a message.
-	public func receive(timeout: TimeInterval) async throws -> NAOSMessage {
+	/// Wait and read the next message.
+	public func read(timeout: TimeInterval) async throws -> NAOSMessage {
 		// return next message from channel
 		return try await withTimeout(seconds: timeout) {
 			for await msg in self.stream! {
@@ -74,8 +76,36 @@ public class NAOSSession {
 		}
 	}
 	
-	/// Send a message.
-	public func send(msg: NAOSMessage) async throws {
+	/// Wait and receive the next message for the specified endpoint with optionally handling acks.
+	public func receive(endpoint: UInt8, ack: Bool, timeout: TimeInterval) async throws -> Data? {
+		// await message
+		let msg = try await read(timeout: timeout)
+		
+		// handle acks
+		if ack && msg.endpoint == 0xFE {
+			// check size
+			if msg.size() != 1 {
+				throw NAOSError.invalidMessage
+			}
+			
+			// check if OK
+			if msg.data![0] == 1 {
+				return nil
+			}
+			
+			throw NAOSError.expectedAck
+		}
+		
+		// check endpoint
+		if msg.endpoint != endpoint {
+			throw NAOSError.invalidMessage
+		}
+		
+		return msg.data
+	}
+	
+	/// Write a message.
+	public func write(msg: NAOSMessage) async throws {
 		// get device
 		guard let device = self.device else {
 			throw NAOSError.sessionClosed
@@ -102,6 +132,27 @@ public class NAOSSession {
 		// forward message
 		try await device.write(char: .msg, data: data, confirm: false)
 	}
+		
+	/// Send a message with optionally waiting for an acknowledgement.
+	public func send(endpoint: UInt8, data: Data, ackTimeout: TimeInterval) async throws {
+		// write message
+		try await write(msg: NAOSMessage(endpoint: endpoint, data: data))
+		
+		// return if timeout is zero
+		if ackTimeout == 0 {
+			return
+		}
+		
+		// await reply
+		let msg = try await read(timeout: ackTimeout)
+		
+		// check reply
+		if msg.size() != 1 || msg.endpoint != 0xFE {
+			throw NAOSError.invalidMessage
+		} else if msg.data![0] != 1 {
+			throw NAOSError.expectedAck
+		}
+	}
 	
 	/// End the session.
 	public func end(timeout: TimeInterval) async throws {
@@ -110,13 +161,13 @@ public class NAOSSession {
 			throw NAOSError.sessionClosed
 		}
 		
-		// send end command
-		try await self.send(msg: NAOSMessage(endpoint: 0xFF, data: nil))
+		// wite command
+		try await self.write(msg: NAOSMessage(endpoint: 0xFF, data: nil))
 		
-		// await message
-		let msg = try await self.receive(timeout: timeout)
+		// read reply
+		let msg = try await self.read(timeout: timeout)
 		
-		// verify message
+		// verify reply
 		if msg.endpoint != 0xFF || msg.size() > 0 {
 			throw NAOSError.invalidMessage
 		}

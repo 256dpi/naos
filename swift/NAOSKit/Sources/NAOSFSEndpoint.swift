@@ -29,7 +29,7 @@ public class NAOSFSEndpoint {
 		cmd.append(path.data(using: .utf8)!)
 		
 		// send comamnd
-		try await send(data: cmd, ack: false)
+		try await send(cmd: cmd, ack: false)
 		
 		// await reply
 		let reply = try await receive(ack: false)!
@@ -53,7 +53,7 @@ public class NAOSFSEndpoint {
 		cmd.append(path.data(using: .utf8)!)
 		
 		// send comamnd
-		try await send(data: cmd, ack: false)
+		try await send(cmd: cmd, ack: false)
 		
 		// prepare infos
 		var infos: [NAOSFSInfo] = []
@@ -88,13 +88,13 @@ public class NAOSFSEndpoint {
 		cmd.append(path.data(using: .utf8)!)
 		
 		// send "open" comamnd
-		try await send(data: cmd, ack: true)
+		try await send(cmd: cmd, ack: true)
 		
 		// prepare "read" command
 		cmd = Data([3, 0, 0, 0, 0, 0, 0, 0, 0])
 		
 		// send "read" comamnd
-		try await send(data: cmd, ack: false)
+		try await send(cmd: cmd, ack: false)
 		
 		// prepare data
 		var data = Data()
@@ -128,7 +128,7 @@ public class NAOSFSEndpoint {
 		}
 		
 		// send "close" comamnd
-		try await send(data: Data([5]), ack: true)
+		try await send(cmd: Data([5]), ack: true)
 		
 		return data
 	}
@@ -140,7 +140,7 @@ public class NAOSFSEndpoint {
 		cmd.append(path.data(using: .utf8)!)
 		
 		// send "create" comamnd
-		try await send(data: cmd, ack: true)
+		try await send(cmd: cmd, ack: true)
 		
 		// TODO: Dynamically determine channel MTU?
 		
@@ -161,7 +161,7 @@ public class NAOSFSEndpoint {
 			cmd.append(chunkData)
 			
 			// send "write" command
-			try await send(data: cmd, ack: false)
+			try await send(cmd: cmd, ack: false)
 			
 			// receive ack or "error" replies
 			if acked {
@@ -181,7 +181,7 @@ public class NAOSFSEndpoint {
 		}
 		
 		// send "close" comamnd
-		try await send(data: Data([5]), ack: true)
+		try await send(cmd: Data([5]), ack: true)
 	}
 	
 	/// Rename a file.
@@ -193,7 +193,7 @@ public class NAOSFSEndpoint {
 		cmd.append(to.data(using: .utf8)!)
 		
 		// send comamnd
-		try await send(data: cmd, ack: true)
+		try await send(cmd: cmd, ack: true)
 	}
 	
 	/// Remove a file.
@@ -203,7 +203,7 @@ public class NAOSFSEndpoint {
 		cmd.append(path.data(using: .utf8)!)
 		
 		// send comamnd
-		try await send(data: cmd, ack: true)
+		try await send(cmd: cmd, ack: true)
 	}
 	
 	/// Calculate the SHA256 checksum of a file.
@@ -213,7 +213,7 @@ public class NAOSFSEndpoint {
 		cmd.append(path.data(using: .utf8)!)
 		
 		// send comamnd
-		try await send(data: cmd, ack: false)
+		try await send(cmd: cmd, ack: false)
 		
 		// await reply
 		let reply = try await receive(ack: true)!
@@ -238,24 +238,9 @@ public class NAOSFSEndpoint {
 	// - Helpers
 	
 	internal func receive(ack: Bool) async throws -> Data? {
-		// TODO: Move parts to session?
-		
-		// await message
-		let msg = try await session.receive(timeout: timeout)
-		
-		// handle acks
-		if ack, msg.endpoint == 0xFE, msg.size() == 1, msg.data![0] == 1 {
+		// receive reply
+		guard let data = try await session.receive(endpoint: 0x3, ack: ack, timeout: timeout) else {
 			return nil
-		}
-		
-		// check message
-		if msg.endpoint != 0x03 {
-			throw NAOSError.invalidMessage
-		}
-		
-		// check reply
-		guard let data = msg.data else {
-			throw NAOSError.invalidMessage
 		}
 		
 		// handle errors
@@ -266,28 +251,8 @@ public class NAOSFSEndpoint {
 		return data
 	}
 	
-	internal func send(data: Data, ack: Bool) async throws {
-		// TODO: Move parts to session?
-		
-		// send message
-		try await session.send(msg: NAOSMessage(endpoint: 0x03, data: data))
-		
-		// return if ack is false
-		if !ack {
-			return
-		}
-		
-		// await message
-		let msg = try await session.receive(timeout: timeout)
-		
-		// check message
-		if msg.size() != 1 || msg.endpoint != 0xFE {
-			throw NAOSError.invalidMessage
-		}
-		
-		// check ack
-		if msg.data![0] != 1 {
-			throw NAOSError.expectedAck
-		}
+	internal func send(cmd: Data, ack: Bool) async throws {
+		// send command
+		try await session.send(endpoint: 0x3, data: cmd, ackTimeout: ack ? timeout : 0)
 	}
 }
