@@ -206,7 +206,14 @@ public class NAOSDevice: NSObject {
 					let endpoint = NAOSParamsEndpoint(session: self.paramSession!, timeout: 5)
 
 					// collet parameters
-					let updates = try await endpoint.collect(refs: nil, since: maxAge)
+					var updates: [NAOSParamUpdate] = []
+					do {
+						updates = try await endpoint.collect(refs: nil, since: maxAge)
+					} catch {
+						// TODO: Session will be broken from this point...
+						mutex.signal()
+						continue
+					}
 
 					// update parameters
 					for update in updates {
@@ -224,8 +231,8 @@ public class NAOSDevice: NSObject {
 
 					// call delegate if present
 					if let d = delegate {
-						DispatchQueue.main.async {
-							for update in updates {
+						for update in updates {
+							DispatchQueue.main.async {
 								if let param = (self.availableParameters.first { p in p.ref == update.ref }) {
 									d.naosDeviceDidUpdate(device: self, parameter: param)
 								}
