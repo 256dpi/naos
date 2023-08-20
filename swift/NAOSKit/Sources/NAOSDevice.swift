@@ -27,19 +27,31 @@ internal enum NAOSCharacteristic: String {
 }
 
 /// The available parameter types.
-public enum NAOSType: String {
-	case string = "s"
-	case bool = "b"
-	case long = "l"
-	case double = "d"
-	case action = "a"
+public enum NAOSType: UInt8 {
+	case raw
+	case string
+	case bool
+	case long
+	case double
+	case action
+
+	public static func parse(str: String) -> NAOSType {
+		switch str {
+		case "s": return .string
+		case "b": return .bool
+		case "l": return .long
+		case "d": return .double
+		case "a": return .action
+		default: return .raw
+		}
+	}
 }
 
 /// The available parameter modes.
 public struct NAOSMode: OptionSet {
-	public let rawValue: Int
+	public let rawValue: UInt8
 
-	public init(rawValue: Int) {
+	public init(rawValue: UInt8) {
 		self.rawValue = rawValue
 	}
 
@@ -414,7 +426,7 @@ public class NAOSDevice: NSObject {
 				continue
 			}
 			let name = String(subSegments[0])
-			let type = NAOSType(rawValue: String(subSegments[1])) ?? .string
+			let type = NAOSType.parse(str: String(subSegments[1]))
 			let mode = NAOSMode.parse(str: String(subSegments[2]))
 			availableParameters.append(
 				NAOSParameter(name: name, type: type, mode: mode))

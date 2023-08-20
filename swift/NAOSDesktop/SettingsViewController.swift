@@ -108,10 +108,10 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				guard let sess = try await self.device.session(timeout: 5) else {
 					throw CustomError(title: "Failed to open session!")
 				}
-				
+
 				// ping session
 				try await sess.ping(timeout: 1)
-				
+
 				// check endpoint existence
 				let exists = try await sess.query(endpoint: 0x03, timeout: 1)
 				if !exists {
@@ -183,9 +183,11 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 					value: device.parameters[p] ?? "")
 				v.textField!.isEnabled = !p.mode.contains(.locked)
 
+				// TODO: Use hex formatter for raw values?
+
 				// set appropriate number formatters
 				switch p.type {
-				case .string, .bool, .action:
+				case .raw, .string, .bool, .action:
 					break
 				case .long:
 					let f = NumberFormatter()
@@ -212,6 +214,8 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 					withIdentifier: NSUserInterfaceItemIdentifier("TypeCell"),
 					owner: nil) as! NSTableCellView
 			switch p.type {
+			case .raw:
+				v.textField!.stringValue = "Raw"
 			case .string:
 				v.textField!.stringValue = "String"
 			case .bool:
