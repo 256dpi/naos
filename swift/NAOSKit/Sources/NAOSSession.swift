@@ -115,13 +115,13 @@ public class NAOSSession {
 		}
 	}
 	
-	/// Wait and receive the next message for the specified endpoint with optionally handling acks.
-	public func receive(endpoint: UInt8, ack: Bool, timeout: TimeInterval) async throws -> Data? {
+	/// Wait and receive the next message for the specified endpoint with reply handling.
+	public func receive(endpoint: UInt8, expectAck: Bool, timeout: TimeInterval) async throws -> Data? {
 		// await message
 		let msg = try await read(timeout: timeout)
 		
 		// handle acks
-		if ack, msg.endpoint == 0xFE {
+		if msg.endpoint == 0xFE {
 			// check size
 			if msg.size() != 1 {
 				throw NAOSSessionError.invalidMessage
@@ -129,10 +129,14 @@ public class NAOSSession {
 			
 			// check if OK
 			if msg.data![0] == 1 {
-				return nil
+				if expectAck {
+					return nil
+				} else {
+					throw NAOSSessionError.unexpectedAck
+				}
 			}
 			
-			throw NAOSSessionError.expectedAck
+			throw NAOSSessionError.parse(value: msg.data![0])
 		}
 		
 		// check endpoint

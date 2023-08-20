@@ -32,7 +32,7 @@ public class NAOSFSEndpoint {
 		try await send(cmd: cmd, ack: false)
 		
 		// await reply
-		let reply = try await receive(ack: false)!
+		let reply = try await receive(expectAck: false)!
 		
 		// verify "info" reply
 		if reply.count != 6 || reply[0] != 1 {
@@ -60,8 +60,8 @@ public class NAOSFSEndpoint {
 		
 		while true {
 			// await reply
-			guard let reply = try await receive(ack: true) else {
-				break
+			guard let reply = try await receive(expectAck: true) else {
+				return infos
 			}
 			
 			// verify "info" reply
@@ -77,8 +77,6 @@ public class NAOSFSEndpoint {
 			// add info
 			infos.append(NAOSFSInfo(name: name, isDir: isDir, size: size))
 		}
-		
-		return infos
 	}
 	
 	/// Read a full file.
@@ -101,7 +99,7 @@ public class NAOSFSEndpoint {
 		
 		while true {
 			// await reply
-			guard let reply = try await receive(ack: true) else {
+			guard let reply = try await receive(expectAck: true) else {
 				break
 			}
 			
@@ -165,7 +163,7 @@ public class NAOSFSEndpoint {
 			
 			// receive ack or "error" replies
 			if acked {
-				let _ = try await receive(ack: true)
+				let _ = try await receive(expectAck: true)
 			}
 			
 			// increment offset
@@ -216,7 +214,7 @@ public class NAOSFSEndpoint {
 		try await send(cmd: cmd, ack: false)
 		
 		// await reply
-		let reply = try await receive(ack: true)!
+		let reply = try await receive(expectAck: false)!
 		
 		// verify "chunk" reply
 		if reply.count != 33 || reply[0] != 3 {
@@ -237,9 +235,9 @@ public class NAOSFSEndpoint {
 	
 	// - Helpers
 	
-	internal func receive(ack: Bool) async throws -> Data? {
+	internal func receive(expectAck: Bool) async throws -> Data? {
 		// receive reply
-		guard let data = try await session.receive(endpoint: 0x3, ack: ack, timeout: timeout) else {
+		guard let data = try await session.receive(endpoint: 0x3, expectAck: expectAck, timeout: timeout) else {
 			return nil
 		}
 		
