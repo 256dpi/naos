@@ -1,11 +1,11 @@
 #include <naos/sys.h>
-#include <naos/msg.h>
 
 #include <esp_ota_ops.h>
 #include <string.h>
 
 #include "system.h"
 #include "naos.h"
+#include "msg.h"
 #include "net.h"
 #include "params.h"
 #include "update.h"

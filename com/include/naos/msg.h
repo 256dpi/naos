@@ -83,11 +83,6 @@ typedef struct {
 } naos_msg_endpoint_t;
 
 /**
- * Initializes the message subsystem.
- */
-void naos_msg_init();
-
-/**
  * Registers a channel.
  *
  * @param channel The channel.
