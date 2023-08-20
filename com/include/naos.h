@@ -58,6 +58,7 @@ typedef enum {
   NAOS_VOLATILE = (1 << 0),    /** Stored in memory */
   NAOS_SYSTEM = (1 << 1),      /** Only informative */
   NAOS_APPLICATION = (1 << 2), /** Only informative */
+  // 1 << 3 has been removed
   NAOS_LOCKED = (1 << 4)       /** Cannot be changed */
 } naos_mode_t;
 
