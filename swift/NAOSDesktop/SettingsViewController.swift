@@ -109,12 +109,10 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 					throw CustomError(title: "Failed to open session!")
 				}
 
-				// ping session
-				try await sess.ping(timeout: 1)
-
 				// check endpoint existence
 				let exists = try await sess.query(endpoint: 0x3, timeout: 1)
 				if !exists {
+					try await sess.end(timeout: 5)
 					throw CustomError(title: "Missing FS Endpoint.")
 				}
 
