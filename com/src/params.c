@@ -1,3 +1,4 @@
+#include <naos/msg.h>
 #include <naos/sys.h>
 
 #include <stdlib.h>
@@ -8,7 +9,17 @@
 #include "params.h"
 #include "utils.h"
 
+#define NAOS_PARAMS_ENDPOINT 0x01
 #define NAOS_PARAMS_MAX_HANDLERS 8
+
+typedef enum {
+  NAOS_PARAMS_CMD_GET,
+  NAOS_PARAMS_CMD_SET,
+  NAOS_PARAMS_CMD_LIST,
+  NAOS_PARAMS_CMD_READ,
+  NAOS_PARAMS_CMD_WRITE,
+  NAOS_PARAMS_CMD_COLLECT,
+} naos_params_cmd_t;
 
 static nvs_handle naos_params_handle;
 static naos_mutex_t naos_params_mutex;
@@ -110,6 +121,248 @@ static void naos_params_update(naos_param_t *param) {
   }
 }
 
+static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
+  // check length
+  if (msg.len == 0) {
+    return NAOS_MSG_INVALID;
+  }
+
+  // get command
+  naos_params_cmd_t cmd = (naos_params_cmd_t)msg.data[0];
+
+  // adjust message
+  msg.data++;
+  msg.len--;
+
+  // handle command
+  switch (cmd) {
+    case NAOS_PARAMS_CMD_GET: {
+      // command structure:
+      // NAME (*)
+
+      // check length
+      if (msg.len == 0) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // get parameter
+      naos_param_t *param = naos_lookup((const char *)msg.data);
+      if (param == NULL) {
+        return NAOS_MSG_ERROR;
+      }
+
+      // check type
+      if (param->type == NAOS_ACTION) {
+        return NAOS_MSG_ERROR;
+      }
+
+      // get value
+      naos_value_t value = naos_get(param->name);
+
+      // send reply
+      naos_msg_send((naos_msg_t){
+          .session = msg.session,
+          .endpoint = NAOS_PARAMS_ENDPOINT,
+          .data = value.buf,
+          .len = value.len,
+      });
+
+      return NAOS_MSG_OK;
+    }
+
+    case NAOS_PARAMS_CMD_SET: {
+      // command structure:
+      // NAME (*) | 0 | VALUE (*)
+
+      // check length
+      if (msg.len < 3) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // get name
+      const char *name = (const char *)msg.data;
+
+      // verify name
+      if (strlen(name) == 0 || strlen(name) + 2 > msg.len) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // get parameter
+      naos_param_t *param = naos_lookup(name);
+      if (param == NULL) {
+        return NAOS_MSG_ERROR;
+      }
+
+      // check type
+      if (param->type == NAOS_ACTION) {
+        return NAOS_MSG_ERROR;
+      }
+
+      // set value
+      naos_set(param->name, msg.data + strlen(name) + 1, msg.len - strlen(name) - 1);
+
+      return NAOS_MSG_ACK;
+    }
+
+    case NAOS_PARAMS_CMD_LIST: {
+      // check length
+      if (msg.len != 0) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // reply structure
+      // REF (1) | TYPE (1) | MODE (1) | NAME (*)
+
+      // iterate parameters
+      uint8_t data[256] = {0};
+      for (int i = 0; i < naos_params_count; i++) {
+        // get param
+        naos_param_t *param = naos_params[i];
+
+        // prepare data
+        data[0] = i;
+        data[1] = (uint8_t)param->type;
+        data[2] = (uint8_t)param->mode;
+        strcpy((char *)data + 3, param->name);
+
+        // prepare reply
+        naos_msg_t reply = {
+            .session = msg.session,
+            .endpoint = NAOS_PARAMS_ENDPOINT,
+            .data = data,
+            .len = 3 + strlen(param->name),
+        };
+
+        // send reply
+        naos_msg_send(reply);
+      }
+
+      return NAOS_MSG_ACK;
+    }
+
+    case NAOS_PARAMS_CMD_READ: {
+      // command structure:
+      // REF (1)
+
+      // check length
+      if (msg.len != 1) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // check ref
+      if (msg.data[0] >= naos_params_count) {
+        return NAOS_MSG_ERROR;
+      }
+
+      // get parameter
+      naos_param_t *param = naos_params[msg.data[0]];
+
+      // check type
+      if (param->type == NAOS_ACTION) {
+        return NAOS_MSG_ERROR;
+      }
+
+      // get value
+      naos_value_t value = naos_get(param->name);
+
+      // send reply
+      naos_msg_send((naos_msg_t){
+          .session = msg.session,
+          .endpoint = NAOS_PARAMS_ENDPOINT,
+          .data = value.buf,
+          .len = value.len,
+      });
+
+      return NAOS_MSG_OK;
+    }
+
+    case NAOS_PARAMS_CMD_WRITE: {
+      // command structure:
+      // REF (1) | VALUE (*)
+
+      // check length
+      if (msg.len == 0) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // verify ref
+      if (msg.data[0] >= naos_params_count) {
+        return NAOS_MSG_ERROR;
+      }
+
+      // get parameter
+      naos_param_t *param = naos_params[msg.data[0]];
+
+      // check type
+      if (param->type == NAOS_ACTION) {
+        return NAOS_MSG_ERROR;
+      }
+
+      // set value
+      naos_set(param->name, msg.data + 1, msg.len - 1);
+
+      return NAOS_MSG_ACK;
+    }
+
+    case NAOS_PARAMS_CMD_COLLECT: {
+      // command structure:
+      // MAP (8) | SINCE (8)
+
+      // check length
+      if (msg.len != 16) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // get map
+      uint64_t map = 0;
+      memcpy(&map, msg.data, sizeof(uint64_t));
+
+      // get since
+      uint64_t since = 0;
+      memcpy(&since, msg.data + 8, sizeof(uint64_t));
+
+      // yield requested parameter values
+      for (int i = 0; i < naos_params_count; i++) {
+        // get param
+        naos_param_t *param = naos_params[i];
+
+        // skip action, unchanged, or not requested
+        if (param->type == NAOS_ACTION || param->age < since || (map & (1 << i)) == 0) {
+          continue;
+        }
+
+        // reply structure
+        // REF (1) | AGE (8) | VALUE (*)
+
+        // prepare data
+        uint8_t *data = malloc(9 + param->current.len);
+        data[0] = i;
+        memcpy(data + 1, &param->age, sizeof(uint64_t));
+        memcpy(data + 9, param->current.buf, param->current.len);
+
+        // prepare reply
+        naos_msg_t reply = {
+            .session = msg.session,
+            .endpoint = NAOS_PARAMS_ENDPOINT,
+            .data = data,
+            .len = 9 + param->current.len,
+        };
+
+        // send reply
+        naos_msg_send(reply);
+
+        // free data
+        free(data);
+      }
+
+      return NAOS_MSG_ACK;
+    }
+
+    default:
+      return NAOS_MSG_UNKNOWN;
+  }
+}
+
 void naos_params_init() {
   // create mutex
   naos_params_mutex = naos_mutex();
@@ -119,6 +372,13 @@ void naos_params_init() {
 
   // open nvs namespace
   ESP_ERROR_CHECK(nvs_open("naos", NVS_READWRITE, &naos_params_handle));
+
+  // register endpoint
+  naos_msg_install((naos_msg_endpoint_t){
+      .ref = NAOS_PARAMS_ENDPOINT,
+      .name = "params",
+      .handle = naos_params_process,
+  });
 }
 
 void naos_register(naos_param_t *param) {
