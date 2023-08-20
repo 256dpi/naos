@@ -66,7 +66,7 @@ static naos_msg_reply_t naos_fs_send_error(uint16_t session, int error) {
   uint8_t data[] = {NAOS_FS_REPLY_ERROR, error};
 
   // send error
-  naos_msg_endpoint_send((naos_msg_t){
+  naos_msg_send((naos_msg_t){
       .session = session,
       .endpoint = NAOS_FS_ENDPOINT,
       .data = data,
@@ -104,7 +104,7 @@ static naos_msg_reply_t naos_fs_handle_stat(naos_msg_t msg) {
   memcpy(&data[2], &size, sizeof(size));
 
   // send reply
-  naos_msg_endpoint_send((naos_msg_t){
+  naos_msg_send((naos_msg_t){
       .session = msg.session,
       .endpoint = NAOS_FS_ENDPOINT,
       .data = data,
@@ -169,7 +169,7 @@ static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {
     memcpy(&data[6], entry->d_name, strlen(entry->d_name));
 
     // send reply
-    naos_msg_endpoint_send((naos_msg_t){
+    naos_msg_send((naos_msg_t){
         .session = msg.session,
         .endpoint = NAOS_FS_ENDPOINT,
         .data = data,
@@ -295,7 +295,7 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
   }
 
   // determine max chunk size
-  size_t max_chunk_size = naos_msg_session_mtu(msg.session) - 16;
+  size_t max_chunk_size = naos_msg_get_mtu(msg.session) - 16;
 
   // reply structure:
   // TYPE (1) | OFFSET (4) | DATA (*)
@@ -322,7 +322,7 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
     }
 
     // send reply
-    naos_msg_endpoint_send((naos_msg_t){
+    naos_msg_send((naos_msg_t){
         .session = msg.session,
         .endpoint = NAOS_FS_ENDPOINT,
         .data = data,
@@ -562,7 +562,7 @@ static naos_msg_reply_t naos_fs_handle_sha256(naos_msg_t msg) {
   mbedtls_sha256_free(&ctx);
 
   // send reply
-  naos_msg_endpoint_send((naos_msg_t){
+  naos_msg_send((naos_msg_t){
       .session = msg.session,
       .endpoint = NAOS_FS_ENDPOINT,
       .data = reply,
@@ -665,8 +665,8 @@ void naos_fs_install() {
   // create mutex
   naos_fs_mutex = naos_mutex();
 
-  // register endpoint
-  naos_msg_endpoint_register((naos_msg_endpoint_t){
+  // install endpoint
+  naos_msg_install((naos_msg_endpoint_t){
       .ref = NAOS_FS_ENDPOINT,
       .name = "fs",
       .handle = naos_fs_handle,

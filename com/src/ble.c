@@ -464,7 +464,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
           }
         } else if (c == &naos_ble_char_msg) {
           if (!conn->locked && p->write.len > 0) {
-            bool ok = naos_msg_channel_dispatch(naos_ble_msg_channel_id, p->write.value, p->write.len, conn);
+            bool ok = naos_msg_dispatch(naos_ble_msg_channel_id, p->write.value, p->write.len, conn);
             if (!ok) {
               status = ESP_GATT_UNKNOWN_ERROR;
             }
@@ -623,7 +623,7 @@ void naos_ble_init(naos_ble_config_t cfg) {
   naos_params_subscribe(naos_ble_param_handler);
 
   // register channel
-  naos_ble_msg_channel_id = naos_msg_channel_register((naos_msg_channel_t){
+  naos_ble_msg_channel_id = naos_msg_register((naos_msg_channel_t){
       .name = "ble",
       .mtu = 512,
       .send = naos_ble_msg_send,

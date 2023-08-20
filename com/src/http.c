@@ -196,7 +196,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   // handle message
   if (strncmp((char *)req.payload, "msg", 3) == 0) {
     // dispatch message
-    naos_msg_channel_dispatch(naos_http_channel, req.payload + 4, req.len - 4, ctx);
+    naos_msg_dispatch(naos_http_channel, req.payload + 4, req.len - 4, ctx);
   }
 
   // free request payload
@@ -388,7 +388,7 @@ void naos_http_init(int core) {
   naos_params_subscribe(naos_http_param_handler);
 
   // register channel
-  naos_http_channel = naos_msg_channel_register((naos_msg_channel_t){
+  naos_http_channel = naos_msg_register((naos_msg_channel_t){
       .name = "http",
       .mtu = 4096,
       .send = naos_http_msg_send,

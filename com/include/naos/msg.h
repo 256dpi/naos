@@ -88,14 +88,14 @@ typedef struct {
  * @param channel The channel.
  * @return The channel ID.
  */
-uint8_t naos_msg_channel_register(naos_msg_channel_t channel);
+uint8_t naos_msg_register(naos_msg_channel_t channel);
 
 /**
- * Registers an endpoint.
+ * Installs an endpoint.
  *
  * @param endpoint The endpoint.
  */
-void naos_msg_endpoint_register(naos_msg_endpoint_t endpoint);
+void naos_msg_install(naos_msg_endpoint_t endpoint);
 
 /**
  * Called by channels to dispatch a message.
@@ -106,7 +106,7 @@ void naos_msg_endpoint_register(naos_msg_endpoint_t endpoint);
  * @param ctx The channel context.
  * @return True if the message was dispatched successfully.
  */
-bool naos_msg_channel_dispatch(uint8_t channel, uint8_t *data, size_t len, void *ctx);
+bool naos_msg_dispatch(uint8_t channel, uint8_t *data, size_t len, void *ctx);
 
 /**
  * Called by endpoints to the send a message.
@@ -114,7 +114,7 @@ bool naos_msg_channel_dispatch(uint8_t channel, uint8_t *data, size_t len, void 
  * @param msg The message.
  * @return True if the message was sent successfully.
  */
-bool naos_msg_endpoint_send(naos_msg_t msg);
+bool naos_msg_send(naos_msg_t msg);
 
 /**
  * Called by endpoints to determine a sessions channel MTU.
@@ -122,4 +122,4 @@ bool naos_msg_endpoint_send(naos_msg_t msg);
  * @param id The session ID.
  * @return The channel MTU in bytes.
  */
-size_t naos_msg_session_mtu(uint16_t id);
+size_t naos_msg_get_mtu(uint16_t id);

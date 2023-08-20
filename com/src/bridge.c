@@ -25,7 +25,7 @@ static void naos_bridge_handler(naos_scope_t scope, const char *topic, const uin
   }
 
   // dispatch message
-  naos_msg_channel_dispatch(naos_bridge_channel, (uint8_t *)payload, len, NULL);
+  naos_msg_dispatch(naos_bridge_channel, (uint8_t *)payload, len, NULL);
 }
 
 static bool naos_bridge_send(const uint8_t *data, size_t len, void *ctx) {
@@ -43,7 +43,7 @@ void naos_bridge_install() {
   naos_com_subscribe(naos_bridge_handler);
 
   // register channel
-  naos_bridge_channel = naos_msg_channel_register((naos_msg_channel_t){
+  naos_bridge_channel = naos_msg_register((naos_msg_channel_t){
       .name = "bridge",
       .mtu = 4096,
       .send = naos_bridge_send,
