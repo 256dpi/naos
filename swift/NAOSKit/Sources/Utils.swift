@@ -53,6 +53,19 @@ func readUint32(data: Data) -> UInt32 {
 	return UInt32(data[0]) | (UInt32(data[1]) << 8) | (UInt32(data[2]) << 16) | (UInt32(data[3]) << 24)
 }
 
+func readUint64(data: Data) -> UInt64 {
+	let byte0 = UInt64(data[0])
+	let byte1 = UInt64(data[1]) << 8
+	let byte2 = UInt64(data[2]) << 16
+	let byte3 = UInt64(data[3]) << 24
+	let byte4 = UInt64(data[4]) << 32
+	let byte5 = UInt64(data[5]) << 40
+	let byte6 = UInt64(data[6]) << 48
+	let byte7 = UInt64(data[7]) << 56
+	
+	return byte0 | byte1 | byte2 | byte3 | byte4 | byte5 | byte6 | byte7
+}
+
 func writeUint16(value: UInt16) -> Data {
 	return Data([
 		UInt8(value & 0xFF),
@@ -66,6 +79,19 @@ func writeUint32(value: UInt32) -> Data {
 		UInt8((value >> 8) & 0xFF),
 		UInt8((value >> 16) & 0xFF),
 		UInt8((value >> 24) & 0xFF)
+	])
+}
+
+func writeUint64(value: UInt64) -> Data {
+	return Data([
+		UInt8(value & 0xFF),
+		UInt8((value >> 8) & 0xFF),
+		UInt8((value >> 16) & 0xFF),
+		UInt8((value >> 24) & 0xFF),
+		UInt8((value >> 32) & 0xFF),
+		UInt8((value >> 40) & 0xFF),
+		UInt8((value >> 48) & 0xFF),
+		UInt8((value >> 56) & 0xFF)
 	])
 }
 
