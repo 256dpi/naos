@@ -173,7 +173,7 @@ public class NAOSSession {
 		}
 		
 		// forward message
-		try await device.write(char: .msg, data: data, confirm: false)
+		try await device.send(data: data)
 	}
 		
 	/// Send a message with optionally waiting for an acknowledgement.
@@ -224,6 +224,8 @@ public class NAOSSession {
 		// unset device
 		self.device = nil
 	}
+	
+	// NAOSDevice
 	
 	internal func dispatch(msg: NAOSMessage) {
 		// send to channel

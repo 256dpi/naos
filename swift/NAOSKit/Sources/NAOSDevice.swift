@@ -655,6 +655,17 @@ public class NAOSDevice: NSObject {
 		}
 	}
 
+	// NAOSSession
+
+	internal func send(data: Data) async throws {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+
+		// send message
+		try await write(char: .msg, data: data, confirm: false)
+	}
+
 	// Helpers
 
 	internal func read(char: NAOSCharacteristic) async throws -> String {
