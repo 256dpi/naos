@@ -141,20 +141,20 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   }
 
   // handle list
-  if (strcmp((char *)req.payload, "list") == 0) {
-    char *list = naos_params_list(ctx->locked ? NAOS_PUBLIC : 0);
+  if (!ctx->locked && strcmp((char *)req.payload, "list") == 0) {
+    char *list = naos_params_list(0);
     res.payload = (uint8_t *)naos_concat("list#", list);
     free(list);
   }
 
   // handle read
-  if (strncmp((char *)req.payload, "read", 4) == 0) {
+  if (!ctx->locked && strncmp((char *)req.payload, "read", 4) == 0) {
     // get name
     const char *name = (char *)req.payload + 5;
 
     // lookup param
     naos_param_t *param = naos_lookup(name);
-    if (param == NULL || (ctx->locked && !(param->mode & NAOS_PUBLIC))) {
+    if (param == NULL) {
       free(req.payload);
       return ESP_FAIL;
     }
@@ -166,7 +166,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   }
 
   // handle write
-  if (strncmp((char *)req.payload, "write", 5) == 0 && strchr((char *)req.payload, '#') != NULL) {
+  if (!ctx->locked && strncmp((char *)req.payload, "write", 5) == 0 && strchr((char *)req.payload, '#') != NULL) {
     // get name
     const char *name = (char *)req.payload + 6;
 
@@ -179,7 +179,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
 
     // lookup param
     naos_param_t *param = naos_lookup(name);
-    if (param == NULL || (ctx->locked && !(param->mode & NAOS_PUBLIC))) {
+    if (param == NULL) {
       free(req.payload);
       return ESP_FAIL;
     }
@@ -194,7 +194,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   }
 
   // handle message
-  if (strncmp((char *)req.payload, "msg", 3) == 0) {
+  if (!ctx->locked && strncmp((char *)req.payload, "msg", 3) == 0) {
     // dispatch message
     naos_msg_dispatch(naos_http_channel, req.payload + 4, req.len - 4, ctx);
   }

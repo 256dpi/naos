@@ -333,15 +333,17 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
         if (c == &naos_ble_char_lock) {
           strcpy((char *)rsp.attr_value.value, conn->locked ? "locked" : "unlocked");
         } else if (c == &naos_ble_char_list) {
-          char *list = naos_params_list(conn->mode | (conn->locked ? NAOS_PUBLIC : 0));
-          strcpy((char *)rsp.attr_value.value, list);
-          free(list);
+          if (!conn->locked) {
+            char *list = naos_params_list(conn->mode);
+            strcpy((char *)rsp.attr_value.value, list);
+            free(list);
+          }
         } else if (c == &naos_ble_char_select) {
-          if (conn->param != NULL) {
+          if (!conn->locked && conn->param != NULL) {
             strcpy((char *)rsp.attr_value.value, conn->param->name);
           }
         } else if (c == &naos_ble_char_value) {
-          if (conn->param != NULL) {
+          if (!conn->locked && conn->param != NULL) {
             memcpy(rsp.attr_value.value, conn->param->current.buf, conn->param->current.len);
             rsp.attr_value.len = conn->param->current.len;
           }
@@ -422,22 +424,26 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
             conn->locked = false;
           }
         } else if (c == &naos_ble_char_list) {
-          if (naos_equal(p->write.value, p->write.len, "system")) {
-            conn->mode = NAOS_SYSTEM;
-          } else if (naos_equal(p->write.value, p->write.len, "application")) {
-            conn->mode = NAOS_APPLICATION;
-          } else {
-            conn->mode = 0;
+          if (!conn->locked) {
+            if (naos_equal(p->write.value, p->write.len, "system")) {
+              conn->mode = NAOS_SYSTEM;
+            } else if (naos_equal(p->write.value, p->write.len, "application")) {
+              conn->mode = NAOS_APPLICATION;
+            } else {
+              conn->mode = 0;
+            }
           }
         } else if (c == &naos_ble_char_select) {
-          char *value = (char *)naos_copy(p->write.value, p->write.len);
-          naos_param_t *param = naos_lookup(value);
-          free(value);
-          if (param != NULL && (!conn->locked || (param->mode & NAOS_PUBLIC) != 0)) {
-            conn->param = param;
+          if (!conn->locked) {
+            char *value = (char *)naos_copy(p->write.value, p->write.len);
+            naos_param_t *param = naos_lookup(value);
+            free(value);
+            if (param != NULL) {
+              conn->param = param;
+            }
           }
         } else if (c == &naos_ble_char_value) {
-          if (conn->param != NULL && (conn->param->mode & NAOS_LOCKED) == 0) {
+          if (!conn->locked && conn->param != NULL && (conn->param->mode & NAOS_LOCKED) == 0) {
             naos_set(conn->param->name, p->write.value, p->write.len);
           }
         } else if (c == &naos_ble_char_flash) {

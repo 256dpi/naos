@@ -131,7 +131,6 @@
         naos.debug = true;
 
         naos.onConnect = async () => {
-            await refresh();
             while(await naos.locked()) {
                 await naos.unlock(prompt('Password'));
             }
