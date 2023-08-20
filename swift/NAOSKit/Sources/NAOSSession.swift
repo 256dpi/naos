@@ -24,6 +24,15 @@ public enum NAOSSessionError: LocalizedError {
 	case invalidMessage
 	case unknownMessage
 	case failedMessage
+	
+	public static func parse(value: UInt8) -> NAOSSessionError {
+		switch value {
+		case 2: return .invalidMessage
+		case 3: return .unknownMessage
+		case 4: return .failedMessage
+		default: return .expectedAck
+		}
+	}
 
 	public var errorDescription: String? {
 		switch self {
@@ -75,7 +84,7 @@ public class NAOSSession {
 		if msg.endpoint != 0xFE || msg.size() != 1 {
 			throw NAOSSessionError.invalidMessage
 		} else if msg.data![0] != 1 {
-			throw NAOSSessionError.expectedAck
+			throw NAOSSessionError.parse(value: msg.data![0])
 		}
 	}
 	
@@ -112,7 +121,7 @@ public class NAOSSession {
 		let msg = try await read(timeout: timeout)
 		
 		// handle acks
-		if ack && msg.endpoint == 0xFE {
+		if ack, msg.endpoint == 0xFE {
 			// check size
 			if msg.size() != 1 {
 				throw NAOSSessionError.invalidMessage
@@ -166,7 +175,7 @@ public class NAOSSession {
 	/// Send a message with optionally waiting for an acknowledgement.
 	public func send(endpoint: UInt8, data: Data, ackTimeout: TimeInterval) async throws {
 		// write message
-		try await write(msg: NAOSMessage(endpoint: endpoint, data: data))
+		try await self.write(msg: NAOSMessage(endpoint: endpoint, data: data))
 		
 		// return if timeout is zero
 		if ackTimeout == 0 {
@@ -180,7 +189,7 @@ public class NAOSSession {
 		if msg.size() != 1 || msg.endpoint != 0xFE {
 			throw NAOSSessionError.invalidMessage
 		} else if msg.data![0] != 1 {
-			throw NAOSSessionError.expectedAck
+			throw NAOSSessionError.parse(value: msg.data![0])
 		}
 	}
 	
