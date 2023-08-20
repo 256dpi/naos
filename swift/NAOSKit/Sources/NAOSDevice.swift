@@ -571,7 +571,9 @@ public class NAOSDevice: NSObject {
 
 	/// Session will create a new session and return it.
 	public func session(timeout: TimeInterval) async throws -> NAOSSession? {
-		// TODO: Lock mutex (arrange with async updates).
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
 
 		// check characteristic
 		if towRawCharacteristic(char: .msg) == nil {
@@ -585,25 +587,44 @@ public class NAOSDevice: NSObject {
 		var msg = Data([1, 0, 0, 0])
 		msg.append(handle.data(using: .utf8)!)
 
+		// prepare future
+		let future: Future<UInt16, Error> = Future { promise in
+			Task {
+				do {
+					let sid = try await withTimeout(seconds: timeout) {
+						await withCheckedContinuation { (continuation: CheckedContinuation<UInt16, Never>) in
+							// store continuation
+							self.begins[handle] = continuation
+						}
+					}
+					promise(Result.success(sid))
+				} catch {
+					promise(Result.failure(error))
+				}
+
+				// clear continuation
+				self.begins[handle] = nil
+			}
+		}
+
 		// send "begin" command
 		try await write(char: .msg, data: msg, confirm: false)
 
 		// await response
-		let sid = try await withTimeout(seconds: timeout) {
-			await withCheckedContinuation { (continuation: CheckedContinuation<UInt16, Never>) in
-				// store continuation
-				self.begins[handle] = continuation
-			}
+		mutex.signal()
+		let sid = try? await future.value
+		await mutex.wait()
+
+		// handle missing session
+		if sid == nil {
+			return nil
 		}
 
-		// clear continuation
-		begins[handle] = nil
-
 		// create session
-		let session = NAOSSession(device: self, id: sid)
+		let session = NAOSSession(device: self, id: sid!)
 
 		// store session
-		sessions[sid] = session
+		sessions[sid!] = session
 
 		return session
 	}
