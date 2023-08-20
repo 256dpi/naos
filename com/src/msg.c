@@ -58,7 +58,7 @@ static void naos_msg_worker() {
     // handle message
     naos_msg_reply_t reply = endpoint->handle(msg);
 
-    // send error
+    // send non-ok replies
     if (reply != NAOS_MSG_OK) {
       naos_msg_send((naos_msg_t){
           .session = msg.session,
@@ -194,7 +194,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     // check sid
     if (sid != 0) {
       NAOS_UNLOCK(naos_msg_mutex);
-      ESP_LOGE("MSG", "naos_msg_dispatch: invalid session ID");
+      ESP_LOGE("MSG", "naos_msg_dispatch: unexpected session ID");
       return false;
     }
 
@@ -264,7 +264,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
   // verify session
   if (!session->active || session->channel != channel) {
     NAOS_UNLOCK(naos_msg_mutex);
-    ESP_LOGE("MSG", "naos_msg_dispatch: session state invalid");
+    ESP_LOGE("MSG", "naos_msg_dispatch: session state mismatch");
     return false;
   }
 
@@ -339,7 +339,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     NAOS_UNLOCK(naos_msg_mutex);
 
     // prepare reply
-    uint8_t reply[] = {1, 0, 0, 0xFE, found ? NAOS_MSG_ACK : NAOS_MSG_INVALID};
+    uint8_t reply[] = {1, 0, 0, 0xFE, found ? NAOS_MSG_ACK : NAOS_MSG_UNKNOWN};
     memcpy(reply + 1, &session->id, 2);
 
 #if NAOS_MSG_DEBUG

@@ -23,13 +23,13 @@ public enum NAOSSessionError: LocalizedError {
 	case unexpectedAck
 	case invalidMessage
 	case unknownMessage
-	case failedMessage
+	case endpointError
 	
 	public static func parse(value: UInt8) -> NAOSSessionError {
 		switch value {
 		case 2: return .invalidMessage
 		case 3: return .unknownMessage
-		case 4: return .failedMessage
+		case 4: return .endpointError
 		default: return .expectedAck
 		}
 	}
@@ -47,9 +47,9 @@ public enum NAOSSessionError: LocalizedError {
 		case .invalidMessage:
 			return "Message was invalid."
 		case .unknownMessage:
-			return "Unknown message."
-		case .failedMessage:
-			return "Message failed."
+			return "Message was unknown."
+		case .endpointError:
+			return "Endpoint errored."
 		}
 	}
 }
