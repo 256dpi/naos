@@ -148,10 +148,6 @@ public struct NAOSParameter: Hashable {
 public enum NAOSError: LocalizedError {
 	case serviceNotFound
 	case characteristicNotFound
-	case sessionTimeout
-	case invalidMessage
-	case sessionClosed
-	case expectedAck
 
 	public var errorDescription: String? {
 		switch self {
@@ -159,14 +155,6 @@ public enum NAOSError: LocalizedError {
 			return "Device service not found."
 		case .characteristicNotFound:
 			return "Device characteristic not found."
-		case .sessionTimeout:
-			return "Session timed out."
-		case .invalidMessage:
-			return "Message was invalid."
-		case .sessionClosed:
-			return "Session has been closed."
-		case .expectedAck:
-			return "Expected acknowledgemnt."
 		}
 	}
 }

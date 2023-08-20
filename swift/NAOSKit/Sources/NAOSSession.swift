@@ -5,13 +5,43 @@
 
 import Foundation
 
-/// A message.
+/// A session message.
 public struct NAOSMessage {
 	public var endpoint: UInt8
 	public var data: Data?
 	
 	public func size() -> Int {
 		return self.data?.count ?? 0
+	}
+}
+
+/// An session specific error..
+public enum NAOSSessionError: LocalizedError {
+	case timeout
+	case closed
+	case expectedAck
+	case unexpectedAck
+	case invalidMessage
+	case unknownMessage
+	case failedMessage
+
+	public var errorDescription: String? {
+		switch self {
+		case .timeout:
+			return "Session timed out."
+		case .closed:
+			return "Session has been closed."
+		case .expectedAck:
+			return "Expected acknowledgemnt."
+		case .unexpectedAck:
+			return "Unexpected acknowledgement."
+		case .invalidMessage:
+			return "Message was invalid."
+		case .unknownMessage:
+			return "Unknown message."
+		case .failedMessage:
+			return "Message failed."
+		}
 	}
 }
 
@@ -43,9 +73,9 @@ public class NAOSSession {
 		
 		// verify reply
 		if msg.endpoint != 0xFE || msg.size() != 1 {
-			throw NAOSError.invalidMessage
+			throw NAOSSessionError.invalidMessage
 		} else if msg.data![0] != 1 {
-			throw NAOSError.expectedAck
+			throw NAOSSessionError.expectedAck
 		}
 	}
 	
@@ -59,7 +89,7 @@ public class NAOSSession {
 		
 		// verify message
 		if msg.endpoint != 0xFE || msg.size() != 1 {
-			throw NAOSError.invalidMessage
+			throw NAOSSessionError.invalidMessage
 		}
 		
 		return msg.data![0] == 1
@@ -72,7 +102,7 @@ public class NAOSSession {
 			for await msg in self.stream! {
 				return msg
 			}
-			throw NAOSError.sessionClosed
+			throw NAOSSessionError.closed
 		}
 	}
 	
@@ -85,7 +115,7 @@ public class NAOSSession {
 		if ack && msg.endpoint == 0xFE {
 			// check size
 			if msg.size() != 1 {
-				throw NAOSError.invalidMessage
+				throw NAOSSessionError.invalidMessage
 			}
 			
 			// check if OK
@@ -93,12 +123,12 @@ public class NAOSSession {
 				return nil
 			}
 			
-			throw NAOSError.expectedAck
+			throw NAOSSessionError.expectedAck
 		}
 		
 		// check endpoint
 		if msg.endpoint != endpoint {
-			throw NAOSError.invalidMessage
+			throw NAOSSessionError.invalidMessage
 		}
 		
 		return msg.data
@@ -108,7 +138,7 @@ public class NAOSSession {
 	public func write(msg: NAOSMessage) async throws {
 		// get device
 		guard let device = self.device else {
-			throw NAOSError.sessionClosed
+			throw NAOSSessionError.closed
 		}
 		
 		// frame message
@@ -148,9 +178,9 @@ public class NAOSSession {
 		
 		// check reply
 		if msg.size() != 1 || msg.endpoint != 0xFE {
-			throw NAOSError.invalidMessage
+			throw NAOSSessionError.invalidMessage
 		} else if msg.data![0] != 1 {
-			throw NAOSError.expectedAck
+			throw NAOSSessionError.expectedAck
 		}
 	}
 	
@@ -158,7 +188,7 @@ public class NAOSSession {
 	public func end(timeout: TimeInterval) async throws {
 		// get device
 		guard let device = self.device else {
-			throw NAOSError.sessionClosed
+			throw NAOSSessionError.closed
 		}
 		
 		// wite command
@@ -169,7 +199,7 @@ public class NAOSSession {
 		
 		// verify reply
 		if msg.endpoint != 0xFF || msg.size() > 0 {
-			throw NAOSError.invalidMessage
+			throw NAOSSessionError.invalidMessage
 		}
 		
 		// close channel

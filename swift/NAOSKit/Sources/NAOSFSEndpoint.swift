@@ -36,7 +36,7 @@ public class NAOSFSEndpoint {
 		
 		// verify "info" reply
 		if reply.count != 6 || reply[0] != 1 {
-			throw NAOSError.invalidMessage
+			throw NAOSSessionError.invalidMessage
 		}
 		
 		// parse "info" reply
@@ -66,7 +66,7 @@ public class NAOSFSEndpoint {
 			
 			// verify "info" reply
 			if reply.count < 7 || reply[0] != 1 {
-				throw NAOSError.invalidMessage
+				throw NAOSSessionError.invalidMessage
 			}
 			
 			// parse "info" reply
@@ -107,7 +107,7 @@ public class NAOSFSEndpoint {
 			
 			// verify "chunk" reply
 			if reply.count <= 5 || reply[0] != 2 {
-				throw NAOSError.invalidMessage
+				throw NAOSSessionError.invalidMessage
 			}
 			
 			// get offset
@@ -115,7 +115,7 @@ public class NAOSFSEndpoint {
 			
 			// verify offset
 			if offset != data.count {
-				throw NAOSError.invalidMessage
+				throw NAOSSessionError.invalidMessage
 			}
 			
 			// append data
@@ -220,7 +220,7 @@ public class NAOSFSEndpoint {
 		
 		// verify "chunk" reply
 		if reply.count != 33 || reply[0] != 3 {
-			throw NAOSError.invalidMessage
+			throw NAOSSessionError.invalidMessage
 		}
 		
 		// get sum
