@@ -170,14 +170,17 @@ public protocol NAOSDeviceDelegate {
 }
 
 public class NAOSDevice: NSObject {
-	internal var peripheral: Peripheral
 	private var manager: NAOSManager
 	private var service: Service?
 	private var mutex = AsyncSemaphore(value: 1)
 	private var refreshing: Bool = false
 	private var subscription: AnyCancellable?
 	private var updateReady: CheckedContinuation<Void, Never>?
+	
+	internal var peripheral: Peripheral
 	internal var updatable: Set<NAOSParameter> = Set()
+	internal var begins: [String: CheckedContinuation<UInt16, Never>] = [:]
+	internal var sessions: [UInt16: NAOSSession] = [:]
 
 	public var delegate: NAOSDeviceDelegate?
 	public private(set) var connected: Bool = false
@@ -185,8 +188,6 @@ public class NAOSDevice: NSObject {
 	public private(set) var locked: Bool = false
 	public private(set) var availableParameters: [NAOSParameter] = []
 	public var parameters: [NAOSParameter: String] = [:]
-	internal var begins: [String: CheckedContinuation<UInt16, Never>] = [:]
-	internal var sessions: [UInt16: NAOSSession] = [:]
 
 	internal init(peripheral: Peripheral, manager: NAOSManager) {
 		// initialize instance
