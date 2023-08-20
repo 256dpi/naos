@@ -58,7 +58,6 @@ public struct NAOSMode: OptionSet {
 	public static let volatile = NAOSMode(rawValue: 1 << 0)
 	public static let system = NAOSMode(rawValue: 1 << 1)
 	public static let application = NAOSMode(rawValue: 1 << 2)
-	public static let _public = NAOSMode(rawValue: 1 << 3)
 	public static let locked = NAOSMode(rawValue: 1 << 4)
 
 	public static func parse(str: String) -> NAOSMode {
@@ -71,9 +70,6 @@ public struct NAOSMode: OptionSet {
 		}
 		if str.contains("a") {
 			mode.insert(.application)
-		}
-		if str.contains("p") {
-			mode.insert(._public)
 		}
 		if str.contains("l") {
 			mode.insert(.locked)
@@ -294,7 +290,7 @@ public class NAOSDevice: NSObject {
 			// get value
 			let rawValue = rawChar.value
 
-			// subscriptions are handled in separate tasks that waist for other actions to complete first
+			// subscriptions are handled in separate tasks that wait for other actions to complete first
 			Task {
 				// acquire mutex
 				await self.mutex.wait()
@@ -446,7 +442,7 @@ public class NAOSDevice: NSObject {
 
 	/// Returns the title of the device.
 	public func title() -> String {
-		// TODO: Use mutex?
+		// TODO: Precompute during refresh and updates?
 		(parameters[.deviceName] ?? "") + " (" + (parameters[.deviceType] ?? "") + ")"
 	}
 
@@ -576,6 +572,11 @@ public class NAOSDevice: NSObject {
 	/// Session will create a new session and return it.
 	public func session(timeout: TimeInterval) async throws -> NAOSSession? {
 		// TODO: Lock mutex (arrange with async updates).
+
+		// check characteristic
+		if towRawCharacteristic(char: .msg) == nil {
+			return nil
+		}
 
 		// genereate handle
 		let handle = randomString(length: 16)
