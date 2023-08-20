@@ -277,6 +277,17 @@ public class NAOSDevice: NSObject {
 		// set flag
 		connected = true
 
+		// read lock
+		let lock = try await read(char: .lock)
+
+		// save lock status
+		locked = lock == "locked"
+
+		// save if this device is protected
+		if locked {
+			protected = true
+		}
+
 		// subscribe to value updates
 		subscription?.cancel()
 		subscription = peripheral.characteristicValueUpdatedPublisher.sink { rawChar in
