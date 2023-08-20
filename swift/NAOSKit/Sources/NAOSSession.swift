@@ -5,6 +5,7 @@
 
 import Combine
 import Foundation
+import Semaphore
 
 /// A session message.
 public struct NAOSMessage {
@@ -80,6 +81,7 @@ public class NAOSSession {
 	private var peripheral: NAOSPeripheral
 	private var stream: AsyncStream<Data>
 	private var subscription: AnyCancellable
+	private var mutex = AsyncSemaphore(value: 1)
 	
 	internal static func open(peripheral: NAOSPeripheral, timeout: TimeInterval) async throws -> NAOSSession? {
 		// check characteristic
@@ -147,6 +149,10 @@ public class NAOSSession {
 	
 	/// Ping will check the session and keep it alive.
 	public func ping(timeout: TimeInterval) async throws {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// write command
 		try await self.write(msg: NAOSMessage(session: self.id, endpoint: 0xFE, data: nil))
 		
@@ -163,6 +169,10 @@ public class NAOSSession {
 	
 	/// Query will check an endpoints existence.
 	public func query(endpoint: UInt8, timeout: TimeInterval) async throws -> Bool {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// write command
 		try await self.write(msg: NAOSMessage(session: self.id, endpoint: endpoint, data: nil))
 		
@@ -177,22 +187,12 @@ public class NAOSSession {
 		return msg.data![0] == 1
 	}
 	
-	/// Wait and read the next message.
-	public func read(timeout: TimeInterval) async throws -> NAOSMessage {
-		// return next message from channel
-		return try await withTimeout(seconds: timeout) {
-			for await data in self.stream {
-				// parse message
-				let msg = try NAOSMessage.parse(data: data)
-				
-				return msg
-			}
-			throw NAOSSessionError.closed
-		}
-	}
-	
 	/// Wait and receive the next message for the specified endpoint with reply handling.
 	public func receive(endpoint: UInt8, expectAck: Bool, timeout: TimeInterval) async throws -> Data? {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// await message
 		let msg = try await read(timeout: timeout)
 		
@@ -222,33 +222,13 @@ public class NAOSSession {
 		
 		return msg.data
 	}
-	
-	/// Write a message.
-	public func write(msg: NAOSMessage) async throws {
-		// frame message
-		var data = Data(count: 4 + msg.size())
-		
-		// write version
-		data[0] = 1
-		
-		// write session
-		data[1] = UInt8(self.id)
-		data[2] = UInt8(self.id >> 8)
-		
-		// write endpoint
-		data[3] = msg.endpoint
-		
-		// copy data if available
-		if let bytes = msg.data {
-			data.replaceSubrange(4..., with: bytes)
-		}
-		
-		// forward message
-		try await self.send(data: data)
-	}
 		
 	/// Send a message with optionally waiting for an acknowledgement.
 	public func send(endpoint: UInt8, data: Data, ackTimeout: TimeInterval) async throws {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// write message
 		try await self.write(msg: NAOSMessage(session: self.id, endpoint: endpoint, data: data))
 		
@@ -270,6 +250,10 @@ public class NAOSSession {
 	
 	/// End the session.
 	public func end(timeout: TimeInterval) async throws {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// wite command
 		try await self.write(msg: NAOSMessage(session: self.id, endpoint: 0xFF, data: nil))
 		
@@ -285,7 +269,46 @@ public class NAOSSession {
 		self.subscription.cancel()
 	}
 	
-	private func send(data: Data) async throws {
+	// Helpers
+	
+	private func write(msg: NAOSMessage) async throws {
+		// frame message
+		var data = Data(count: 4 + msg.size())
+		
+		// write version
+		data[0] = 1
+		
+		// write session
+		data[1] = UInt8(self.id)
+		data[2] = UInt8(self.id >> 8)
+		
+		// write endpoint
+		data[3] = msg.endpoint
+		
+		// copy data if available
+		if let bytes = msg.data {
+			data.replaceSubrange(4..., with: bytes)
+		}
+		
+		// forward message
 		try await self.peripheral.write(char: .msg, data: data, confirm: false)
+	}
+
+	private func read(timeout: TimeInterval) async throws -> NAOSMessage {
+		// return next message from channel
+		return try await withTimeout(seconds: timeout) {
+			for await data in self.stream {
+				// parse message
+				let msg = try NAOSMessage.parse(data: data)
+				
+				// check session IDS
+				if msg.session != self.id {
+					continue
+				}
+				
+				return msg
+			}
+			throw NAOSSessionError.closed
+		}
 	}
 }
