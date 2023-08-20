@@ -176,10 +176,10 @@ public class NAOSDevice: NSObject {
 	private var refreshing: Bool = false
 	private var subscription: AnyCancellable?
 	private var updateReady: CheckedContinuation<Void, Never>?
-	
+
 	internal var peripheral: Peripheral
 	internal var updatable: Set<NAOSParameter> = Set()
-	internal var begins: [String: CheckedContinuation<UInt16, Never>] = [:]
+	internal var begins: [String: Future<UInt16, Never>.Promise] = [:]
 	internal var sessions: [UInt16: NAOSSession] = [:]
 
 	public var delegate: NAOSDeviceDelegate?
@@ -336,14 +336,14 @@ public class NAOSDevice: NSObject {
 						// get handle
 						let handle = String(data: Data(data[4...]), encoding: .utf8)!
 
-						// get continuation
-						guard let continuation = self.begins[handle] else {
+						// get promise
+						guard let promise = self.begins[handle] else {
 							print("missing continuation for message")
 							return
 						}
 
-						// resume continuation
-						continuation.resume(returning: sid)
+						// resolve promise
+						promise(.success(sid))
 
 						return
 					}
@@ -589,23 +589,8 @@ public class NAOSDevice: NSObject {
 		msg.append(handle.data(using: .utf8)!)
 
 		// prepare future
-		let future: Future<UInt16, Error> = Future { promise in
-			Task {
-				do {
-					let sid = try await withTimeout(seconds: timeout) {
-						await withCheckedContinuation { (continuation: CheckedContinuation<UInt16, Never>) in
-							// store continuation
-							self.begins[handle] = continuation
-						}
-					}
-					promise(Result.success(sid))
-				} catch {
-					promise(Result.failure(error))
-				}
-
-				// clear continuation
-				self.begins[handle] = nil
-			}
+		let future: Future<UInt16, Never> = Future { promise in
+			self.begins[handle] = promise
 		}
 
 		// send "begin" command
@@ -613,8 +598,13 @@ public class NAOSDevice: NSObject {
 
 		// await response
 		mutex.signal()
-		let sid = try? await future.value
+		let sid = try? await withTimeout(seconds: 1) {
+			await future.value
+		}
 		await mutex.wait()
+
+		// clear promise
+		begins[handle] = nil
 
 		// handle missing session
 		if sid == nil {
