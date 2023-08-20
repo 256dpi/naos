@@ -62,7 +62,7 @@ func readUint64(data: Data) -> UInt64 {
 	let byte5 = UInt64(data[5]) << 40
 	let byte6 = UInt64(data[6]) << 48
 	let byte7 = UInt64(data[7]) << 56
-	
+
 	return byte0 | byte1 | byte2 | byte3 | byte4 | byte5 | byte6 | byte7
 }
 
