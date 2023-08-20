@@ -38,12 +38,9 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 	func connect() {
 		// connect to device
 		Task {
+			// perform connect
 			do {
-				// perform connect
 				try await device.connect()
-
-				// refresh device
-				try await device.refresh()
 			} catch {
 				showError(error: error)
 				return
@@ -54,9 +51,9 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 				// show unlock view
 				unlockViewController =
 					NSStoryboard(name: "Main", bundle: nil)
-					.instantiateController(
-						withIdentifier: "UnlockViewController")
-					as? UnlockViewController
+						.instantiateController(
+							withIdentifier: "UnlockViewController")
+						as? UnlockViewController
 				unlockViewController!.device = device
 				unlockViewController!.swc = self
 				contentViewController = unlockViewController
@@ -64,9 +61,9 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 				// show settings view
 				settingsViewController =
 					NSStoryboard(name: "Main", bundle: nil)
-					.instantiateController(
-						withIdentifier: "SettingsViewController")
-					as? SettingsViewController
+						.instantiateController(
+							withIdentifier: "SettingsViewController")
+						as? SettingsViewController
 				settingsViewController!.device = device
 				contentViewController = settingsViewController
 
