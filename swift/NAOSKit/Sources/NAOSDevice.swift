@@ -3,28 +3,9 @@
 //  Copyright © 2017 Joël Gähwiler. All rights reserved.
 //
 
-import AsyncBluetooth
 import Combine
-import CoreBluetooth
+import Foundation
 import Semaphore
-
-internal let NAOSService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
-
-internal enum NAOSCharacteristic: String {
-	case lock = "F7A5FBA4-4084-239B-684D-07D5902EB591"
-	case list = "AC2289D1-231B-B78B-DF48-7D951A6EA665"
-	case select = "CFC9706D-406F-CCBE-4240-F88D6ED4BACD"
-	case value = "01CA5446-8EE1-7E99-2041-6884B01E71B3"
-	case update = "87BFFDCF-0704-22A2-9C4A-7A61BC8C1726"
-	case flash = "6C114DA1-9AA9-1687-5341-A1fE4C991390"
-	case msg = "0360744B-A61B-00AD-C945-37f3634130F3"
-
-	func cbuuid() -> CBUUID {
-		return CBUUID(string: rawValue)
-	}
-
-	static let all: [NAOSCharacteristic] = [.lock, .list, .select, .value, .update, .flash, .msg]
-}
 
 /// The available parameter types.
 public enum NAOSType: UInt8 {
@@ -171,13 +152,14 @@ public protocol NAOSDeviceDelegate {
 
 public class NAOSDevice: NSObject {
 	private var manager: NAOSManager
-	private var service: Service?
 	private var mutex = AsyncSemaphore(value: 1)
 	private var refreshing: Bool = false
-	private var subscription: AnyCancellable?
+	private var updater: AnyCancellable?
+	private var forwarder: AnyCancellable?
+	private var readier: AnyCancellable?
 	private var updateReady: CheckedContinuation<Void, Never>?
 
-	internal var peripheral: Peripheral
+	internal var peripheral: NAOSPeripheral
 	internal var updatable: Set<NAOSParameter> = Set()
 	internal var begins: [String: Future<UInt16, Never>.Promise] = [:]
 	internal var sessions: [UInt16: NAOSSession] = [:]
@@ -189,7 +171,7 @@ public class NAOSDevice: NSObject {
 	public private(set) var availableParameters: [NAOSParameter] = []
 	public var parameters: [NAOSParameter: String] = [:]
 
-	internal init(peripheral: Peripheral, manager: NAOSManager) {
+	internal init(peripheral: NAOSPeripheral, manager: NAOSManager) {
 		// initialize instance
 		self.peripheral = peripheral
 		self.manager = manager
@@ -198,7 +180,7 @@ public class NAOSDevice: NSObject {
 		super.init()
 
 		// initialize device name
-		parameters[.deviceName] = peripheral.name
+		parameters[.deviceName] = peripheral.name()
 		parameters[.deviceType] = "unknown"
 
 		// run updater
@@ -240,42 +222,16 @@ public class NAOSDevice: NSObject {
 		defer { mutex.signal() }
 
 		// connect
-		try await manager.centralManager.connect(peripheral, options: nil)
+		try await peripheral.connect()
 
-		// discover services
-		try await withTimeout(seconds: 2) {
-			try await self.peripheral.discoverServices([NAOSService])
-		}
-
-		// find service
-		for svc in peripheral.discoveredServices ?? [] {
-			if svc.uuid == NAOSService {
-				service = svc
-			}
-		}
-		if service == nil {
-			throw NAOSError.serviceNotFound
-		}
-
-		// discover characteristics
-		try await withTimeout(seconds: 1) {
-			try await self.peripheral.discoverCharacteristics(nil, for: self.service!)
-		}
-
-		// enable notifications for characteristics that support indication
-		for char in service!.discoveredCharacteristics ?? [] {
-			if char.properties.contains(.indicate) {
-				try await withTimeout(seconds: 1) {
-					try await self.peripheral.setNotifyValue(true, for: char)
-				}
-			}
-		}
+		// discover
+		try await peripheral.discover()
 
 		// set flag
 		connected = true
 
 		// read lock
-		let lock = try await read(char: .lock)
+		let lock = try await peripheral.read(char: .lock)
 
 		// save lock status
 		locked = lock == "locked"
@@ -285,89 +241,24 @@ public class NAOSDevice: NSObject {
 			protected = true
 		}
 
-		// subscribe to value updates
-		subscription?.cancel()
-		subscription = peripheral.characteristicValueUpdatedPublisher.sink { rawChar in
-			// get value
-			let rawValue = rawChar.value
+		// cancel previous subscriptions
+		updater?.cancel()
+		forwarder?.cancel()
+		readier?.cancel()
 
-			// subscriptions are handled in separate tasks that wait for other actions to complete first
+		// subscribe to value updates
+		updater = peripheral.receive(char: .update, operation: { data in
 			Task {
 				// acquire mutex
 				await self.mutex.wait()
 				defer { self.mutex.signal() }
 
-				// get value
-				var value = ""
-				if rawValue != nil {
-					value = String(data: rawValue!, encoding: .utf8) ?? ""
-				}
-
-				// get characteristic
-				let char = self.fromRawCharacteristic(char: rawChar)
-
-				// handle flash
-				if char == .flash {
-					self.updateReady?.resume()
-					return
-				}
-
-				// handle msg
-				if char == .msg {
-					// verify data
-					guard let data = rawValue else {
-						return
-					}
-
-					// verify size and version
-					if data.count < 4 || data[0] != 1 {
-						print("invalid message")
-						return
-					}
-
-					// read session ID
-					let sid = readUint16(data: Data(data[1 ... 2]))
-
-					// read endpoint ID
-					let eid = data[3]
-
-					// handle "begin" replies
-					if eid == 0 {
-						// get handle
-						let handle = String(data: Data(data[4...]), encoding: .utf8)!
-
-						// get promise
-						guard let promise = self.begins[handle] else {
-							print("missing continuation for message")
-							return
-						}
-
-						// resolve promise
-						promise(.success(sid))
-
-						return
-					}
-
-					// get session
-					guard let session = self.sessions[sid] else {
-						print("missing session for message")
-						return
-					}
-
-					// dispatch message
-					session.dispatch(msg: NAOSMessage(endpoint: eid, data: Data(data[4...])))
-
-					return
-				}
-
-				// check update
-				if char != .update {
-					return
-				}
+				// get name
+				let name = String(data: data, encoding: .utf8) ?? ""
 
 				// find parameter
 				let param = self.availableParameters.first { param in
-					param.name == value
+					param.name == name
 				}
 				if param == nil {
 					return
@@ -376,7 +267,66 @@ public class NAOSDevice: NSObject {
 				// add to set
 				self.updatable.insert(param!)
 			}
-		}
+		})
+
+		// subscribe to messages
+		forwarder = peripheral.receive(char: .msg, operation: { data in
+			Task {
+				// acquire mutex
+				await self.mutex.wait()
+				defer { self.mutex.signal() }
+
+				// verify size and version
+				if data.count < 4 || data[0] != 1 {
+					print("invalid message")
+					return
+				}
+
+				// read session ID
+				let sid = readUint16(data: Data(data[1 ... 2]))
+
+				// read endpoint ID
+				let eid = data[3]
+
+				// handle "begin" replies
+				if eid == 0 {
+					// get handle
+					let handle = String(data: Data(data[4...]), encoding: .utf8)!
+
+					// get promise
+					guard let promise = self.begins[handle] else {
+						print("missing continuation for message")
+						return
+					}
+
+					// resolve promise
+					promise(.success(sid))
+
+					return
+				}
+
+				// get session
+				guard let session = self.sessions[sid] else {
+					print("missing session for message")
+					return
+				}
+
+				// dispatch message
+				session.dispatch(msg: NAOSMessage(endpoint: eid, data: Data(data[4...])))
+			}
+		})
+
+		// subscribe to flash readies
+		readier = peripheral.receive(char: .flash, operation: { _ in
+			Task {
+				// acquire mutex
+				await self.mutex.wait()
+				defer { self.mutex.signal() }
+
+				// handle flash
+				self.updateReady?.resume()
+			}
+		})
 	}
 
 	/// Refresh will perform a full device refresh and update all parameters.
@@ -390,7 +340,7 @@ public class NAOSDevice: NSObject {
 		defer { refreshing = false }
 
 		// read lock
-		let lock = try await read(char: .lock)
+		let lock = try await peripheral.read(char: .lock)
 
 		// save lock status
 		locked = lock == "locked"
@@ -401,12 +351,12 @@ public class NAOSDevice: NSObject {
 		}
 
 		// read system parameters
-		try await write(char: .list, data: "system")
-		let system = try await read(char: .list)
+		try await peripheral.write(char: .list, data: "system")
+		let system = try await peripheral.read(char: .list)
 
 		// read application parameters
-		try await write(char: .list, data: "application")
-		let application = try await read(char: .list)
+		try await peripheral.write(char: .list, data: "application")
+		let application = try await peripheral.read(char: .list)
 
 		// read list
 		let list = system + "," + application
@@ -431,10 +381,10 @@ public class NAOSDevice: NSObject {
 		// refresh parameters
 		for parameter in availableParameters {
 			// select parameter
-			try await write(char: .select, data: parameter.name)
+			try await peripheral.write(char: .select, data: parameter.name)
 
 			// read parameter
-			parameters[parameter] = try await read(char: .value)
+			parameters[parameter] = try await peripheral.read(char: .value)
 		}
 
 		// notify manager
@@ -454,10 +404,10 @@ public class NAOSDevice: NSObject {
 		defer { mutex.signal() }
 
 		// write lock
-		try await write(char: .lock, data: password)
+		try await peripheral.write(char: .lock, data: password)
 
 		// read lock
-		let lock = try await read(char: .lock)
+		let lock = try await peripheral.read(char: .lock)
 
 		return lock == "unlocked"
 	}
@@ -469,10 +419,10 @@ public class NAOSDevice: NSObject {
 		defer { mutex.signal() }
 
 		// select parameter
-		try await write(char: .select, data: parameter.name)
+		try await peripheral.write(char: .select, data: parameter.name)
 
 		// write parameter
-		parameters[parameter] = try await read(char: .value)
+		parameters[parameter] = try await peripheral.read(char: .value)
 
 		// notify manager
 		manager.didUpdateDevice(device: self)
@@ -492,10 +442,10 @@ public class NAOSDevice: NSObject {
 		defer { mutex.signal() }
 
 		// select parameter
-		try await write(char: .select, data: parameter.name)
+		try await peripheral.write(char: .select, data: parameter.name)
 
 		// write parameter
-		try await write(char: .value, data: parameters[parameter]!)
+		try await peripheral.write(char: .value, data: parameters[parameter]!)
 
 		// notify manager
 		manager.didUpdateDevice(device: self)
@@ -515,7 +465,7 @@ public class NAOSDevice: NSObject {
 		defer { mutex.signal() }
 
 		// begin flash
-		try await write(char: .flash, data: String(format: "b%d", data.count))
+		try await peripheral.write(char: .flash, data: String(format: "b%d", data.count))
 
 		// await signal (without holding mutex)
 		mutex.signal()
@@ -552,7 +502,7 @@ public class NAOSDevice: NSObject {
 			buf.append(data[i ..< end])
 
 			// write data
-			try await write(char: .flash, data: buf, confirm: num % 5 == 0)
+			try await peripheral.write(char: .flash, data: buf, confirm: num % 5 == 0)
 
 			// increment
 			num += 1
@@ -567,7 +517,7 @@ public class NAOSDevice: NSObject {
 		progress(NAOSProgress(done: data.count, total: data.count, rate: Double(data.count) / diff, percent: 100))
 
 		// finish flash
-		try await write(char: .flash, data: "f")
+		try await peripheral.write(char: .flash, data: "f")
 	}
 
 	/// Session will create a new session and return it.
@@ -577,7 +527,7 @@ public class NAOSDevice: NSObject {
 		defer { mutex.signal() }
 
 		// check characteristic
-		if towRawCharacteristic(char: .msg) == nil {
+		if !peripheral.exists(char: .msg) {
 			return nil
 		}
 
@@ -594,7 +544,7 @@ public class NAOSDevice: NSObject {
 		}
 
 		// send "begin" command
-		try await write(char: .msg, data: msg, confirm: false)
+		try await peripheral.write(char: .msg, data: msg, confirm: false)
 
 		// await response
 		mutex.signal()
@@ -635,10 +585,10 @@ public class NAOSDevice: NSObject {
 		connected = false
 
 		// cancel subscription
-		subscription?.cancel()
+		updater?.cancel()
 
 		// disconnect from device
-		try await manager.centralManager.cancelPeripheralConnection(peripheral)
+		try await peripheral.disconnect()
 	}
 
 	// NAOSManager
@@ -657,7 +607,7 @@ public class NAOSDevice: NSObject {
 		connected = false
 
 		// cancel subscription
-		subscription?.cancel()
+		updater?.cancel()
 
 		// call delegate if available
 		if let d = delegate {
@@ -675,65 +625,6 @@ public class NAOSDevice: NSObject {
 		defer { mutex.signal() }
 
 		// send message
-		try await write(char: .msg, data: data, confirm: false)
-	}
-
-	// Helpers
-
-	internal func read(char: NAOSCharacteristic) async throws -> String {
-		// get characteristic
-		guard let char = towRawCharacteristic(char: char) else {
-			throw NAOSError.characteristicNotFound
-		}
-
-		// read value
-		try await withTimeout(seconds: 2) {
-			try await self.peripheral.readValue(for: char)
-		}
-
-		// parse string
-		let str = String(data: char.value ?? Data(capacity: 0), encoding: .utf8) ?? ""
-
-		return str
-	}
-
-	internal func write(char: NAOSCharacteristic, data: String) async throws {
-		try await write(char: char, data: data.data(using: .utf8)!, confirm: true)
-	}
-
-	internal func write(char: NAOSCharacteristic, data: Data, confirm: Bool) async throws {
-		// get characteristic
-		guard let char = towRawCharacteristic(char: char) else {
-			throw NAOSError.characteristicNotFound
-		}
-
-		// read value
-		try await withTimeout(seconds: 2) {
-			try await self.peripheral.writeValue(data, for: char, type: confirm ? .withResponse : .withoutResponse)
-		}
-	}
-
-	private func fromRawCharacteristic(char: Characteristic) -> NAOSCharacteristic? {
-		for property in NAOSCharacteristic.all {
-			if property.cbuuid() == char.uuid {
-				return property
-			}
-		}
-
-		return nil
-	}
-
-	private func towRawCharacteristic(char: NAOSCharacteristic) -> Characteristic? {
-		if let s = service {
-			if let cs = s.discoveredCharacteristics {
-				for c in cs {
-					if c.uuid == char.cbuuid() {
-						return c
-					}
-				}
-			}
-		}
-
-		return nil
+		try await peripheral.write(char: .msg, data: data, confirm: false)
 	}
 }
