@@ -116,7 +116,10 @@ void naos_system_init() {
   // create mutex
   naos_system_mutex = naos_mutex();
 
-  // init parameters
+  // initialize message subsystem
+  naos_msg_init();
+
+  // init parameter subsystem
   naos_params_init();
 
   // register system parameters
@@ -134,11 +137,10 @@ void naos_system_init() {
     naos_set_s("device-password", naos_config()->default_password);
   }
 
-  // initialize subsystems
+  // initialize other subsystems
   naos_log_init();
   naos_net_init();
   naos_com_init();
-  naos_msg_init();
 
   // initialize OTA
   naos_update_init();
