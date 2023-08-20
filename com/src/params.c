@@ -477,6 +477,7 @@ void naos_set(const char *name, uint8_t *value, size_t length) {
 
   // track change
   param->changed = true;
+  param->age = naos_millis();
 
   // release mutex
   NAOS_UNLOCK(naos_params_mutex);

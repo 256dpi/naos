@@ -135,6 +135,11 @@ typedef struct {
    * The changes tracker.
    */
   bool changed;
+
+  /**
+   * The age of the parameter.
+   */
+  uint64_t age;
 } naos_param_t;
 
 /**
