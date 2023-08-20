@@ -130,34 +130,34 @@ internal class NAOSPeripheral {
 		}
 	}
 
-	/* func subscribe(char: NAOSCharacteristic) async -> (AsyncStream<Data>, AnyCancellable) {
-	 	// prepare stream
-	 	var continuation: AsyncStream<Data>.Continuation?
-	 	let stream = AsyncStream<Data> { c in
-	 		continuation = c
-	 	}
+	func stream(char: NAOSCharacteristic) async -> (AsyncStream<Data>, AnyCancellable) {
+		// prepare stream
+		var continuation: AsyncStream<Data>.Continuation?
+		let stream = AsyncStream<Data> { c in
+			continuation = c
+		}
 
-	 	// create subscription
-	 	let subscription = raw.characteristicValueUpdatedPublisher.sink { rawChar in
-	 		// check characteristic
-	 		if rawChar.uuid != char.cbuuid() {
-	 			return
-	 		}
+		// create subscription
+		let subscription = raw.characteristicValueUpdatedPublisher.sink { rawChar in
+			// check characteristic
+			if rawChar.uuid != char.cbuuid() {
+				return
+			}
 
-	 		// get data
-	 		guard let data = rawChar.value else {
-	 			return
-	 		}
+			// get data
+			guard let data = rawChar.value else {
+				return
+			}
 
-	 		// yield message
-	 		continuation!.yield(data)
-	 	}
+			// yield message
+			continuation!.yield(data)
+		}
 
-	 	return (stream, AnyCancellable {
-	 		subscription.cancel()
-	 		continuation!.finish()
-	 	})
-	 } */
+		return (stream, AnyCancellable {
+			subscription.cancel()
+			continuation!.finish()
+		})
+	}
 
 	func disconnect() async throws {
 		try await man.cancelPeripheralConnection(raw)

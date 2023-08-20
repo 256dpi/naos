@@ -155,14 +155,11 @@ public class NAOSDevice: NSObject {
 	private var mutex = AsyncSemaphore(value: 1)
 	private var refreshing: Bool = false
 	private var updater: AnyCancellable?
-	private var forwarder: AnyCancellable?
 	private var readier: AnyCancellable?
 	private var updateReady: CheckedContinuation<Void, Never>?
 
 	internal var peripheral: NAOSPeripheral
 	internal var updatable: Set<NAOSParameter> = Set()
-	internal var begins: [String: Future<UInt16, Never>.Promise] = [:]
-	internal var sessions: [UInt16: NAOSSession] = [:]
 
 	public var delegate: NAOSDeviceDelegate?
 	public private(set) var connected: Bool = false
@@ -243,7 +240,6 @@ public class NAOSDevice: NSObject {
 
 		// cancel previous subscriptions
 		updater?.cancel()
-		forwarder?.cancel()
 		readier?.cancel()
 
 		// subscribe to value updates
@@ -266,53 +262,6 @@ public class NAOSDevice: NSObject {
 
 				// add to set
 				self.updatable.insert(param!)
-			}
-		})
-
-		// subscribe to messages
-		forwarder = peripheral.receive(char: .msg, operation: { data in
-			Task {
-				// acquire mutex
-				await self.mutex.wait()
-				defer { self.mutex.signal() }
-
-				// verify size and version
-				if data.count < 4 || data[0] != 1 {
-					print("invalid message")
-					return
-				}
-
-				// read session ID
-				let sid = readUint16(data: Data(data[1 ... 2]))
-
-				// read endpoint ID
-				let eid = data[3]
-
-				// handle "begin" replies
-				if eid == 0 {
-					// get handle
-					let handle = String(data: Data(data[4...]), encoding: .utf8)!
-
-					// get promise
-					guard let promise = self.begins[handle] else {
-						print("missing continuation for message")
-						return
-					}
-
-					// resolve promise
-					promise(.success(sid))
-
-					return
-				}
-
-				// get session
-				guard let session = self.sessions[sid] else {
-					print("missing session for message")
-					return
-				}
-
-				// dispatch message
-				session.dispatch(msg: NAOSMessage(endpoint: eid, data: Data(data[4...])))
 			}
 		})
 
@@ -531,43 +480,7 @@ public class NAOSDevice: NSObject {
 			return nil
 		}
 
-		// genereate handle
-		let handle = randomString(length: 16)
-
-		// prepare message
-		var msg = Data([1, 0, 0, 0])
-		msg.append(handle.data(using: .utf8)!)
-
-		// prepare future
-		let future: Future<UInt16, Never> = Future { promise in
-			self.begins[handle] = promise
-		}
-
-		// send "begin" command
-		try await peripheral.write(char: .msg, data: msg, confirm: false)
-
-		// await response
-		mutex.signal()
-		let sid = try? await withTimeout(seconds: 1) {
-			await future.value
-		}
-		await mutex.wait()
-
-		// clear promise
-		begins[handle] = nil
-
-		// handle missing session
-		if sid == nil {
-			return nil
-		}
-
-		// create session
-		let session = NAOSSession(device: self, id: sid!)
-
-		// store session
-		sessions[sid!] = session
-
-		return session
+		return try await NAOSSession.open(peripheral: peripheral, timeout: timeout)
 	}
 
 	/// Disconnect will close the connection to the device.
@@ -615,16 +528,5 @@ public class NAOSDevice: NSObject {
 				d.naosDeviceDidDisconnect(device: self, error: error)
 			}
 		}
-	}
-
-	// NAOSSession
-
-	internal func send(data: Data) async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
-		// send message
-		try await peripheral.write(char: .msg, data: data, confirm: false)
 	}
 }
