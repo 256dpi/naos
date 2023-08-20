@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import Semaphore
 
 /// Information about a file.
 public struct NAOSFSInfo {
@@ -16,6 +17,7 @@ public struct NAOSFSInfo {
 public class NAOSFSEndpoint {
 	private let session: NAOSSession
 	private let timeout: TimeInterval
+	private let mutex = AsyncSemaphore(value: 1)
 	
 	public init(session: NAOSSession, timeout: TimeInterval) {
 		self.session = session
@@ -24,6 +26,10 @@ public class NAOSFSEndpoint {
 	
 	/// Get information on a file or directory.
 	public func stat(path: String) async throws -> NAOSFSInfo {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// prepare command
 		var cmd = Data([0])
 		cmd.append(path.data(using: .utf8)!)
@@ -48,6 +54,10 @@ public class NAOSFSEndpoint {
 	
 	/// List a files and directories.
 	public func list(path: String) async throws -> [NAOSFSInfo] {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// prepare command
 		var cmd = Data([1])
 		cmd.append(path.data(using: .utf8)!)
@@ -81,6 +91,10 @@ public class NAOSFSEndpoint {
 	
 	/// Read a full file.
 	public func read(path: String, report: ((Int) -> Void)?) async throws -> Data {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// prepare "open" command
 		var cmd = Data([2, 0])
 		cmd.append(path.data(using: .utf8)!)
@@ -133,6 +147,10 @@ public class NAOSFSEndpoint {
 	
 	/// Write a full file.
 	public func write(path: String, data: Data, report: ((Int) -> Void)?) async throws {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// prepare "open" command (create & truncate)
 		var cmd = Data([2, 1 << 0 | 1 << 2])
 		cmd.append(path.data(using: .utf8)!)
@@ -151,7 +169,7 @@ public class NAOSFSEndpoint {
 			let chunkData = data.subdata(in: offset ..< offset + chunkSize)
 			
 			// determine mode
-			let acked = num % 10 == 0;
+			let acked = num % 10 == 0
 			
 			// prepare "write" command (acked or silent & sequential)
 			cmd = Data([4, acked ? 0 : 1 << 0 | 1 << 1])
@@ -184,6 +202,10 @@ public class NAOSFSEndpoint {
 	
 	/// Rename a file.
 	public func rename(from: String, to: String) async throws {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// prepare command
 		var cmd = Data([6])
 		cmd.append(from.data(using: .utf8)!)
@@ -196,6 +218,10 @@ public class NAOSFSEndpoint {
 	
 	/// Remove a file.
 	public func remove(path: String) async throws {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// prepare command
 		var cmd = Data([7])
 		cmd.append(path.data(using: .utf8)!)
@@ -206,6 +232,10 @@ public class NAOSFSEndpoint {
 	
 	/// Calculate the SHA256 checksum of a file.
 	public func sha256(path: String) async throws -> Data {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// prepare command
 		var cmd = Data([8])
 		cmd.append(path.data(using: .utf8)!)
@@ -229,6 +259,10 @@ public class NAOSFSEndpoint {
 	
 	/// End the underlying session.
 	public func end() async throws {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+		
 		// end session
 		try await session.end(timeout: timeout)
 	}
