@@ -110,7 +110,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				}
 
 				// check endpoint existence
-				let exists = try await sess.query(endpoint: 0x3, timeout: 1)
+				let exists = try await sess.query(endpoint: 0x3, timeout: 5)
 				if !exists {
 					try await sess.end(timeout: 5)
 					throw CustomError(title: "Missing FS Endpoint.")

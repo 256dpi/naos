@@ -105,7 +105,7 @@ public class NAOSSession {
 		try await peripheral.write(char: .msg, data: msg, confirm: false)
 
 		// await response
-		let sid = try? await withTimeout(seconds: 1) {
+		let sid = try? await withTimeout(seconds: timeout) {
 			for await data in stream {
 				// parse message
 				let msg = try NAOSMessage.parse(data: data)
