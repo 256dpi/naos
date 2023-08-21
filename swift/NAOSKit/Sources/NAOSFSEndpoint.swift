@@ -34,7 +34,7 @@ public class NAOSFSEndpoint {
 		var cmd = Data([0])
 		cmd.append(path.data(using: .utf8)!)
 		
-		// send comamnd
+		// send command
 		try await send(cmd: cmd, ack: false)
 		
 		// await reply
@@ -62,7 +62,7 @@ public class NAOSFSEndpoint {
 		var cmd = Data([1])
 		cmd.append(path.data(using: .utf8)!)
 		
-		// send comamnd
+		// send command
 		try await send(cmd: cmd, ack: false)
 		
 		// prepare infos
@@ -99,13 +99,13 @@ public class NAOSFSEndpoint {
 		var cmd = Data([2, 0])
 		cmd.append(path.data(using: .utf8)!)
 		
-		// send "open" comamnd
+		// send "open" command
 		try await send(cmd: cmd, ack: true)
 		
 		// prepare "read" command
 		cmd = Data([3, 0, 0, 0, 0, 0, 0, 0, 0])
 		
-		// send "read" comamnd
+		// send "read" command
 		try await send(cmd: cmd, ack: false)
 		
 		// prepare data
@@ -139,7 +139,7 @@ public class NAOSFSEndpoint {
 			}
 		}
 		
-		// send "close" comamnd
+		// send "close" command
 		try await send(cmd: Data([5]), ack: true)
 		
 		return data
@@ -155,7 +155,7 @@ public class NAOSFSEndpoint {
 		var cmd = Data([2, 1 << 0 | 1 << 2])
 		cmd.append(path.data(using: .utf8)!)
 		
-		// send "create" comamnd
+		// send "create" command
 		try await send(cmd: cmd, ack: true)
 		
 		// TODO: Dynamically determine channel MTU?
@@ -196,7 +196,7 @@ public class NAOSFSEndpoint {
 			num += 1
 		}
 		
-		// send "close" comamnd
+		// send "close" command
 		try await send(cmd: Data([5]), ack: true)
 	}
 	
@@ -212,7 +212,7 @@ public class NAOSFSEndpoint {
 		cmd.append(Data([0]))
 		cmd.append(to.data(using: .utf8)!)
 		
-		// send comamnd
+		// send command
 		try await send(cmd: cmd, ack: true)
 	}
 	
@@ -226,7 +226,7 @@ public class NAOSFSEndpoint {
 		var cmd = Data([7])
 		cmd.append(path.data(using: .utf8)!)
 		
-		// send comamnd
+		// send command
 		try await send(cmd: cmd, ack: true)
 	}
 	
@@ -240,7 +240,7 @@ public class NAOSFSEndpoint {
 		var cmd = Data([8])
 		cmd.append(path.data(using: .utf8)!)
 		
-		// send comamnd
+		// send command
 		try await send(cmd: cmd, ack: false)
 		
 		// await reply
