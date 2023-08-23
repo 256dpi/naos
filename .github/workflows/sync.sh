@@ -8,8 +8,8 @@ REPO_NAME="NAOSKit"
 BRANCH_NAME="main"
 BASE=$(pwd)
 
-git config user.name "GitHub Actions"
-git config user.email "actions@example.com"
+git config --global user.name "GitHub Actions"
+git config --global user.email "actions@example.com"
 
 echo "Cloning folder $FOLDER and pushing to $GITHUB_USERNAME"
 
