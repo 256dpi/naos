@@ -29,7 +29,7 @@ cd $CLONE_DIR
 
 # delete all files only in that folder if folder exists
 mkdir -p ./$FOLDER_NAME
-cp -r $BASE/$FOLDER/. ./$FOLDER_NAME
+cp -r $BASE/$FOLDER/* ./$FOLDER_NAME
 echo "  Copied files to $FOLDER_NAME"
 
 # Commit if there is anything to
