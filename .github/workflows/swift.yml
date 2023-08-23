@@ -4,10 +4,11 @@ jobs:
   swift:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: bitprj/push-subdir@0.3
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Sync
+        run: ./sync.sh
+        shell: bash
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: swift/NAOSKit 256dpi NAOSKit main
