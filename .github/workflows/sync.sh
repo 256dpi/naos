@@ -13,36 +13,27 @@ git config --global user.email "actions@example.com"
 
 echo "Cloning folder $FOLDER and pushing to $GITHUB_USERNAME"
 
-cd $FOLDER
-FOLDER_NAME=${PWD##*/}
-cd $BASE
+# Clone the target repository
+git clone --depth 1 https://$API_TOKEN_GITHUB@github.com/$GITHUB_USERNAME/$REPO_NAME.git &> /dev/null
+cd $REPO_NAME
 
-echo "  Name: $REPO_NAME"
-CLONE_DIR="__${REPO_NAME}__clone__"
-echo "  Clone dir: $CLONE_DIR"
+# Remove all files in the repository except the .git folder
+find . -maxdepth 1 ! -name '.git' -exec rm -rf {} \;
 
-# clone, delete files in the clone, and copy (new) files over
-# this handles file deletions, additions, and changes seamlessly
-git clone --depth 1 https://$API_TOKEN_GITHUB@github.com/$GITHUB_USERNAME/$REPO_NAME.git $CLONE_DIR &> /dev/null
-cd $CLONE_DIR
-[ -d $FOLDER_NAME ] && find ./$FOLDER_NAME | grep -v ".git" | grep -v "^\.*$" | xargs rm -rf
+# Copy the contents of the source directory to the repository root
+cp -r $BASE/$FOLDER/* .
 
-# delete all files only in that folder if folder exists
-mkdir -p ./$FOLDER_NAME
-cp -r $BASE/$FOLDER/* ./$FOLDER_NAME
-echo "  Copied files to $FOLDER_NAME"
-
-# Commit if there is anything to
+# Commit and push changes if there are any
 if [ -n "$(git status --porcelain)" ]; then
-  echo  "  Committing $REPO_NAME to $GITHUB_REPOSITORY"
+  echo "Committing and pushing changes"
   git add .
-  git commit --message "Update $REPO_NAME from $GITHUB_REPOSITORY"
+  git commit --message "Update from $GITHUB_REPOSITORY"
   git push origin $BRANCH_NAME
-  echo  "  Completed $REPO_NAME"
+  echo "Completed"
 else
-  echo "  No changes, skipping $BASE/$FOLDER/"
+  echo "No changes to commit"
 fi
 
 cd ..
-rm -r $CLONE_DIR
+rm -rf $REPO_NAME
 cd $BASE
