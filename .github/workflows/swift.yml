@@ -1,0 +1,13 @@
+on: push
+name: Swift
+jobs:
+  swift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: bitprj/push-subdir@0.3
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: swift/NAOSKit 256dpi NAOSKit main
