@@ -52,7 +52,8 @@ func NewInventory() *Inventory {
 	return &Inventory{
 		Version:    "master",
 		Target:     "esp32",
-		Overrides:  nil,
+		Embeds:     make([]string, 0),
+		Overrides:  make(map[string]string),
 		Components: make(map[string]*Component),
 	}
 }
