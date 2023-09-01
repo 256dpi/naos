@@ -142,8 +142,6 @@ func Apply(repo, patch string, out io.Writer) error {
 	// check if patch has been already applied
 	cmd := exec.Command("git", "apply", patch, "--check", "--reverse")
 	cmd.Dir = repo
-	cmd.Stdout = out
-	cmd.Stderr = out
 	err := cmd.Run()
 	if err == nil {
 		return nil
