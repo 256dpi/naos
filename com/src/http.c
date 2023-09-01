@@ -140,6 +140,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     res.payload = (uint8_t *)strdup(ctx->locked ? "unlock#locked" : "unlock#unlocked");
   }
 
+#if !defined(CONFIG_NAOS_MSG_ONLY)
   // handle list
   if (!ctx->locked && strcmp((char *)req.payload, "list") == 0) {
     char *list = naos_params_list(0);
@@ -192,6 +193,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     // set value
     res.payload = (uint8_t *)naos_format("write:%s#%s", name, param->current.buf);
   }
+#endif
 
   // handle message
   if (!ctx->locked && strncmp((char *)req.payload, "msg", 3) == 0) {
@@ -283,6 +285,7 @@ static esp_err_t naos_http_file(httpd_req_t *req) {
   return ESP_OK;
 }
 
+#if !defined(CONFIG_NAOS_MSG_ONLY)
 static void naos_http_update(void *arg) {
   // get param
   naos_param_t *param = arg;
@@ -322,6 +325,7 @@ static void naos_http_param_handler(naos_param_t *param) {
   // queue function
   ESP_ERROR_CHECK(httpd_queue_work(naos_http_handle, naos_http_update, param));
 }
+#endif
 
 static void naos_http_send_frame(void *arg) {
   // get message
@@ -384,8 +388,10 @@ void naos_http_init(int core) {
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_socket));
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_file));
 
+#if !defined(CONFIG_NAOS_MSG_ONLY)
   // handle parameters
   naos_params_subscribe(naos_http_param_handler);
+#endif
 
   // register channel
   naos_http_channel = naos_msg_register((naos_msg_channel_t){
