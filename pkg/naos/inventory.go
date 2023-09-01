@@ -37,14 +37,14 @@ type Frameworks struct {
 type Inventory struct {
 	Version    string                `json:"version"`
 	Target     string                `json:"target"`
-	FixSerial  bool                  `json:"fix_serial"`
-	BaudRate   string                `json:"baud_rate"`
+	FixSerial  bool                  `json:"fix_serial,omitempty"`
+	BaudRate   string                `json:"baud_rate,omitempty"`
 	Embeds     []string              `json:"embeds"`
 	Overrides  map[string]string     `json:"overrides"`
 	Components map[string]*Component `json:"components"`
-	Frameworks Frameworks            `json:"frameworks"`
-	Broker     string                `json:"broker"`
-	Devices    map[string]*Device    `json:"devices"`
+	Frameworks Frameworks            `json:"frameworks,omitempty"`
+	Broker     string                `json:"broker,omitempty"`
+	Devices    map[string]*Device    `json:"devices,omitempty"`
 }
 
 // NewInventory creates a new Inventory.
@@ -52,11 +52,8 @@ func NewInventory() *Inventory {
 	return &Inventory{
 		Version:    "master",
 		Target:     "esp32",
-		FixSerial:  true, // TODO: Remove?
 		Overrides:  nil,
 		Components: make(map[string]*Component),
-		Broker:     "mqtts://key:secret@example.org",
-		Devices:    make(map[string]*Device),
 	}
 }
 
