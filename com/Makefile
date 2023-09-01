@@ -7,6 +7,7 @@ ESP_MQTT_VERSION := $(shell cat ../tree/esp-mqtt.version)
 ESP_OSC_VERSION := $(shell cat ../tree/esp-osc.version)
 
 prepare:
+	rm -rf test/build test/esp-idf test/tools
 	git clone --recursive  https://github.com/espressif/esp-idf.git test/esp-idf
 	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
 	cd test/esp-idf; git submodule update --recursive --init

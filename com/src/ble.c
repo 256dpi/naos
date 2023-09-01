@@ -120,8 +120,10 @@ static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
 
 static naos_ble_config_t naos_ble_config = {0};
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
+#if !defined(CONFIG_NAOS_MSG_ONLY)
 static naos_ble_conn_t *naos_ble_flash_conn = NULL;
 static bool naos_ble_flash_ready = false;
+#endif
 static uint8_t naos_ble_msg_channel_id = 0;
 
 #if !defined(CONFIG_NAOS_MSG_ONLY)

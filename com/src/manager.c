@@ -40,7 +40,7 @@ static void naos_manager_heartbeat() {
 
   // send heartbeat
   char buf[64];
-  snprintf(buf, sizeof buf, "%s,%s,%s,%ld,%ld,%s,%.2f,%ld,%.2f,%.2f", naos_config()->device_type,
+  snprintf(buf, sizeof buf, "%s,%s,%s,%ld,%lld,%s,%.2f,%ld,%.2f,%.2f", naos_config()->device_type,
            naos_config()->device_version, device_name, esp_get_free_heap_size(), naos_millis(),
            esp_ota_get_running_partition()->label, battery, rssi, cpu0, cpu1);
   naos_publish_s("naos/heartbeat", buf, 0, false, NAOS_LOCAL);

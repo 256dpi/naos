@@ -546,7 +546,7 @@ static naos_msg_reply_t naos_fs_handle_sha256(naos_msg_t msg) {
   mbedtls_sha256_init(&ctx);
 
   // start checksum
-  int ret = mbedtls_sha256_starts_ret(&ctx, false);
+  int ret = mbedtls_sha256_starts(&ctx, false);
   if (ret != 0) {
     close(fd);
     mbedtls_sha256_free(&ctx);
@@ -571,7 +571,7 @@ static naos_msg_reply_t naos_fs_handle_sha256(naos_msg_t msg) {
     }
 
     // update checksum
-    ret = mbedtls_sha256_update_ret(&ctx, data, len);
+    ret = mbedtls_sha256_update(&ctx, data, len);
     if (ret != 0) {
       close(fd);
       mbedtls_sha256_free(&ctx);
@@ -591,7 +591,7 @@ static naos_msg_reply_t naos_fs_handle_sha256(naos_msg_t msg) {
   uint8_t reply[33] = {NAOS_FS_REPLY_SHA256};
 
   // finish checksum
-  ret = mbedtls_sha256_finish_ret(&ctx, reply + 1);
+  ret = mbedtls_sha256_finish(&ctx, reply + 1);
   if (ret != 0) {
     close(fd);
     mbedtls_sha256_free(&ctx);
