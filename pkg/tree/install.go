@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
@@ -221,6 +222,31 @@ func InstallAudioFramework(naosPath, version string, force bool, out io.Writer) 
 		if err != nil {
 			return err
 
+		}
+	}
+
+	/* apply ADF patches */
+
+	// get version
+	idfVersion, err := IDFVersion(naosPath)
+	if err != nil {
+		return err
+	}
+
+	// determine patches
+	var patches []string
+	if strings.HasPrefix(idfVersion, "v4.4") {
+		patches = append(patches, "idf_v4.4_freertos.patch")
+	}
+
+	// apply patches
+	if len(patches) > 0 {
+		for _, patch := range patches {
+			utils.Log(out, fmt.Sprintf("Applying audio framework patch '%s'...", patch))
+			err = utils.Apply(IDFDirectory(naosPath), filepath.Join(ADFDirectory(naosPath), "idf_patches", patch), out)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

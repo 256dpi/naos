@@ -16,6 +16,17 @@ type compileCommand struct {
 	File      string `json:"file"`
 }
 
+// IDFVersion will detect and return the IDF version from the specified path.
+func IDFVersion(naosPath string) (string, error) {
+	// read version
+	bytes, err := os.ReadFile(filepath.Join(Directory(naosPath), "esp-idf.version"))
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(bytes)), nil
+}
+
 // IDFMajorVersion will detect and return the major IDF version from the
 // specified path.
 func IDFMajorVersion(naosPath string) (int, error) {

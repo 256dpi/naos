@@ -136,3 +136,28 @@ func Original(path, name string) (string, error) {
 
 	return string(buf), nil
 }
+
+// Apply will apply the specified patch to the provided repository.
+func Apply(repo, patch string, out io.Writer) error {
+	// check if patch has been already applied
+	cmd := exec.Command("git", "apply", patch, "--check", "--reverse")
+	cmd.Dir = repo
+	cmd.Stdout = out
+	cmd.Stderr = out
+	err := cmd.Run()
+	if err == nil {
+		return nil
+	}
+
+	// apply patch
+	cmd = exec.Command("git", "apply", patch)
+	cmd.Dir = repo
+	cmd.Stdout = out
+	cmd.Stderr = out
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

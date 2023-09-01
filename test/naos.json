@@ -5,6 +5,9 @@
   ],
   "overrides": {},
   "components": {},
+  "frameworks": {
+    "audio": "v2.5"
+  },
   "broker": "mqtt://public:public@public.cloud.shiftr.io",
   "devices": {
     "test": {
