@@ -19,8 +19,8 @@ prepare:
 update:
 	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
 	cd test/esp-idf; git submodule update --recursive --init
-	cd test/components/esp-mqtt; git fetch; git checkout $(ESP_MQTT_VERSION); git submodule update --recursive --init
-	cd test/components/esp-osc; git fetch; git checkout $(ESP_OSC_VERSION); git submodule update --recursive --init
+	cd test/components/esp-mqtt; git fetch; git pull; git checkout $(ESP_MQTT_VERSION); git submodule update --recursive --init
+	cd test/components/esp-osc; git fetch; git pull; git checkout $(ESP_OSC_VERSION); git submodule update --recursive --init
 
 install:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; cd test/esp-idf; ./install.sh all

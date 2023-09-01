@@ -699,7 +699,7 @@ void naos_fs_mount_fat(const char *path, const char *label, int max_files) {
       .format_if_mount_failed = true,
       .allocation_unit_size = CONFIG_WL_SECTOR_SIZE,
   };
-  ESP_ERROR_CHECK(esp_vfs_fat_spiflash_mount(path, label, &mount_config, &wl_handle));
+  ESP_ERROR_CHECK(esp_vfs_fat_spiflash_mount_rw_wl(path, label, &mount_config, &wl_handle));
 }
 
 void naos_fs_install(naos_fs_config_t cfg) {
