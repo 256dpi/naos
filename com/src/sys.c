@@ -1,5 +1,6 @@
 #include <naos/sys.h>
 
+#include <esp_timer.h>
 #include <esp_debug_helpers.h>
 #include <freertos/task_snapshot.h>
 

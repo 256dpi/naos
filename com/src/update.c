@@ -13,6 +13,15 @@ static const esp_partition_t *naos_update_partition = NULL;
 static size_t naos_update_size = 0;
 static esp_ota_handle_t naos_update_handle = 0;
 
+static void naos_update_set_wdt(uint32_t timeout, bool panic) {
+  esp_task_wdt_config_t cfg = {
+      .timeout_ms = timeout * 1000,
+      .idle_core_mask = 3,
+      .trigger_panic = panic,
+  };
+  ESP_ERROR_CHECK(esp_task_wdt_init(&cfg));
+}
+
 static void naos_update_begin_task() {
   // acquire mutex
   NAOS_LOCK(naos_update_mutex);
@@ -22,9 +31,9 @@ static void naos_update_begin_task() {
 
   // increase task WDT timeout if enabled
 #ifdef CONFIG_ESP_TASK_WDT_PANIC
-  ESP_ERROR_CHECK(esp_task_wdt_init(30, true));
+  naos_update_set_wdt(30, true);
 #elif CONFIG_ESP_TASK_WDT
-  ESP_ERROR_CHECK(esp_task_wdt_init(30, false));
+  naos_update_set_wdt(30, false);
 #endif
 
   // begin update
@@ -32,9 +41,9 @@ static void naos_update_begin_task() {
 
   // restore original task WDT timeout if enabled
 #ifdef CONFIG_ESP_TASK_WDT_PANIC
-  ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
+  naos_update_set_wdt(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true);
 #elif CONFIG_ESP_TASK_WDT
-  ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
+  naos_update_set_wdt(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false);
 #endif
 
   // release mutex

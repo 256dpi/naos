@@ -54,5 +54,5 @@ void naos_log(const char *fmt, ...) {
   }
 
   // print message
-  printf("N (%ld) %s: %s\n", naos_millis(), device_type, msg);
+  printf("N (%lld) %s: %s\n", naos_millis(), device_type, msg);
 }
