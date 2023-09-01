@@ -1,6 +1,6 @@
 //
 //  Created by Joël Gähwiler on 20.08.23.
-//  Copyright © 2017 Joël Gähwiler. All rights reserved.
+//  Copyright © 2023 Joël Gähwiler. All rights reserved.
 //
 
 import Foundation
