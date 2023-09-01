@@ -170,7 +170,6 @@ func InstallComponent(projectPath, naosPath, name, path, repository, version str
 		err = utils.Fetch(comPath, version, nil, out)
 		if err != nil {
 			return err
-
 		}
 	}
 
@@ -179,8 +178,14 @@ func InstallComponent(projectPath, naosPath, name, path, repository, version str
 
 // InstallAudioFramework will manage the esp-adf installation.
 func InstallAudioFramework(naosPath, version string, force bool, out io.Writer) error {
+	// check existences
+	exists, err := utils.Exists(ADFDirectory(naosPath))
+	if err != nil {
+		return err
+	}
+
 	// handle removal
-	if version == "" {
+	if version == "" && exists {
 		utils.Log(out, fmt.Sprintf("Removing audio framework..."))
 		err := os.RemoveAll(ADFDirectory(naosPath))
 		if err != nil {
@@ -192,7 +197,7 @@ func InstallAudioFramework(naosPath, version string, force bool, out io.Writer) 
 	/* otherwise, handle install */
 
 	// remove existing directory if force has been set
-	if force {
+	if force && exists {
 		utils.Log(out, fmt.Sprintf("Removing existing audio framework (forced)."))
 		err := os.RemoveAll(ADFDirectory(naosPath))
 		if err != nil {
@@ -200,14 +205,8 @@ func InstallAudioFramework(naosPath, version string, force bool, out io.Writer) 
 		}
 	}
 
-	// check if framework already exists
-	ok, err := utils.Exists(ADFDirectory(naosPath))
-	if err != nil {
-		return err
-	}
-
 	// check existence
-	if !ok {
+	if !exists {
 		// perform initial repo clone
 		utils.Log(out, fmt.Sprintf("Installing audio framework '%s'...", version))
 		err = utils.Clone("https://github.com/espressif/esp-adf.git", ADFDirectory(naosPath), version, []string{"esp-idf"}, out)
