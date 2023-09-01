@@ -34,6 +34,6 @@ config NAOS_MSG_DEBUG
 
 config NAOS_MSG_ONLY
     bool "Enforce msg-only mode by dropping channel specific params/flash interface"
-    default y
+    default n
 
 endmenu
