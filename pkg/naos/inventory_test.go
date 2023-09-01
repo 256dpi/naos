@@ -8,6 +8,7 @@ import (
 
 func TestInventoryFilterDevices1(t *testing.T) {
 	i := NewInventory()
+	i.Devices = make(map[string]*Device)
 	i.Devices["foo"] = &Device{
 		Name:      "foo",
 		BaseTopic: "/foo",
@@ -24,6 +25,7 @@ func TestInventoryFilterDevices1(t *testing.T) {
 
 func TestInventoryDeviceBaseTopics(t *testing.T) {
 	i := NewInventory()
+	i.Devices = make(map[string]*Device)
 	i.Devices["foo"] = &Device{
 		Name:      "foo",
 		BaseTopic: "/foo",

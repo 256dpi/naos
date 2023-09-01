@@ -156,6 +156,11 @@ func (i *Inventory) Collect(duration time.Duration) ([]*Device, error) {
 		return nil, err
 	}
 
+	// ensure devices
+	if i.Devices == nil {
+		i.Devices = make(map[string]*Device)
+	}
+
 	// prepare list
 	var newDevices []*Device
 
