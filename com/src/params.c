@@ -198,6 +198,11 @@ static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
         return NAOS_MSG_ERROR;
       }
 
+      // check mode
+      if (param->mode & NAOS_LOCKED) {
+        return NAOS_MSG_ERROR;
+      }
+
       // set value
       naos_set(param->name, msg.data + strlen(name) + 1, msg.len - strlen(name) - 1);
 

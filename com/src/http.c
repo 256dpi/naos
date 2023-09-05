@@ -185,6 +185,8 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
       return ESP_FAIL;
     }
 
+    // TODO: Return error when writing locked parameter.
+
     // set value
     naos_set_s(param->name, value);
 
