@@ -332,7 +332,7 @@ static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
         naos_param_t *param = naos_params[i];
 
         // skip action, unchanged, or not requested
-        if (param->type == NAOS_ACTION || param->age < since || (map & (1 << i)) == 0) {
+        if (param->type == NAOS_ACTION || param->age < since || !(map & (1 << i))) {
           continue;
         }
 
@@ -410,7 +410,7 @@ void naos_register(naos_param_t *param) {
   }
 
   // force application if undefined
-  if ((param->mode & (NAOS_SYSTEM | NAOS_APPLICATION)) == 0) {
+  if (!(param->mode & (NAOS_SYSTEM | NAOS_APPLICATION))) {
     param->mode |= NAOS_APPLICATION;
   }
 
@@ -431,7 +431,7 @@ void naos_register(naos_param_t *param) {
   // check existence
   size_t length;
   esp_err_t err = nvs_get_blob(naos_params_handle, param->name, NULL, &length);
-  if ((param->mode & NAOS_VOLATILE) != 0 || err == ESP_ERR_NVS_NOT_FOUND) {
+  if ((param->mode & NAOS_VOLATILE) || err == ESP_ERR_NVS_NOT_FOUND) {
     // set default value if missing or volatile
     NAOS_UNLOCK(naos_params_mutex);
     switch (param->type) {
@@ -513,16 +513,16 @@ char *naos_params_list(naos_mode_t mode) {
     if ((param->mode & mode) == mode) {
       count++;
       length += strlen(param->name) + 4;
-      if ((param->mode & NAOS_VOLATILE) != 0) {
+      if (param->mode & NAOS_VOLATILE) {
         length++;
       }
-      if ((param->mode & NAOS_SYSTEM) != 0) {
+      if (param->mode & NAOS_SYSTEM) {
         length++;
       }
-      if ((param->mode & NAOS_APPLICATION) != 0) {
+      if (param->mode & NAOS_APPLICATION) {
         length++;
       }
-      if ((param->mode & NAOS_LOCKED) != 0) {
+      if (param->mode & NAOS_LOCKED) {
         length++;
       }
     }
@@ -590,19 +590,19 @@ char *naos_params_list(naos_mode_t mode) {
     pos++;
 
     // write mode
-    if ((param->mode & NAOS_VOLATILE) != 0) {
+    if (param->mode & NAOS_VOLATILE) {
       buf[pos] = 'v';
       pos++;
     }
-    if ((param->mode & NAOS_SYSTEM) != 0) {
+    if (param->mode & NAOS_SYSTEM) {
       buf[pos] = 's';
       pos++;
     }
-    if ((param->mode & NAOS_APPLICATION) != 0) {
+    if (param->mode & NAOS_APPLICATION) {
       buf[pos] = 'a';
       pos++;
     }
-    if ((param->mode & NAOS_LOCKED) != 0) {
+    if (param->mode & NAOS_LOCKED) {
       buf[pos] = 'l';
       pos++;
     }
@@ -710,7 +710,7 @@ void naos_set(const char *name, uint8_t *value, size_t length) {
   NAOS_LOCK(naos_params_mutex);
 
   // set parameter if not volatile
-  if ((param->mode & NAOS_VOLATILE) == 0) {
+  if (!(param->mode & NAOS_VOLATILE)) {
     ESP_ERROR_CHECK(nvs_set_blob(naos_params_handle, name, value, length));
   }
 

@@ -460,7 +460,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
             }
           }
         } else if (c == &naos_ble_char_value) {
-          if (!conn->locked && conn->param != NULL && (conn->param->mode & NAOS_LOCKED) == 0) {
+          if (!conn->locked && conn->param != NULL && !(conn->param->mode & NAOS_LOCKED)) {
             naos_set(conn->param->name, p->write.value, p->write.len);
           }
         } else if (c == &naos_ble_char_flash) {
