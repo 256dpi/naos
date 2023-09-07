@@ -126,6 +126,11 @@ typedef struct {
   };
 
   /**
+   * Whether to skip the function during initialization.
+   */
+  bool skip_func_init;
+
+  /**
    * The current and last value.
    */
   naos_value_t current;

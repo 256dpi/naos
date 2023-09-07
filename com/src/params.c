@@ -74,7 +74,10 @@ static naos_value_t naos_params_default(naos_param_t *param) {
   };
 }
 
-static void naos_params_update(naos_param_t *param) {
+static void naos_params_update(naos_param_t *param, bool init) {
+  // determine yield
+  bool yield = !init || !param->skip_func_init;
+
   // handle type
   switch (param->type) {
     case NAOS_RAW: {
@@ -84,7 +87,7 @@ static void naos_params_update(naos_param_t *param) {
       }
 
       // yield value
-      if (param->func_r != NULL) {
+      if (yield && param->func_r != NULL) {
         param->func_r(param->current);
       }
 
@@ -104,7 +107,7 @@ static void naos_params_update(naos_param_t *param) {
       }
 
       // yield value
-      if (param->func_s != NULL) {
+      if (yield && param->func_s != NULL) {
         param->func_s((const char *)param->current.buf);
       }
 
@@ -120,7 +123,7 @@ static void naos_params_update(naos_param_t *param) {
       }
 
       // yield value
-      if (param->func_b != NULL) {
+      if (yield && param->func_b != NULL) {
         param->func_b(value);
       }
 
@@ -136,7 +139,7 @@ static void naos_params_update(naos_param_t *param) {
       }
 
       // yield value
-      if (param->func_l != NULL) {
+      if (yield && param->func_l != NULL) {
         param->func_l(value);
       }
 
@@ -152,7 +155,7 @@ static void naos_params_update(naos_param_t *param) {
       }
 
       // yield value
-      if (param->func_d != NULL) {
+      if (yield && param->func_d != NULL) {
         param->func_d(value);
       }
 
@@ -160,7 +163,7 @@ static void naos_params_update(naos_param_t *param) {
     }
     case NAOS_ACTION: {
       // defer trigger
-      if (param->func_a != NULL) {
+      if (yield && param->func_a != NULL) {
         naos_defer(param->func_a);
       }
     }
@@ -496,7 +499,7 @@ void naos_register(naos_param_t *param) {
   }
 
   // update parameter
-  naos_params_update(param);
+  naos_params_update(param, true);
 
   // release mutex
   NAOS_UNLOCK(naos_params_mutex);
@@ -767,7 +770,7 @@ void naos_set(const char *name, uint8_t *value, size_t length) {
   NAOS_UNLOCK(naos_params_mutex);
 
   // update parameter
-  naos_params_update(param);
+  naos_params_update(param, false);
 }
 
 void naos_set_s(const char *param, const char *value) {
