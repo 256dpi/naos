@@ -288,6 +288,9 @@ public class NAOSDevice: NSObject {
 				paramSession = sess
 			}
 		}
+		
+		// reset max aage
+		maxAge = 0
 
 		// cancel previous subscriptions
 		updater?.cancel()
