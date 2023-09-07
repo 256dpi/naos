@@ -43,10 +43,10 @@ static void online() {
 
 static void update(naos_param_t *param) {
   // log param change
-  if (param->current.len > 0) {
-    naos_log("param %s updated to %s", param->name, param->current.buf);
+  if (param->type == NAOS_ACTION) {
+    naos_log("param %s triggered", param->name);
   } else {
-    naos_log("param %s cleared", param->name);
+    naos_log("param %s updated to '%s'", param->name, param->current.buf);
   }
 
   // set counter

@@ -225,7 +225,7 @@ static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
       // NAME (*) | 0 | VALUE (*)
 
       // check length
-      if (msg.len < 3) {
+      if (msg.len < 2) {
         return NAOS_MSG_INVALID;
       }
 
@@ -233,18 +233,13 @@ static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
       const char *name = (const char *)msg.data;
 
       // verify name
-      if (strlen(name) == 0 || strlen(name) + 2 > msg.len) {
+      if (strlen(name) == 0 || strlen(name) + 1 > msg.len) {
         return NAOS_MSG_INVALID;
       }
 
       // get parameter
       naos_param_t *param = naos_lookup(name);
       if (param == NULL) {
-        return NAOS_MSG_ERROR;
-      }
-
-      // check type
-      if (param->type == NAOS_ACTION) {
         return NAOS_MSG_ERROR;
       }
 
@@ -347,11 +342,6 @@ static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
 
       // get parameter
       naos_param_t *param = naos_params[msg.data[0]];
-
-      // check type
-      if (param->type == NAOS_ACTION) {
-        return NAOS_MSG_ERROR;
-      }
 
       // set value
       naos_set(param->name, msg.data + 1, msg.len - 1);
