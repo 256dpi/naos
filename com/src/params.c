@@ -28,6 +28,52 @@ static size_t naos_params_count = 0;
 static naos_params_handler_t naos_params_handlers[NAOS_PARAMS_MAX_HANDLERS] = {0};
 static uint8_t naos_params_handler_count = 0;
 
+static naos_value_t naos_params_default(naos_param_t *param) {
+  // prepare scratch
+  char scratch[32];
+
+  // determine default value
+  uint8_t *buf = NULL;
+  size_t len = 0;
+  switch (param->type) {
+    case NAOS_RAW:
+      buf = param->default_r.buf;
+      len = param->default_r.len;
+      break;
+    case NAOS_STRING:
+      if (param->default_s != 0) {
+        buf = (uint8_t *)param->default_s;
+        len = strlen(param->default_s);
+      }
+      break;
+    case NAOS_BOOL:
+      buf = (uint8_t *)naos_i2str(scratch, param->default_b);
+      len = strlen((const char *)buf);
+      break;
+    case NAOS_LONG:
+      buf = (uint8_t *)naos_i2str(scratch, param->default_l);
+      len = strlen((const char *)buf);
+      break;
+    case NAOS_DOUBLE:
+      buf = (uint8_t *)naos_d2str(scratch, param->default_d);
+      len = strlen((const char *)buf);
+      break;
+    default:
+      ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // copy value
+  uint8_t *copy = malloc(len + 1);
+  memcpy(copy, buf, len);
+  copy[len] = 0;
+
+  // return value
+  return (naos_value_t){
+      .buf = copy,
+      .len = len,
+  };
+}
+
 static void naos_params_update(naos_param_t *param) {
   // handle type
   switch (param->type) {
@@ -433,29 +479,9 @@ void naos_register(naos_param_t *param) {
   esp_err_t err = nvs_get_blob(naos_params_handle, param->name, NULL, &length);
   if ((param->mode & NAOS_VOLATILE) || err == ESP_ERR_NVS_NOT_FOUND) {
     // set default value if missing or volatile
-    NAOS_UNLOCK(naos_params_mutex);
-    switch (param->type) {
-      case NAOS_RAW:
-        naos_set(param->name, param->default_r.buf, param->default_r.len);
-        break;
-      case NAOS_STRING:
-        naos_set_s(param->name, param->default_s);
-        break;
-      case NAOS_BOOL:
-        naos_set_b(param->name, param->default_b);
-        break;
-      case NAOS_LONG:
-        naos_set_l(param->name, param->default_l);
-        break;
-      case NAOS_DOUBLE:
-        naos_set_d(param->name, param->default_d);
-        break;
-      default:
-        ESP_ERROR_CHECK(ESP_FAIL);
-    }
-    NAOS_LOCK(naos_params_mutex);
+    param->current = naos_params_default(param);
   } else if (err == ESP_OK) {
-    // otherwise, read stored value
+    // otherwise, load stored value
     uint8_t *buf = malloc(length + 1);
     ESP_ERROR_CHECK(nvs_get_blob(naos_params_handle, param->name, buf, &length));
     buf[length] = 0;
@@ -465,12 +491,12 @@ void naos_register(naos_param_t *param) {
         .buf = buf,
         .len = length,
     };
-
-    // update parameter
-    naos_params_update(param);
   } else {
     ESP_ERROR_CHECK(err);
   }
+
+  // update parameter
+  naos_params_update(param);
 
   // release mutex
   NAOS_UNLOCK(naos_params_mutex);
@@ -709,9 +735,9 @@ void naos_set(const char *name, uint8_t *value, size_t length) {
   // acquire mutex
   NAOS_LOCK(naos_params_mutex);
 
-  // set parameter if not volatile
+  // store value if not volatile
   if (!(param->mode & NAOS_VOLATILE)) {
-    ESP_ERROR_CHECK(nvs_set_blob(naos_params_handle, name, value, length));
+    ESP_ERROR_CHECK(nvs_set_blob(naos_params_handle, param->name, value, length));
   }
 
   // free last value
