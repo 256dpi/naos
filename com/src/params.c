@@ -19,6 +19,7 @@ typedef enum {
   NAOS_PARAMS_CMD_READ,
   NAOS_PARAMS_CMD_WRITE,
   NAOS_PARAMS_CMD_COLLECT,
+  NAOS_PARAMS_CMD_CLEAR,
 } naos_params_cmd_t;
 
 static nvs_handle naos_params_handle;
@@ -408,6 +409,34 @@ static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
         // free data
         free(data);
       }
+
+      return NAOS_MSG_ACK;
+    }
+
+    case NAOS_PARAMS_CMD_CLEAR: {
+      // command structure:
+      // REF (1)
+
+      // check length
+      if (msg.len != 1) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // check ref
+      if (msg.data[0] >= naos_params_count) {
+        return NAOS_MSG_ERROR;
+      }
+
+      // get parameter
+      naos_param_t *param = naos_params[msg.data[0]];
+
+      // check type
+      if (param->type == NAOS_ACTION) {
+        return NAOS_MSG_ERROR;
+      }
+
+      // clear value
+      naos_clear(param->name);
 
       return NAOS_MSG_ACK;
     }
