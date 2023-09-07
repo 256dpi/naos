@@ -288,6 +288,13 @@ void naos_set_l(const char *param, int32_t value);
 void naos_set_d(const char *param, double value);
 
 /**
+ * Will set the default value of the requested parameter. Synchronized parameters are automatically updated.
+ *
+ * @param name The parameters.
+ */
+void naos_clear(const char *name);
+
+/**
  * Will lookup the specified parameter.
  *
  * @param name The parameter.

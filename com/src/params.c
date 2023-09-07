@@ -795,3 +795,40 @@ void naos_set_d(const char *param, double value) {
   char buf[32] = {0};
   naos_set_s(param, naos_d2str(buf, value));
 }
+
+void naos_clear(const char *name) {
+  // lookup parameter
+  naos_param_t *param = naos_lookup(name);
+  if (param == NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // acquire mutex
+  NAOS_LOCK(naos_params_mutex);
+
+  // erase value if not volatile
+  if (!(param->mode & NAOS_VOLATILE)) {
+    ESP_ERROR_CHECK(nvs_erase_key(naos_params_handle, param->name));
+  }
+
+  // free last value
+  if (param->last.buf != NULL) {
+    free(param->last.buf);
+  }
+
+  // move current to last value
+  param->last = param->current;
+
+  // set current value
+  param->current = naos_params_default(param);
+
+  // track change
+  param->changed = true;
+  param->age = naos_millis();
+
+  // release mutex
+  NAOS_UNLOCK(naos_params_mutex);
+
+  // update parameter
+  naos_params_update(param, false);
+}
