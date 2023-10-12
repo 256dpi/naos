@@ -302,6 +302,15 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       naos_ble_conns[p->connect.conn_id].connected = true;
       naos_ble_conns[p->connect.conn_id].locked = strlen(naos_get_s("device-password")) > 0;
 
+      // update connection params
+      esp_ble_conn_update_params_t conn_params;
+      memcpy(conn_params.bda, p->connect.remote_bda, sizeof(conn_params.bda));
+      conn_params.min_int = 0x06; // x 1.25ms
+      conn_params.max_int = 0x20; // x 1.25ms
+      conn_params.latency = 0x00; // no skipped events
+      conn_params.timeout = 0x0C80; // 32s
+      ESP_ERROR_CHECK(esp_ble_gap_update_conn_params(&conn_params));
+
       // restart advertisement
       ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
 
