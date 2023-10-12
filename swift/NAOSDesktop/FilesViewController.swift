@@ -40,8 +40,10 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			
 			// write file
 			await process(title: "Uploading...") { progress in
+				let start = Date()
 				try await self.endpoint.write(path: path, data: file.1, report: { done in
-					progress(Double(done) / Double(file.1.count))
+					let diff = Date().timeIntervalSince(start)
+					progress(Double(done) / Double(file.1.count), Double(done) / diff)
 				})
 			}
 			
@@ -63,8 +65,10 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			// read file
 			var data: Data?
 			await process(title: "Downloading...") { progress in
+				let start = Date()
 				data = try await self.endpoint.read(path: self.root() + "/" + file.name, report: { done in
-					progress(Double(done) / Double(file.size))
+					let diff = Date().timeIntervalSince(start)
+					progress(Double(done) / Double(file.size), Double(done) / diff)
 				})
 			}
 			
