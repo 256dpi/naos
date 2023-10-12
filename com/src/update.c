@@ -3,7 +3,6 @@
 
 #include <string.h>
 #include <esp_ota_ops.h>
-#include <esp_task_wdt.h>
 
 #include "update.h"
 #include "utils.h"
@@ -29,25 +28,12 @@ static void naos_update_begin_task() {
   NAOS_LOCK(naos_update_mutex);
 
   // esp_ota_begin will erase flash, which may take up to 10s for 2MB,
-  // we conservatively increase the task WDT timeout to 30s if enabled
-
-  // increase task WDT timeout if enabled
-#ifdef CONFIG_ESP_TASK_WDT_PANIC
-  ESP_ERROR_CHECK(esp_task_wdt_init(30, true));
-#elif CONFIG_ESP_TASK_WDT
-  ESP_ERROR_CHECK(esp_task_wdt_init(30, false));
-#endif
+  // the function should yield back to the task manager at some interval
 
   // begin update
+  ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin_task: erasing partition...");
   ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, naos_update_size, &naos_update_handle));
   ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin_task: partition erased");
-
-  // restore original task WDT timeout if enabled
-#ifdef CONFIG_ESP_TASK_WDT_PANIC
-  ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
-#elif CONFIG_ESP_TASK_WDT
-  ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
-#endif
 
   // release mutex
   NAOS_UNLOCK(naos_update_mutex);
