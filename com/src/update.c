@@ -1,17 +1,28 @@
 #include <naos/sys.h>
+#include <naos/msg.h>
 
+#include <string.h>
 #include <esp_ota_ops.h>
 #include <esp_task_wdt.h>
 
-#include "naos.h"
 #include "update.h"
 #include "utils.h"
+
+#define NAOS_UPDATE_ENDPOINT 0x02
+
+typedef enum {
+  NAOS_UPDATE_BEGIN,
+  NAOS_UPDATE_WRITE,
+  NAOS_UPDATE_ABORT,
+  NAOS_UPDATE_FINISH,
+} naos_update_cmd_t;
 
 static naos_mutex_t naos_update_mutex;
 static naos_update_callback_t naos_update_callback = NULL;
 static const esp_partition_t *naos_update_partition = NULL;
 static size_t naos_update_size = 0;
 static esp_ota_handle_t naos_update_handle = 0;
+static uint16_t naos_update_session = 0;
 
 static void naos_update_begin_task() {
   // acquire mutex
@@ -44,6 +55,17 @@ static void naos_update_begin_task() {
   if (naos_update_callback != NULL) {
     naos_update_callback(NAOS_UPDATE_READY);
   }
+
+  // send reply to session
+  if (naos_update_session != 0) {
+    uint8_t event = NAOS_UPDATE_READY;
+    naos_msg_send((naos_msg_t){
+      .session = naos_update_session,
+      .endpoint = NAOS_UPDATE_ENDPOINT,
+      .data = &event,
+      .len = 1,
+    });
+  }
 }
 
 static void naos_update_finish_task() {
@@ -52,9 +74,6 @@ static void naos_update_finish_task() {
 
   // end update
   ESP_ERROR_CHECK(esp_ota_end(naos_update_handle));
-
-  // reset handle
-  naos_update_handle = 0;
 
   // set boot partition
   ESP_ERROR_CHECK(esp_ota_set_boot_partition(naos_update_partition));
@@ -70,13 +89,132 @@ static void naos_update_finish_task() {
     naos_update_callback(NAOS_UPDATE_DONE);
   }
 
+  // send reply to session
+  if (naos_update_session != 0) {
+    uint8_t event = NAOS_UPDATE_DONE;
+    naos_msg_send((naos_msg_t){
+        .session = naos_update_session,
+        .endpoint = NAOS_UPDATE_ENDPOINT,
+        .data = &event,
+        .len = 1,
+    });
+  }
+
   // restart system
   esp_restart();
+}
+
+static naos_msg_reply_t naos_update_process(naos_msg_t msg) {
+  // check length
+  if (msg.len == 0) {
+    return NAOS_MSG_INVALID;
+  }
+
+  // get command
+  naos_update_cmd_t cmd = (naos_update_cmd_t)msg.data[0];
+
+  // adjust message
+  msg.data++;
+  msg.len--;
+
+  // handle command
+  switch (cmd) {
+    case NAOS_UPDATE_BEGIN:
+      // command structure:
+      // SIZE (4)
+
+      // check length
+      if (msg.len != 4) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // get size
+      uint32_t size = 0;
+      memcpy(&size, msg.data, 4);
+
+      // set session
+      naos_update_session = msg.session;
+
+      // begin update
+      naos_update_begin(size, NULL);
+
+      return NAOS_MSG_OK;
+
+    case NAOS_UPDATE_WRITE:
+      // command structure:
+      // DATA (*)
+
+      // check length
+      if (msg.len == 0) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // check session
+      if (naos_update_session != msg.session) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // write data
+      naos_update_write(msg.data, msg.len);
+
+      return NAOS_MSG_ACK;
+
+    case NAOS_UPDATE_ABORT:
+      // check length
+      if (msg.len != 0) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // check session
+      if (naos_update_session != msg.session) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // abort update
+      naos_update_abort();
+
+      return NAOS_MSG_ACK;
+
+    case NAOS_UPDATE_FINISH:
+      // check length
+      if (msg.len != 0) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // check session
+      if (naos_update_session != msg.session) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // finish update
+      naos_update_finish();
+
+      return NAOS_MSG_OK;
+
+    default:
+      return NAOS_MSG_UNKNOWN;
+  }
+}
+
+static void naos_update_cleanup(uint16_t ref) {
+  // check sessions
+  if (naos_update_session == ref) {
+    // abort update
+    naos_update_abort();
+  }
 }
 
 void naos_update_init() {
   // create mutex
   naos_update_mutex = naos_mutex();
+
+  // register endpoint
+  naos_msg_install((naos_msg_endpoint_t){
+    .ref = NAOS_UPDATE_ENDPOINT,
+    .name = "update",
+    .handle = naos_update_process,
+    .cleanup = naos_update_cleanup,
+  });
 }
 
 void naos_update_begin(size_t size, naos_update_callback_t cb) {
@@ -126,6 +264,26 @@ void naos_update_write(const uint8_t *chunk, size_t len) {
 
   // write chunk
   ESP_ERROR_CHECK(esp_ota_write(naos_update_handle, (const void *)chunk, len));
+
+  // release mutex
+  NAOS_UNLOCK(naos_update_mutex);
+}
+
+void naos_update_abort() {
+  // acquire mutex
+  NAOS_LOCK(naos_update_mutex);
+
+  // abort a previous update and discard its result
+  if (naos_update_handle != 0) {
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ota_abort(naos_update_handle));
+  }
+
+  // clear state
+  naos_update_callback = NULL;
+  naos_update_partition = NULL;
+  naos_update_size = 0;
+  naos_update_handle = 0;
+  naos_update_session = 0;
 
   // release mutex
   NAOS_UNLOCK(naos_update_mutex);

@@ -13,6 +13,7 @@ typedef void (*naos_update_callback_t)(naos_update_event_t event);
 void naos_update_init();
 void naos_update_begin(size_t size, naos_update_callback_t cb);
 void naos_update_write(const uint8_t *chunk, size_t len);
+void naos_update_abort();
 void naos_update_finish();
 
 #endif  // NAOS_UPDATE_H
