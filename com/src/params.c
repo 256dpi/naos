@@ -167,6 +167,8 @@ static void naos_params_update(naos_param_t *param, bool init) {
       if (yield && param->func_a != NULL) {
         naos_defer(param->func_a);
       }
+
+      break;
     }
   }
 }
