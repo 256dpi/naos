@@ -65,6 +65,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				// perform flash
 				try await device.flash(data: image, progress: { (progress: NAOSProgress) in
 					DispatchQueue.main.async {
+						self.loadingViewController!.label.stringValue = String(format: "Flashing...\n%.1f %% @ %.1f kB/s", progress.percent, progress.rate / 1000)
 						self.loadingViewController!.progressIndicator.isIndeterminate = false
 						self.loadingViewController!.progressIndicator.doubleValue = progress.percent
 					}
