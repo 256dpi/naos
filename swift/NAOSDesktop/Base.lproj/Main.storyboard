@@ -1142,11 +1142,11 @@
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                     <prototypeCellViews>
                                                         <tableCellView identifier="SizeCell" id="mOg-s0-Fdk">
-                                                            <rect key="frame" x="311" y="0.0" width="58" height="17"/>
+                                                            <rect key="frame" x="311" y="0.0" width="58" height="24"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kxl-SF-GCN">
-                                                                    <rect key="frame" x="0.0" y="1" width="58" height="16"/>
+                                                                    <rect key="frame" x="0.0" y="4" width="58" height="16"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                                                     <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="Wfu-p8-EOW">
                                                                         <font key="font" usesAppearanceFont="YES"/>
