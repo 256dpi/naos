@@ -12,9 +12,16 @@
  */
 void naos_fs_mount_fat(const char *path, const char *label, int max_files);
 
+typedef struct {
+  /**
+   * The exposed filesystem root.
+   */
+  const char *root;
+} naos_fs_config_t;
+
 /**
  * Install the FS endpoint.
  */
-void naos_fs_install();
+void naos_fs_install(naos_fs_config_t cfg);
 
 #endif // NAOS_FS_H

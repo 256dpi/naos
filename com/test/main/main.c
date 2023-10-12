@@ -204,7 +204,9 @@ void app_main() {
   naos_fs_mount_fat("/data", "storage", 5);
 
   // install file system endpoint
-  naos_fs_install();
+  naos_fs_install((naos_fs_config_t){
+    .root = "/data",
+  });
 
   // register parameters
   naos_register(&param_counter);

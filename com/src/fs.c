@@ -1,3 +1,4 @@
+#include <naos/fs.h>
 #include <naos/msg.h>
 #include <naos/sys.h>
 
@@ -57,6 +58,22 @@ typedef struct {
 
 static naos_mutex_t naos_fs_mutex = 0;
 static naos_fs_file_t naos_fs_files[NAOS_FS_MAX_FILES] = {0};
+static naos_fs_config_t naos_fs_config = {0};
+static char naos_fs_path[256] = {0};
+
+static const char *naos_fs_concat_path(const char *path) {
+  // check root
+  if (naos_fs_config.root == NULL) {
+    return path;
+  }
+
+  // build path
+  naos_fs_path[0] = 0;
+  strcat(naos_fs_path, naos_fs_config.root);
+  strcat(naos_fs_path, path);
+
+  return naos_fs_path;
+}
 
 static naos_msg_reply_t naos_fs_send_error(uint16_t session, int error) {
   // reply structure:
@@ -81,13 +98,16 @@ static naos_msg_reply_t naos_fs_handle_stat(naos_msg_t msg) {
   // PATH (*)
 
   // check path
-  if (msg.len == 0) {
+  if (msg.len == 0 || msg.data[0] != '/') {
     return NAOS_MSG_INVALID;
   }
 
+  // get path
+  const char *path = naos_fs_concat_path((const char *)msg.data);
+
   // stat path
   struct stat info;
-  int ret = stat((const char *)msg.data, &info);
+  int ret = stat(path, &info);
   if (ret != 0) {
     return naos_fs_send_error(msg.session, errno);
   }
@@ -119,12 +139,15 @@ static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {
   // PATH (*)
 
   // check path
-  if (msg.len == 0) {
+  if (msg.len == 0 || msg.data[0] != '/') {
     return NAOS_MSG_INVALID;
   }
 
+  // get root
+  const char *root = naos_fs_concat_path((const char *)msg.data);
+
   // open directory
-  DIR *dir = opendir((const char *)msg.data);
+  DIR *dir = opendir(root);
   if (dir == NULL) {
     return naos_fs_send_error(msg.session, errno);
   }
@@ -141,7 +164,7 @@ static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {
     }
 
     // join path
-    snprintf(path, sizeof(path), "%s/%s", msg.data, entry->d_name);
+    snprintf(path, sizeof(path), "%s/%s", root, entry->d_name);
 
     // stat file
     struct stat info;
@@ -191,7 +214,7 @@ static naos_msg_reply_t naos_fs_handle_open(naos_msg_t msg) {
   // FLAGS (1) | PATH (*)
 
   // check path
-  if (msg.len <= 1) {
+  if (msg.len <= 1 || msg.data[1] != '/') {
     return NAOS_MSG_INVALID;
   }
 
@@ -233,8 +256,11 @@ static naos_msg_reply_t naos_fs_handle_open(naos_msg_t msg) {
     open_flags |= O_EXCL;
   }
 
+  // get path
+  const char *path = naos_fs_concat_path((const char *)(msg.data + 1));
+
   // create file
-  int fd = open((const char *)(msg.data + 1), open_flags, 0644);
+  int fd = open(path, open_flags, 0644);
   if (fd < 0) {
     return naos_fs_send_error(msg.session, errno);
   }
@@ -446,11 +472,13 @@ static naos_msg_reply_t naos_fs_handle_rename(naos_msg_t msg) {
     return NAOS_MSG_INVALID;
   } else if (from_len + 1 + to_len > msg.len) {
     return NAOS_MSG_INVALID;
+  } else if (msg.data[0] != '/' || msg.data[from_len + 1] != '/') {
+    return NAOS_MSG_INVALID;
   }
 
-  // get strings
-  const char *from = (const char *)msg.data;
-  const char *to = (const char *)&msg.data[from_len + 1];
+  // get paths
+  const char *from = naos_fs_concat_path((const char *)msg.data);
+  const char *to = naos_fs_concat_path((const char *)&msg.data[from_len + 1]);
 
   // rename file
   int ret = rename(from, to);
@@ -466,12 +494,12 @@ static naos_msg_reply_t naos_fs_handle_remove(naos_msg_t msg) {
   // PATH (*)
 
   // check path
-  if (msg.len == 0) {
+  if (msg.len == 0 || msg.data[0] != '/') {
     return NAOS_MSG_INVALID;
   }
 
   // get path
-  const char *path = (const char *)msg.data;
+  const char *path = naos_fs_concat_path((const char *)msg.data);
 
   // remove file
   int ret = remove(path);
@@ -487,12 +515,12 @@ static naos_msg_reply_t naos_fs_handle_sha256(naos_msg_t msg) {
   // PATH (*)
 
   // check length
-  if (msg.len == 0) {
+  if (msg.len == 0 || msg.data[0] != '/') {
     return NAOS_MSG_INVALID;
   }
 
   // get path
-  const char *path = (const char *)msg.data;
+  const char *path = naos_fs_concat_path((const char *)msg.data);
 
   // open file
   int fd = open(path, O_RDONLY, 0);
@@ -661,9 +689,18 @@ void naos_fs_mount_fat(const char *path, const char *label, int max_files) {
   ESP_ERROR_CHECK(esp_vfs_fat_spiflash_mount(path, label, &mount_config, &wl_handle));
 }
 
-void naos_fs_install() {
+void naos_fs_install(naos_fs_config_t cfg) {
+  // check root (must begin with "/" and not end with "/")
+  if (cfg.root != NULL && (cfg.root[0] != '/' || (strlen(cfg.root) > 1 && cfg.root[strlen(cfg.root) - 1] == '/'))) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+    return;
+  }
+
   // create mutex
   naos_fs_mutex = naos_mutex();
+
+  // store config
+  naos_fs_config = cfg;
 
   // install endpoint
   naos_msg_install((naos_msg_endpoint_t){
