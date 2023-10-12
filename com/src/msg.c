@@ -85,7 +85,7 @@ void naos_msg_cleaner() {
     // get session
     naos_msg_session_t* session = &naos_msg_session[i];
 
-    // skip if inactive and young sessions
+    // skip inactive or young session
     if (!session->active || now - session->last_msg < 30000) {
       continue;
     }

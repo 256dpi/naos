@@ -40,6 +40,7 @@ static void naos_update_begin_task() {
 
   // begin update
   ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, naos_update_size, &naos_update_handle));
+  ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin_task: partition erased");
 
   // restore original task WDT timeout if enabled
 #ifdef CONFIG_ESP_TASK_WDT_PANIC
@@ -100,6 +101,12 @@ static void naos_update_finish_task() {
     });
   }
 
+  // log message
+  ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish: rebooting in one second...");
+
+  // wait one second
+  naos_delay(1000);
+
   // restart system
   esp_restart();
 }
@@ -142,10 +149,10 @@ static naos_msg_reply_t naos_update_process(naos_msg_t msg) {
 
     case NAOS_UPDATE_WRITE:
       // command structure:
-      // DATA (*)
+      // ACKED (1) | DATA (*)
 
       // check length
-      if (msg.len == 0) {
+      if (msg.len <= 1) {
         return NAOS_MSG_INVALID;
       }
 
@@ -154,10 +161,13 @@ static naos_msg_reply_t naos_update_process(naos_msg_t msg) {
         return NAOS_MSG_INVALID;
       }
 
-      // write data
-      naos_update_write(msg.data, msg.len);
+      // get acked
+      bool acked = msg.data[0] == 1;
 
-      return NAOS_MSG_ACK;
+      // write data
+      naos_update_write(msg.data + 1, msg.len - 1);
+
+      return acked ? NAOS_MSG_ACK : NAOS_MSG_OK;
 
     case NAOS_UPDATE_ABORT:
       // check length
@@ -228,7 +238,7 @@ void naos_update_begin(size_t size, naos_update_callback_t cb) {
   }
 
   // log message
-  ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin: start update");
+  ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin: starting update...");
 
   // store callback
   naos_update_callback = cb;
@@ -275,6 +285,7 @@ void naos_update_abort() {
 
   // abort a previous update and discard its result
   if (naos_update_handle != 0) {
+    ESP_LOGI(NAOS_LOG_TAG, "naos_update_abort: aborting update...");
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ota_abort(naos_update_handle));
   }
 
@@ -299,6 +310,9 @@ void naos_update_finish() {
     NAOS_UNLOCK(naos_update_mutex);
     return;
   }
+
+  // log message
+  ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin: finishing update...");
 
   // release mutex
   NAOS_UNLOCK(naos_update_mutex);
