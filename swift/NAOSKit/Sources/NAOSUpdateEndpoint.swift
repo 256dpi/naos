@@ -8,12 +8,14 @@ import Semaphore
 
 public class NAOSUpdateEndpoint {
 	private let session: NAOSSession
-	private let timeout: TimeInterval
 	private let mutex = AsyncSemaphore(value: 1)
 	
-	public init(session: NAOSSession, timeout: TimeInterval) {
+	public let beginTimeout: TimeInterval = 30
+	public let writeTimeout: TimeInterval = 5
+	public let finishTimeout: TimeInterval = 10
+	
+	public init(session: NAOSSession) {
 		self.session = session
-		self.timeout = timeout
 	}
 	
 	public func run(image: Data, report: ((Int) -> Void)?) async throws {
@@ -29,7 +31,7 @@ public class NAOSUpdateEndpoint {
 		try await session.send(endpoint: 0x2, data: cmd, ackTimeout: 0)
 		
 		// receive value
-		var reply = try await session.receive(endpoint: 0x2, expectAck: false, timeout: timeout)!
+		var reply = try await session.receive(endpoint: 0x2, expectAck: false, timeout: beginTimeout)!
 		
 		// verify reply
 		if reply.count != 1 || reply[0] != 0 {
@@ -46,16 +48,15 @@ public class NAOSUpdateEndpoint {
 			let chunkSize = min(500, image.count - offset)
 			let chunkData = image.subdata(in: offset ..< offset + chunkSize)
 			
-			// determine mode
+			// determine acked
 			let acked = num % 10 == 0
 			
-			// prepare "write" command (acked or silent & sequential)
-			cmd = Data([1]) // , acked ? 0 : 1 << 0 | 1 << 1])
-			// cmd.append(writeUint32(value: UInt32(offset)))
+			// prepare "write" command
+			cmd = Data([1, acked ? 1 : 0])
 			cmd.append(chunkData)
 			
 			// send "write" command
-			try await session.send(endpoint: 0x2, data: cmd, ackTimeout: timeout)
+			try await session.send(endpoint: 0x2, data: cmd, ackTimeout: acked ? writeTimeout : 0)
 			
 			// increment offset
 			offset += chunkSize
@@ -76,7 +77,7 @@ public class NAOSUpdateEndpoint {
 		try await session.send(endpoint: 0x2, data: cmd, ackTimeout: 0)
 		
 		// receive value
-		reply = try await session.receive(endpoint: 0x2, expectAck: false, timeout: timeout)!
+		reply = try await session.receive(endpoint: 0x2, expectAck: false, timeout: finishTimeout)!
 		
 		// verify reply
 		if reply.count != 1 || reply[0] != 1 {

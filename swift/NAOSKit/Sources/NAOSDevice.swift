@@ -527,14 +527,16 @@ public class NAOSDevice: NSObject {
 		if peripheral.exists(char: .msg) {
 			// open session
 			if let session = try await NAOSSession.open(peripheral: peripheral, timeout: 5) {
-				print("starting flash")
-				
 				// create endpoint
-				let endpoint = NAOSUpdateEndpoint(session: session, timeout: 30)
+				let endpoint = NAOSUpdateEndpoint(session: session)
+				
+				// get time
+				let start = Date()
 				
 				// run update
 				try await endpoint.run(image: data) { offset in
-					progress(NAOSProgress(done: offset, total: data.count, rate: 0, percent: 100 / Double(data.count) * Double(offset)))
+					let diff = Date().timeIntervalSince(start)
+					progress(NAOSProgress(done: offset, total: data.count, rate: Double(offset) / diff, percent: 100 / Double(data.count) * Double(offset)))
 				}
 				
 				// end session
@@ -543,8 +545,6 @@ public class NAOSDevice: NSObject {
 				return
 			}
 		}
-		
-		print("use old flash technique")
 
 		// begin flash
 		try await peripheral.write(char: .flash, data: String(format: "b%d", data.count))
