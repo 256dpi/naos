@@ -22,6 +22,7 @@ static const esp_partition_t *naos_update_partition = NULL;
 static size_t naos_update_size = 0;
 static esp_ota_handle_t naos_update_handle = 0;
 static uint16_t naos_update_session = 0;
+static bool naos_update_block = false;
 
 static void naos_update_begin_task() {
   // acquire mutex
@@ -67,6 +68,9 @@ static void naos_update_finish_task() {
 
   // log message
   ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish: update finished");
+
+  // set block
+  naos_update_block = true;
 
   // release mutex
   NAOS_UNLOCK(naos_update_mutex);
@@ -217,6 +221,13 @@ void naos_update_begin(size_t size, naos_update_callback_t cb) {
   // acquire mutex
   NAOS_LOCK(naos_update_mutex);
 
+  // check block
+  if (naos_update_block) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_begin: blocked");
+    NAOS_UNLOCK(naos_update_mutex);
+    return;
+  }
+
   // abort a previous update and discard its result
   if (naos_update_handle != 0) {
     esp_ota_abort(naos_update_handle);
@@ -251,6 +262,13 @@ void naos_update_write(const uint8_t *chunk, size_t len) {
   // acquire mutex
   NAOS_LOCK(naos_update_mutex);
 
+  // check block
+  if (naos_update_block) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_write: blocked");
+    NAOS_UNLOCK(naos_update_mutex);
+    return;
+  }
+
   // check handle
   if (naos_update_handle == 0) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_write: missing handle");
@@ -268,6 +286,13 @@ void naos_update_write(const uint8_t *chunk, size_t len) {
 void naos_update_abort() {
   // acquire mutex
   NAOS_LOCK(naos_update_mutex);
+
+  // check block
+  if (naos_update_block) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_abort: blocked");
+    NAOS_UNLOCK(naos_update_mutex);
+    return;
+  }
 
   // abort a previous update and discard its result
   if (naos_update_handle != 0) {
@@ -289,6 +314,13 @@ void naos_update_abort() {
 void naos_update_finish() {
   // acquire mutex
   NAOS_LOCK(naos_update_mutex);
+
+  // check block
+  if (naos_update_block) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_finish: blocked");
+    NAOS_UNLOCK(naos_update_mutex);
+    return;
+  }
 
   // check handle
   if (naos_update_handle == 0) {
