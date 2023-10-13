@@ -205,7 +205,7 @@ void app_main() {
 
   // install file system endpoint
   naos_fs_install((naos_fs_config_t){
-    .root = "/data",
+      .root = "/data",
   });
 
   // register parameters

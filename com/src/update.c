@@ -47,10 +47,10 @@ static void naos_update_begin_task() {
   if (naos_update_session != 0) {
     uint8_t event = NAOS_UPDATE_READY;
     naos_msg_send((naos_msg_t){
-      .session = naos_update_session,
-      .endpoint = NAOS_UPDATE_ENDPOINT,
-      .data = &event,
-      .len = 1,
+        .session = naos_update_session,
+        .endpoint = NAOS_UPDATE_ENDPOINT,
+        .data = &event,
+        .len = 1,
     });
   }
 }
@@ -206,10 +206,10 @@ void naos_update_init() {
 
   // register endpoint
   naos_msg_install((naos_msg_endpoint_t){
-    .ref = NAOS_UPDATE_ENDPOINT,
-    .name = "update",
-    .handle = naos_update_process,
-    .cleanup = naos_update_cleanup,
+      .ref = NAOS_UPDATE_ENDPOINT,
+      .name = "update",
+      .handle = naos_update_process,
+      .cleanup = naos_update_cleanup,
   });
 }
 
