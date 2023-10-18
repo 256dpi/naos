@@ -34,6 +34,7 @@ export const UUIDs = {
   valueChar: "01ca5446-8ee1-7e99-2041-6884b01e71b3",
   updateChar: "87bffdcf-0704-22a2-9c4a-7a61bc8c1726",
   flashChar: "6c114da1-9aa9-1687-5341-a1fe4c991390",
+  msgChar: "0360744b-a61b-00ad-c945-37f3634130f3",
 };
 
 export const Types = {
@@ -64,6 +65,7 @@ export class Device extends EventTarget {
   valueChar;
   updateChar;
   flashChar;
+  msgChar;
 
   protected = false;
   locked = false;
@@ -118,6 +120,9 @@ export class Device extends EventTarget {
       this.valueChar = await this.service.getCharacteristic(UUIDs.valueChar);
       this.updateChar = await this.service.getCharacteristic(UUIDs.updateChar);
       this.flashChar = await this.service.getCharacteristic(UUIDs.flashChar);
+      try {
+        this.msgChar = await this.service.getCharacteristic(UUIDs.msgChar);
+      } catch (_) {}
 
       // handle updates
       this.updateChar.addEventListener(
