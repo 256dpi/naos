@@ -186,11 +186,13 @@ func InstallAudioFramework(naosPath, version string, force bool, out io.Writer) 
 	}
 
 	// handle removal
-	if version == "" && exists {
-		utils.Log(out, fmt.Sprintf("Removing audio framework..."))
-		err := os.RemoveAll(ADFDirectory(naosPath))
-		if err != nil {
-			return err
+	if version == "" {
+		if exists {
+			utils.Log(out, fmt.Sprintf("Removing audio framework..."))
+			err := os.RemoveAll(ADFDirectory(naosPath))
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	}
