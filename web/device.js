@@ -217,7 +217,7 @@ export class Device extends EventTarget {
   }
 
   async unlock(password) {
-    return this.queue.run(async () => {
+    return await this.queue.run(async () => {
       // check state
       if (!this.connected) {
         throw new Error("not connected");
@@ -237,7 +237,7 @@ export class Device extends EventTarget {
   }
 
   async read(name) {
-    return this.queue.run(async () => {
+    return await this.queue.run(async () => {
       // check state
       if (!this.connected) {
         throw new Error("not connected");
@@ -257,7 +257,7 @@ export class Device extends EventTarget {
   }
 
   async write(name, value) {
-    return this.queue.run(async () => {
+    return await this.queue.run(async () => {
       // check state
       if (!this.connected) {
         throw new Error("not connected");
@@ -275,7 +275,7 @@ export class Device extends EventTarget {
   }
 
   async quickWrite(name, values, confirm = false) {
-    return this.queue.run(async () => {
+    return await this.queue.run(async () => {
       // check state
       if (!this.connected) {
         throw new Error("not connected");
@@ -296,7 +296,7 @@ export class Device extends EventTarget {
   }
 
   async flash(data, progress) {
-    return this.queue.run(async () => {
+    return await this.queue.run(async () => {
       // check state
       if (!this.connected) {
         throw new Error("not connected");
@@ -372,7 +372,7 @@ export class Device extends EventTarget {
   }
 
   async disconnect() {
-    return this.queue.run(async () => {
+    return await this.queue.run(async () => {
       // lock again if protected
       if (this.protected) {
         this.locked = true;
