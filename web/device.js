@@ -1,11 +1,9 @@
 import { Queue } from "async-await-queue";
-
-const utf8Enc = new TextEncoder();
-const utf8Dec = new TextDecoder();
+import { concat, toBuffer, toString } from "./utils.js";
 
 async function write(char, data, confirm = true) {
   if (typeof data === "string") {
-    data = utf8Enc.encode(data);
+    data = toBuffer(data);
   }
   if (confirm) {
     await char.writeValueWithResponse(data);
@@ -16,14 +14,7 @@ async function write(char, data, confirm = true) {
 
 async function read(char) {
   const value = await char.readValue();
-  return utf8Dec.decode(value);
-}
-
-function concat(buf1, buf2) {
-  const buf = new Uint8Array(buf1.byteLength + buf2.byteLength);
-  buf.set(new Uint8Array(buf1), 0);
-  buf.set(new Uint8Array(buf2), buf1.byteLength);
-  return buf.buffer;
+  return toString(value);
 }
 
 export const UUIDs = {
@@ -128,7 +119,7 @@ export class Device extends EventTarget {
       this.updateChar.addEventListener(
         "characteristicvaluechanged",
         (event) => {
-          const name = utf8Dec.decode(event.target.value);
+          const name = toString(event.target.value);
           this.updated.add(name);
           this.dispatchEvent(new CustomEvent("changed", { detail: name }));
         }
@@ -313,7 +304,7 @@ export class Device extends EventTarget {
       // prepare signal
       const signal = new Promise((resolve) => {
         const listener = (event) => {
-          const res = utf8Dec.decode(event.target.value);
+          const res = toString(event.target.value);
           this.flashChar.removeEventListener(
             "characteristicvaluechanged",
             listener
@@ -348,7 +339,7 @@ export class Device extends EventTarget {
       // write update
       let chunks = 0;
       for (let i = 0; i < data.byteLength; i += 500) {
-        const buf = concat(utf8Enc.encode("w"), data.slice(i, i + 500));
+        const buf = concat(toBuffer("w"), data.slice(i, i + 500));
         await write(this.flashChar, buf, chunks % 5 === 0);
         chunks++;
         if (progress) {
