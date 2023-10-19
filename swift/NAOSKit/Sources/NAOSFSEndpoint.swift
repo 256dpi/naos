@@ -127,13 +127,18 @@ public class NAOSFSEndpoint {
 		try await send(cmd: cmd, ack: true)
 		
 		// prepare "read" command
-		cmd = Data([3, 0, 0, 0, 0, 0, 0, 0, 0])
+		cmd = Data([3])
+		cmd.append(writeUint32(value: offset))
+		cmd.append(writeUint32(value: length))
 		
 		// send "read" command
 		try await send(cmd: cmd, ack: false)
 		
 		// prepare data
 		var data = Data()
+		
+		// prepare counter
+		var count: UInt32 = 0
 		
 		while true {
 			// await reply
@@ -147,15 +152,18 @@ public class NAOSFSEndpoint {
 			}
 			
 			// get offset
-			let offset = readUint32(data: Data(reply[1 ... 5]))
+			let replyOffset = readUint32(data: Data(reply[1 ... 5]))
 			
 			// verify offset
-			if offset != data.count {
+			if replyOffset != offset + count {
 				throw NAOSSessionError.invalidMessage
 			}
 			
 			// append data
 			data.append(Data(reply[5...]))
+			
+			// increment
+			count += UInt32(reply.count - 5)
 			
 			// report length
 			if report != nil {
