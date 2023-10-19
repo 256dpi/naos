@@ -302,16 +302,10 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
   memcpy(&offset, msg.data, sizeof(offset));
   memcpy(&length, &msg.data[4], sizeof(length));
 
-  // determine length if zero
-  if (length == 0) {
-    struct stat info;
-    int ret = fstat(file->fd, &info);
-    if (ret != 0) {
-      return naos_fs_send_error(msg.session, errno);
-    }
-    if (info.st_size > offset) {
-      length = info.st_size - offset;
-    }
+  // stat file
+  struct stat info;
+  if (fstat(file->fd, &info) != 0) {
+    return naos_fs_send_error(msg.session, errno);
   }
 
   // seek to offset
@@ -320,8 +314,20 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
     return naos_fs_send_error(msg.session, errno);
   }
 
+  // determine length if zero or limit length
+  if (length == 0) {
+    if (info.st_size > offset) {
+      length = info.st_size - offset;
+    }
+  } else if (offset + length > info.st_size) {
+    length = info.st_size - offset;
+  }
+
   // determine max chunk size
   size_t max_chunk_size = naos_msg_get_mtu(msg.session) - 16;
+  if (max_chunk_size > length) {
+    max_chunk_size = length;
+  }
 
   // reply structure:
   // TYPE (1) | OFFSET (4) | DATA (*)
@@ -477,14 +483,21 @@ static naos_msg_reply_t naos_fs_handle_rename(naos_msg_t msg) {
   }
 
   // get paths
-  const char *from = naos_fs_concat_path((const char *)msg.data);
+  char *from = strdup(naos_fs_concat_path((const char *)msg.data));
   const char *to = naos_fs_concat_path((const char *)&msg.data[from_len + 1]);
+
+  // remove existing file, if any
+  remove(to);
 
   // rename file
   int ret = rename(from, to);
   if (ret != 0) {
+    free(from);
     return naos_fs_send_error(msg.session, errno);
   }
+
+  // free from
+  free(from);
 
   return NAOS_MSG_ACK;
 }
