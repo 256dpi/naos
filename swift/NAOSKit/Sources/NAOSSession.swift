@@ -92,9 +92,15 @@ public class NAOSSession {
 		// open stream
 		let (stream, subscription) = await peripheral.stream(char: .msg)
 		
-		// TODO: Cancel on error?
+		// handle cancellaton
+		var ok = false
+		defer {
+			if !ok {
+				subscription.cancel()
+			}
+		}
 
-		// genereate handle
+		// generate handle
 		let outHandle = randomString(length: 16)
 
 		// prepare message
@@ -135,6 +141,9 @@ public class NAOSSession {
 
 		// create session
 		let session = NAOSSession(id: sid!, peripheral: peripheral, stream: stream, subscription: subscription)
+		
+		// set flag
+		ok = true
 
 		return session
 	}
