@@ -1,5 +1,6 @@
 import { Queue } from "async-await-queue";
-import { concat, toBuffer, toString } from "./utils.js";
+import Session from "./session.js";
+import { AsyncQueue, concat, toBuffer, toString } from "./utils.js";
 
 async function write(char, data, confirm = true) {
   if (typeof data === "string") {
@@ -155,6 +156,15 @@ export class Device extends EventTarget {
             this.dispatchEvent(new CustomEvent("updated", { detail: updates }));
           });
         }, 1000);
+      }
+
+      // subscribe and handle messages if available
+      if (this.msgChar) {
+        this.msgChar.addEventListener("characteristicvaluechanged", (event) => {
+          const data = event.target.value;
+          this.dispatchEvent(new CustomEvent("message", { detail: data }));
+        });
+        await this.msgChar.startNotifications();
       }
 
       // dispatch event
@@ -365,6 +375,42 @@ export class Device extends EventTarget {
       // finish update
       await write(this.flashChar, "f", true);
     });
+  }
+
+  async session(timeout) {
+    // check characteristic
+    if (!this.msgChar) {
+      return;
+    }
+
+    // create queue
+    const queue = new AsyncQueue();
+
+    // prepare handler
+    const handler = (event) => {
+      queue.push(event.detail);
+    };
+
+    // subscribe to messages
+    this.addEventListener("message", handler);
+
+    return await Session.open(
+      {
+        write: async (msg) => {
+          // write message
+          await write(this.msgChar, msg, false);
+        },
+        read: async (timeout) => {
+          // return next message
+          return queue.pop(timeout);
+        },
+        close: () => {
+          // unsubscribe from messages
+          this.removeEventListener("message", handler);
+        },
+      },
+      timeout
+    );
   }
 
   async disconnect() {
