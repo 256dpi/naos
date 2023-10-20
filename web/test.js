@@ -1,11 +1,11 @@
 import {
   Manager,
+  FSEndpoint,
   randomString,
   readFile,
   toString,
   toBuffer,
 } from "./index.js";
-import FSEndpoint from "./fs_endpoint.js";
 
 let device;
 

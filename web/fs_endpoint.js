@@ -1,6 +1,6 @@
 import { pack, toString } from "./utils.js";
 
-export default class FSEndpoint {
+export class FSEndpoint {
   #session;
   #timeout;
 

@@ -38,7 +38,7 @@ export function decodeMessage(view) {
   };
 }
 
-export default class Session {
+export class Session {
   #id = 0;
   #channel = null;
 

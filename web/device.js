@@ -1,5 +1,6 @@
 import { Queue } from "async-await-queue";
-import Session from "./session.js";
+
+import { Session } from "./session.js";
 import { AsyncQueue, concat, toBuffer, toString } from "./utils.js";
 
 async function write(char, data, confirm = true) {
