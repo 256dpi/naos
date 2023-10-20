@@ -90,10 +90,10 @@ export default class Session {
 
   async ping(timeout = 5000) {
     // write command
-    await this.#write(0xfe);
+    await this._write(0xfe);
 
     // read reply
-    const msg = await this.#read(timeout);
+    const msg = await this._read(timeout);
 
     // verify reply
     if (msg.endpoint !== 0xfe || msg.data.byteLength !== 1) {
@@ -105,10 +105,10 @@ export default class Session {
 
   async query(endpoint, timeout = 5000) {
     // write command
-    await this.#write(endpoint);
+    await this._write(endpoint);
 
     // read reply
-    const msg = await this.#read(timeout);
+    const msg = await this._read(timeout);
 
     // verify message
     if (msg.endpoint !== 0xfe || msg.data.byteLength !== 1) {
@@ -120,7 +120,7 @@ export default class Session {
 
   async receive(endpoint, expectAck, timeout = 5000) {
     // await message
-    const msg = await this.#read(timeout);
+    const msg = await this._read(timeout);
 
     // handle acks
     if (msg.endpoint === 0xfe) {
@@ -151,7 +151,7 @@ export default class Session {
 
   async send(endpoint, data, ackTimeout = 5000) {
     // write message
-    await this.#write(endpoint, data);
+    await this._write(endpoint, data);
 
     // return if timeout is zero
     if (ackTimeout === 0) {
@@ -159,7 +159,7 @@ export default class Session {
     }
 
     // await reply
-    const msg = await this.#read(ackTimeout);
+    const msg = await this._read(ackTimeout);
 
     // check reply
     if (msg.data.byteLength !== 1 || msg.endpoint !== 0xfe) {
@@ -171,10 +171,10 @@ export default class Session {
 
   async end(timeout = 5000) {
     // write command
-    await this.#write(0xff);
+    await this._write(0xff);
 
     // read reply
-    const msg = await this.#read(timeout);
+    const msg = await this._read(timeout);
 
     // verify reply
     if (msg.endpoint !== 0xff || msg.data.byteLength > 0) {
@@ -191,7 +191,7 @@ export default class Session {
 
   // Helpers
 
-  async #write(endpoint, data) {
+  async _write(endpoint, data) {
     // forward message
     await this.#channel.write(
       encodeMessage({
@@ -202,7 +202,7 @@ export default class Session {
     );
   }
 
-  async #read(timeout) {
+  async _read(timeout) {
     while (true) {
       // TODO: Check overall timeout?
 
