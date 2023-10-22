@@ -30,7 +30,7 @@ type Component struct {
 
 // Frameworks represents the official frameworks.
 type Frameworks struct {
-	Audio string `json:"audio"`
+	Audio string `json:"audio,omitempty"`
 }
 
 // An Inventory represents the contents of the inventory file.
