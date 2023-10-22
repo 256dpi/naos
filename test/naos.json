@@ -1,13 +1,9 @@
 {
-  "version": "master",
+  "version": "origin/master",
+  "target": "esp32",
   "embeds": [
     "foo.txt"
   ],
-  "overrides": {},
-  "components": {},
-  "frameworks": {
-    "audio": "v2.5"
-  },
   "broker": "mqtt://public:public@public.cloud.shiftr.io",
   "devices": {
     "test": {
