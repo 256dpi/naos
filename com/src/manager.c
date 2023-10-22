@@ -167,12 +167,12 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
   }
 
   // handle unset
-  if (scope == NAOS_LOCAL && strncmp(topic, "naos/unset/", 9) == 0) {
+  if (scope == NAOS_LOCAL && strncmp(topic, "naos/unset/", 11) == 0) {
     // release mutex (conflict with naos_clear)
     NAOS_UNLOCK(naos_manager_mutex);
 
     // get param
-    char *param = (char *)topic + 9;
+    char *param = (char *)topic + 11;
 
     // check param
     if (naos_lookup(param) == NULL) {
