@@ -64,14 +64,8 @@ static void naos_manager_update(naos_update_event_t event) {
     return;
   }
 
-  // acquire mutex
-  NAOS_LOCK(naos_manager_mutex);
-
   // request first chunk
   naos_publish_l("naos/update/request", CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE, 0, false, NAOS_LOCAL);
-
-  // release mutex
-  NAOS_UNLOCK(naos_manager_mutex);
 }
 
 static void naos_manager_handler(naos_scope_t scope, const char *topic, const uint8_t *payload, size_t len, int qos,
@@ -101,7 +95,9 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     NAOS_UNLOCK(naos_manager_mutex);
 
     // trigger ping
-    naos_set_s("ping", "");
+    if (naos_lookup("ping") != NULL) {
+      naos_set_s("ping", "");
+    }
 
     return;
   }
@@ -121,8 +117,16 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
 
   // handle get
   if (scope == NAOS_LOCAL && strncmp(topic, "naos/get/", 9) == 0) {
+    // release mutex
+    NAOS_UNLOCK(naos_manager_mutex);
+
     // get param
     char *param = (char *)topic + 9;
+
+    // check param
+    if (naos_lookup(param) == NULL) {
+      return;
+    }
 
     // get value
     naos_value_t value = naos_get(param);
@@ -131,9 +135,6 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     char *t = naos_concat("naos/value/", param);
     naos_publish(t, value.buf, value.len, 0, false, NAOS_LOCAL);
     free(t);
-
-    // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
 
     return;
   }
@@ -146,6 +147,11 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     // get param
     char *param = (char *)topic + 9;
 
+    // check param
+    if (naos_lookup(param) == NULL) {
+      return;
+    }
+
     // set value
     naos_set(param, (uint8_t *)payload, len);
 
@@ -156,6 +162,25 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     char *t = naos_concat("naos/value/", param);
     naos_publish(t, value.buf, value.len, 0, false, NAOS_LOCAL);
     free(t);
+
+    return;
+  }
+
+  // handle unset
+  if (scope == NAOS_LOCAL && strncmp(topic, "naos/unset/", 9) == 0) {
+    // release mutex (conflict with naos_clear)
+    NAOS_UNLOCK(naos_manager_mutex);
+
+    // get param
+    char *param = (char *)topic + 9;
+
+    // check param
+    if (naos_lookup(param) == NULL) {
+      return;
+    }
+
+    // clear value
+    naos_clear(param);
 
     return;
   }
