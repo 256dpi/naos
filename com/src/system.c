@@ -115,10 +115,8 @@ void naos_system_init() {
   // create mutex
   naos_system_mutex = naos_mutex();
 
-  // initialize message subsystem
+  // initialize message and parameter subsystems
   naos_msg_init();
-
-  // init parameter subsystem
   naos_params_init();
 
   // register system parameters
@@ -140,8 +138,6 @@ void naos_system_init() {
   naos_log_init();
   naos_net_init();
   naos_com_init();
-
-  // initialize OTA
   naos_update_init();
 
   // set initial state
