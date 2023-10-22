@@ -1,4 +1,5 @@
 #include <naos/sys.h>
+#include <naos/update.h>
 
 #include <esp_ota_ops.h>
 #include <string.h>
@@ -6,7 +7,6 @@
 #include "naos.h"
 #include "coredump.h"
 #include "params.h"
-#include "update.h"
 #include "utils.h"
 #include "com.h"
 #include "log.h"

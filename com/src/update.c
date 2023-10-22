@@ -1,3 +1,4 @@
+#include <naos/update.h>
 #include <naos/sys.h>
 #include <naos/msg.h>
 
