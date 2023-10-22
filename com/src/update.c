@@ -254,8 +254,12 @@ void naos_update_begin(size_t size, naos_update_callback_t cb) {
   // release mutex
   NAOS_UNLOCK(naos_update_mutex);
 
-  // run begin task
-  naos_run("update-begin", 4096, 1, naos_update_begin_task);
+  // begin update async or sync
+  if (naos_update_callback != NULL) {
+    naos_run("update-begin", 4096, 1, naos_update_begin_task);
+  } else {
+    naos_update_begin_task();
+  }
 }
 
 void naos_update_write(const uint8_t *chunk, size_t len) {
@@ -335,6 +339,10 @@ void naos_update_finish() {
   // release mutex
   NAOS_UNLOCK(naos_update_mutex);
 
-  // run finish task
-  naos_run("update-finish", 4096, 1, naos_update_finish_task);
+  // finish update async or sync
+  if (naos_update_callback != NULL) {
+    naos_run("update-finish", 4096, 1, naos_update_finish_task);
+  } else {
+    naos_update_finish_task();
+  }
 }
