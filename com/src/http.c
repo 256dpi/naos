@@ -4,7 +4,6 @@
 
 #include "params.h"
 #include "utils.h"
-#include "naos.h"
 
 #define NAOS_HTTP_MAX_CONNS 7
 #define NAOS_HTTP_MAX_FILES 8

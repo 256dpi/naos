@@ -1,6 +1,5 @@
 #include <naos/sys.h>
 
-#include "naos.h"
 #include "utils.h"
 #include "system.h"
 #include "params.h"

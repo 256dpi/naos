@@ -3,7 +3,6 @@
 #include <string.h>
 #include <esp_mqtt.h>
 
-#include "naos.h"
 #include "com.h"
 #include "utils.h"
 #include "system.h"

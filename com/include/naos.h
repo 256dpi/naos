@@ -251,6 +251,11 @@ typedef struct {
 void naos_init(naos_config_t *config);
 
 /**
+ * Access the global configuration.
+ */
+const naos_config_t *naos_config();
+
+/**
  * Run the managed setup, online, loop and offline callbacks.
  */
 void naos_start();

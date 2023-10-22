@@ -1,10 +1,10 @@
+#include <naos.h>
 #include <naos/sys.h>
 
 #include <string.h>
 #include <esp_event.h>
 #include <esp_wifi.h>
 
-#include "naos.h"
 #include "utils.h"
 #include "net.h"
 

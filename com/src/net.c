@@ -3,7 +3,6 @@
 #include <esp_event.h>
 #include <string.h>
 
-#include "naos.h"
 #include "net.h"
 
 #define NAOS_NET_MAX_LINKS 4

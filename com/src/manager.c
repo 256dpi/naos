@@ -4,7 +4,6 @@
 #include <esp_ota_ops.h>
 #include <string.h>
 
-#include "naos.h"
 #include "coredump.h"
 #include "params.h"
 #include "utils.h"

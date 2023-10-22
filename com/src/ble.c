@@ -13,7 +13,6 @@
 #include <esp_bt_device.h>
 #include <string.h>
 
-#include "naos.h"
 #include "params.h"
 #include "utils.h"
 

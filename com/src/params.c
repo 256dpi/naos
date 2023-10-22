@@ -5,7 +5,6 @@
 #include <string.h>
 #include <nvs_flash.h>
 
-#include "naos.h"
 #include "params.h"
 #include "utils.h"
 

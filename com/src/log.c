@@ -1,7 +1,7 @@
+#include <naos.h>
 #include <naos/sys.h>
 
 #include "log.h"
-#include "naos.h"
 
 #define NAOS_LOG_MAX_SINKS 8
 

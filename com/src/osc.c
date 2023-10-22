@@ -1,7 +1,6 @@
 #include <naos/osc.h>
 #include <naos/sys.h>
 
-#include "naos.h"
 #include "com.h"
 #include "utils.h"
 #include "net.h"
