@@ -96,7 +96,9 @@ export class Session {
     const msg = await this._read(timeout);
 
     // verify reply
-    if (msg.endpoint !== 0xfe || msg.data.byteLength !== 1) {
+    if (!msg) {
+      throw new Error("timeout exceeded")
+    } else if (msg.endpoint !== 0xfe || msg.data.byteLength !== 1) {
       throw new Error("invalid message");
     } else if (msg.data.getUint8(0) !== 1) {
       throw new Error("session error: " + msg.data.getUint8(0));
@@ -111,7 +113,9 @@ export class Session {
     const msg = await this._read(timeout);
 
     // verify message
-    if (msg.endpoint !== 0xfe || msg.data.byteLength !== 1) {
+    if (!msg) {
+      throw new Error("timeout exceeded")
+    } else if (msg.endpoint !== 0xfe || msg.data.byteLength !== 1) {
       throw new Error("invalid message");
     }
 
@@ -122,7 +126,12 @@ export class Session {
     // await message
     const msg = await this._read(timeout);
 
-    // handle acks
+    // check message
+    if (!msg) {
+      throw new Error("timeout exceeded")
+    }
+
+    // handle ack
     if (msg.endpoint === 0xfe) {
       // check size
       if (msg.data.byteLength !== 1) {
@@ -162,7 +171,9 @@ export class Session {
     const msg = await this._read(ackTimeout);
 
     // check reply
-    if (msg.data.byteLength !== 1 || msg.endpoint !== 0xfe) {
+    if (!msg) {
+      throw new Error("timeout exceeded")
+    } else if (msg.data.byteLength !== 1 || msg.endpoint !== 0xfe) {
       throw new Error("invalid message");
     } else if (msg.data.getUint8(0) !== 1) {
       throw new Error("session error: " + msg.data.getUint8(0));
@@ -176,8 +187,8 @@ export class Session {
     // read reply
     const msg = await this._read(timeout);
 
-    // verify reply
-    if (msg.endpoint !== 0xff || msg.data.byteLength > 0) {
+    // verify reply if available
+    if (msg && (msg.endpoint !== 0xff || msg.data.byteLength > 0)) {
       throw new Error("invalid message");
     }
 

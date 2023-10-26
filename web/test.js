@@ -87,6 +87,10 @@ async function fs() {
   console.log(await fs.sha256("/test2.txt"));
   await fs.remove("/test2.txt");
 
+  // await fs.write("/data.bin", new Uint8Array(4096));
+  // console.log(await fs.stat("/data.bin"));
+  // console.log(await fs.read("/data.bin"));
+
   await session.end();
 
   console.log("Session closed!");
