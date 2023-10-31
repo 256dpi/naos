@@ -288,7 +288,7 @@ public class NAOSSession {
 		data[0] = 1
 		
 		// write session
-		data[1] = UInt8(self.id)
+		data[1] = UInt8(self.id & 0xFF)
 		data[2] = UInt8(self.id >> 8)
 		
 		// write endpoint
