@@ -82,7 +82,6 @@ public enum NAOSSessionError: LocalizedError {
 public class NAOSSession {
 	private var id: UInt16
 	private var peripheral: NAOSPeripheral
-	private var stream: AsyncStream<Data>
 	private var subscription: AnyCancellable
 	private var channel: Channel<NAOSMessage>
 	private var mutex = AsyncSemaphore(value: 1)
@@ -135,14 +134,28 @@ public class NAOSSession {
 
 				return msg.session
 			}
+			
 			throw NAOSSessionError.closed
+		}
+		
+		// create channel
+		let channel = Channel<NAOSMessage>()
+		
+		// run forwarder
+		Task {
+			for await data in stream {
+				// parse message
+				let msg = try NAOSMessage.parse(data: data)
+				
+				// forward matchin messages
+				if msg.session == sid {
+					channel.send(value: msg)
+				}
+			}
 		}
 
 		// create session
-		let session = NAOSSession(id: sid, peripheral: peripheral, stream: stream, subscription: subscription)
-		
-		// run forward
-		session.forward()
+		let session = NAOSSession(id: sid, peripheral: peripheral, subscription: subscription, channel: channel)
 		
 		// set flag
 		ok = true
@@ -150,31 +163,12 @@ public class NAOSSession {
 		return session
 	}
 	
-	init(id: UInt16, peripheral: NAOSPeripheral, stream: AsyncStream<Data>, subscription: AnyCancellable) {
+	init(id: UInt16, peripheral: NAOSPeripheral, subscription: AnyCancellable, channel: Channel<NAOSMessage>) {
 		// setup session
 		self.id = id
 		self.peripheral = peripheral
-		self.stream = stream
 		self.subscription = subscription
-		self.channel = Channel()
-	}
-	
-	internal func forward() {
-		Task {
-			// handle messages from channel
-			for await data in self.stream {
-				// parse message
-				let msg = try NAOSMessage.parse(data: data)
-				
-				// check session IDS
-				if msg.session != self.id {
-					continue
-				}
-				
-				// forward message
-				self.channel.send(value: msg)
-			}
-		}
+		self.channel = channel
 	}
 	
 	/// Ping will check the session and keep it alive.
