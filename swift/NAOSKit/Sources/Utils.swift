@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import Semaphore
 
 public struct TimedOutError: LocalizedError, Equatable {
 	public var errorDescription: String? {
@@ -105,4 +106,26 @@ func concatData(a: Data, b: Data) -> Data {
 	c.append(a)
 	c.append(b)
 	return c
+}
+
+class Channel<T> {
+	private var queue = DispatchQueue(label: "Channel")
+	private var buffer: [T] = []
+	private var semaphore = AsyncSemaphore(value: 0)
+
+	func send(value: T) {
+		queue.sync {
+			self.buffer.append(value)
+			semaphore.signal()
+		}
+	}
+
+	func receive(timeout: TimeInterval) async throws -> T {
+		return try await withTimeout(seconds: timeout) {
+			try await self.semaphore.waitUnlessCancelled()
+			return self.queue.sync {
+				return self.buffer.removeFirst()
+			}
+		}
+	}
 }

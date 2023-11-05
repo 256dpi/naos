@@ -84,6 +84,7 @@ public class NAOSSession {
 	private var peripheral: NAOSPeripheral
 	private var stream: AsyncStream<Data>
 	private var subscription: AnyCancellable
+	private var channel: Channel<NAOSMessage>
 	private var mutex = AsyncSemaphore(value: 1)
 	
 	internal static func open(peripheral: NAOSPeripheral, timeout: TimeInterval) async throws -> NAOSSession {
@@ -140,6 +141,9 @@ public class NAOSSession {
 		// create session
 		let session = NAOSSession(id: sid, peripheral: peripheral, stream: stream, subscription: subscription)
 		
+		// run forward
+		session.forward()
+		
 		// set flag
 		ok = true
 
@@ -152,6 +156,25 @@ public class NAOSSession {
 		self.peripheral = peripheral
 		self.stream = stream
 		self.subscription = subscription
+		self.channel = Channel()
+	}
+	
+	internal func forward() {
+		Task {
+			// handle messages from channel
+			for await data in self.stream {
+				// parse message
+				let msg = try NAOSMessage.parse(data: data)
+				
+				// check session IDS
+				if msg.session != self.id {
+					continue
+				}
+				
+				// forward message
+				self.channel.send(value: msg)
+			}
+		}
 	}
 	
 	/// Ping will check the session and keep it alive.
@@ -308,20 +331,6 @@ public class NAOSSession {
 	}
 
 	private func read(timeout: TimeInterval) async throws -> NAOSMessage {
-		// return next message from channel
-		return try await withTimeout(seconds: timeout) {
-			for await data in self.stream {
-				// parse message
-				let msg = try NAOSMessage.parse(data: data)
-				
-				// check session IDS
-				if msg.session != self.id {
-					continue
-				}
-				
-				return msg
-			}
-			throw NAOSSessionError.closed
-		}
+		return try await channel.receive(timeout: timeout)
 	}
 }
