@@ -8,7 +8,6 @@ import CryptoKit
 import NAOSKit
 
 class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTableViewDelegate {
-	internal var endpoint: NAOSFSEndpoint!
 	@IBOutlet var pathField: NSTextField!
 	@IBOutlet var listTable: NSTableView!
 	
@@ -21,8 +20,12 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 	@IBAction public func list(_: AnyObject) {
 		Task {
 			// list directory
-			await run(title: "Listing...") {
-				self.files = try await self.endpoint.list(path: self.root())
+			await run(title: "Listing...") { session in
+				// create endpoint
+				let endpoint = NAOSFSEndpoint(session: session, timeout: 5)
+				
+				// list files
+				self.files = try await endpoint.list(path: self.root())
 			}
 			
 			// reload list
@@ -39,10 +42,19 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			let path = self.root() + "/" + file.0
 			
 			// write file
-			await process(title: "Uploading...") { progress in
+			await process(title: "Uploading...") { session, progress in
+				// create endpoint
+				let endpoint = NAOSFSEndpoint(session: session, timeout: 5)
+				
+				// get time
 				let start = Date()
-				try await self.endpoint.write(path: path, data: file.1, report: { done in
+				
+				// write file
+				try await endpoint.write(path: path, data: file.1, report: { done in
+					// calculta difference
 					let diff = Date().timeIntervalSince(start)
+					
+					// report progress
 					progress(Double(done) / Double(file.1.count), Double(done) / diff)
 				})
 			}
@@ -64,10 +76,19 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 		Task {
 			// read file
 			var data: Data?
-			await process(title: "Downloading...") { progress in
+			await process(title: "Downloading...") { session, progress in
+				// create endpoint
+				let endpoint = NAOSFSEndpoint(session: session, timeout: 5)
+				
+				// get time
 				let start = Date()
-				data = try await self.endpoint.read(path: self.root() + "/" + file.name, report: { done in
+				
+				// read file
+				data = try await endpoint.read(path: self.root() + "/" + file.name, report: { done in
+					// calculate difference
 					let diff = Date().timeIntervalSince(start)
+					
+					// report progress
 					progress(Double(done) / Double(file.size), Double(done) / diff)
 				})
 			}
@@ -95,8 +116,12 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			}
 			
 			// rename file
-			await run(title: "Renaming...") {
-				try await self.endpoint.rename(from: self.root() + "/" + file.name, to: self.root() + "/" + name)
+			await run(title: "Renaming...") { session in
+				// create endpoint
+				let endpoint = NAOSFSEndpoint(session: session, timeout: 5)
+				
+				// rename file
+				try await endpoint.rename(from: self.root() + "/" + file.name, to: self.root() + "/" + name)
 			}
 			
 			// re-list
@@ -115,8 +140,12 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 		
 		Task {
 			// rename file
-			await run(title: "Removing...") {
-				try await self.endpoint.remove(path: self.root() + "/" + file.name)
+			await run(title: "Removing...") { session in
+				// create endpoint
+				let endpoint = NAOSFSEndpoint(session: session, timeout: 5)
+				
+				// remove file
+				try await endpoint.remove(path: self.root() + "/" + file.name)
 			}
 			
 			// re-list
@@ -136,8 +165,12 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 		Task {
 			// hash file
 			var sum: Data?
-			await run(title: "Hashing...") {
-				sum = try await self.endpoint.sha256(path: self.root() + "/" + file.name)
+			await run(title: "Hashing...") { session in
+				// create endpoint
+				let endpoint = NAOSFSEndpoint(session: session, timeout: 5)
+				
+				// hash file
+				sum = try await endpoint.sha256(path: self.root() + "/" + file.name)
 			}
 			if sum == nil {
 				return
@@ -158,11 +191,6 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 	@IBAction public func close(_: AnyObject) {
 		// dismiss sheet
 		dismiss(self)
-		
-		Task {
-			// close endpoint
-			try await endpoint.end()
-		}
 	}
 
 	// NSTableView

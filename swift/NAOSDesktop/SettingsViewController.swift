@@ -110,7 +110,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				let fvc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "FilesViewController") as! FilesViewController
 
 				// assign endpoint
-				fvc.endpoint = NAOSFSEndpoint(session: sess, timeout: 5)
+				fvc.device = device
 
 				// present view controller
 				self.presentAsSheet(fvc)

@@ -4,9 +4,12 @@
 //
 
 import Cocoa
+import NAOSKit
 
 internal class EndpointViewController: NSViewController {
-	internal func run(title: String, operation: () async throws -> Void) async {
+	internal var device: NAOSDevice?
+	
+	internal func run(title: String, operation: @escaping (NAOSSession) async throws -> Void) async {
 		// show loading view controller
 		let lvc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "LoadingViewController") as! LoadingViewController
 		lvc.message = title
@@ -14,10 +17,28 @@ internal class EndpointViewController: NSViewController {
 
 		// present view controller
 		presentAsSheet(lvc)
+		
+		// run task
+		let task = Task {
+			// open session
+			let session = try await device!.session(timeout: 5)
+			defer { session.cleanup() }
+			
+			// run operation
+			try await operation(session)
+			
+			// end session
+			try await session.end(timeout: 5)
+		}
+		
+		// set cancel action
+		lvc.onCancel {
+			task.cancel()
+		}
 
 		// run operation and dismiss controller
 		do {
-			try await operation()
+			try await task.value
 			lvc.dismiss(lvc)
 		} catch {
 			lvc.dismiss(lvc)
@@ -25,7 +46,7 @@ internal class EndpointViewController: NSViewController {
 		}
 	}
 	
-	internal func process(title: String, operation: (@escaping (Double, Double) -> Void) async throws -> Void) async {
+	internal func process(title: String, operation: @escaping (NAOSSession, @escaping (Double, Double) -> Void) async throws -> Void) async {
 		// show loading view controller
 		let lvc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "LoadingViewController") as! LoadingViewController
 		lvc.message = title
@@ -36,17 +57,35 @@ internal class EndpointViewController: NSViewController {
 
 		// present view controller
 		presentAsSheet(lvc)
-
-		// run operation and dismiss controller
-		do {
-			try await operation({ (progress, rate) in
+		
+		// run task
+		let task = Task.detached {
+			// open session
+			let session = try await self.device!.session(timeout: 5)
+			defer { session.cleanup() }
+			
+			// run operation
+			try await operation(session) { progress, rate in
 				DispatchQueue.main.async {
 					lvc.indicator.doubleValue = progress * 100
 					if rate > 0 {
 						lvc.label.stringValue = String(format: title + "\n%.1f %% @ %.1f kB/s", progress * 100, rate / 1000)
 					}
 				}
-			})
+			}
+			
+			// end session
+			try await session.end(timeout: 5)
+		}
+		
+		// set cancel action
+		lvc.onCancel {
+			task.cancel()
+		}
+		
+		// run operation and dismiss controller
+		do {
+			try await task.value
 			lvc.dismiss(lvc)
 		} catch {
 			lvc.dismiss(lvc)
