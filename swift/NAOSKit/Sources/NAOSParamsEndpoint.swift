@@ -173,14 +173,4 @@ public class NAOSParamsEndpoint {
 			list.append(NAOSParamUpdate(ref: ref, age: age, value: value))
 		}
 	}
-	
-	/// End the underlying session.
-	public func end() async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-		
-		// end session
-		try await session.end(timeout: timeout)
-	}
 }

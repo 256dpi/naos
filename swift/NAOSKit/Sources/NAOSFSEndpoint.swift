@@ -289,16 +289,6 @@ public class NAOSFSEndpoint {
 		return sum
 	}
 	
-	/// End the underlying session.
-	public func end() async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-		
-		// end session
-		try await session.end(timeout: timeout)
-	}
-	
 	// - Helpers
 	
 	internal func receive(expectAck: Bool) async throws -> Data? {
