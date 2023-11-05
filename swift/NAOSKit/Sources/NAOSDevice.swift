@@ -179,7 +179,7 @@ public class NAOSDevice: NSObject {
 		// finish init
 		super.init()
 
-		// initialize device name
+		// initialize device name and type
 		parameters[.deviceName] = peripheral.name()
 		parameters[.deviceType] = "unknown"
 
@@ -206,7 +206,7 @@ public class NAOSDevice: NSObject {
 						// create endpoint
 						let endpoint = NAOSParamsEndpoint(session: session, timeout: 5)
 
-						// collet parameters
+						// collect parameters
 						var updates: [NAOSParamUpdate] = []
 						do {
 							updates = try await endpoint.collect(refs: nil, since: maxAge)
@@ -315,17 +315,19 @@ public class NAOSDevice: NSObject {
 			})
 		}
 
-		// subscribe to flash updates
-		readier = peripheral.receive(char: .flash, operation: { _ in
-			Task {
-				// acquire mutex
-				await self.mutex.wait()
-				defer { self.mutex.signal() }
-
-				// handle flash
-				self.updateReady?.resume()
-			}
-		})
+		// subscribe to flash updates if not using session
+		if !peripheral.exists(char: .msg) {
+			readier = peripheral.receive(char: .flash, operation: { _ in
+				Task {
+					// acquire mutex
+					await self.mutex.wait()
+					defer { self.mutex.signal() }
+					
+					// handle flash
+					self.updateReady?.resume()
+				}
+			})
+		}
 	}
 
 	/// Refresh will perform a full device refresh and update all parameters.
@@ -443,7 +445,7 @@ public class NAOSDevice: NSObject {
 		return lock == "unlocked"
 	}
 
-	/// Read will read the specified parameter. The result is place into the parameters dictionary.
+	/// Read will read the specified parameter. The result is placed into the parameters dictionary.
 	public func read(parameter: NAOSParameter) async throws {
 		// acquire mutex
 		await mutex.wait()
