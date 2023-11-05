@@ -3,9 +3,9 @@
 //  Copyright © 2017 Joël Gähwiler. All rights reserved.
 //
 
-import AsyncBluetooth
 import Combine
 import CoreBluetooth
+import AsyncBluetooth
 
 /// The delegate protocol to be implemented to handle NAOSManager events.
 public protocol NAOSManagerDelegate {
