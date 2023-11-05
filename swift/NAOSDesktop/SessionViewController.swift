@@ -6,7 +6,7 @@
 import Cocoa
 import NAOSKit
 
-internal class EndpointViewController: NSViewController {
+internal class SessionViewController: NSViewController {
 	internal var device: NAOSDevice?
 	
 	internal func run(title: String, operation: @escaping (NAOSSession) async throws -> Void) async {

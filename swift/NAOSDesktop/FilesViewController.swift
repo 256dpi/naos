@@ -7,7 +7,7 @@ import Cocoa
 import CryptoKit
 import NAOSKit
 
-class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTableViewDelegate {
+class FilesViewController: SessionViewController, NSTableViewDataSource, NSTableViewDelegate {
 	@IBOutlet var pathField: NSTextField!
 	@IBOutlet var listTable: NSTableView!
 	
