@@ -51,11 +51,11 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 				
 				// write file
 				try await endpoint.write(path: path, data: file.1, report: { done in
-					// calculta difference
-					let diff = Date().timeIntervalSince(start)
+					// calculate delta
+					let delta = Date().timeIntervalSince(start)
 					
 					// report progress
-					progress(Double(done) / Double(file.1.count), Double(done) / diff)
+					progress(Double(done) / Double(file.1.count), Double(done) / delta)
 				})
 			}
 			
@@ -85,11 +85,11 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 				
 				// read file
 				data = try await endpoint.read(path: self.root() + "/" + file.name, report: { done in
-					// calculate difference
-					let diff = Date().timeIntervalSince(start)
+					// calculate delta
+					let delta = Date().timeIntervalSince(start)
 					
 					// report progress
-					progress(Double(done) / Double(file.size), Double(done) / diff)
+					progress(Double(done) / Double(file.size), Double(done) / delta)
 				})
 			}
 			

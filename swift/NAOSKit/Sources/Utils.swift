@@ -101,13 +101,6 @@ func randomString(length: Int) -> String {
 	return String((0 ..< length).map { _ in letters.randomElement()! })
 }
 
-func concatData(a: Data, b: Data) -> Data {
-	var c = Data()
-	c.append(a)
-	c.append(b)
-	return c
-}
-
 class Channel<T> {
 	private var queue = DispatchQueue(label: "Channel")
 	private var buffer: [T] = []
