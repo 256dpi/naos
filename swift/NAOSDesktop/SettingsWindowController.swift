@@ -9,9 +9,9 @@ import NAOSKit
 class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDeviceDelegate {
 	private var device: NAOSDevice!
 	private var manager: BluetoothManager!
-	private var connectingViewController: LoadingViewController!
-	private var unlockViewController: UnlockViewController?
-	private var settingsViewController: SettingsViewController?
+	private var lvc: LoadingViewController!
+	private var uvc: UnlockViewController?
+	private var svc: SettingsViewController?
 
 	override func windowDidLoad() {
 		super.windowDidLoad()
@@ -28,8 +28,13 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 		// save manager
 		self.manager = manager
 
-		// grab default connecting view
-		connectingViewController = (contentViewController as! LoadingViewController)
+		// grab connecting view controller
+		lvc = (contentViewController as! LoadingViewController)
+
+		// set cancel handler
+		lvc.onCancel {
+			self.close()
+		}
 
 		// connect
 		connect()
@@ -49,58 +54,48 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 			// check if locked
 			if device.locked {
 				// show unlock view
-				unlockViewController =
-					NSStoryboard(name: "Main", bundle: nil)
-						.instantiateController(
-							withIdentifier: "UnlockViewController")
-						as? UnlockViewController
-				unlockViewController!.device = device
-				unlockViewController!.swc = self
-				contentViewController = unlockViewController
+				uvc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "UnlockViewController") as? UnlockViewController
+				uvc!.device = device
+				uvc!.swc = self
+				contentViewController = uvc
 			} else {
 				// show settings view
-				settingsViewController =
-					NSStoryboard(name: "Main", bundle: nil)
-						.instantiateController(
-							withIdentifier: "SettingsViewController")
-						as? SettingsViewController
-				settingsViewController!.device = device
-				contentViewController = settingsViewController
+				svc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "SettingsViewController") as? SettingsViewController
+				svc!.device = device
+				contentViewController = svc
 
 				// trigger refresh
-				settingsViewController?.refresh(self)
+				svc?.refresh(self)
 			}
 		}
 	}
 
 	func didUnlock() {
 		// show settings view
-		settingsViewController =
-			NSStoryboard(name: "Main", bundle: nil).instantiateController(
-				withIdentifier: "SettingsViewController") as? SettingsViewController
-		settingsViewController!.device = device
-		contentViewController = settingsViewController
+		svc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "SettingsViewController") as? SettingsViewController
+		svc!.device = device
+		contentViewController = svc
 
 		// remove old controller
-		unlockViewController = nil
+		uvc = nil
 
 		// trigger refresh
-		settingsViewController!.refresh(self)
+		svc!.refresh(self)
 	}
 
 	// NAOSDeviceDelegate
 
 	func naosDeviceDidUpdate(device _: NAOSDevice, parameter: NAOSParameter) {
 		// forward parameter update
-		if let svc = settingsViewController {
+		if let svc = svc {
 			svc.didUpdateParameter(parameter: parameter)
 		}
 	}
 
 	func naosDeviceDidDisconnect(device _: NAOSDevice, error _: Error) {
 		// show connecting view
-		contentViewController = connectingViewController
-		settingsViewController = nil
+		contentViewController = lvc
+		svc = nil
 
 		// reconnect
 		connect()

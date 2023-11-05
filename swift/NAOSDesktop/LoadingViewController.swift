@@ -28,9 +28,9 @@ class LoadingViewController: NSViewController {
 		indicator.startAnimation(self)
 	}
 	
-	func onCancel(cb: @escaping () -> Void) {
+	func onCancel(cancelled: @escaping () -> Void) {
 		// set callback
-		cancelled = cb
+		self.cancelled = cancelled
 		
 		// show button
 		button.isHidden = false

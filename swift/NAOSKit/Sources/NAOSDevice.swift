@@ -74,20 +74,15 @@ public struct NAOSParameter: Hashable {
 		return lhs.name == rhs.name && lhs.type == rhs.type
 	}
 
-	public static let deviceName = NAOSParameter(
-		name: "device-name", type: .string, mode: .system)
-	public static let deviceType = NAOSParameter(
-		name: "device-type", type: .string, mode: .system)
-	public static let connectionStatus = NAOSParameter(
-		name: "connection-status", type: .string, mode: .system)
+	public static let deviceName = NAOSParameter(name: "device-name", type: .string, mode: .system)
+	public static let deviceType = NAOSParameter(name: "device-type", type: .string, mode: .system)
+	public static let connectionStatus = NAOSParameter(name: "connection-status", type: .string, mode: .system)
 	public static let battery = NAOSParameter(name: "battery", type: .double, mode: .system)
 	public static let uptime = NAOSParameter(name: "uptime", type: .long, mode: .system)
 	public static let freeHeap = NAOSParameter(name: "free-heap", type: .long, mode: .system)
 	public static let wifiRSSI = NAOSParameter(name: "wifi-rssi", type: .long, mode: .system)
-	public static let cpuUsage0 = NAOSParameter(
-		name: "cpu-usage0", type: .double, mode: .system)
-	public static let cpuUsage1 = NAOSParameter(
-		name: "cpu-usage1", type: .double, mode: .system)
+	public static let cpuUsage0 = NAOSParameter(name: "cpu-usage0", type: .double, mode: .system)
+	public static let cpuUsage1 = NAOSParameter(name: "cpu-usage1", type: .double, mode: .system)
 
 	public func format(value: String) -> String {
 		let num = Double(value) ?? 0

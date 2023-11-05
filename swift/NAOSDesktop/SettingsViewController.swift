@@ -127,9 +127,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		return device != nil ? device.availableParameters.count : 0
 	}
 
-	func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int)
-		-> NSView?
-	{
+	func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
 		// get parameter
 		let p = device.availableParameters[row]
 

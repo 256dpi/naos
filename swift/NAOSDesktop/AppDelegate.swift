@@ -64,6 +64,4 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 		// terminate application
 		NSApplication.shared.terminate(self)
 	}
-
-	func applicationWillTerminate(_: Notification) {}
 }
