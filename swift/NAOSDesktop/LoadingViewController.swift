@@ -6,10 +6,12 @@
 import Cocoa
 
 class LoadingViewController: NSViewController {
-	@IBOutlet var progressIndicator: NSProgressIndicator!
+	@IBOutlet var indicator: NSProgressIndicator!
 	@IBOutlet var label: NSTextField!
+	@IBOutlet var button: NSButton!
 
 	var message: String = ""
+	var cancelled: (()->Void)?
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -18,8 +20,26 @@ class LoadingViewController: NSViewController {
 		if message != "" {
 			label.stringValue = message
 		}
+		
+		// hide button by default
+		button.isHidden = true
 
 		// start spinning
-		progressIndicator.startAnimation(self)
+		indicator.startAnimation(self)
+	}
+	
+	func onCancel(cb: @escaping () -> Void) {
+		// set callback
+		cancelled = cb
+		
+		// show button
+		button.isHidden = false
+	}
+	
+	@IBAction func cancelAction(_ sender: Any) {
+		// call callback if available
+		if cancelled != nil {
+			cancelled!()
+		}
 	}
 }

@@ -13,20 +13,19 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 	@IBOutlet var parameterTableView: NSTableView!
 
 	internal var device: NAOSDevice!
-	private var loadingViewController: LoadingViewController?
+	private var lvc: LoadingViewController?
 
 	@IBAction
 	func refresh(_: AnyObject) {
 		// show loading view controller
-		loadingViewController =
-			NSStoryboard(name: "Main", bundle: nil).instantiateController(
-				withIdentifier: "LoadingViewController") as? LoadingViewController
-		loadingViewController!.message = "Refreshing..."
-		loadingViewController!.preferredContentSize = CGSize(width: 200, height: 200)
-		presentAsSheet(loadingViewController!)
+		lvc = NSStoryboard(name: "Main", bundle: nil)
+			.instantiateController(withIdentifier: "LoadingViewController") as? LoadingViewController
+		lvc!.message = "Refreshing..."
+		lvc!.preferredContentSize = CGSize(width: 200, height: 200)
+		presentAsSheet(lvc!)
 
 		// refresh device
-		Task {
+		let task = Task {
 			// perform refresh
 			do {
 				try await device.refresh()
@@ -44,30 +43,35 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				self.parameterTableView.reloadData()
 
 				// dismiss sheet
-				self.dismiss(self.loadingViewController!)
+				self.dismiss(self.lvc!)
 			}
+		}
+
+		// set cancel action
+		lvc!.onCancel {
+			task.cancel()
 		}
 	}
 
 	@IBAction
 	func flash(_: AnyObject) {
 		// show loading view controller
-		loadingViewController = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "LoadingViewController") as? LoadingViewController
-		loadingViewController!.message = "Flashing..."
-		loadingViewController!.preferredContentSize = CGSize(width: 200, height: 200)
-		presentAsSheet(loadingViewController!)
+		lvc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "LoadingViewController") as? LoadingViewController
+		lvc!.message = "Flashing..."
+		lvc!.preferredContentSize = CGSize(width: 200, height: 200)
+		presentAsSheet(lvc!)
 
-		Task {
+		let task = Task {
 			do {
 				// open file
 				let (_, image) = try await openFile()
-				
+
 				// perform flash
 				try await device.flash(data: image, progress: { (progress: NAOSProgress) in
 					DispatchQueue.main.async {
-						self.loadingViewController!.label.stringValue = String(format: "Flashing...\n%.1f %% @ %.1f kB/s", progress.percent, progress.rate / 1000)
-						self.loadingViewController!.progressIndicator.isIndeterminate = false
-						self.loadingViewController!.progressIndicator.doubleValue = progress.percent
+						self.lvc!.label.stringValue = String(format: "Flashing...\n%.1f %% @ %.1f kB/s", progress.percent, progress.rate / 1000)
+						self.lvc!.indicator.isIndeterminate = false
+						self.lvc!.indicator.doubleValue = progress.percent
 					}
 				})
 			} catch {
@@ -75,7 +79,12 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 			}
 
 			// dismiss sheet
-			self.dismiss(self.loadingViewController!)
+			self.dismiss(self.lvc!)
+		}
+
+		// assign cancel action
+		lvc!.onCancel {
+			task.cancel()
 		}
 	}
 

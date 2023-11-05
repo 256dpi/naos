@@ -31,7 +31,7 @@ internal class EndpointViewController: NSViewController {
 		lvc.message = title
 		lvc.preferredContentSize = CGSize(width: 200, height: 200)
 		DispatchQueue.main.async {
-			lvc.progressIndicator.isIndeterminate = false
+			lvc.indicator.isIndeterminate = false
 		}
 
 		// present view controller
@@ -41,7 +41,7 @@ internal class EndpointViewController: NSViewController {
 		do {
 			try await operation({ (progress, rate) in
 				DispatchQueue.main.async {
-					lvc.progressIndicator.doubleValue = progress * 100
+					lvc.indicator.doubleValue = progress * 100
 					if rate > 0 {
 						lvc.label.stringValue = String(format: title + "\n%.1f %% @ %.1f kB/s", progress * 100, rate / 1000)
 					}
