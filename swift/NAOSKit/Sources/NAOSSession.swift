@@ -38,6 +38,7 @@ public struct NAOSMessage {
 
 /// An session specific error..
 public enum NAOSSessionError: LocalizedError {
+	case unavailable
 	case timeout
 	case closed
 	case expectedAck
@@ -57,6 +58,8 @@ public enum NAOSSessionError: LocalizedError {
 
 	public var errorDescription: String? {
 		switch self {
+		case .unavailable:
+			return "Session not available."
 		case .timeout:
 			return "Session timed out."
 		case .closed:
@@ -83,10 +86,10 @@ public class NAOSSession {
 	private var subscription: AnyCancellable
 	private var mutex = AsyncSemaphore(value: 1)
 	
-	internal static func open(peripheral: NAOSPeripheral, timeout: TimeInterval) async throws -> NAOSSession? {
+	internal static func open(peripheral: NAOSPeripheral, timeout: TimeInterval) async throws -> NAOSSession {
 		// check characteristic
 		if !peripheral.exists(char: .msg) {
-			return nil
+			throw NAOSSessionError.unavailable
 		}
 		
 		// open stream
@@ -111,7 +114,7 @@ public class NAOSSession {
 		try await peripheral.write(char: .msg, data: msg, confirm: false)
 
 		// await response
-		let sid = try? await withTimeout(seconds: timeout) {
+		let sid = try await withTimeout(seconds: timeout) {
 			for await data in stream {
 				// parse message
 				let msg = try NAOSMessage.parse(data: data)
@@ -134,13 +137,8 @@ public class NAOSSession {
 			throw NAOSSessionError.closed
 		}
 
-		// handle missing session
-		if sid == nil {
-			return nil
-		}
-
 		// create session
-		let session = NAOSSession(id: sid!, peripheral: peripheral, stream: stream, subscription: subscription)
+		let session = NAOSSession(id: sid, peripheral: peripheral, stream: stream, subscription: subscription)
 		
 		// set flag
 		ok = true
@@ -263,7 +261,7 @@ public class NAOSSession {
 		await mutex.wait()
 		defer { mutex.signal() }
 		
-		// wite command
+		// write command
 		try await self.write(msg: NAOSMessage(session: self.id, endpoint: 0xFF, data: nil))
 		
 		// read reply
@@ -275,6 +273,12 @@ public class NAOSSession {
 		}
 		
 		// close channel
+		self.subscription.cancel()
+	}
+	
+	/// Cleanup the session.
+	public func cleanup() {
+		// cancel subscription
 		self.subscription.cancel()
 	}
 	

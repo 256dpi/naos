@@ -92,14 +92,17 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		Task {
 			do {
 				// open a new session
-				guard let sess = try await self.device.session(timeout: 5) else {
-					throw CustomError(title: "Failed to open session!")
-				}
+				let sess = try await self.device.session(timeout: 5)
+				defer { sess.cleanup() }
+
+				// query endpoint existence
+				let exists = try await sess.query(endpoint: 0x3, timeout: 5)
+
+				// close session
+				try await sess.end(timeout: 5)
 
 				// check endpoint existence
-				let exists = try await sess.query(endpoint: 0x3, timeout: 5)
 				if !exists {
-					try await sess.end(timeout: 5)
 					throw CustomError(title: "Missing FS Endpoint.")
 				}
 

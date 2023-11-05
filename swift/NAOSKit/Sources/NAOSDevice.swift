@@ -126,7 +126,6 @@ public struct NAOSParameter: Hashable {
 public enum NAOSError: LocalizedError {
 	case serviceNotFound
 	case characteristicNotFound
-	case missingSession
 
 	public var errorDescription: String? {
 		switch self {
@@ -134,8 +133,6 @@ public enum NAOSError: LocalizedError {
 			return "Device service not found."
 		case .characteristicNotFound:
 			return "Device characteristic not found."
-		case .missingSession:
-			return "Could not open session."
 		}
 	}
 }
@@ -522,28 +519,29 @@ public class NAOSDevice: NSObject {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }
-		
+
 		// check characteristic
 		if peripheral.exists(char: .msg) {
 			// open session
-			if let session = try await NAOSSession.open(peripheral: peripheral, timeout: 5) {
-				// create endpoint
-				let endpoint = NAOSUpdateEndpoint(session: session)
-				
-				// get time
-				let start = Date()
-				
-				// run update
-				try await endpoint.run(image: data) { offset in
-					let diff = Date().timeIntervalSince(start)
-					progress(NAOSProgress(done: offset, total: data.count, rate: Double(offset) / diff, percent: 100 / Double(data.count) * Double(offset)))
-				}
-				
-				// end session
-				try await session.end(timeout: 5)
-				
-				return
+			let session = try await NAOSSession.open(peripheral: peripheral, timeout: 5)
+			defer { session.cleanup() }
+
+			// create endpoint
+			let endpoint = NAOSUpdateEndpoint(session: session)
+
+			// get time
+			let start = Date()
+
+			// run update
+			try await endpoint.run(image: data) { offset in
+				let diff = Date().timeIntervalSince(start)
+				progress(NAOSProgress(done: offset, total: data.count, rate: Double(offset) / diff, percent: 100 / Double(data.count) * Double(offset)))
 			}
+
+			// end session
+			try await session.end(timeout: 5)
+
+			return
 		}
 
 		// begin flash
@@ -603,16 +601,7 @@ public class NAOSDevice: NSObject {
 	}
 
 	/// Session will create a new session and return it.
-	public func session(timeout: TimeInterval) async throws -> NAOSSession? {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
-		// check characteristic
-		if !peripheral.exists(char: .msg) {
-			return nil
-		}
-
+	public func session(timeout: TimeInterval) async throws -> NAOSSession {
 		return try await NAOSSession.open(peripheral: peripheral, timeout: timeout)
 	}
 
@@ -645,17 +634,14 @@ public class NAOSDevice: NSObject {
 	private func withParamSession(callback: (NAOSSession) async throws -> Void) async throws {
 		// ensure session
 		if paramSession == nil {
-			if let sess = try await NAOSSession.open(peripheral: peripheral, timeout: 5) {
-				paramSession = sess
-			} else {
-				throw NAOSError.missingSession
-			}
+			paramSession = try await NAOSSession.open(peripheral: peripheral, timeout: 5)
 		}
 
 		// yield session
 		do {
 			try await callback(paramSession!)
 		} catch {
+			paramSession?.cleanup()
 			paramSession = nil
 			throw error
 		}
@@ -669,6 +655,7 @@ public class NAOSDevice: NSObject {
 		defer { mutex.signal() }
 
 		// clear session
+		paramSession?.cleanup()
 		paramSession = nil
 
 		// lock again if protected
