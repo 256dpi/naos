@@ -22,7 +22,7 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			// list directory
 			await run(title: "Listing...") { session in
 				// create endpoint
-				let endpoint = NAOSFSEndpoint(session: session, timeout: 5)
+				let endpoint = NAOSFSEndpoint(session: session)
 				
 				// list files
 				self.files = try await endpoint.list(path: self.root())
@@ -44,7 +44,7 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			// write file
 			await process(title: "Uploading...") { session, progress in
 				// create endpoint
-				let endpoint = NAOSFSEndpoint(session: session, timeout: 5)
+				let endpoint = NAOSFSEndpoint(session: session)
 				
 				// get time
 				let start = Date()
@@ -78,7 +78,7 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			var data: Data?
 			await process(title: "Downloading...") { session, progress in
 				// create endpoint
-				let endpoint = NAOSFSEndpoint(session: session, timeout: 5)
+				let endpoint = NAOSFSEndpoint(session: session)
 				
 				// get time
 				let start = Date()
@@ -118,7 +118,7 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			// rename file
 			await run(title: "Renaming...") { session in
 				// create endpoint
-				let endpoint = NAOSFSEndpoint(session: session, timeout: 5)
+				let endpoint = NAOSFSEndpoint(session: session)
 				
 				// rename file
 				try await endpoint.rename(from: self.root() + "/" + file.name, to: self.root() + "/" + name)
@@ -142,7 +142,7 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			// rename file
 			await run(title: "Removing...") { session in
 				// create endpoint
-				let endpoint = NAOSFSEndpoint(session: session, timeout: 5)
+				let endpoint = NAOSFSEndpoint(session: session)
 				
 				// remove file
 				try await endpoint.remove(path: self.root() + "/" + file.name)
@@ -167,7 +167,7 @@ class FilesViewController: EndpointViewController, NSTableViewDataSource, NSTabl
 			var sum: Data?
 			await run(title: "Hashing...") { session in
 				// create endpoint
-				let endpoint = NAOSFSEndpoint(session: session, timeout: 5)
+				let endpoint = NAOSFSEndpoint(session: session)
 				
 				// hash file
 				sum = try await endpoint.sha256(path: self.root() + "/" + file.name)

@@ -204,7 +204,7 @@ public class NAOSDevice: NSObject {
 				if peripheral.exists(char: .msg) {
 					try? await withParamSession { session in
 						// create endpoint
-						let endpoint = NAOSParamsEndpoint(session: session, timeout: 5)
+						let endpoint = NAOSParamsEndpoint(session: session)
 
 						// collect parameters
 						var updates: [NAOSParamUpdate] = []
@@ -356,7 +356,7 @@ public class NAOSDevice: NSObject {
 		if peripheral.exists(char: .msg) {
 			try await withParamSession { session in
 				// create endpoint
-				let endpoint = NAOSParamsEndpoint(session: session, timeout: 5)
+				let endpoint = NAOSParamsEndpoint(session: session)
 
 				// list parameters
 				let list = try await endpoint.list()
@@ -455,7 +455,7 @@ public class NAOSDevice: NSObject {
 		if peripheral.exists(char: .msg) {
 			try await withParamSession { session in
 				// create endpoint
-				let endpoint = NAOSParamsEndpoint(session: session, timeout: 5)
+				let endpoint = NAOSParamsEndpoint(session: session)
 
 				// read value
 				let value = try await endpoint.read(ref: parameter.ref)
@@ -492,7 +492,7 @@ public class NAOSDevice: NSObject {
 		if peripheral.exists(char: .msg) {
 			try await withParamSession { session in
 				// create endpoint
-				let endpoint = NAOSParamsEndpoint(session: session, timeout: 5)
+				let endpoint = NAOSParamsEndpoint(session: session)
 
 				// write parameter
 				try await endpoint.write(ref: parameter.ref, value: parameters[parameter]!.data(using: .utf8)!)

@@ -16,12 +16,12 @@ public struct NAOSFSInfo {
 /// The NAOS file system endpoint.
 public class NAOSFSEndpoint {
 	private let session: NAOSSession
-	private let timeout: TimeInterval
 	private let mutex = AsyncSemaphore(value: 1)
 	
-	public init(session: NAOSSession, timeout: TimeInterval) {
+	public let timeout: TimeInterval = 5
+	
+	public init(session: NAOSSession) {
 		self.session = session
-		self.timeout = timeout
 	}
 	
 	/// Get information on a file or directory.
