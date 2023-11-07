@@ -29,13 +29,11 @@ static void naos_update_begin_task() {
   // acquire mutex
   NAOS_LOCK(naos_update_mutex);
 
-  // esp_ota_begin will erase flash, which may take up to 10s for 2MB,
-  // the function should yield back to the task manager at some interval
+  // log message
+  ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin_task: preparing update...");
 
-  // begin update
-  ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin_task: erasing partition...");
-  ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, naos_update_size, &naos_update_handle));
-  ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin_task: partition erased");
+  // begin update (without full flash erase)
+  ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, OTA_WITH_SEQUENTIAL_WRITES, &naos_update_handle));
 
   // release mutex
   NAOS_UNLOCK(naos_update_mutex);
