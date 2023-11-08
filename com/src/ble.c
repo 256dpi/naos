@@ -104,13 +104,7 @@ static naos_ble_gatts_char_t naos_ble_char_msg = {
 #define NAOS_BLE_NUM_CHARS 7
 #endif
 
-#if defined(CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF)
-#define NAOS_BLE_MAX_CONNECTIONS CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF
-#elif defined(CONFIG_BT_ACL_CONNECTIONS)
-#define NAOS_BLE_MAX_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
-#else
-#define NAOS_BLE_MAX_CONNECTIONS 1
-#endif
+#define NAOS_BLE_MAX_CONNECTIONS 8
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
     &naos_ble_char_lock,
