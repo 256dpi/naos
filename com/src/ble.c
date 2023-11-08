@@ -11,6 +11,7 @@
 #include <esp_gatts_api.h>
 #include <esp_gatt_common_api.h>
 #include <esp_bt_device.h>
+#include <esp_log.h>
 #include <string.h>
 
 #include "params.h"
@@ -396,7 +397,9 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
     // handle confirm event
     case ESP_GATTS_CONF_EVT: {
       // check status
-      ESP_ERROR_CHECK_WITHOUT_ABORT(p->conf.status);
+      if (p->conf.status != ESP_GATT_OK) {
+        ESP_LOGW(NAOS_LOG_TAG, "naos_ble_gatts_handler: failed to send indication/notification (%d)", p->conf.status);
+      }
 
       break;
     }
@@ -588,7 +591,9 @@ static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
   // send indicate
   esp_err_t err = esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, conn->id, naos_ble_char_msg.handle,
                                               (uint16_t)len, (uint8_t *)data, false);
-  ESP_ERROR_CHECK_WITHOUT_ABORT(err);
+  if (err != ESP_OK) {
+    ESP_LOGW(NAOS_LOG_TAG, "naos_ble_msg_send: failed so send msg as notification (%d)", err);
+  }
 
   return err == ESP_OK;
 }
