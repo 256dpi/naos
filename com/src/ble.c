@@ -610,6 +610,11 @@ void naos_ble_init(naos_ble_config_t cfg) {
 
   // initialize bluetooth
   if (!cfg.skip_bt_init) {
+    // free some memory unless when using dual-mode
+#if !defined(CONFIG_BTDM_CTRL_MODE_BTDM)
+    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+#endif
+
     // enable controller
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
