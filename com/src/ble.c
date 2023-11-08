@@ -11,7 +11,6 @@
 #include <esp_gatts_api.h>
 #include <esp_gatt_common_api.h>
 #include <esp_bt_device.h>
-#include <esp_log.h>
 #include <string.h>
 
 #include "params.h"
@@ -115,6 +114,7 @@ static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
     &naos_ble_char_msg,
 };
 
+static naos_ble_config_t naos_ble_config = {0};
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
 static naos_ble_conn_t *naos_ble_flash_conn = NULL;
 static bool naos_ble_flash_ready = false;
@@ -563,13 +563,15 @@ static void naos_ble_param_handler(naos_param_t *param) {
   }
 
 #if !defined(CONFIG_NAOS_MSG_ONLY)
-  // send indicate to all unlocked connections
-  for (int j = 0; j < NAOS_BLE_MAX_CONNECTIONS; j++) {
-    naos_ble_conn_t *conn = &naos_ble_conns[j];
-    if (conn->connected && !conn->locked) {
-      ESP_ERROR_CHECK_WITHOUT_ABORT(
-          esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, conn->id, naos_ble_char_update.handle,
-                                      (uint16_t)strlen(param->name), (uint8_t *)param->name, false));
+  if (naos_ble_config.send_updates) {
+    // send indicate to all unlocked connections
+    for (int j = 0; j < NAOS_BLE_MAX_CONNECTIONS; j++) {
+      naos_ble_conn_t *conn = &naos_ble_conns[j];
+      if (conn->connected && !conn->locked) {
+        ESP_ERROR_CHECK_WITHOUT_ABORT(
+            esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, conn->id, naos_ble_char_update.handle,
+                                        (uint16_t)strlen(param->name), (uint8_t *)param->name, false));
+      }
     }
   }
 #endif
@@ -599,6 +601,9 @@ static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
 }
 
 void naos_ble_init(naos_ble_config_t cfg) {
+  // store config
+  naos_ble_config = cfg;
+
   // Note: The BLE subsystem is not protected by a mutex to prevent deadlocks of
   // the bluetooth task. Most BLE calls block until the bluetooth task replies,
   // but other work items issues beforehand may call into our code before the

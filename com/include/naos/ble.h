@@ -8,6 +8,11 @@ typedef struct {
    * Whether to skip bluetooth initialization.
    */
   bool skip_bt_init;
+
+  /**
+   * Whether to send indications on update characteristic.
+   */
+  bool send_updates;
 } naos_ble_config_t;
 
 /**
