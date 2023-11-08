@@ -5,9 +5,8 @@ CONFIG_PARTITION_TABLE_FILENAME="partitions.csv"
 # increase default flash size
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
-# enable bluetooth (dual mode)
+# enable bluetooth (BLE only)
 CONFIG_BT_ENABLED=y
-CONFIG_BTDM_CTRL_MODE_BTDM=y
 CONFIG_BT_BLE_42_FEATURES_SUPPORTED=y
 
 # use maximum CPU frequency
