@@ -10,9 +10,9 @@ public class NAOSUpdateEndpoint {
 	private let session: NAOSSession
 	private let mutex = AsyncSemaphore(value: 1)
 	
-	public let beginTimeout: TimeInterval = 30
-	public let writeTimeout: TimeInterval = 5
-	public let finishTimeout: TimeInterval = 10
+	public var beginTimeout: TimeInterval = 30
+	public var writeTimeout: TimeInterval = 5
+	public var finishTimeout: TimeInterval = 10
 	
 	public init(session: NAOSSession) {
 		self.session = session

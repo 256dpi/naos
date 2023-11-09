@@ -18,7 +18,7 @@ public class NAOSFSEndpoint {
 	private let session: NAOSSession
 	private let mutex = AsyncSemaphore(value: 1)
 	
-	public let timeout: TimeInterval = 5
+	public var timeout: TimeInterval = 5
 	
 	public init(session: NAOSSession) {
 		self.session = session
