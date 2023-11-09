@@ -99,9 +99,6 @@ public class NAOSManager: NSObject {
 	}
 
 	private func scan() async throws {
-		// reset
-		reset()
-
 		// check if powered on
 		while centralManager.bluetoothState != .poweredOn {
 			try? await Task.sleep(nanoseconds: 1_000_000_000) // 1s
