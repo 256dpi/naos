@@ -47,24 +47,12 @@ public class NAOSManager: NSObject {
 			case .didUpdateState(let state):
 				switch state {
 				case .poweredOn:
-					// start scan
-					self.scan()
+					// ignore
+					break
 				case .poweredOff:
-					// stop scan
+					// stop running scan
 					Task {
 						await self.centralManager.stopScan()
-					}
-
-					// clear devices
-					self.queue.sync {
-						self.devices.removeAll()
-					}
-
-					// call callback if present
-					if let d = self.delegate {
-						DispatchQueue.main.async {
-							d.naosManagerDidReset(manager: self)
-						}
 					}
 				default:
 					break
@@ -80,6 +68,17 @@ public class NAOSManager: NSObject {
 				}
 			default:
 				break
+			}
+		}
+
+		// scan forever
+		Task {
+			while true {
+				do {
+					try await self.scan()
+				} catch {
+					print("error while scanning: ", error.localizedDescription)
+				}
 			}
 		}
 	}
@@ -99,41 +98,44 @@ public class NAOSManager: NSObject {
 		}
 	}
 
-	private func scan() {
-		Task {
-			// run until cancelled
-			while !Task.isCancelled {
-				// wait until ready
-				try await centralManager.waitUntilReady()
+	private func scan() async throws {
+		// reset
+		reset()
 
-				// create scan stream
-				let stream = try await centralManager.scanForPeripherals(
-					withServices: [NAOSService])
+		// check if powered on
+		while centralManager.bluetoothState != .poweredOn {
+			try? await Task.sleep(nanoseconds: 1_000_000_000) // 1s
+		}
 
-				// handle discovered peripherals
-				for await scanData in stream {
-					// skip if device exists already
-					if findDevice(peripheral: scanData.peripheral) != nil {
-						continue
-					}
+		// wait until ready
+		try await centralManager.waitUntilReady()
 
-					// prepare peripheral
-					let peripheral = NAOSPeripheral(man: centralManager, raw: scanData.peripheral)
+		// create scan stream
+		let stream = try await centralManager.scanForPeripherals(
+			withServices: [NAOSService])
 
-					// otherwise, create new device
-					let device = NAOSDevice(peripheral: peripheral, manager: self)
+		// handle discovered peripherals
+		for await scanData in stream {
+			// skip if device exists already
+			if findDevice(peripheral: scanData.peripheral) != nil {
+				continue
+			}
 
-					// add device
-					self.queue.sync {
-						devices.append(device)
-					}
+			// prepare peripheral
+			let peripheral = NAOSPeripheral(man: centralManager, raw: scanData.peripheral)
 
-					// call callback if present
-					if let d = delegate {
-						DispatchQueue.main.async {
-							d.naosManagerDidDiscoverDevice(manager: self, device: device)
-						}
-					}
+			// otherwise, create new device
+			let device = NAOSDevice(peripheral: peripheral, manager: self)
+
+			// add device
+			queue.sync {
+				devices.append(device)
+			}
+
+			// call callback if present
+			if let d = delegate {
+				DispatchQueue.main.async {
+					d.naosManagerDidDiscoverDevice(manager: self, device: device)
 				}
 			}
 		}
