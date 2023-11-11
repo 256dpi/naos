@@ -151,10 +151,27 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT: {
       // check status
       if (p->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-        ESP_LOGE(NAOS_LOG_TAG, "ESP_GAP_BLE_ADV_START_COMPLETE_EVT: %d", p->adv_data_raw_cmpl.status);
+        ESP_LOGE(NAOS_LOG_TAG, "naos_ble_gap_handler: failed to start advertisement (%d)", p->adv_data_raw_cmpl.status);
+        break;
       }
 
       break;
+    }
+
+    case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT: {
+      // check status
+      if (p->update_conn_params.status != ESP_BT_STATUS_SUCCESS) {
+        ESP_LOGE(NAOS_LOG_TAG, "naos_ble_gap_handler: failed to update connection parameters (%d)",
+                 p->adv_data_raw_cmpl.status);
+        break;
+      }
+
+      // log info
+      ESP_LOGI(NAOS_LOG_TAG,
+               "naos_ble_gap_handler: connection parameters updated (min_int=%d max_int=%d latency=%d conn_int=%d "
+               "timeout=%d)",
+               p->update_conn_params.min_int, p->update_conn_params.max_int, p->update_conn_params.latency,
+               p->update_conn_params.conn_int, p->update_conn_params.timeout);
     }
 
     default: {
