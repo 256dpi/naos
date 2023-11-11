@@ -18,6 +18,7 @@
 
 typedef struct {
   uint16_t id;
+  uint16_t mtu;
   bool connected;
   bool locked;
   naos_mode_t mode;
@@ -293,6 +294,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
     case ESP_GATTS_CONNECT_EVT: {
       // mark connection
       naos_ble_conns[p->connect.conn_id].id = p->connect.conn_id;
+      naos_ble_conns[p->connect.conn_id].mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
       naos_ble_conns[p->connect.conn_id].connected = true;
       naos_ble_conns[p->connect.conn_id].locked = strlen(naos_get_s("device-password")) > 0;
 
@@ -390,6 +392,17 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
     case ESP_GATTS_RESPONSE_EVT: {
       // check status
       ESP_ERROR_CHECK_WITHOUT_ABORT(p->rsp.status);
+
+      break;
+    }
+
+    // handle MUT event
+    case ESP_GATTS_MTU_EVT: {
+      // log info
+      ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gatts_handler: MTU changed to %d (conn=%d)", p->mtu.mtu, p->mtu.conn_id);
+
+      // set MTU
+      naos_ble_conns[p->mtu.conn_id].mtu = p->mtu.mtu;
 
       break;
     }
