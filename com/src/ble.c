@@ -19,6 +19,7 @@
 typedef struct {
   uint16_t id;
   uint16_t mtu;
+  bool congested;
   bool connected;
   bool locked;
   naos_mode_t mode;
@@ -337,6 +338,21 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       break;
     }
 
+    // handle congestion event
+    case ESP_GATTS_CONGEST_EVT: {
+      // log info
+      ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gatts_handler: congestion changed (id=%d congested=%d)", p->congest.conn_id,
+               p->congest.congested);
+
+      // get connection
+      naos_ble_conn_t *conn = &naos_ble_conns[p->congest.conn_id];
+
+      // set flag
+      conn->congested = p->congest.congested;
+
+      break;
+    }
+
     // handle characteristic read event
     case ESP_GATTS_READ_EVT: {
       // stop immediately if no response is needed
@@ -619,26 +635,31 @@ static void naos_ble_param_handler(naos_param_t *param) {
 }
 
 static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
-  // get conn
-  naos_ble_conn_t *conn = ctx;
-  if (!conn->connected || conn->locked) {
-    return false;
+  for (int i = 0; i < 5; i++) {
+    // get conn
+    naos_ble_conn_t *conn = ctx;
+    if (!conn->connected || conn->locked) {
+      return false;
+    }
+
+    // wait up to a second until packets can be sent again
+    int attempts = 0;
+    while ((conn->congested || esp_ble_get_cur_sendable_packets_num(conn->id) < 5) && attempts++ < 1000) {
+      naos_delay(1);
+    }
+
+    // send indicate
+    esp_err_t err = esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, conn->id, naos_ble_char_msg.handle,
+                                                (uint16_t)len, (uint8_t *)data, false);
+    if (err != ESP_OK) {
+      ESP_LOGW(NAOS_LOG_TAG, "naos_ble_msg_send: failed so send msg as notification (%d)", err);
+      continue;
+    }
+
+    return true;
   }
 
-  // wait up to 1 second until packet can be sent
-  int attempts = 0;
-  while (esp_ble_get_cur_sendable_packets_num(conn->id) == 0 && attempts++ < 1000) {
-    naos_delay(1);
-  }
-
-  // send indicate
-  esp_err_t err = esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, conn->id, naos_ble_char_msg.handle,
-                                              (uint16_t)len, (uint8_t *)data, false);
-  if (err != ESP_OK) {
-    ESP_LOGW(NAOS_LOG_TAG, "naos_ble_msg_send: failed so send msg as notification (%d)", err);
-  }
-
-  return err == ESP_OK;
+  return false;
 }
 
 void naos_ble_init(naos_ble_config_t cfg) {
