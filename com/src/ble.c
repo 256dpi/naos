@@ -38,6 +38,8 @@ static esp_ble_adv_params_t naos_ble_adv_params = {
 
 static esp_ble_adv_data_t naos_ble_adv_data = {
     .include_name = true,
+    .min_interval = 6,   // 7.5ms
+    .max_interval = 12,  // 15ms
     .flag = ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT,
 };
 
@@ -323,10 +325,10 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       // update connection params
       esp_ble_conn_update_params_t conn_params;
       memcpy(conn_params.bda, p->connect.remote_bda, sizeof(conn_params.bda));
-      conn_params.min_int = 0x06;   // 7.5ms
-      conn_params.max_int = 0x20;   // 40ms
-      conn_params.latency = 0x00;   // no skips
-      conn_params.timeout = 0x1F4;  // 5s
+      conn_params.min_int = 6;    // 7.5ms
+      conn_params.max_int = 12;   // 15ms
+      conn_params.latency = 0;    // no skips
+      conn_params.timeout = 500;  // 5s
       ESP_ERROR_CHECK(esp_ble_gap_update_conn_params(&conn_params));
 
       // restart advertisement
