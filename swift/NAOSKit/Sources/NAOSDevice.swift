@@ -371,9 +371,10 @@ public class NAOSDevice: NSObject {
 
 				// refresh parameters
 				for update in try await endpoint.collect(refs: map, since: 0) {
-					let param = availableParameters.first(where: { p in p.ref == update.ref })!
-					parameters[param] = String(data: update.value, encoding: .utf8) ?? ""
-					maxAge = max(maxAge, update.age)
+					if let param = availableParameters.first(where: { p in p.ref == update.ref }) {
+						parameters[param] = String(data: update.value, encoding: .utf8) ?? ""
+						maxAge = max(maxAge, update.age)
+					}
 				}
 			}
 		} else {
