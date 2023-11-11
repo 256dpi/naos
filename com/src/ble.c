@@ -292,6 +292,11 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
     // handle client connect event
     case ESP_GATTS_CONNECT_EVT: {
+      // log info
+      ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gatts_handler: new connection (id=%d interval=%d latency=%d timeout=%d)",
+               p->connect.conn_id, p->connect.conn_params.interval, p->connect.conn_params.latency,
+               p->connect.conn_params.timeout);
+
       // mark connection
       naos_ble_conns[p->connect.conn_id].id = p->connect.conn_id;
       naos_ble_conns[p->connect.conn_id].mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
@@ -529,6 +534,10 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
     // handle client disconnect event
     case ESP_GATTS_DISCONNECT_EVT: {
+      // log info
+      ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gatts_handler: lost connection (id=%d, reason=%d)", p->disconnect.conn_id,
+               p->disconnect.reason);
+
       // get connection
       naos_ble_conn_t *conn = &naos_ble_conns[p->disconnect.conn_id];
 
