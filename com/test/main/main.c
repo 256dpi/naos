@@ -9,6 +9,7 @@
 #include <naos/eth.h>
 #include <naos/mqtt.h>
 #include <naos/osc.h>
+#include <naos/udp.h>
 #include <naos/manager.h>
 #include <naos/bridge.h>
 #include <naos/fs.h>
@@ -192,6 +193,7 @@ void app_main() {
   naos_mqtt_init(1);
   naos_osc_init(1);
   naos_osc_filter(osc_filter);
+  naos_udp_init(8080);
   naos_manager_init();
   naos_serial_init_stdio();
   if (NAOS_SERIAL_USB_AVAILABLE) {
