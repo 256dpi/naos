@@ -436,7 +436,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       break;
     }
 
-    // handle MUT event
+    // handle MTU event
     case ESP_GATTS_MTU_EVT: {
       // log info
       ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gatts_handler: MTU changed to %d (conn=%d)", p->mtu.mtu, p->mtu.conn_id);
@@ -451,7 +451,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
     case ESP_GATTS_CONF_EVT: {
       // check status
       if (p->conf.status != ESP_GATT_OK) {
-        ESP_LOGW(NAOS_LOG_TAG, "naos_ble_gatts_handler: failed to send indication/notification (%d)", p->conf.status);
+        ESP_LOGW(NAOS_LOG_TAG, "naos_ble_gatts_handler: failed to send indication (%d)", p->conf.status);
       }
 
       break;
@@ -573,11 +573,8 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gatts_handler: lost connection (id=%d, reason=%d)", p->disconnect.conn_id,
                p->disconnect.reason);
 
-      // get connection
-      naos_ble_conn_t *conn = &naos_ble_conns[p->disconnect.conn_id];
-
       // clear connection
-      *conn = (naos_ble_conn_t){0};
+      naos_ble_conns[p->disconnect.conn_id] = (naos_ble_conn_t){0};
 
       // restart advertisement
       ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
