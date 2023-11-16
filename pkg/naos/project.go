@@ -275,7 +275,7 @@ func (p *Project) BuildTrace(cpuCore, baudRate string, clean, reconfigure, appOn
 }
 
 // Flash will flash the project to the attached device.
-func (p *Project) Flash(device, baudRate string, erase bool, appOnly bool, out io.Writer) error {
+func (p *Project) Flash(device, baudRate string, erase bool, appOnly, alt bool, out io.Writer) error {
 	// ensure baud rate
 	if baudRate == "" {
 		baudRate = p.Inventory.BaudRate
@@ -289,7 +289,7 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly bool, out i
 		device = utils.FindPort(out)
 	}
 
-	return tree.Flash(p.Tree(), p.Inventory.Target, device, baudRate, erase, appOnly, out)
+	return tree.Flash(p.Tree(), p.Inventory.Target, device, baudRate, erase, appOnly, alt, out)
 }
 
 // Attach will attach to the attached device.
@@ -305,7 +305,7 @@ func (p *Project) Attach(device string, out io.Writer, in io.Reader) error {
 // Exec will execute a command withing the tree.
 func (p *Project) Exec(cmd string, out io.Writer, in io.Reader) error {
 	// execute command
-	return tree.Exec(p.Tree(), out, in, false, cmd)
+	return tree.Exec(p.Tree(), out, in, false, false, cmd)
 }
 
 // Config will write settings and parameters to an attached device.

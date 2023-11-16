@@ -31,7 +31,7 @@ func ADFDirectory(naosPath string) string {
 
 // Exec runs a named command in the build tree. All xtensa toolchain binaries are
 // made available in the path transparently.
-func Exec(naosPath string, out io.Writer, in io.Reader, usePty bool, name string, arg ...string) error {
+func Exec(naosPath string, out io.Writer, in io.Reader, noEnv, usePty bool, name string, arg ...string) error {
 	// print command
 	utils.Log(out, fmt.Sprintf("%s %s", name, strings.Join(arg, " ")))
 
@@ -42,15 +42,10 @@ func Exec(naosPath string, out io.Writer, in io.Reader, usePty bool, name string
 	}
 
 	// prepare command
-	var cmd *exec.Cmd
-
-	// construct command for v3 projects
-	if idfMajorVersion == 3 {
-		cmd = exec.Command(name, arg...)
-	}
+	var cmd = exec.Command(name, arg...)
 
 	// construct command for new projects
-	if idfMajorVersion >= 4 {
+	if idfMajorVersion >= 4 && !noEnv {
 		source := filepath.Join(IDFDirectory(naosPath), "export.sh")
 		cmd = exec.Command("bash", "-c", fmt.Sprintf("source %s; %s %s", source, name, strings.Join(arg, " ")))
 	}

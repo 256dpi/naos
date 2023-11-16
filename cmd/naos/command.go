@@ -41,10 +41,10 @@ Usage:
   naos create [--cmake --force]
   naos install [--force]
   naos build [--clean --reconfigure --app-only]
-  naos flash [<device>] [--baud=<rate> --erase --app-only]
+  naos flash [<device>] [--baud=<rate> --erase --app-only --alt]
   naos attach [<device>]
-  naos run [<device>] [--clean --reconfigure --app-only --baud=<rate> --erase]
-  naos trace [<device>] [--cpu=<core> --clean --app-only --baud=<rate> --erase]
+  naos run [<device>] [--clean --reconfigure --app-only --baud=<rate> --erase --alt]
+  naos trace [<device>] [--cpu=<core> --clean --app-only --baud=<rate> --erase --alt]
   naos exec <command>
   naos config <file> [<device>]
   naos format
@@ -69,6 +69,7 @@ Options:
   --reconfigure         Reconfigure will recalculate the sdkconfig file.
   --erase               Erase completely before flashing new image.
   --app-only            Only build or flash the application.
+  --alt                 Use alternative esptool.py found in PATH.
   --clear               Remove not available devices from inventory.
   --delete              Delete loaded coredumps from the devices.
   -b --baud=<rate>      The baud rate.
@@ -123,6 +124,7 @@ type command struct {
 	oReconfigure bool
 	oErase       bool
 	oAppOnly     bool
+	oAlt         bool
 	oCPUCore     string
 	oClear       bool
 	oDelete      bool
@@ -180,6 +182,7 @@ func parseCommand() *command {
 		oBaudRate:    getString(a["--baud"]),
 		oErase:       getBool(a["--erase"]),
 		oAppOnly:     getBool(a["--app-only"]),
+		oAlt:         getBool(a["--alt"]),
 		oCPUCore:     getString(a["--cpu"]),
 		oClear:       getBool(a["--clear"]),
 		oDelete:      getBool(a["--delete"]),

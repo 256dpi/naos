@@ -143,9 +143,9 @@ func Build(naosPath, target string, overrides map[string]string, files []string,
 	if clean {
 		utils.Log(out, "Cleaning project...")
 		if idfMajorVersion >= 4 {
-			err = Exec(naosPath, out, nil, false, "idf.py", "fullclean")
+			err = Exec(naosPath, out, nil, false, false, "idf.py", "fullclean")
 		} else {
-			err = Exec(naosPath, out, nil, false, "make", "clean")
+			err = Exec(naosPath, out, nil, false, false, "make", "clean")
 		}
 		if err != nil {
 			return err
@@ -159,7 +159,7 @@ func Build(naosPath, target string, overrides map[string]string, files []string,
 		if err != nil && !os.IsNotExist(err) {
 			return err
 		}
-		err = Exec(naosPath, out, nil, false, "idf.py", "-DIDF_TARGET="+target, "reconfigure")
+		err = Exec(naosPath, out, nil, false, false, "idf.py", "-DIDF_TARGET="+target, "reconfigure")
 		if err != nil {
 			return err
 		}
@@ -169,9 +169,9 @@ func Build(naosPath, target string, overrides map[string]string, files []string,
 	if appOnly {
 		utils.Log(out, "Building project (app only)...")
 		if idfMajorVersion >= 4 {
-			err = Exec(naosPath, out, nil, false, "idf.py", "build", "app")
+			err = Exec(naosPath, out, nil, false, false, "idf.py", "build", "app")
 		} else {
-			err = Exec(naosPath, out, nil, false, "make", "app")
+			err = Exec(naosPath, out, nil, false, false, "make", "app")
 		}
 		if err != nil {
 			return err
@@ -183,9 +183,9 @@ func Build(naosPath, target string, overrides map[string]string, files []string,
 	// build project
 	utils.Log(out, "Building project...")
 	if idfMajorVersion >= 4 {
-		err = Exec(naosPath, out, nil, false, "idf.py", "build")
+		err = Exec(naosPath, out, nil, false, false, "idf.py", "build")
 	} else {
-		err = Exec(naosPath, out, nil, false, "make", "all")
+		err = Exec(naosPath, out, nil, false, false, "make", "all")
 	}
 	if err != nil {
 		return err

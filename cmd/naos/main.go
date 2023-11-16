@@ -94,7 +94,7 @@ func build(cmd *command, p *naos.Project) {
 
 func flash(cmd *command, p *naos.Project) {
 	// flash project
-	exitIfSet(p.Flash(cmd.aDevice, cmd.oBaudRate, cmd.oErase, cmd.oAppOnly, os.Stdout))
+	exitIfSet(p.Flash(cmd.aDevice, cmd.oBaudRate, cmd.oErase, cmd.oAppOnly, cmd.oAlt, os.Stdout))
 }
 
 func attach(cmd *command, p *naos.Project) {
@@ -107,7 +107,7 @@ func run(cmd *command, p *naos.Project) {
 	exitIfSet(p.Build(nil, cmd.oClean, cmd.oReconfigure, cmd.oAppOnly, os.Stdout))
 
 	// flash project
-	exitIfSet(p.Flash(cmd.aDevice, cmd.oBaudRate, cmd.oErase, cmd.oAppOnly, os.Stdout))
+	exitIfSet(p.Flash(cmd.aDevice, cmd.oBaudRate, cmd.oErase, cmd.oAppOnly, cmd.oAlt, os.Stdout))
 
 	// attach to device
 	exitIfSet(p.Attach(cmd.aDevice, os.Stdout, os.Stdin))
@@ -118,7 +118,7 @@ func trace(cmd *command, p *naos.Project) {
 	exitIfSet(p.BuildTrace(cmd.oCPUCore, cmd.oBaudRate, cmd.oClean, cmd.oReconfigure, cmd.oAppOnly, os.Stdout))
 
 	// flash project
-	exitIfSet(p.Flash(cmd.aDevice, cmd.oBaudRate, cmd.oErase, cmd.oAppOnly, os.Stdout))
+	exitIfSet(p.Flash(cmd.aDevice, cmd.oBaudRate, cmd.oErase, cmd.oAppOnly, cmd.oAlt, os.Stdout))
 }
 
 func exec(cmd *command, p *naos.Project) {

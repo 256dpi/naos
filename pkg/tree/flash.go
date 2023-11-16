@@ -2,13 +2,14 @@ package tree
 
 import (
 	"io"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
 
 // Flash will flash the project using the specified serial port.
-func Flash(naosPath, target, port, baudRate string, erase, appOnly bool, out io.Writer) error {
+func Flash(naosPath, target, port, baudRate string, erase, appOnly, alt bool, out io.Writer) error {
 	// ensure target
 	if target == "" {
 		target = "esp32"
@@ -22,6 +23,12 @@ func Flash(naosPath, target, port, baudRate string, erase, appOnly bool, out io.
 
 	// calculate paths
 	espTool := filepath.Join(IDFDirectory(naosPath), "components", "esptool_py", "esptool", "esptool.py")
+	if alt {
+		espTool, err = exec.LookPath("esptool.py")
+		if err != nil {
+			return err
+		}
+	}
 	bootLoaderBinary := filepath.Join(Directory(naosPath), "build", "bootloader", "bootloader.bin")
 	projectBinary := filepath.Join(Directory(naosPath), "build", "naos-project.bin")
 	partitionsBinary := filepath.Join(Directory(naosPath), "build", "partitions.bin")
@@ -92,7 +99,7 @@ func Flash(naosPath, target, port, baudRate string, erase, appOnly bool, out io.
 	// erase if requested
 	if erase {
 		utils.Log(out, "Erasing flash...")
-		err := Exec(naosPath, out, nil, false, "python", eraseFlash...)
+		err := Exec(naosPath, out, nil, alt, false, "python", eraseFlash...)
 		if err != nil {
 			return err
 		}
@@ -101,7 +108,7 @@ func Flash(naosPath, target, port, baudRate string, erase, appOnly bool, out io.
 	// flash app only
 	if appOnly {
 		utils.Log(out, "Flashing (app only)...")
-		err := Exec(naosPath, out, nil, false, "python", flashApp...)
+		err := Exec(naosPath, out, nil, alt, false, "python", flashApp...)
 		if err != nil {
 			return err
 		}
@@ -111,7 +118,7 @@ func Flash(naosPath, target, port, baudRate string, erase, appOnly bool, out io.
 
 	// flash all
 	utils.Log(out, "Flashing...")
-	err = Exec(naosPath, out, nil, false, "python", flashAll...)
+	err = Exec(naosPath, out, nil, alt, false, "python", flashAll...)
 	if err != nil {
 		return err
 	}
@@ -119,7 +126,7 @@ func Flash(naosPath, target, port, baudRate string, erase, appOnly bool, out io.
 	// erase ota if not already erased
 	if !erase {
 		utils.Log(out, "Erasing OTA config...")
-		err := Exec(naosPath, out, nil, false, "python", eraseOTA...)
+		err := Exec(naosPath, out, nil, alt, false, "python", eraseOTA...)
 		if err != nil {
 			return err
 		}
