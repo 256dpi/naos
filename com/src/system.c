@@ -30,6 +30,7 @@ static naos_param_t naos_system_params[] = {
     {.name = "running-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "uptime", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "free-heap", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
+    {.name = "free-heap-int", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
 };
 
 static void naos_system_set_status(naos_status_t status) {
@@ -96,6 +97,7 @@ static void naos_system_task() {
     if (naos_millis() > params_updated + 1000) {
       naos_set_l("uptime", (int32_t)naos_millis());
       naos_set_l("free-heap", (int32_t)esp_get_free_heap_size());
+      naos_set_l("free-heap-int", (int32_t)esp_get_free_internal_heap_size());
       params_updated = naos_millis();
     }
 
