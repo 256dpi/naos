@@ -3,11 +3,7 @@ package utils
 import (
 	"io"
 	"os/exec"
-	"strings"
 )
-
-// TODO: Prefix commit with "origin/" to ensure we get the latest updates for
-//  branches?
 
 // Clone will check out the provided repository set it to the specified version
 // and properly checkout all submodules.
@@ -69,52 +65,6 @@ func Fetch(path, commit string, ignoredSubmodules []string, out io.Writer) error
 	cmd = exec.Command("git", "submodule", "update", "--recursive", "--init")
 	cmd.Stderr = out
 	cmd.Stdout = out
-	cmd.Dir = path
-	err = cmd.Run()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Replace will replace the specified git repository with the specified branch
-// of the provided remote repository.
-func Replace(path, remote, name, branch string, out io.Writer) error {
-	// list remotes
-	cmd := exec.Command("git", "remote")
-	cmd.Dir = path
-	buf, err := cmd.Output()
-	if err != nil {
-		return err
-	}
-
-	// add remote
-	if !strings.Contains(string(buf), "fork") {
-		cmd = exec.Command("git", "remote", "add", name, remote)
-		cmd.Stdout = out
-		cmd.Stderr = out
-		cmd.Dir = path
-		err = cmd.Run()
-		if err != nil {
-			return err
-		}
-	}
-
-	// fetch remote
-	cmd = exec.Command("git", "fetch", name)
-	cmd.Stdout = out
-	cmd.Stderr = out
-	cmd.Dir = path
-	err = cmd.Run()
-	if err != nil {
-		return err
-	}
-
-	// checkout branch
-	cmd = exec.Command("git", "checkout", name+"/"+branch)
-	cmd.Stdout = out
-	cmd.Stderr = out
 	cmd.Dir = path
 	err = cmd.Run()
 	if err != nil {

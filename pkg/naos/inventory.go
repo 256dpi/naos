@@ -37,7 +37,6 @@ type Frameworks struct {
 type Inventory struct {
 	Version    string                `json:"version"`
 	Target     string                `json:"target"`
-	FixSerial  bool                  `json:"fix_serial,omitempty"`
 	BaudRate   string                `json:"baud_rate,omitempty"`
 	Embeds     []string              `json:"embeds"`
 	Overrides  map[string]string     `json:"overrides"`
