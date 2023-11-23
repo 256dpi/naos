@@ -80,6 +80,7 @@ public struct NAOSParameter: Hashable {
 	public static let battery = NAOSParameter(name: "battery", type: .double, mode: .system)
 	public static let uptime = NAOSParameter(name: "uptime", type: .long, mode: .system)
 	public static let freeHeap = NAOSParameter(name: "free-heap", type: .long, mode: .system)
+	public static let freeHeapInt = NAOSParameter(name: "free-heap-int", type: .long, mode: .system)
 	public static let wifiRSSI = NAOSParameter(name: "wifi-rssi", type: .long, mode: .system)
 	public static let cpuUsage0 = NAOSParameter(name: "cpu-usage0", type: .double, mode: .system)
 	public static let cpuUsage1 = NAOSParameter(name: "cpu-usage1", type: .double, mode: .system)
@@ -96,7 +97,7 @@ public struct NAOSParameter: Hashable {
 			formatter.allowedUnits = [.hour, .minute, .second]
 			formatter.unitsStyle = .abbreviated
 			return formatter.string(from: num / 1000) ?? ""
-		case .freeHeap:
+		case .freeHeap, .freeHeapInt:
 			return ByteCountFormatter.string(
 				from: Measurement(value: num, unit: .bytes), countStyle: .memory)
 		case .wifiRSSI:
