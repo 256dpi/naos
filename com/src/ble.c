@@ -690,7 +690,8 @@ void naos_ble_init(naos_ble_config_t cfg) {
 #endif
 
     // enable bluedroid
-    ESP_ERROR_CHECK(esp_bluedroid_init());
+    esp_bluedroid_config_t bld_cfg = {0};
+    ESP_ERROR_CHECK(esp_bluedroid_init_with_cfg(&bld_cfg));
     ESP_ERROR_CHECK(esp_bluedroid_enable());
   }
 

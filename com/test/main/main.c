@@ -194,6 +194,7 @@ void app_main() {
   naos_manager_init();
   if (ETHERNET) {
     naos_eth_olimex();
+    // naos_eth_w5500((naos_eth_w5500_t){});
     naos_eth_init();
   }
 

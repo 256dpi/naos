@@ -4,6 +4,7 @@
 
 #include <driver/spi_master.h>
 #include <esp_eth.h>
+#include <esp_mac.h>
 #include <esp_event.h>
 #include <string.h>
 
@@ -179,7 +180,7 @@ void naos_eth_w5500(naos_eth_w5500_t cfg) {
   ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &device, &handle));
 
   // prepare MAC
-  eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(handle);
+  eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(SPI2_HOST, &device);
   w5500_config.int_gpio_num = cfg.intn;
   eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
   esp_eth_mac_t *mac = esp_eth_mac_new_w5500(&w5500_config, &mac_config);
