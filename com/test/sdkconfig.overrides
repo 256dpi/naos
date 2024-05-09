@@ -1,0 +1,6 @@
+# set minimum revision to 3 (saves IRAM)
+CONFIG_ESP32_REV_MIN=3
+CONFIG_ESP32_REV_MIN_3=y
+
+# enable SPI Ethernet driver
+CONFIG_ETH_SPI_ETHERNET_W5500=y
