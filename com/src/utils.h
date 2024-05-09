@@ -2,6 +2,7 @@
 #define NAOS_UTILS_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define NAOS_LOG_TAG "naos"
 
