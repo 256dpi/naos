@@ -44,7 +44,7 @@ Usage:
   naos flash [<device>] [--baud=<rate> --erase --app-only --alt]
   naos attach [<device>]
   naos run [<device>] [--clean --reconfigure --app-only --baud=<rate> --erase --alt]
-  naos trace [<device>] [--cpu=<core> --clean --app-only --baud=<rate> --erase --alt]
+  naos trace [<device>] [--cpu=<core> --clean --reconfigure --app-only --baud=<rate> --erase --alt]
   naos exec <command>
   naos config <file> [<device>]
   naos format
