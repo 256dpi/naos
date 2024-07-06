@@ -2,10 +2,12 @@ package tree
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/256dpi/naos/pkg/utils"
@@ -15,8 +17,52 @@ import (
 // TODO: Updating sdkconfig.overrides requires a reconfigure.
 // TODO: Changing target needs a reconfigure and clean.
 
+// Partitions defines a percentage based partitioning scheme.
+type Partitions struct {
+	Total   int // MiBs
+	Alpha   int // %
+	Beta    int // %
+	Storage int // %
+}
+
+func (p *Partitions) generate() (string, error) {
+	// check if values add up
+	if p.Alpha+p.Beta+p.Storage != 100 {
+		return "", fmt.Errorf("partitions do not add up to 100%%")
+	}
+
+	// prepare partitions
+	partitions := `# Name,   Type, SubType,  Offset,  Size
+nvs,      data, nvs,      0x9000,  0x4000
+otadata,  data, ota,      0xd000,  0x2000
+phy_init, data, phy,      0xf000,  0x1000
+alpha,    app,  ota_0,    0x10000, ALPHA_BYTES
+beta,     app,  ota_1,    ,        BETA_BYTES
+storage,  data, fat,      ,        STORAGE_BYTES
+coredump, data, coredump, ,        64K
+`
+
+	// calculate available bytes
+	total := int64(p.Total)*1024*1024 - 3<<16
+
+	// calculate partition sizes
+	alpha := int(float64(total) * float64(p.Alpha) / 100)
+	beta := int(float64(total) * float64(p.Beta) / 100)
+	storage := int(float64(total) * float64(p.Storage) / 100)
+
+	// replace template
+	partitions = strings.ReplaceAll(partitions, "ALPHA_BYTES", strconv.Itoa(alpha))
+	partitions = strings.ReplaceAll(partitions, "BETA_BYTES", strconv.Itoa(beta))
+	partitions = strings.ReplaceAll(partitions, "STORAGE_BYTES", strconv.Itoa(storage))
+
+	// print partitions
+	println(partitions)
+
+	return partitions, nil
+}
+
 // Build will build the project.
-func Build(naosPath, target string, overrides map[string]string, files []string, clean, reconfigure, appOnly bool, out io.Writer) error {
+func Build(naosPath, target string, overrides map[string]string, files []string, partitions *Partitions, clean, reconfigure, appOnly bool, out io.Writer) error {
 	// ensure target
 	if target == "" {
 		target = "esp32"
@@ -127,6 +173,21 @@ func Build(naosPath, target string, overrides map[string]string, files []string,
 					return err
 				}
 			}
+		}
+	}
+
+	// check partitions
+	if partitions != nil {
+		// generate table
+		table, err := partitions.generate()
+		if err != nil {
+			return err
+		}
+
+		// update partitions
+		err = utils.Update(filepath.Join(Directory(naosPath), "partitions.csv"), table)
+		if err != nil {
+			return err
 		}
 	}
 

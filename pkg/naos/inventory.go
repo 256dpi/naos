@@ -10,6 +10,7 @@ import (
 	"github.com/ryanuber/go-glob"
 
 	"github.com/256dpi/naos/pkg/fleet"
+	"github.com/256dpi/naos/pkg/tree"
 )
 
 // A Device represents a single device in an Inventory.
@@ -40,6 +41,7 @@ type Inventory struct {
 	BaudRate   string                `json:"baud_rate,omitempty"`
 	Embeds     []string              `json:"embeds"`
 	Overrides  map[string]string     `json:"overrides"`
+	Partitions *tree.Partitions      `json:"partitions"`
 	Components map[string]*Component `json:"components"`
 	Frameworks Frameworks            `json:"frameworks,omitempty"`
 	Broker     string                `json:"broker,omitempty"`
