@@ -82,6 +82,14 @@ void naos_repeat(const char *name, uint32_t period_ms, naos_func_t func);
 void naos_defer(naos_func_t func);
 
 /**
+ * Defer a function call to the background task from an ISR.
+ *
+ * @param func The function.
+ * @return Whether the function was deferred.
+ */
+bool naos_defer_isr(naos_func_t func);
+
+/**
  * A mutex handle.
  */
 typedef SemaphoreHandle_t naos_mutex_t;

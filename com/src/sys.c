@@ -106,6 +106,11 @@ void naos_defer(naos_func_t func) {
   }
 }
 
+bool naos_defer_isr(naos_func_t func) {
+  // pend function call
+  return xTimerPendFunctionCallFromISR(func, NULL, 0, NULL) == pdPASS;
+}
+
 naos_mutex_t naos_mutex() {
   // create mutex
   return xSemaphoreCreateMutex();
