@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/dirent.h>
 #include <sys/syslimits.h>
