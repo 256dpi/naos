@@ -12,6 +12,12 @@ import (
 	"github.com/256dpi/naos/pkg/utils"
 )
 
+// IDFComponent represents a component in the idf-components.yml file.
+type IDFComponent struct {
+	Name    string
+	Version string
+}
+
 // Install will install the NAOS repo to the specified path and link the source
 // path into the build tree.
 func Install(naosPath, sourcePath, dataPath, version string, force bool, out io.Writer) error {
@@ -162,6 +168,30 @@ func InstallComponent(projectPath, naosPath, name, path, repository, version str
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// InstallRegistryComponents will install the specified registry components.
+func InstallRegistryComponents(projectPath, naosPath string, components []IDFComponent, force bool, out io.Writer) error {
+	// compile idf_components.yml
+	componentsYAML := "dependencies:\n"
+	for _, c := range components {
+		componentsYAML += fmt.Sprintf("  %s: \"%s\"\n", c.Name, c.Version)
+	}
+
+	// update idf_components.yml
+	err := utils.Update(filepath.Join(Directory(naosPath), "main", "idf_component.yml"), componentsYAML)
+	if err != nil {
+		return err
+	}
+
+	// update dependencies
+	utils.Log(out, "Updating dependencies...")
+	err = Exec(naosPath, out, nil, false, false, "idf.py", "update-dependencies")
+	if err != nil {
+		return err
 	}
 
 	return nil

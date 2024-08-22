@@ -22,9 +22,10 @@ type Device struct {
 	Parameters      map[string]string `json:"parameters"`
 }
 
-// A Component represents an installable NAOS component.
+// A Component represents an installable component.
 type Component struct {
 	Path       string `json:"path"`
+	Registry   string `json:"registry"`
 	Repository string `json:"repository"`
 	Version    string `json:"version"`
 }

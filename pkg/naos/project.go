@@ -139,12 +139,29 @@ func (p *Project) Install(force bool, out io.Writer) error {
 		return err
 	}
 
-	// install components
+	// install non-registry components
 	for name, com := range p.Inventory.Components {
-		err = tree.InstallComponent(p.Location, p.Tree(), name, com.Path, com.Repository, com.Version, force, out)
-		if err != nil {
-			return err
+		if com.Registry == "" {
+			err = tree.InstallComponent(p.Location, p.Tree(), name, com.Path, com.Repository, com.Version, force, out)
+			if err != nil {
+				return err
+			}
 		}
+	}
+
+	// install registry components
+	registryComponents := []tree.IDFComponent{}
+	for _, com := range p.Inventory.Components {
+		if com.Registry != "" {
+			registryComponents = append(registryComponents, tree.IDFComponent{
+				Name:    com.Registry,
+				Version: com.Version,
+			})
+		}
+	}
+	err = tree.InstallRegistryComponents(p.Location, p.Tree(), registryComponents, force, out)
+	if err != nil {
+		return err
 	}
 
 	// install audio framework
