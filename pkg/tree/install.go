@@ -175,6 +175,16 @@ func InstallComponent(projectPath, naosPath, name, path, repository, version str
 
 // InstallRegistryComponents will install the specified registry components.
 func InstallRegistryComponents(projectPath, naosPath string, components []IDFComponent, force bool, out io.Writer) error {
+	// if empty remove file
+	if len(components) == 0 {
+		utils.Log(out, "Removing IDF dependencies...")
+		err := os.Remove(filepath.Join(Directory(naosPath), "main", "idf_component.yml"))
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		return nil
+	}
+
 	// compile idf_components.yml
 	componentsYAML := "dependencies:\n"
 	for _, c := range components {
@@ -188,7 +198,7 @@ func InstallRegistryComponents(projectPath, naosPath string, components []IDFCom
 	}
 
 	// update dependencies
-	utils.Log(out, "Updating dependencies...")
+	utils.Log(out, "Updating IDF dependencies...")
 	err = Exec(naosPath, out, nil, false, false, "idf.py", "update-dependencies")
 	if err != nil {
 		return err
