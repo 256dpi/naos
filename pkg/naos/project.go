@@ -1,6 +1,7 @@
 package naos
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -18,6 +19,7 @@ import (
 type Project struct {
 	Location  string
 	Inventory *Inventory
+	Fleet     *Fleet
 }
 
 // CreateProject will initialize a project in the specified directory. If out is
@@ -103,10 +105,19 @@ func OpenProject(path string) (*Project, error) {
 		return nil, err
 	}
 
+	// attempt to read fleet
+	flt, err := ReadFleet(filepath.Join(path, "fleet.json"))
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	} else if flt == nil {
+		flt = NewFleet()
+	}
+
 	// prepare project
 	project := &Project{
 		Location:  path,
 		Inventory: inv,
+		Fleet:     flt,
 	}
 
 	return project, nil
@@ -116,6 +127,17 @@ func OpenProject(path string) (*Project, error) {
 func (p *Project) SaveInventory() error {
 	// save inventory
 	err := p.Inventory.Save(filepath.Join(p.Location, "naos.json"))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SaveFleet will save the associated fleet to disk.
+func (p *Project) SaveFleet() error {
+	// save fleet
+	err := p.Fleet.Save(filepath.Join(p.Location, "fleet.json"))
 	if err != nil {
 		return err
 	}
@@ -358,7 +380,7 @@ func (p *Project) Format(out io.Writer) error {
 // pattern. The coredumps are saved to the 'debug' directory in the project.
 func (p *Project) Debug(pattern string, delete bool, duration time.Duration, out io.Writer) error {
 	// collect coredumps
-	coredumps, err := p.Inventory.Debug(pattern, delete, duration)
+	coredumps, err := p.Fleet.Debug(pattern, delete, duration)
 	if err != nil {
 		return err
 	}
@@ -405,7 +427,7 @@ func (p *Project) Update(version, pattern string, jobs int, timeout time.Duratio
 	}
 
 	// run update
-	err = p.Inventory.Update(version, pattern, bytes, jobs, timeout, callback)
+	err = p.Fleet.Update(version, pattern, bytes, jobs, timeout, callback)
 	if err != nil {
 		return err
 	}

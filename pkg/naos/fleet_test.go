@@ -6,40 +6,40 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInventoryFilterDevices1(t *testing.T) {
-	i := NewInventory()
-	i.Devices = make(map[string]*Device)
-	i.Devices["foo"] = &Device{
+func TestFleetFilterDevices1(t *testing.T) {
+	f := NewFleet()
+	f.Devices = make(map[string]*Device)
+	f.Devices["foo"] = &Device{
 		Name:      "foo",
 		BaseTopic: "/foo",
 	}
-	i.Devices["bar"] = &Device{
+	f.Devices["bar"] = &Device{
 		Name:      "bar",
 		BaseTopic: "/bar",
 	}
 
-	devices := i.FilterDevices("foo")
+	devices := f.FilterDevices("foo")
 	assert.Len(t, devices, 1)
 	assert.Equal(t, devices[0].Name, "foo")
 }
 
-func TestInventoryDeviceBaseTopics(t *testing.T) {
-	i := NewInventory()
-	i.Devices = make(map[string]*Device)
-	i.Devices["foo"] = &Device{
+func TestFleetDeviceBaseTopics(t *testing.T) {
+	f := NewFleet()
+	f.Devices = make(map[string]*Device)
+	f.Devices["foo"] = &Device{
 		Name:      "foo",
 		BaseTopic: "/foo",
 	}
-	i.Devices["bar"] = &Device{
+	f.Devices["bar"] = &Device{
 		Name:      "bar",
 		BaseTopic: "/bar",
 	}
-	i.Devices["baz"] = &Device{
+	f.Devices["baz"] = &Device{
 		Name:      "baz",
 		BaseTopic: "/baz",
 	}
 
-	devices := i.FilterDevices("f*")
+	devices := f.FilterDevices("f*")
 	assert.Len(t, devices, 1)
 	assert.Equal(t, devices[0].Name, "foo")
 }

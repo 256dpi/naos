@@ -141,7 +141,7 @@ func list(_ *command, p *naos.Project) {
 	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "BASE TOPIC")
 
 	// add rows
-	for _, d := range p.Inventory.Devices {
+	for _, d := range p.Fleet.Devices {
 		tbl.add(d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
 	}
 
@@ -152,11 +152,11 @@ func list(_ *command, p *naos.Project) {
 func collect(cmd *command, p *naos.Project) {
 	// clear all previously collected devices
 	if cmd.oClear {
-		p.Inventory.Devices = make(map[string]*naos.Device)
+		p.Fleet.Devices = make(map[string]*naos.Device)
 	}
 
 	// collect devices
-	list, err := p.Inventory.Collect(cmd.oDuration)
+	list, err := p.Fleet.Collect(cmd.oDuration)
 	exitIfSet(err)
 
 	// prepare table
@@ -171,22 +171,22 @@ func collect(cmd *command, p *naos.Project) {
 	tbl.show(0)
 
 	// save inventory
-	exitIfSet(p.SaveInventory())
+	exitIfSet(p.SaveFleet())
 }
 
 func ping(cmd *command, p *naos.Project) {
 	// send message
-	exitIfSet(p.Inventory.Ping(cmd.aPattern, cmd.oTimeout))
+	exitIfSet(p.Fleet.Ping(cmd.aPattern, cmd.oTimeout))
 }
 
 func send(cmd *command, p *naos.Project) {
 	// send message
-	exitIfSet(p.Inventory.Send(cmd.aPattern, cmd.aTopic, cmd.aMessage, cmd.oTimeout))
+	exitIfSet(p.Fleet.Send(cmd.aPattern, cmd.aTopic, cmd.aMessage, cmd.oTimeout))
 }
 
 func discover(cmd *command, p *naos.Project) {
 	// discover parameters
-	list, err := p.Inventory.Discover(cmd.aPattern, cmd.oTimeout)
+	list, err := p.Fleet.Discover(cmd.aPattern, cmd.oTimeout)
 	exitIfSet(err)
 
 	// prepare table
@@ -209,12 +209,12 @@ func discover(cmd *command, p *naos.Project) {
 	fmt.Printf("\nGot parameters from %d devices.\n", len(list))
 
 	// save inventory
-	exitIfSet(p.SaveInventory())
+	exitIfSet(p.SaveFleet())
 }
 
 func get(cmd *command, p *naos.Project) {
 	// get parameter
-	list, err := p.Inventory.GetParams(cmd.aPattern, cmd.aParam, cmd.oTimeout)
+	list, err := p.Fleet.GetParams(cmd.aPattern, cmd.aParam, cmd.oTimeout)
 	exitIfSet(err)
 
 	// prepare table
@@ -232,12 +232,12 @@ func get(cmd *command, p *naos.Project) {
 	fmt.Printf("\nGot parameter from %d devices.\n", len(list))
 
 	// save inventory
-	exitIfSet(p.SaveInventory())
+	exitIfSet(p.SaveFleet())
 }
 
 func set(cmd *command, p *naos.Project) {
 	// set parameter
-	list, err := p.Inventory.SetParams(cmd.aPattern, cmd.aParam, cmd.aValue, cmd.oTimeout)
+	list, err := p.Fleet.SetParams(cmd.aPattern, cmd.aParam, cmd.aValue, cmd.oTimeout)
 	exitIfSet(err)
 
 	// prepare table
@@ -255,16 +255,16 @@ func set(cmd *command, p *naos.Project) {
 	fmt.Printf("\nSet parameter on %d devices.\n", len(list))
 
 	// save inventory
-	exitIfSet(p.SaveInventory())
+	exitIfSet(p.SaveFleet())
 }
 
 func unset(cmd *command, p *naos.Project) {
 	// unset parameter
-	_, err := p.Inventory.UnsetParams(cmd.aPattern, cmd.aParam, cmd.oTimeout)
+	_, err := p.Fleet.UnsetParams(cmd.aPattern, cmd.aParam, cmd.oTimeout)
 	exitIfSet(err)
 
 	// save inventory
-	exitIfSet(p.SaveInventory())
+	exitIfSet(p.SaveFleet())
 }
 
 func monitor(cmd *command, p *naos.Project) {
@@ -286,7 +286,7 @@ func monitor(cmd *command, p *naos.Project) {
 	list := make(map[*naos.Device]*fleet.Heartbeat)
 
 	// monitor devices
-	exitIfSet(p.Inventory.Monitor(cmd.aPattern, quit, cmd.oTimeout, func(d *naos.Device, hb *fleet.Heartbeat) {
+	exitIfSet(p.Fleet.Monitor(cmd.aPattern, quit, cmd.oTimeout, func(d *naos.Device, hb *fleet.Heartbeat) {
 		// set the latest heartbeat for device
 		list[d] = hb
 
@@ -335,7 +335,7 @@ func monitor(cmd *command, p *naos.Project) {
 	}))
 
 	// save inventory
-	exitIfSet(p.SaveInventory())
+	exitIfSet(p.SaveFleet())
 }
 
 func record(cmd *command, p *naos.Project) {
@@ -351,7 +351,7 @@ func record(cmd *command, p *naos.Project) {
 	}()
 
 	// record devices
-	exitIfSet(p.Inventory.Record(cmd.aPattern, quit, cmd.oTimeout, func(d *naos.Device, msg string) {
+	exitIfSet(p.Fleet.Record(cmd.aPattern, quit, cmd.oTimeout, func(d *naos.Device, msg string) {
 		// show log message
 		fmt.Printf("[%s] %s\n", d.Name, msg)
 	}))
@@ -394,7 +394,7 @@ func update(cmd *command, p *naos.Project) {
 	})
 
 	// save inventory
-	exitIfSet(p.SaveInventory())
+	exitIfSet(p.SaveFleet())
 
 	// check error
 	exitIfSet(err)
