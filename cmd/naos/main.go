@@ -280,7 +280,7 @@ func monitor(cmd *command, p *naos.Project) {
 	}()
 
 	// prepare table
-	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION", "BATTERY", "SIGNAL STRENGTH", "CPU0 USAGE (PROTO)", "CPU1 USAGE (APP)")
+	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION", "BATTERY", "WIFI", "CPU0", "CPU1")
 
 	// prepare list
 	list := make(map[*naos.Device]*fleet.Heartbeat)
