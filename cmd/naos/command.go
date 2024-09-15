@@ -28,6 +28,7 @@ Fleet Management:
   collect  Collect devices and add them to the inventory.
   ping     Ping devices.
   send     Send a message to devices.
+  receive  Receive messages from devices.
   discover Discover all parameters of a device.
   get      Read a parameter from devices.
   set      Set a parameter on devices.
@@ -52,6 +53,7 @@ Usage:
   naos collect [--clear --duration=<time>]
   naos ping [<pattern>] [--timeout=<time>]
   naos send <topic> [--] <message> [<pattern>] [--timeout=<time>]
+  naos receive <topic> [--] [<pattern>] [--timeout=<time>]
   naos discover [<pattern>] [--timeout=<time>]
   naos get <param> [<pattern>] [--timeout=<time>]
   naos set <param> [--] <value> [<pattern>] [--timeout=<time>]
@@ -95,6 +97,7 @@ type command struct {
 	cCollect  bool
 	cPing     bool
 	cSend     bool
+	cReceive  bool
 	cDiscover bool
 	cGet      bool
 	cSet      bool
@@ -153,6 +156,7 @@ func parseCommand() *command {
 		cCollect:  getBool(a["collect"]),
 		cPing:     getBool(a["ping"]),
 		cSend:     getBool(a["send"]),
+		cReceive:  getBool(a["receive"]),
 		cDiscover: getBool(a["discover"]),
 		cGet:      getBool(a["get"]),
 		cSet:      getBool(a["set"]),

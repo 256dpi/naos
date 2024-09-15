@@ -52,6 +52,8 @@ func main() {
 		ping(cmd, getProject())
 	} else if cmd.cSend {
 		send(cmd, getProject())
+	} else if cmd.cReceive {
+		receive(cmd, getProject())
 	} else if cmd.cDiscover {
 		discover(cmd, getProject())
 	} else if cmd.cGet {
@@ -182,6 +184,26 @@ func ping(cmd *command, p *naos.Project) {
 func send(cmd *command, p *naos.Project) {
 	// send message
 	exitIfSet(p.Fleet.Send(cmd.aPattern, cmd.aTopic, cmd.aMessage, cmd.oTimeout))
+}
+
+func receive(cmd *command, p *naos.Project) {
+	// receive messages
+	msgs, err := p.Fleet.Receive(cmd.aPattern, cmd.aTopic, cmd.oTimeout)
+	exitIfSet(err)
+
+	// prepare table
+	tbl := newTable("TOPIC", "PAYLOAD")
+
+	// add rows
+	for topic, payload := range msgs {
+		tbl.add(topic, payload)
+	}
+
+	// show table
+	tbl.show(0)
+
+	// show info
+	fmt.Printf("\nReceived %d messages.\n", len(msgs))
 }
 
 func discover(cmd *command, p *naos.Project) {

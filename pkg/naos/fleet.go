@@ -188,6 +188,28 @@ func (f *Fleet) Send(pattern, topic, message string, timeout time.Duration) erro
 	return nil
 }
 
+// Receive will receive messages from all devices matching the supplied glob pattern.
+func (f *Fleet) Receive(pattern, topic string, timeout time.Duration) (map[string]string, error) {
+	// get base topics
+	baseTopics := BaseTopics(f.FilterDevices(pattern))
+
+	// prepare new list
+	topics := make([]string, 0, len(baseTopics))
+
+	// generate topics
+	for _, bt := range baseTopics {
+		topics = append(topics, bt+"/"+strings.Trim(topic, "/"))
+	}
+
+	// receive from the generated topics
+	msgs, err := fleet.Receive(f.Broker, topics, timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	return msgs, nil
+}
+
 // Discover will request the list of parameters from all devices matching the
 // supplied glob pattern. The inventory is updated with the reported parameters
 // and a list of answering devices is returned.
