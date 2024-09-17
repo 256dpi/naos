@@ -372,10 +372,13 @@ func record(cmd *command, p *naos.Project) {
 		close(quit)
 	}()
 
+	// get start
+	start := time.Now()
+
 	// record devices
-	exitIfSet(p.Fleet.Record(cmd.aPattern, quit, cmd.oTimeout, func(d *naos.Device, msg string) {
+	exitIfSet(p.Fleet.Record(cmd.aPattern, quit, cmd.oTimeout, func(t time.Time, d *naos.Device, msg string) {
 		// show log message
-		fmt.Printf("[%s] %s\n", d.Name, msg)
+		fmt.Printf("%s [%s] %s\n", time.Since(start).Round(time.Millisecond).String(), d.Name, msg)
 	}))
 }
 

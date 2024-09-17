@@ -315,11 +315,11 @@ func (f *Fleet) UnsetParams(pattern, param string, timeout time.Duration) ([]*De
 
 // Record will enable log recording mode and yield the received log messages
 // until the provided channel has been closed.
-func (f *Fleet) Record(pattern string, quit chan struct{}, timeout time.Duration, callback func(*Device, string)) error {
+func (f *Fleet) Record(pattern string, quit chan struct{}, timeout time.Duration, callback func(time.Time, *Device, string)) error {
 	return fleet.Record(f.Broker, BaseTopics(f.FilterDevices(pattern)), quit, timeout, func(log *fleet.LogMessage) {
 		// call user callback
 		if callback != nil {
-			callback(f.DeviceByBaseTopic(log.BaseTopic), log.Content)
+			callback(log.Time, f.DeviceByBaseTopic(log.BaseTopic), log.Content)
 		}
 	})
 }

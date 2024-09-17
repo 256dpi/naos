@@ -11,6 +11,7 @@ import (
 
 // LogMessage is emitted by Record.
 type LogMessage struct {
+	Time      time.Time
 	BaseTopic string
 	Content   string
 }
@@ -38,7 +39,10 @@ func Record(url string, baseTopics []string, quit chan struct{}, timeout time.Du
 		}
 
 		// prepare log message
-		log := &LogMessage{Content: string(msg.Payload)}
+		log := &LogMessage{
+			Time:    time.Now(),
+			Content: string(msg.Payload),
+		}
 
 		// set base topic
 		for _, baseTopic := range baseTopics {
