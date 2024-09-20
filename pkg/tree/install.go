@@ -84,27 +84,17 @@ func Install(naosPath, sourcePath, dataPath, version string, force bool, out io.
 	}
 
 	// link source directory if missing
-	ok, err = utils.Exists(filepath.Join(Directory(naosPath), "main", "src"))
+	utils.Log(out, "Linking source directory.")
+	err = utils.Link(filepath.Join(Directory(naosPath), "main", "src"), sourcePath)
 	if err != nil {
 		return err
-	} else if !ok {
-		utils.Log(out, "Linking source directory.")
-		err = os.Symlink(sourcePath, filepath.Join(Directory(naosPath), "main", "src"))
-		if err != nil {
-			return err
-		}
 	}
 
 	// link data directory if missing
-	ok, err = utils.Exists(filepath.Join(Directory(naosPath), "main", "data"))
+	utils.Log(out, "Linking data directory.")
+	err = utils.Link(filepath.Join(Directory(naosPath), "main", "data"), dataPath)
 	if err != nil {
 		return err
-	} else if !ok {
-		utils.Log(out, "Linking data directory.")
-		err = os.Symlink(dataPath, filepath.Join(Directory(naosPath), "main", "data"))
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
