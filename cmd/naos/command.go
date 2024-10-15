@@ -20,8 +20,7 @@ Project Management:
   run      Run 'build', 'flash' and 'attach' sequentially.
   trace    Run 'build' and 'flash' with app tracing enabled over USB.
   exec     Run a command in the tree. 
-  config   Write settings and parameters to an attached device.
-  assign   Assign settings to BLE accessible devices.
+  config   Write parameters to an attached device or to devices over BLE.
   format   Format all source files in the 'src' subdirectory.
 
 Fleet Management:
@@ -48,8 +47,7 @@ Usage:
   naos run [<device>] [--clean --reconfigure --app-only --baud=<rate> --erase --alt]
   naos trace [<device>] [--cpu=<core> --clean --reconfigure --app-only --baud=<rate> --erase --alt]
   naos exec <command>
-  naos config <file> [<device>]
-  naos assign <param> [--] <value>
+  naos config <file> [<device>] [--ble]
   naos format
   naos list
   naos collect [--clear --duration=<time>]
@@ -74,6 +72,7 @@ Options:
   --erase               Erase completely before flashing new image.
   --app-only            Only build or flash the application.
   --alt                 Use alternative esptool.py found in PATH.
+  --ble                 Use BLE instead of serial to configure devices.
   --clear               Remove not available devices from inventory.
   --delete              Delete loaded coredumps from the devices.
   -b --baud=<rate>      The baud rate.
@@ -94,7 +93,6 @@ type command struct {
 	cTrace    bool
 	cExec     bool
 	cConfig   bool
-	cAssign   bool
 	cFormat   bool
 	cList     bool
 	cCollect  bool
@@ -132,6 +130,7 @@ type command struct {
 	oAppOnly     bool
 	oAlt         bool
 	oCPUCore     string
+	oBLE         bool
 	oClear       bool
 	oDelete      bool
 	oDuration    time.Duration
@@ -154,7 +153,6 @@ func parseCommand() *command {
 		cTrace:    getBool(a["trace"]),
 		cExec:     getBool(a["exec"]),
 		cConfig:   getBool(a["config"]),
-		cAssign:   getBool(a["assign"]),
 		cFormat:   getBool(a["format"]),
 		cList:     getBool(a["list"]),
 		cCollect:  getBool(a["collect"]),
@@ -192,6 +190,7 @@ func parseCommand() *command {
 		oAppOnly:     getBool(a["--app-only"]),
 		oAlt:         getBool(a["--alt"]),
 		oCPUCore:     getString(a["--cpu"]),
+		oBLE:         getBool(a["--ble"]),
 		oClear:       getBool(a["--clear"]),
 		oDelete:      getBool(a["--delete"]),
 		oDuration:    getDuration(a["--duration"]),

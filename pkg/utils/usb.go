@@ -16,7 +16,7 @@ func FindPort(out io.Writer) string {
 	// get list
 	list, err := serial.GetPortsList()
 	if err != nil {
-		_, _ = fmt.Fprintf(out, "usb: %s\n", err.Error())
+		Log(out, fmt.Sprintf("usb: %s\n", err.Error()))
 		return ""
 	}
 

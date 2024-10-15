@@ -10,6 +10,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/256dpi/naos/pkg/ble"
 	"github.com/256dpi/naos/pkg/fleet"
 	"github.com/256dpi/naos/pkg/tree"
 	"github.com/256dpi/naos/pkg/utils"
@@ -348,7 +349,7 @@ func (p *Project) Exec(cmd string, out io.Writer, in io.Reader) error {
 }
 
 // Config will write settings and parameters to an attached device.
-func (p *Project) Config(file, device string, out io.Writer) error {
+func (p *Project) Config(file, device string, useBLE bool, out io.Writer) error {
 	// load file
 	data, err := os.ReadFile(file)
 	if err != nil {
@@ -365,6 +366,11 @@ func (p *Project) Config(file, device string, out io.Writer) error {
 	// set missing device
 	if device == "" {
 		device = utils.FindPort(out)
+	}
+
+	// use BLE if requested
+	if useBLE {
+		return ble.Config(values, out)
 	}
 
 	return tree.Config(p.Tree(), values, device, out)
