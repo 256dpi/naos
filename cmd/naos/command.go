@@ -21,6 +21,7 @@ Project Management:
   trace    Run 'build' and 'flash' with app tracing enabled over USB.
   exec     Run a command in the tree. 
   config   Write settings and parameters to an attached device.
+  assign   Assign settings to BLE accessible devices.
   format   Format all source files in the 'src' subdirectory.
 
 Fleet Management:
@@ -48,6 +49,7 @@ Usage:
   naos trace [<device>] [--cpu=<core> --clean --reconfigure --app-only --baud=<rate> --erase --alt]
   naos exec <command>
   naos config <file> [<device>]
+  naos assign <param> [--] <value>
   naos format
   naos list
   naos collect [--clear --duration=<time>]
@@ -92,6 +94,7 @@ type command struct {
 	cTrace    bool
 	cExec     bool
 	cConfig   bool
+	cAssign   bool
 	cFormat   bool
 	cList     bool
 	cCollect  bool
@@ -151,6 +154,7 @@ func parseCommand() *command {
 		cTrace:    getBool(a["trace"]),
 		cExec:     getBool(a["exec"]),
 		cConfig:   getBool(a["config"]),
+		cAssign:   getBool(a["assign"]),
 		cFormat:   getBool(a["format"]),
 		cList:     getBool(a["list"]),
 		cCollect:  getBool(a["collect"]),

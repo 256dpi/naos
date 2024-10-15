@@ -10,6 +10,7 @@ import (
 
 	"code.cloudfoundry.org/bytefmt"
 
+	"github.com/256dpi/naos/pkg/ble"
 	"github.com/256dpi/naos/pkg/fleet"
 	"github.com/256dpi/naos/pkg/naos"
 )
@@ -42,6 +43,8 @@ func main() {
 		exec(cmd, getProject())
 	} else if cmd.cConfig {
 		config(cmd, getProject())
+	} else if cmd.cAssign {
+		assign(cmd)
 	} else if cmd.cFormat {
 		format(cmd, getProject())
 	} else if cmd.cList {
@@ -131,6 +134,11 @@ func exec(cmd *command, p *naos.Project) {
 func config(cmd *command, p *naos.Project) {
 	// configure device
 	exitIfSet(p.Config(cmd.aFile, cmd.aDevice, os.Stdout))
+}
+
+func assign(cmd *command) {
+	// assign device
+	exitIfSet(ble.Assign(cmd.aParam, cmd.aValue, os.Stdout))
 }
 
 func format(_ *command, p *naos.Project) {
