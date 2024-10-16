@@ -106,14 +106,14 @@ func Config(params map[string]string, out io.Writer) error {
 			// write parameters
 			for param, value := range params {
 				// select parameter
-				_, err = selectChar.Write([]byte(param))
+				err = write(selectChar, []byte(param))
 				if err != nil {
 					utils.Log(out, fmt.Sprintf("Error: %s", err))
 					return
 				}
 
 				// write value
-				_, err = valueChar.Write([]byte(value))
+				err = write(valueChar, []byte(value))
 				if err != nil {
 					utils.Log(out, fmt.Sprintf("Error: %s", err))
 					return
