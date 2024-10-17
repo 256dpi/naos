@@ -25,13 +25,14 @@ jobs:
       - name: Build (macOS)
         if: startsWith(matrix.os, 'macos-latest')
         run: |
-          env GOOS=darwin GOARCH=amd64 go build -o naos-darwin-amd64 ./cmd/naos
-          env GOOS=darwin GOARCH=arm64 go build -o naos-darwin-arm64 ./cmd/naos
+          env GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 go build -o naos-darwin-amd64 ./cmd/naos
+          env GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -o naos-darwin-arm64 ./cmd/naos
 
       - name: Build (Linux)
         if: startsWith(matrix.os, 'ubuntu-latest')
         run: |
           env GOOS=linux GOARCH=amd64 go build -o naos-linux-amd64 ./cmd/naos
+          env GOOS=linux GOARCH=arm64 go build -o naos-linux-arm64 ./cmd/naos
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -41,5 +42,6 @@ jobs:
             naos-darwin-amd64
             naos-darwin-arm64
             naos-linux-amd64
+            naos-linux-arm64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

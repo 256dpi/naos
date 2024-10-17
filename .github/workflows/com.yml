@@ -22,15 +22,11 @@ jobs:
 
       - name: Install
         if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          cd com
-          make prepare install
+        run: cd com; make prepare install
 
       - name: Update
         if: steps.cache.outputs.cache-hit == 'true'
-        run: |
-          cd com
-          make update
+        run: cd com; make update
 
       - name: Build
-        run: make build
+        run: cd com; make build
