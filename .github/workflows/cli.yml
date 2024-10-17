@@ -1,7 +1,7 @@
 on: [push, pull_request]
 name: CLI
 jobs:
-  test:
+  cli:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]

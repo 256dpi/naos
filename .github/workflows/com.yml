@@ -1,7 +1,7 @@
 on: [push, pull_request]
 name: Component
 jobs:
-  test:
+  com:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
