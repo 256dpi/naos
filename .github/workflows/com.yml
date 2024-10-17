@@ -9,6 +9,7 @@ jobs:
 
       - name: Cache
         uses: actions/cache@v4
+        id: cache
         with:
           path: |
             com/test/esp-idf
@@ -19,8 +20,17 @@ jobs:
       - name: Prepare
         run: sudo apt-get install python-is-python3 gperf -y
 
-      - name: Test
+      - name: Install
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           cd com
           make prepare install
-          make build
+
+      - name: Update
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: |
+          cd com
+          make update
+
+      - name: Build
+        run: make build
