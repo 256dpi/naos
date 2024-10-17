@@ -2,7 +2,10 @@ on: [push, pull_request]
 name: CLI
 jobs:
   test:
-    runs-on: [macos-latest, ubuntu-latest]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,16 +21,16 @@ jobs:
       - name: Test CLI
         run: go test ./...
 
-      - name: Build CLI (macOS)
+      - name: Build (macOS)
+        if: startsWith(matrix.os, 'macos-latest')
         run: |
           env GOOS=darwin GOARCH=amd64 go build -o naos-darwin-amd64 ./cmd/naos
           env GOOS=darwin GOARCH=arm64 go build -o naos-darwin-arm64 ./cmd/naos
-        if: startsWith(matrix.os, 'macos-latest')
 
-      - name: Build CLI (Linux)
+      - name: Build (Linux)
+        if: startsWith(matrix.os, 'ubuntu-latest')
         run: |
           env GOOS=linux GOARCH=amd64 go build -o naos-linux-amd64 ./cmd/naos
-        if: startsWith(matrix.os, 'ubuntu-latest')
 
       - name: Release
         uses: softprops/action-gh-release@v1
