@@ -13,9 +13,10 @@ jobs:
         with:
           path: |
             com/test/esp-idf
+            com/test/tools
             com/test/components/esp-mqtt
             com/test/components/esp-osc
-          key: ${{ runner.os }}-${{ hashFiles('tree/*.version') }}
+          key: v0-${{ runner.os }}-${{ hashFiles('tree/*.version') }}
 
       - name: Prepare
         run: sudo apt-get install python-is-python3 gperf -y
