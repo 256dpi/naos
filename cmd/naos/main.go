@@ -12,6 +12,7 @@ import (
 
 	"github.com/256dpi/naos/pkg/fleet"
 	"github.com/256dpi/naos/pkg/naos"
+	"github.com/256dpi/naos/pkg/utils"
 )
 
 func main() {
@@ -30,6 +31,8 @@ func main() {
 		install(cmd, getProject())
 	} else if cmd.cBuild {
 		build(cmd, getProject())
+	} else if cmd.cDetect {
+		detect(cmd, getProject())
 	} else if cmd.cFlash {
 		flash(cmd, getProject())
 	} else if cmd.cAttach {
@@ -92,6 +95,23 @@ func install(cmd *command, p *naos.Project) {
 func build(cmd *command, p *naos.Project) {
 	// build project
 	exitIfSet(p.Build(nil, cmd.oClean, cmd.oReconfigure, cmd.oAppOnly, os.Stdout))
+}
+
+func detect(cmd *command, p *naos.Project) {
+	// detect devices
+	list, err := utils.ListPorts()
+	exitIfSet(err)
+
+	// prepare table
+	tbl := newTable("PATH")
+
+	// add rows
+	for _, d := range list {
+		tbl.add(d.Path)
+	}
+
+	// show table
+	tbl.show(-1)
 }
 
 func flash(cmd *command, p *naos.Project) {

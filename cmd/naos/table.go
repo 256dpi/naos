@@ -56,9 +56,11 @@ func (t *table) show(sortColumn int) {
 	sub := t.data[1:]
 
 	// sort table using a column
-	sort.Slice(sub, func(i, j int) bool {
-		return sub[i][sortColumn] < sub[j][sortColumn]
-	})
+	if sortColumn >= 0 {
+		sort.Slice(sub, func(i, j int) bool {
+			return sub[i][sortColumn] < sub[j][sortColumn]
+		})
+	}
 
 	// construct full slice
 	full := append([][]string{}, t.data[0])

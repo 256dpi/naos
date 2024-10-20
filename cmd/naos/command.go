@@ -15,6 +15,7 @@ Project Management:
   create   Create a new naos project in the current directory.
   install  Download required dependencies to the 'naos' subdirectory.
   build    Build all source files.
+  detect   Detect all connected devices.
   flash    Flash the previously built binary to an attached device.
   attach   Open a serial communication with an attached device.
   run      Run 'build', 'flash' and 'attach' sequentially.
@@ -42,6 +43,7 @@ Usage:
   naos create [--cmake --force]
   naos install [--force]
   naos build [--clean --reconfigure --app-only]
+  naos detect
   naos flash [<device>] [--baud=<rate> --erase --app-only --alt]
   naos attach [<device>]
   naos run [<device>] [--clean --reconfigure --app-only --baud=<rate> --erase --alt]
@@ -87,6 +89,7 @@ type command struct {
 	cCreate   bool
 	cInstall  bool
 	cBuild    bool
+	cDetect   bool
 	cFlash    bool
 	cAttach   bool
 	cRun      bool
@@ -147,6 +150,7 @@ func parseCommand() *command {
 		cCreate:   getBool(a["create"]),
 		cInstall:  getBool(a["install"]),
 		cBuild:    getBool(a["build"]),
+		cDetect:   getBool(a["detect"]),
 		cFlash:    getBool(a["flash"]),
 		cAttach:   getBool(a["attach"]),
 		cRun:      getBool(a["run"]),
