@@ -12,6 +12,7 @@ import (
 
 	"github.com/256dpi/naos/pkg/fleet"
 	"github.com/256dpi/naos/pkg/naos"
+	"github.com/256dpi/naos/pkg/sdk"
 	"github.com/256dpi/naos/pkg/utils"
 )
 
@@ -73,6 +74,8 @@ func main() {
 		debug(cmd, getProject())
 	} else if cmd.cUpdate {
 		update(cmd, getProject())
+	} else if cmd.cSDKs {
+		sdks()
 	} else if cmd.cHelp {
 		fmt.Print(usage)
 	}
@@ -443,4 +446,21 @@ func update(cmd *command, p *naos.Project) {
 
 	// check error
 	exitIfSet(err)
+}
+
+func sdks() {
+	// list SDKs
+	sdks, err := sdk.List()
+	exitIfSet(err)
+
+	// prepare table
+	tbl := newTable("NAME", "VERSION", "REF", "PATH")
+
+	// add rows
+	for _, sdk := range sdks {
+		tbl.add(sdk.Name, sdk.Version, sdk.Ref, sdk.Path)
+	}
+
+	// show table
+	tbl.show(0)
 }

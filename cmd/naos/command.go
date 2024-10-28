@@ -39,6 +39,10 @@ Fleet Management:
   debug    Gather debug information from devices.
   update   Update devices over the air.
 
+Utilities:
+  sdks     List installed SDKs with their versions and location.
+  help     Show this help message.
+
 Usage:
   naos create [--cmake --force]
   naos install [--force]
@@ -64,6 +68,7 @@ Usage:
   naos record [<pattern>] [--timeout=<time>]
   naos debug [<pattern>] [--delete --duration=<time>]
   naos update <version> [<pattern>] [--jobs=<count> --timeout=<time>]
+  naos sdks
   naos help
 
 Options:
@@ -110,6 +115,7 @@ type command struct {
 	cRecord   bool
 	cDebug    bool
 	cUpdate   bool
+	cSDKs     bool
 	cHelp     bool
 
 	// arguments
@@ -171,6 +177,7 @@ func parseCommand() *command {
 		cRecord:   getBool(a["record"]),
 		cDebug:    getBool(a["debug"]),
 		cUpdate:   getBool(a["update"]),
+		cSDKs:     getBool(a["sdks"]),
 		cHelp:     getBool(a["help"]),
 
 		// arguments
