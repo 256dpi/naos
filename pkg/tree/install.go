@@ -80,7 +80,26 @@ func Install(naosPath, sourcePath, dataPath, version string, force bool, out io.
 	}
 
 	// install toolchain
-	err = InstallToolchain(naosPath, force, out)
+	toolchain, err := sdk.InstallToolchain(idfVersion, out)
+	if err != nil {
+		return err
+	}
+
+	// remove old toolchain
+	oldToolchain, err := utils.IsDir(filepath.Join(Directory(naosPath), "toolchain"))
+	if err != nil {
+		return err
+	} else if oldToolchain {
+		utils.Log(out, "Removing old toolchain.")
+		err = os.RemoveAll(filepath.Join(Directory(naosPath), "toolchain"))
+		if err != nil {
+			return err
+		}
+	}
+
+	// link toolchain
+	utils.Log(out, "Linking toolchain.")
+	err = utils.Link(filepath.Join(Directory(naosPath), "toolchain"), toolchain)
 	if err != nil {
 		return err
 	}

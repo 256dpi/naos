@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"io"
-	"os"
 	"path/filepath"
 
 	"github.com/256dpi/naos/pkg/utils"
@@ -10,17 +9,8 @@ import (
 
 // InstallIDF will install the specified version of the ESP-IDF SDK.
 func InstallIDF(version string, out io.Writer) (string, error) {
-	// get user home directory
-	usr, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	// prepare base directory
-	base := filepath.Join(usr, ".naos", "sdks")
-
-	// ensure directory
-	err = os.MkdirAll(base, 0755)
+	// ensure base
+	base, err := ensureBase()
 	if err != nil {
 		return "", err
 	}

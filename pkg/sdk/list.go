@@ -4,15 +4,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/256dpi/naos/pkg/utils"
 )
 
 // SDK represents an installed SDK.
 type SDK struct {
 	Name    string // e.g. esp-idf, tools
 	Version string // e.g. v5.3
-	Ref     string
 	Path    string
 }
 
@@ -49,17 +46,10 @@ func List() ([]SDK, error) {
 			return nil, nil
 		}
 
-		// get ref
-		ref, err := utils.Ref(filepath.Join(dir, name))
-		if err != nil {
-			return nil, err
-		}
-
 		// append sdk
 		sdks = append(sdks, SDK{
 			Name:    parts[0],
 			Version: parts[1],
-			Ref:     ref,
 			Path:    filepath.Join(dir, name),
 		})
 	}

@@ -9,6 +9,20 @@ import (
 	"strings"
 )
 
+// IsDir will check if the provided path is a directory.
+func IsDir(path string) (bool, error) {
+	// get file info
+	info, err := os.Lstat(path)
+	if os.IsNotExist(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	// check if directory
+	return info.IsDir(), nil
+}
+
 // Exists will check if the provided file or directory exists.
 func Exists(path string) (bool, error) {
 	// get file info

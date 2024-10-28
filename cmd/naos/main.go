@@ -454,11 +454,11 @@ func sdks() {
 	exitIfSet(err)
 
 	// prepare table
-	tbl := newTable("NAME", "VERSION", "REF", "PATH")
+	tbl := newTable("NAME", "VERSION", "PATH")
 
 	// add rows
 	for _, sdk := range sdks {
-		tbl.add(sdk.Name, sdk.Version, sdk.Ref, sdk.Path)
+		tbl.add(sdk.Name, sdk.Version, sdk.Path)
 	}
 
 	// show table
