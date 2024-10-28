@@ -3,7 +3,26 @@ package utils
 import (
 	"io"
 	"os/exec"
+	"strings"
 )
+
+// Ref will return the current branch or tag name of the repository.
+func Ref(path string) (string, error) {
+	// get current branch or tag name
+	cmd := exec.Command("git", "symbolic-ref", "-q", "--short", "HEAD")
+	cmd.Dir = path
+	buf, err := cmd.Output()
+	if err != nil {
+		cmd = exec.Command("git", "describe", "--tags", "--exact-match")
+		cmd.Dir = path
+		buf, err = cmd.Output()
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return string(buf), nil
+}
 
 // Clone will check out the provided repository set it to the specified version
 // and properly checkout all submodules.
@@ -29,8 +48,14 @@ func Clone(repo, path, commit string, ignoredSubmodules []string, out io.Writer)
 // Fetch will update the remote repository and update all submodules
 // accordingly.
 func Fetch(path, commit string, ignoredSubmodules []string, out io.Writer) error {
+	// unprefix commit
+	_commit := commit
+	if strings.HasPrefix(commit, "origin/") {
+		_commit = commit[7:]
+	}
+
 	// fetch repo
-	cmd := exec.Command("git", "fetch", "origin")
+	cmd := exec.Command("git", "fetch", "origin", _commit)
 	cmd.Stdout = out
 	cmd.Stderr = out
 	cmd.Dir = path
@@ -51,7 +76,7 @@ func Fetch(path, commit string, ignoredSubmodules []string, out io.Writer) error
 
 	// remove not needed submodules
 	for _, ism := range ignoredSubmodules {
-		cmd = exec.Command("git", "rm", ism)
+		cmd = exec.Command("git", "rm", "-rfq", ism)
 		cmd.Stderr = out
 		cmd.Stdout = out
 		cmd.Dir = path
