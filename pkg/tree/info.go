@@ -37,53 +37,20 @@ func IDFMajorVersion(naosPath string) (int, error) {
 	}
 
 	// parse version
-	if strings.HasPrefix(string(bytes), "v3.") {
-		return 3, nil
-	} else if strings.HasPrefix(string(bytes), "v4.") {
+	if strings.HasPrefix(string(bytes), "v4.") {
 		return 4, nil
 	} else if strings.HasPrefix(string(bytes), "v5.") {
 		return 5, nil
 	}
 
-	return 0, fmt.Errorf("unknown version")
+	return 0, fmt.Errorf("unknown version: %q", string(bytes))
 }
 
 // IncludeDirectories returns a list of directories that will be included in the
 // build process.
 func IncludeDirectories(naosPath string) ([]string, error) {
-	// get idf major version
-	idfMajorVersion, err := IDFMajorVersion(naosPath)
-	if err != nil {
-		return nil, err
-	}
-
-	// handle old projects
-	if idfMajorVersion == 3 {
-		// update includes.list
-		err = Exec(naosPath, nil, nil, false, false, "make", "generate_component_includes")
-		if err != nil {
-			return nil, err
-		}
-
-		// read file
-		bytes, err := os.ReadFile(filepath.Join(Directory(naosPath), "includes.list"))
-		if err != nil {
-			return nil, err
-		}
-
-		// split lines and trim whitespace
-		list := strings.Split(strings.TrimSpace(string(bytes)), "\n")
-		for i, item := range list {
-			list[i] = strings.TrimSpace(item)
-		}
-
-		return list, nil
-	}
-
-	/* handle new projects */
-
 	// reconfigure project
-	err = Exec(naosPath, io.Discard, nil, false, false, "idf.py", "reconfigure")
+	err := Exec(naosPath, io.Discard, nil, false, false, "idf.py", "reconfigure")
 	if err != nil {
 		return nil, err
 	}

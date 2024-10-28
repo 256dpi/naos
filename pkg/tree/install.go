@@ -79,33 +79,10 @@ func Install(naosPath, sourcePath, dataPath, version string, force bool, out io.
 		return err
 	}
 
-	// get major IDF version
-	idfMajorVersion, err := IDFMajorVersion(naosPath)
+	// install toolchain
+	err = InstallToolchain(naosPath, force, out)
 	if err != nil {
 		return err
-	}
-
-	// install toolchain for v3 projects
-	if idfMajorVersion == 3 {
-		// get required toolchain
-		toolchainVersion, err := RequiredToolchain(naosPath)
-		if err != nil {
-			return err
-		}
-
-		// install toolchain
-		err = InstallToolchain3(naosPath, toolchainVersion, force, out)
-		if err != nil {
-			return err
-		}
-	}
-
-	// install toolchain for new projects
-	if idfMajorVersion >= 4 {
-		err = InstallToolchain(naosPath, force, out)
-		if err != nil {
-			return err
-		}
 	}
 
 	// link source directory if missing

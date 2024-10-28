@@ -2,7 +2,6 @@ package tree
 
 import (
 	"io"
-	"path/filepath"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
@@ -19,12 +18,7 @@ func Attach(naosPath, port string, out io.Writer, in io.Reader) error {
 	utils.Log(out, "Attaching to serial port (press Ctrl+C to exit)...")
 
 	// run monitor
-	if idfMajorVersion == 3 {
-		tool := filepath.Join(IDFDirectory(naosPath), "tools", "idf_monitor.py")
-		elf := filepath.Join(Directory(naosPath), "build", "naos-project.elf")
-		err = Exec(naosPath, out, in, false, true, "python", tool, "--baud", "115200", "--port", port, elf)
-
-	} else if idfMajorVersion == 4 {
+	if idfMajorVersion == 4 {
 		err = Exec(naosPath, out, in, false, true, "idf.py", "monitor", "-B", "115200", "-p", port)
 	} else {
 		err = Exec(naosPath, out, in, false, true, "idf.py", "monitor", "-b", "115200", "-p", port)

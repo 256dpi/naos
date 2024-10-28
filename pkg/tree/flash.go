@@ -15,15 +15,10 @@ func Flash(naosPath, target, port, baudRate string, erase, appOnly, alt bool, ou
 		target = "esp32"
 	}
 
-	// get idf major version
-	idfMajorVersion, err := IDFMajorVersion(naosPath)
-	if err != nil {
-		return err
-	}
-
 	// calculate paths
 	espTool := filepath.Join(IDFDirectory(naosPath), "components", "esptool_py", "esptool", "esptool.py")
 	if alt {
+		var err error
 		espTool, err = exec.LookPath("esptool.py")
 		if err != nil {
 			return err
@@ -31,10 +26,7 @@ func Flash(naosPath, target, port, baudRate string, erase, appOnly, alt bool, ou
 	}
 	bootLoaderBinary := filepath.Join(Directory(naosPath), "build", "bootloader", "bootloader.bin")
 	projectBinary := filepath.Join(Directory(naosPath), "build", "naos-project.bin")
-	partitionsBinary := filepath.Join(Directory(naosPath), "build", "partitions.bin")
-	if idfMajorVersion >= 4 {
-		partitionsBinary = filepath.Join(Directory(naosPath), "build", "partition_table", "partition-table.bin")
-	}
+	partitionsBinary := filepath.Join(Directory(naosPath), "build", "partition_table", "partition-table.bin")
 
 	// prepare erase flash command
 	eraseFlash := []string{
@@ -118,7 +110,7 @@ func Flash(naosPath, target, port, baudRate string, erase, appOnly, alt bool, ou
 
 	// flash all
 	utils.Log(out, "Flashing...")
-	err = Exec(naosPath, out, nil, alt, false, "python", flashAll...)
+	err := Exec(naosPath, out, nil, alt, false, "python", flashAll...)
 	if err != nil {
 		return err
 	}
