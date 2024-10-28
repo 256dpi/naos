@@ -178,3 +178,23 @@ func Link(path, target string) error {
 
 	return nil
 }
+
+// Ensure will create a file with the provided content if it does not exist.
+// If force is set to true, an existing file will be overwritten.
+func Ensure(path, content string, force bool) error {
+	// check existence
+	exists, err := Exists(path)
+	if err != nil {
+		return err
+	}
+
+	// write file
+	if !exists || force {
+		err = os.WriteFile(path, []byte(content), 0644)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

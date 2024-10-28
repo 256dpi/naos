@@ -4,14 +4,8 @@
   "embeds": [
     "foo.txt"
   ],
-  "broker": "mqtt://public:public@public.cloud.shiftr.io",
-  "devices": {
-    "test": {
-      "base_topic": "test",
-      "name": "test",
-      "type": "naos-test",
-      "firmware_version": "0.0.1",
-      "parameters": {}
-    }
-  }
+  "overrides": null,
+  "partitions": null,
+  "components": {},
+  "frameworks": {}
 }

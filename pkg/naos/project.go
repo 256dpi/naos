@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -36,7 +37,7 @@ func CreateProject(path string, force, cmake bool, out io.Writer) (*Project, err
 	// create project
 	p := &Project{Location: path}
 
-	// check if inventory already exists
+	// check existence
 	ok, err := utils.Exists(filepath.Join(path, "naos.json"))
 	if err != nil {
 		return nil, err
@@ -54,7 +55,12 @@ func CreateProject(path string, force, cmake bool, out io.Writer) (*Project, err
 			return nil, err
 		}
 	} else {
+		// open existing project
 		utils.Log(out, "Inventory already exists.")
+		p, err = OpenProject(path)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// ensure source directory
@@ -65,34 +71,33 @@ func CreateProject(path string, force, cmake bool, out io.Writer) (*Project, err
 	}
 
 	// prepare main source path and check if it already exists
+	utils.Log(out, "Creating default source file.")
 	mainSourcePath := filepath.Join(path, "src", "main.c")
-	ok, err = utils.Exists(mainSourcePath)
+	err = utils.Ensure(mainSourcePath, mainSourceFile, force)
 	if err != nil {
 		return nil, err
 	}
 
-	// create main source file if it not already exists
-	if !ok || force {
-		utils.Log(out, "Creating default source file.")
-		err = os.WriteFile(mainSourcePath, []byte(mainSourceFile), 0644)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		utils.Log(out, "Default source file already exists.")
-	}
-
 	// generate cmake file if requested
 	if cmake {
-		// get project path
-		projectPath := filepath.Join(p.Location, "CMakeLists.txt")
-
-		// update CMake file anyway
-		utils.Log(out, "Ensuring project CMake file.")
-		err = os.WriteFile(projectPath, []byte(projectCMakeListsFile), 0644)
+		utils.Log(out, "Creating CMakeLists file.")
+		cMakeListsPath := filepath.Join(p.Location, "CMakeLists.txt")
+		err = utils.Ensure(cMakeListsPath, projectCMakeListsFile, force)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// create ".gitignore" file
+	gitIgnoreEntries := []string{"naos/"}
+	if cmake {
+		gitIgnoreEntries = append(gitIgnoreEntries, "cmake-build-debug/")
+	}
+	gitIgnoreData := []byte(strings.Join(gitIgnoreEntries, "\n") + "\n")
+	gitignorePath := filepath.Join(p.Location, ".gitignore")
+	err = utils.Ensure(gitignorePath, string(gitIgnoreData), force)
+	if err != nil {
+		return nil, err
 	}
 
 	return p, nil
