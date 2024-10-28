@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/256dpi/naos/pkg/utils"
 )
 
 // InstallToolchain will install the esp-idf toolchain.
@@ -23,6 +25,15 @@ func InstallToolchain(version string, out io.Writer) (string, error) {
 	// prepare tools path
 	idfDir := filepath.Join(base, idfKey)
 	toolsDir := filepath.Join(base, toolsKey)
+	flagFile := filepath.Join(toolsDir, ".installed")
+
+	// check flag
+	ok, err := utils.Exists(flagFile)
+	if err != nil {
+		return "", err
+	} else if ok {
+		return toolsDir, nil
+	}
 
 	// prepare command
 	cmd := exec.Command(filepath.Join(idfDir, "install.sh"), "all")
@@ -47,6 +58,12 @@ func InstallToolchain(version string, out io.Writer) (string, error) {
 
 	// run command
 	err = cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
+	// write flag
+	err = os.WriteFile(flagFile, []byte{}, 0644)
 	if err != nil {
 		return "", err
 	}
