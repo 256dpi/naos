@@ -11,7 +11,7 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 	@IBOutlet var pathField: NSTextField!
 	@IBOutlet var listTable: NSTableView!
 	
-	internal var files: [NAOSFSInfo] = []
+	var files: [NAOSFSInfo] = []
 	
 	private func root() -> String {
 		return pathField.stringValue
@@ -36,27 +36,30 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 	@IBAction public func upload(_: AnyObject) {
 		Task {
 			// open file
-			let file = try await openFile()
+			let files = try await openFiles()
 			
-			// prepare path
-			let path = self.root() + "/" + file.0
-			
-			// write file
-			await process(title: "Uploading...") { session, progress in
-				// create endpoint
-				let endpoint = NAOSFSEndpoint(session: session)
-				
-				// get time
-				let start = Date()
+			// iterate files
+			for file in files {
+				// prepare path
+				let path = self.root() + "/" + file.name
 				
 				// write file
-				try await endpoint.write(path: path, data: file.1, report: { done in
-					// calculate delta
-					let delta = Date().timeIntervalSince(start)
+				await process(title: "Uploading...") { session, progress in
+					// create endpoint
+					let endpoint = NAOSFSEndpoint(session: session)
 					
-					// report progress
-					progress(Double(done) / Double(file.1.count), Double(done) / delta)
-				})
+					// get time
+					let start = Date()
+					
+					// write file
+					try await endpoint.write(path: path, data: file.data, report: { done in
+						// calculate delta
+						let delta = Date().timeIntervalSince(start)
+						
+						// report progress
+						progress(Double(done) / Double(file.data.count), Double(done) / delta)
+					})
+				}
 			}
 			
 			// re-list

@@ -5,6 +5,11 @@
 
 import Cocoa
 
+struct File {
+	var name: String
+	var data: Data
+}
+
 struct CustomError: LocalizedError {
 	var title: String?
 	var errorDescription: String?
@@ -31,7 +36,7 @@ func openFile() async throws -> (String, Data) {
 		openPanel.canChooseFiles = true
 		openPanel.canChooseDirectories = false
 		openPanel.allowsMultipleSelection = false
-		
+
 		// run panel
 		let result = openPanel.runModal()
 		if result != .OK {
@@ -42,7 +47,7 @@ func openFile() async throws -> (String, Data) {
 		guard let url = openPanel.urls.first else {
 			throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
 		}
-		
+
 		// get name and content
 		let name = url.lastPathComponent
 		let content = try Data(contentsOf: url)
@@ -51,23 +56,47 @@ func openFile() async throws -> (String, Data) {
 	}
 }
 
+func openFiles() async throws -> [File] {
+	return try await MainActor.run {
+		// prepare panel
+		let openPanel = NSOpenPanel()
+		openPanel.canChooseFiles = true
+		openPanel.canChooseDirectories = false
+		openPanel.allowsMultipleSelection = true
+
+		// run panel
+		let result = openPanel.runModal()
+		if result != .OK {
+			throw NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError, userInfo: nil)
+		}
+
+		// collect files
+		var files = [File]()
+		for url in openPanel.urls {
+			try files.append(File(name: url.lastPathComponent, data: Data(contentsOf: url)))
+		}
+
+		return files
+	}
+}
+
 func saveFile(withName name: String, data: Data) async throws {
 	try await MainActor.run {
 		// prepare panel
 		let savePanel = NSSavePanel()
 		savePanel.nameFieldStringValue = name
-		
+
 		// run panel
 		let result = savePanel.runModal()
 		if result != .OK {
 			throw NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError, userInfo: nil)
 		}
-		
+
 		// get URL
 		guard let url = savePanel.url else {
 			throw NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: nil)
 		}
-		
+
 		// write data to file
 		try data.write(to: url)
 	}
@@ -80,12 +109,12 @@ func prompt(message: String, defaultValue: String? = nil) async -> String? {
 		alert.messageText = message
 		alert.addButton(withTitle: "OK")
 		alert.addButton(withTitle: "Cancel")
-		
+
 		// prepare text field
 		let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
 		textField.stringValue = defaultValue ?? ""
 		alert.accessoryView = textField
-		
+
 		// handle resposne
 		let response = alert.runModal()
 		if response == .alertFirstButtonReturn {
