@@ -375,7 +375,7 @@ func (p *Project) Config(file, device string, useBLE bool, out io.Writer) error 
 
 	// use BLE if requested
 	if useBLE {
-		return ble.Config(values, out)
+		return ble.Config(values, 0, out)
 	}
 
 	return tree.Config(p.Tree(), values, device, out)

@@ -3,6 +3,7 @@ package ble
 import (
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/samber/lo"
 	"tinygo.org/x/bluetooth"
@@ -16,11 +17,23 @@ var selectUUID = lo.Must(bluetooth.ParseUUID("CFC9706D-406F-CCBE-4240-F88D6ED4BA
 var valueUUID = lo.Must(bluetooth.ParseUUID("01CA5446-8EE1-7E99-2041-6884B01E71B3"))
 
 // Config configures all reachable BLE device with the given parameters.
-func Config(params map[string]string, out io.Writer) error {
+func Config(params map[string]string, timeout time.Duration, out io.Writer) error {
 	// enable BLE adapter
 	err := adapter.Enable()
 	if err != nil {
 		return err
+	}
+
+	// handle timeout
+	if timeout > 0 {
+		go func() {
+			<-time.After(timeout)
+			utils.Log(out, "Timeout reached.")
+			err := adapter.StopScan()
+			if err != nil {
+				utils.Log(out, fmt.Sprintf("Error: %s", err))
+			}
+		}()
 	}
 
 	// prepare map
