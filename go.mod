@@ -5,6 +5,7 @@ go 1.20
 require (
 	code.cloudfoundry.org/bytefmt v0.0.0-20210524144015-27119551aaea
 	github.com/256dpi/gomqtt v0.14.3
+	github.com/coder/websocket v1.8.12
 	github.com/creack/pty v1.1.18
 	github.com/docopt/docopt-go v0.0.0-20160216232012-784ddc588536
 	github.com/grandcat/zeroconf v1.0.0
