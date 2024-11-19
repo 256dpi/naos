@@ -28,7 +28,9 @@ type Fleet struct {
 
 // NewFleet creates a new Fleet.
 func NewFleet() *Fleet {
-	return &Fleet{}
+	return &Fleet{
+		Broker: "tcp://localhost:1883",
+	}
 }
 
 // ReadFleet will attempt to read the fleet file at the specified path.
