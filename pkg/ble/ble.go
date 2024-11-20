@@ -17,133 +17,50 @@ import (
 
 var adapter = bluetooth.DefaultAdapter
 var serviceUUID = lo.Must(bluetooth.ParseUUID("632FBA1B-4861-4E4F-8103-FFEE9D5033B5"))
-var selectUUID = lo.Must(bluetooth.ParseUUID("CFC9706D-406F-CCBE-4240-F88D6ED4BACD"))
-var valueUUID = lo.Must(bluetooth.ParseUUID("01CA5446-8EE1-7E99-2041-6884B01E71B3"))
 var msgUUID = lo.Must(bluetooth.ParseUUID("0360744B-A61B-00AD-C945-37F3634130F3"))
 
 // Config configures all reachable BLE device with the given parameters.
 func Config(params map[string]string, timeout time.Duration, out io.Writer) error {
-	// enable BLE adapter
-	err := adapter.Enable()
-	if err != nil {
-		return err
-	}
-
-	// handle timeout
+	// prepare context
+	ctx := context.Background()
 	if timeout > 0 {
-		go func() {
-			<-time.After(timeout)
-			utils.Log(out, "Timeout reached.")
-			err := adapter.StopScan()
-			if err != nil {
-				utils.Log(out, fmt.Sprintf("Error: %s", err))
-			}
-		}()
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
 	}
-
-	// prepare map
-	devices := map[string]bool{}
 
 	// log info
 	utils.Log(out, "Scanning for devices... (press Ctrl+C to stop)")
 
-	// start scanning
-	err = adapter.Scan(func(adapter *bluetooth.Adapter, device bluetooth.ScanResult) {
-		// check service
-		if !device.HasServiceUUID(serviceUUID) {
+	return Discover(ctx, func(device msg.Device) {
+		// get channel
+		ch, err := device.Channel()
+		if err != nil {
+			utils.Log(out, fmt.Sprintf("Error: %s", err))
 			return
 		}
+		defer ch.Close()
 
-		// check map
-		if devices[device.Address.String()] {
+		// open session
+		s, err := msg.OpenSession(ch)
+		if err != nil {
+			utils.Log(out, fmt.Sprintf("Error: %s", err))
 			return
 		}
+		defer s.End(time.Second)
 
-		// mark device
-		devices[device.Address.String()] = true
-
-		go func(localName string) {
-			// connect to device
-			device, err := adapter.Connect(device.Address, bluetooth.ConnectionParams{})
+		// write parameters
+		for param, value := range params {
+			err = msg.SetParam(s, param, []byte(value), time.Second)
 			if err != nil {
 				utils.Log(out, fmt.Sprintf("Error: %s", err))
 				return
 			}
+		}
 
-			// ensure disconnect when done
-			defer func() {
-				err := device.Disconnect()
-				if err != nil {
-					utils.Log(out, fmt.Sprintf("Error: %s", err))
-				}
-			}()
-
-			// discover services
-			svcs, err := device.DiscoverServices([]bluetooth.UUID{serviceUUID})
-			if err != nil {
-				utils.Log(out, fmt.Sprintf("Error: %s", err))
-				return
-			}
-
-			// check services
-			if len(svcs) != 1 {
-				utils.Log(out, fmt.Sprintf("Error: unexpected number of services: %d", len(svcs)))
-				return
-			}
-
-			// discover characteristics
-			chars, err := svcs[0].DiscoverCharacteristics([]bluetooth.UUID{
-				selectUUID,
-				valueUUID,
-			})
-			if err != nil {
-				utils.Log(out, fmt.Sprintf("Error: %s", err))
-				return
-			}
-
-			// check characteristics
-			if len(chars) != 2 {
-				utils.Log(out, fmt.Sprintf("Error: unexpected number of characteristics: %d", len(chars)))
-				return
-			}
-
-			// find characteristics
-			var selectChar, valueChar bluetooth.DeviceCharacteristic
-			for _, char := range chars {
-				switch char.UUID() {
-				case selectUUID:
-					selectChar = char
-				case valueUUID:
-					valueChar = char
-				default:
-					utils.Log(out, fmt.Sprintf("Error: unexpected characteristic: %s", char.UUID()))
-					return
-				}
-			}
-
-			// write parameters
-			for param, value := range params {
-				// select parameter
-				err = write(selectChar, []byte(param))
-				if err != nil {
-					utils.Log(out, fmt.Sprintf("Error: %s", err))
-					return
-				}
-
-				// write value
-				err = write(valueChar, []byte(value))
-				if err != nil {
-					utils.Log(out, fmt.Sprintf("Error: %s", err))
-					return
-				}
-			}
-
-			// log success
-			utils.Log(out, fmt.Sprintf("Configured: %s", localName))
-		}(device.LocalName())
+		// log success
+		utils.Log(out, fmt.Sprintf("Configured: %s", device.Addr()))
 	})
-
-	return nil
 }
 
 // Discover scans for BLE devices and calls the provided callback for each
@@ -180,7 +97,7 @@ func Discover(ctx context.Context, cb func(device msg.Device)) error {
 		devices[result.Address.String()] = true
 
 		// yield device
-		cb(&device{addr: result.Address})
+		go cb(&device{addr: result.Address})
 	})
 
 	return nil
@@ -304,7 +221,7 @@ func (c *channel) Write(bytes []byte) error {
 	defer c.mutex.Unlock()
 
 	// write to characteristic
-	_, err := c.char.Write(bytes)
+	err := write(c.char, bytes)
 	if err != nil {
 		return err
 	}
