@@ -37,7 +37,6 @@ func OpenSession(channel Channel) (*Session, error) {
 
 	// prepare handle
 	handle := random(16)
-	handle = []byte("helloworld")
 
 	// begin session
 	err := Write(channel, Message{Session: 0, Endpoint: 0x00, Data: handle})
@@ -63,6 +62,11 @@ func OpenSession(channel Channel) (*Session, error) {
 		ch: channel,
 		qu: queue,
 	}, nil
+}
+
+// ID returns the session ID.
+func (s *Session) ID() uint16 {
+	return s.id
 }
 
 // Ping verifies and keeps the session alive.

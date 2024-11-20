@@ -62,10 +62,10 @@ type ParamUpdate struct {
 // GetParam returns the value of the named parameter.
 func GetParam(s *Session, name string, timeout time.Duration) ([]byte, error) {
 	// prepare command
-	data := append([]byte{0}, []byte(name)...)
+	cmd := pack("os", uint8(0), name)
 
-	// write command
-	err := s.Send(ParamsEndpoint, data, 0)
+	// send command
+	err := s.Send(ParamsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -82,12 +82,9 @@ func GetParam(s *Session, name string, timeout time.Duration) ([]byte, error) {
 // SetParam sets the value of the named parameter.
 func SetParam(s *Session, name string, value []byte, timeout time.Duration) error {
 	// prepare command
-	cmd := []byte{1}
-	cmd = append(cmd, []byte(name)...)
-	cmd = append(cmd, 0)
-	cmd = append(cmd, value...)
+	cmd := pack("osob", uint8(1), name, uint8(0), value)
 
-	// write command
+	// send command
 	err := s.Send(ParamsEndpoint, cmd, timeout)
 	if err != nil {
 		return err
@@ -146,7 +143,7 @@ func ListParams(s *Session, timeout time.Duration) ([]ParamInfo, error) {
 
 // ReadParam return the value of the referenced parameter.
 func ReadParam(s *Session, ref uint8, timeout time.Duration) ([]byte, error) {
-	// write command
+	// send command
 	err := s.Send(ParamsEndpoint, []byte{3, ref}, 0)
 	if err != nil {
 		return nil, err
@@ -163,8 +160,11 @@ func ReadParam(s *Session, ref uint8, timeout time.Duration) ([]byte, error) {
 
 // WriteParam sets the value of the referenced parameter.
 func WriteParam(s *Session, ref uint8, value []byte, timeout time.Duration) error {
-	// write command
-	err := s.Send(ParamsEndpoint, append([]byte{4, ref}, value...), timeout)
+	// prepare command
+	cmd := pack("oob", uint8(4), ref, value)
+
+	// send command
+	err := s.Send(ParamsEndpoint, cmd, timeout)
 	if err != nil {
 		return err
 	}
@@ -181,9 +181,7 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 	}
 
 	// prepare command
-	cmd := []byte{5}
-	cmd = binary.LittleEndian.AppendUint64(cmd, mp)
-	cmd = binary.LittleEndian.AppendUint64(cmd, since)
+	cmd := pack("oqq", uint8(5), mp, since)
 
 	// send command
 	err := s.Send(ParamsEndpoint, cmd, 0)
@@ -226,7 +224,7 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 
 // ClearParam clears the value of the referenced parameter.
 func ClearParam(s *Session, ref uint8, timeout time.Duration) error {
-	// write command
+	// send command
 	err := s.Send(ParamsEndpoint, []byte{6, ref}, timeout)
 	if err != nil {
 		return err

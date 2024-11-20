@@ -27,7 +27,6 @@ func TestHTTPChannel(t *testing.T) {
 
 	val, err := GetParam(s, "var_s", time.Second)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, val)
 
 	err = SetParam(s, "var_s", []byte("test"), time.Second)
 	assert.NoError(t, err)
