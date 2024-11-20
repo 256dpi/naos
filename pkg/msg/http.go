@@ -11,6 +11,25 @@ import (
 
 // TODO: Move locking to message protocol.
 
+type httpDevice struct {
+	host string
+}
+
+// NewHTTPDevice creates a new HTTP device.
+func NewHTTPDevice(host string) Device {
+	return &httpDevice{
+		host: host,
+	}
+}
+
+func (h *httpDevice) Addr() string {
+	return "http/" + h.host
+}
+
+func (h *httpDevice) Channel() (Channel, error) {
+	return OpenHTTPChannel(h.host, "")
+}
+
 type httpChannel struct {
 	ctx    context.Context
 	conn   *websocket.Conn
@@ -19,7 +38,7 @@ type httpChannel struct {
 	mutex  sync.Mutex
 }
 
-// OpenHTTPChannel opens a new HTTP channel to the server.
+// OpenHTTPChannel opens a new HTTP channel to the device.
 func OpenHTTPChannel(host, password string) (Channel, error) {
 	// create context
 	var ok bool
