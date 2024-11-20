@@ -723,6 +723,11 @@
   resolved "https://registry.yarnpkg.com/@types/parse-json/-/parse-json-4.0.0.tgz#2f8bb441434d163b35fb8ffdccd7138927ffb8c0"
   integrity sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==
 
+"@types/web-bluetooth@^0.0.20":
+  version "0.0.20"
+  resolved "https://registry.yarnpkg.com/@types/web-bluetooth/-/web-bluetooth-0.0.20.tgz#f066abfcd1cbe66267cdbbf0de010d8a41b41597"
+  integrity sha512-g9gZnnXVq7gM7v3tJCWV/qw7w+KeOlSHAhgF9RytFyifW6AF61hdT2ucrYhPq9hLs5JIryeupHV3qGk95dH9ow==
+
 abortcontroller-polyfill@^1.1.9:
   version "1.7.5"
   resolved "https://registry.yarnpkg.com/abortcontroller-polyfill/-/abortcontroller-polyfill-1.7.5.tgz#6738495f4e901fbb57b6c0611d0c75f76c485bed"

@@ -1,26 +1,37 @@
 const utf8Enc = new TextEncoder();
 const utf8Dec = new TextDecoder();
 
-export function toBuffer(string) {
+export function toBuffer(string: string): Uint8Array {
   return utf8Enc.encode(string);
 }
 
-export function toString(buffer) {
+export function toString(buffer: ArrayBufferLike): string {
   return utf8Dec.decode(buffer);
 }
 
-export function concat(buf1, buf2) {
+export function concat(buf1: Uint8Array, buf2: Uint8Array): Uint8Array {
   const buf = new Uint8Array(buf1.byteLength + buf2.byteLength);
-  buf.set(new Uint8Array(buf1), 0);
-  buf.set(new Uint8Array(buf2), buf1.byteLength);
+  buf.set(buf1, 0);
+  buf.set(buf2, buf1.byteLength);
   return buf;
 }
 
-export function readFile(file) {
+export function random(length: number): string {
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    result += characters.charAt(randomIndex);
+  }
+  return result;
+}
+
+export function readFile(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => {
-      resolve(r.result);
+      resolve(r.result as ArrayBuffer);
     };
     r.onerror = (event) => {
       reject(event);
@@ -29,10 +40,7 @@ export function readFile(file) {
   });
 }
 
-export function pack(fmt /* ... */) {
-  // get arguments
-  const args = Array.from(arguments).slice(1);
-
+export function pack(fmt: string, ...args: any[]): Uint8Array {
   // calculate size
   let size = 0;
   for (const [index, arg] of args.entries()) {
@@ -96,56 +104,4 @@ export function pack(fmt /* ... */) {
   }
 
   return buffer;
-}
-
-export function randomString(length) {
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    result += characters.charAt(randomIndex);
-  }
-  return result;
-}
-
-export class AsyncQueue {
-  constructor() {
-    this.queue = [];
-    this.waiters = [];
-  }
-
-  push(item) {
-    // add to back
-    this.queue.push(item);
-
-    // process queue
-    while (this.waiters.length > 0 && this.queue.length > 0) {
-      const resolve = this.waiters.shift();
-      resolve(this.queue.shift());
-    }
-  }
-
-  async pop(timeout) {
-    // check if there is an item in the queue
-    if (this.queue.length > 0) {
-      return this.queue.shift();
-    }
-
-    return new Promise((resolve) => {
-      // add waiter
-      this.waiters.push(resolve);
-
-      // handle timeout
-      if (timeout > 0) {
-        setTimeout(() => {
-          if (this.waiters.includes(resolve)) {
-            const index = this.waiters.indexOf(resolve);
-            this.waiters.splice(index, 1);
-            resolve(null);
-          }
-        }, timeout);
-      }
-    });
-  }
 }

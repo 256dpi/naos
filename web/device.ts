@@ -1,7 +1,7 @@
-import { Queue } from "async-await-queue";
+import { Queue as WorkQueue } from "async-await-queue";
 
-import { Session } from "./session.js";
-import { AsyncQueue, concat, toBuffer, toString } from "./utils.js";
+import { concat, toBuffer, toString } from "./utils";
+import { Channel, Queue } from "./channel";
 
 async function write(char, data, confirm = true) {
   if (typeof data === "string") {
@@ -46,28 +46,46 @@ export const Modes = {
   Locked: "l",
 };
 
-export class Device extends EventTarget {
-  queue = new Queue();
+export interface Param {
+  name: string;
+  type: string;
+  mode: string;
+}
 
-  options;
-  device;
-  service;
-  lockChar;
-  listChar;
-  selectChar;
-  valueChar;
-  updateChar;
-  flashChar;
-  msgChar;
+export interface DeviceOptions {
+  subscribe: boolean;
+  autoUpdate: boolean;
+}
+
+export class Device extends EventTarget {
+  wq = new WorkQueue();
+
+  options: DeviceOptions;
+  device: BluetoothDevice;
+  service: BluetoothRemoteGATTService;
+  lockChar: BluetoothRemoteGATTCharacteristic;
+  listChar: BluetoothRemoteGATTCharacteristic;
+  selectChar: BluetoothRemoteGATTCharacteristic;
+  valueChar: BluetoothRemoteGATTCharacteristic;
+  updateChar: BluetoothRemoteGATTCharacteristic;
+  flashChar: BluetoothRemoteGATTCharacteristic;
+  msgChar: BluetoothRemoteGATTCharacteristic;
 
   protected = false;
   locked = false;
-  parameters;
-  updated = new Set();
+  parameters: Param[] = [];
+  updated = new Set<string>();
   cache = {};
-  timer;
+  timer: number;
+  channel: Channel | null;
 
-  constructor(device, options = {}) {
+  constructor(
+    device: BluetoothDevice,
+    options: DeviceOptions = {
+      subscribe: false,
+      autoUpdate: false,
+    }
+  ) {
     super();
 
     // set device
@@ -90,16 +108,16 @@ export class Device extends EventTarget {
 
   /* Connection */
 
-  get name() {
+  get name(): string {
     return this.device.name;
   }
 
-  get connected() {
+  get connected(): boolean {
     return this.device.gatt.connected;
   }
 
-  async connect() {
-    await this.queue.run(async () => {
+  async connect(): Promise<void> {
+    await this.wq.run(async () => {
       // connect
       await this.device.gatt.connect();
 
@@ -121,7 +139,7 @@ export class Device extends EventTarget {
       this.updateChar.addEventListener(
         "characteristicvaluechanged",
         (event) => {
-          const name = toString(event.target.value);
+          const name = toString(this.updateChar.value.buffer);
           this.updated.add(name);
           this.dispatchEvent(new CustomEvent("changed", { detail: name }));
         }
@@ -135,7 +153,7 @@ export class Device extends EventTarget {
       // create timer
       if (this.options.autoUpdate) {
         this.timer = setInterval(() => {
-          this.queue.run(async () => {
+          this.wq.run(async () => {
             // get and replace updated
             const updated = this.updated;
             this.updated = new Set();
@@ -162,7 +180,7 @@ export class Device extends EventTarget {
       // subscribe and handle messages if available
       if (this.msgChar) {
         this.msgChar.addEventListener("characteristicvaluechanged", (event) => {
-          const data = event.target.value;
+          const data = this.msgChar.value;
           this.dispatchEvent(new CustomEvent("message", { detail: data }));
         });
         await this.msgChar.startNotifications();
@@ -174,7 +192,7 @@ export class Device extends EventTarget {
   }
 
   async refresh() {
-    await this.queue.run(async () => {
+    await this.wq.run(async () => {
       // check state
       if (!this.connected) {
         throw new Error("not connected");
@@ -217,14 +235,14 @@ export class Device extends EventTarget {
 
       // read all parameters
       for (let param of this.parameters) {
-        await write(this.selectChar, name);
-        this.cache[name] = await read(this.valueChar);
+        await write(this.selectChar, param.name);
+        this.cache[param.name] = await read(this.valueChar);
       }
     });
   }
 
-  async unlock(password) {
-    return await this.queue.run(async () => {
+  async unlock(password: string) {
+    return await this.wq.run(async () => {
       // check state
       if (!this.connected) {
         throw new Error("not connected");
@@ -243,8 +261,8 @@ export class Device extends EventTarget {
     });
   }
 
-  async read(name) {
-    return await this.queue.run(async () => {
+  async read(name: string) {
+    return await this.wq.run(async () => {
       // check state
       if (!this.connected) {
         throw new Error("not connected");
@@ -263,8 +281,8 @@ export class Device extends EventTarget {
     });
   }
 
-  async write(name, value) {
-    return await this.queue.run(async () => {
+  async write(name: string, value: Uint8Array) {
+    return await this.wq.run(async () => {
       // check state
       if (!this.connected) {
         throw new Error("not connected");
@@ -281,8 +299,8 @@ export class Device extends EventTarget {
     });
   }
 
-  async quickWrite(name, values, confirm = false) {
-    return await this.queue.run(async () => {
+  async quickWrite(name: string, values: Uint8Array, confirm = false) {
+    return await this.wq.run(async () => {
       // check state
       if (!this.connected) {
         throw new Error("not connected");
@@ -302,8 +320,8 @@ export class Device extends EventTarget {
     });
   }
 
-  async flash(data, progress) {
-    return await this.queue.run(async () => {
+  async flash(data: Uint8Array, progress) {
+    return await this.wq.run(async () => {
       // check state
       if (!this.connected) {
         throw new Error("not connected");
@@ -378,44 +396,57 @@ export class Device extends EventTarget {
     });
   }
 
-  async session(timeout) {
+  getChannel(): Channel {
     // check characteristic
     if (!this.msgChar) {
       return;
     }
 
-    // create queue
-    const queue = new AsyncQueue();
+    // check channel
+    if (this.channel) {
+      return this.channel;
+    }
+
+    // create list
+    const subscribers: Queue[] = [];
 
     // prepare handler
     const handler = (event) => {
-      queue.push(event.detail);
+      for (let queue of subscribers) {
+        const data = event.detail as DataView;
+        queue.push(new Uint8Array(data.buffer));
+      }
     };
 
     // subscribe to messages
     this.addEventListener("message", handler);
 
-    return await Session.open(
-      {
-        write: async (msg) => {
-          // write message
-          await write(this.msgChar, msg, false);
-        },
-        read: async (timeout) => {
-          // return next message
-          return queue.pop(timeout);
-        },
-        close: () => {
-          // unsubscribe from messages
-          this.removeEventListener("message", handler);
-        },
+    // create channel
+    this.channel = {
+      name: () => "ble",
+      subscribe: (q: Queue) => {
+        subscribers.push(q);
       },
-      timeout
-    );
+      unsubscribe(queue: Queue) {
+        const index = subscribers.indexOf(queue);
+        if (index >= 0) {
+          subscribers.splice(index, 1);
+        }
+      },
+      write: async (data: Uint8Array) => {
+        await write(this.msgChar, data, false);
+      },
+      close: () => {
+        this.removeEventListener("message", handler);
+        this.channel = null;
+      },
+    };
+
+    return this.channel;
   }
 
   async disconnect() {
-    return await this.queue.run(async () => {
+    return await this.wq.run(async () => {
       // lock again if protected
       if (this.protected) {
         this.locked = true;

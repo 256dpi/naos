@@ -1,15 +1,22 @@
-import { pack, toString } from "./utils.js";
+import { Session } from "./session";
+import { pack, toString } from "./utils";
+
+export interface FSInfo {
+  name: string;
+  isDir: boolean;
+  size: number;
+}
 
 export class FSEndpoint {
-  #session;
-  #timeout;
+  private readonly session: Session;
+  private readonly timeout: number;
 
-  constructor(session, timeout = 5000) {
-    this.#session = session;
-    this.#timeout = timeout;
+  constructor(session: Session, timeout: number = 5000) {
+    this.session = session;
+    this.timeout = timeout;
   }
 
-  async stat(path) {
+  async stat(path: string): Promise<FSInfo | null> {
     // send command
     await this.send(pack("os", 0, path), false);
 
@@ -17,13 +24,14 @@ export class FSEndpoint {
     const reply = await this.receive(false);
 
     // verify "info" reply
-    if (reply.byteLength !== 6 || reply.getUint8(0) !== 1) {
+    if (reply.length !== 6 || reply[0] !== 1) {
       throw new Error("invalid message");
     }
 
     // parse "info" reply
-    const isDir = reply.getUint8(1) === 1;
-    const size = reply.getUint32(2, true);
+    const view = new DataView(reply.buffer);
+    const isDir = reply[1] === 1;
+    const size = view.getUint32(2, true);
 
     return {
       name: "",
@@ -32,7 +40,7 @@ export class FSEndpoint {
     };
   }
 
-  async list(path) {
+  async list(path: string): Promise<FSInfo[]> {
     // send command
     await this.send(pack("os", 1, path), false);
 
@@ -47,14 +55,15 @@ export class FSEndpoint {
       }
 
       // verify "info" reply
-      if (reply.byteLength < 7 || reply.getUint8(0) !== 1) {
+      if (reply.byteLength < 7 || reply[0] !== 1) {
         throw new Error("invalid message");
       }
 
       // parse "info" reply
-      const isDir = reply.getUint8(1) === 1;
-      const size = reply.getUint32(2, true);
-      const name = toString(reply.buffer.slice(6));
+      const view = new DataView(reply.buffer);
+      const isDir = reply[1] === 1;
+      const size = view.getUint32(2, true);
+      const name = toString(reply.slice(6));
 
       // add info
       infos.push({
@@ -65,7 +74,10 @@ export class FSEndpoint {
     }
   }
 
-  async read(path, report) {
+  async read(
+    path: string,
+    report: (count: number) => void = null
+  ): Promise<Uint8Array> {
     // stat file
     const info = await this.stat(path);
 
@@ -79,7 +91,7 @@ export class FSEndpoint {
       const length = Math.min(5000, info.size - offset);
 
       // read range
-      let range = await this.readRange(path, offset, length, (pos) => {
+      let range = await this.readRange(path, offset, length, (pos: number) => {
         if (report) {
           report(offset + pos);
         }
@@ -93,7 +105,12 @@ export class FSEndpoint {
     return data;
   }
 
-  async readRange(path, offset, length, report) {
+  async readRange(
+    path: string,
+    offset: number,
+    length: number,
+    report: (count: number) => void = null
+  ): Promise<Uint8Array> {
     // send "open" command
     await this.send(pack("oos", 2, 0, path), true);
 
@@ -114,12 +131,13 @@ export class FSEndpoint {
       }
 
       // verify "chunk" reply
-      if (reply.byteLength <= 5 || reply.getUint8(0) !== 2) {
+      if (reply.byteLength <= 5 || reply[0] !== 2) {
         throw new Error("invalid message");
       }
 
       // get offset
-      let replyOffset = reply.getUint32(1, true);
+      let view = new DataView(reply.buffer);
+      let replyOffset = view.getUint32(1, true);
 
       // verify offset
       if (replyOffset !== offset + count) {
@@ -144,7 +162,11 @@ export class FSEndpoint {
     return data;
   }
 
-  async write(path, data, report) {
+  async write(
+    path: string,
+    data: Uint8Array,
+    report: (count: number) => void = null
+  ) {
     // send "create" command (create & truncate)
     await this.send(pack("oos", 2, (1 << 0) | (1 << 2), path), true);
 
@@ -194,7 +216,7 @@ export class FSEndpoint {
     await this.send(pack("o", 5), true);
   }
 
-  async rename(from, to) {
+  async rename(from: string, to: string) {
     // prepare command
     let cmd = pack("osos", 6, from, 0, to);
 
@@ -205,7 +227,7 @@ export class FSEndpoint {
     await this.receive(true);
   }
 
-  async remove(path) {
+  async remove(path: string) {
     // prepare command
     let cmd = pack("os", 7, path);
 
@@ -213,7 +235,7 @@ export class FSEndpoint {
     await this.send(cmd, true);
   }
 
-  async sha256(path) {
+  async sha256(path: string) {
     // prepare command
     let cmd = pack("os", 8, path);
 
@@ -224,7 +246,7 @@ export class FSEndpoint {
     let reply = await this.receive(false);
 
     // verify "chunk" reply
-    if (reply.byteLength !== 33 || reply.getUint8(0) !== 3) {
+    if (reply.byteLength !== 33 || reply[0] !== 3) {
       throw new Error("invalid message");
     }
 
@@ -232,30 +254,25 @@ export class FSEndpoint {
     return new Uint8Array(reply.buffer.slice(1));
   }
 
-  async end() {
-    // end session
-    await this.#session.end(this.#timeout);
-  }
-
   // Helpers
 
-  async receive(expectAck) {
+  async receive(expectAck: boolean): Promise<Uint8Array> {
     // receive reply
-    let data = await this.#session.receive(0x3, expectAck, this.#timeout);
+    let [data] = await this.session.receive(0x3, expectAck, this.timeout);
     if (!data) {
       return null;
     }
 
     // handle errors
-    if (data.getUint8(0) === 0) {
-      throw new Error("posix error: " + data.getUint8(1));
+    if (data[0] === 0) {
+      throw new Error("posix error: " + data[1]);
     }
 
     return data;
   }
 
-  async send(data, awaitAck) {
+  async send(data: Uint8Array, awaitAck: boolean) {
     // send command
-    await this.#session.send(0x3, data, awaitAck ? this.#timeout : 0);
+    await this.session.send(0x3, data, awaitAck ? this.timeout : 0);
   }
 }

@@ -1,13 +1,15 @@
 import {
   Manager,
+  Device,
+  Session,
   FSEndpoint,
-  randomString,
+  random,
   readFile,
   toString,
   toBuffer,
-} from "./index.js";
+} from "./index";
 
-let device;
+let device: Device | null = null;
 
 async function run() {
   const manager = new Manager();
@@ -16,7 +18,7 @@ async function run() {
     subscribe: false,
     autoUpdate: false,
   });
-  if (!device) {
+  if (!device) {s
     return;
   }
 
@@ -33,6 +35,7 @@ async function run() {
 
     // console.log("Refreshing...");
     // await device.refresh();
+    // console.log(device.parameters);
     //
     // console.log("Unlocking...");
     // await device.unlock("secret");
@@ -53,7 +56,7 @@ async function flash(input) {
     return;
   }
 
-  const data = await readFile(input.files[0]);
+  const data = new Uint8Array(await readFile(input.files[0]));
 
   console.log("Flashing...", data);
   await device.flash(data, (progress) => {
@@ -70,9 +73,10 @@ async function fs() {
 
   console.log("Opening session...");
 
-  const session = await device.session();
-  await session.ping();
-  console.log(await session.query(0x03));
+  const channel = device.getChannel();
+  const session = await Session.open(channel);
+  await session.ping(1000);
+  console.log(await session.query(0x03, 1000));
 
   const fs = new FSEndpoint(session);
 
@@ -81,7 +85,7 @@ async function fs() {
 
   console.log(toString(await fs.read("/lol.txt")));
 
-  await fs.write("/test.txt", toBuffer(randomString(16)));
+  await fs.write("/test.txt", toBuffer(random(16)));
   console.log(toString(await fs.read("/test.txt")));
   await fs.rename("/test.txt", "/test2.txt");
   console.log(await fs.sha256("/test2.txt"));
@@ -91,7 +95,7 @@ async function fs() {
   // console.log(await fs.stat("/data.bin"));
   // console.log(await fs.read("/data.bin"));
 
-  await session.end();
+  await session.end(1000);
 
   console.log("Session closed!");
 }

@@ -1,32 +1,32 @@
-import { Device, UUIDs } from "./device.js";
+import { Device, UUIDs } from "./device";
 
-export class Manager extends EventTarget {
-  device;
+export class Manager {
+  private device: Device | null = null;
 
-  async request(options = {}) {
+  async request(options = {}): Promise<Device | null> {
     // release existing device
     if (this.device) {
       if (this.device.connected) {
-        this.device.disconnect();
+        this.device.disconnect().then();
       }
       this.device = null;
     }
 
     // request device
-    let device;
+    let dev: BluetoothDevice | null;
     try {
-      device = await navigator.bluetooth.requestDevice({
+      dev = await navigator.bluetooth.requestDevice({
         filters: [{ services: [UUIDs.service] }],
       });
     } catch (err) {
       // ignore
     }
-    if (!device) {
-      return;
+    if (!dev) {
+      return null;
     }
 
     // create device
-    device = new Device(device, options);
+    const device = new Device(dev, options);
 
     // set device
     this.device = device;

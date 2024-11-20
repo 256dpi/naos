@@ -13,6 +13,7 @@
     "async-await-queue": "^2.1.2"
   },
   "devDependencies": {
+    "@types/web-bluetooth": "^0.0.20",
     "parcel": "^2.8.3",
     "prettier": "^2.8.4"
   }
