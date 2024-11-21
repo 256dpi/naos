@@ -228,7 +228,7 @@ public class NAOSDevice: NSObject {
 
 		// read lock status
 		try await withParamSession { session in
-			locked = try await session.status(timeout: 1000).contains(.locked)
+			locked = try await session.status(timeout: 5).contains(.locked)
 		}
 
 		// save if this device is protected
@@ -256,7 +256,7 @@ public class NAOSDevice: NSObject {
 
 		// read lock status
 		try await withParamSession { session in
-			locked = try await session.status(timeout: 1000).contains(.locked)
+			locked = try await session.status(timeout: 5).contains(.locked)
 		}
 
 		// save if this device is protected and stop
@@ -312,7 +312,7 @@ public class NAOSDevice: NSObject {
 
 		// read lock status
 		try await withParamSession { session in
-			if try await session.unlock(password: password, timeout: 1000) {
+			if try await session.unlock(password: password, timeout: 5) {
 				locked = false
 			}
 		}
