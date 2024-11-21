@@ -9,20 +9,14 @@ import CoreBluetooth
 import Foundation
 
 let NAOSService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
-
-enum NAOSCharacteristic: String {
-	case msg = "0360744B-A61B-00AD-C945-37f3634130F3"
-
-	func cbuuid() -> CBUUID {
-		return CBUUID(string: rawValue)
-	}
-
-	static let all: [NAOSCharacteristic] = [.msg]
-}
+let NAOSCharacteristic = CBUUID(string: "0360744B-A61B-00AD-C945-37f3634130F3")
 
 class NAOSPeripheral {
 	let man: CentralManager
 	let raw: Peripheral
+
+	var svc: Service? = nil
+	var char: Characteristic? = nil
 
 	init(man: CentralManager, raw: Peripheral) {
 		self.man = man
@@ -47,83 +41,42 @@ class NAOSPeripheral {
 			try await self.raw.discoverServices([NAOSService])
 
 			// find service
-			var service: Service?
-			for svc in self.raw.discoveredServices ?? [] {
-				if svc.uuid == NAOSService {
-					service = svc
+			for s in self.raw.discoveredServices ?? [] {
+				if s.uuid == NAOSService {
+					self.svc = s
 				}
 			}
-			if service == nil {
+			if self.svc == nil {
 				throw NAOSError.serviceNotFound
 			}
 
 			// discover characteristics
-			try await self.raw.discoverCharacteristics(nil, for: service!)
+			try await self.raw.discoverCharacteristics(nil, for: self.svc!)
 
-			// enable notifications for characteristics that support indication
-			for char in service!.discoveredCharacteristics ?? [] {
-				if char.properties.contains(.indicate) {
-					try await self.raw.setNotifyValue(true, for: char)
+			// find characteristic
+			for c in self.svc!.discoveredCharacteristics ?? [] {
+				if c.uuid == NAOSCharacteristic {
+					self.char = c
 				}
 			}
+			if self.char == nil {
+				throw NAOSError.characteristicNotFound
+			}
+
+			// enable indication notifications
+			try await self.raw.setNotifyValue(true, for: self.char!)
 		}
 	}
 
-	func read(char: NAOSCharacteristic) async throws -> String {
-		// get characteristic
-		guard let char = towRawCharacteristic(char: char) else {
-			throw NAOSError.characteristicNotFound
-		}
-
-		// read value
-		try await withTimeout(seconds: 2) {
-			try await self.raw.readValue(for: char)
-		}
-
-		// parse string
-		let str = String(data: char.value ?? Data(capacity: 0), encoding: .utf8) ?? ""
-
-		return str
-	}
-
-	func write(char: NAOSCharacteristic, data: String) async throws {
-		try await write(char: char, data: data.data(using: .utf8)!, confirm: true)
-	}
-
-	func write(char: NAOSCharacteristic, data: Data, confirm: Bool) async throws {
-		// get characteristic
-		guard let char = towRawCharacteristic(char: char) else {
-			throw NAOSError.characteristicNotFound
-		}
-
+	func write(data: Data, confirm: Bool) async throws {
 		// read value
 		try await withTimeout(seconds: 2) {
 			try await self.raw.writeValue(
-				data, for: char, type: confirm ? .withResponse : .withoutResponse)
+				data, for: self.char!, type: confirm ? .withResponse : .withoutResponse)
 		}
 	}
 
-	func receive(char: NAOSCharacteristic, operation: @escaping (Data) -> Void)
-		-> AnyCancellable
-	{
-		// create subscription
-		return raw.characteristicValueUpdatedPublisher.sink { rawChar in
-			// check characteristic
-			if rawChar.uuid != char.cbuuid() {
-				return
-			}
-
-			// get data
-			guard let data = rawChar.value else {
-				return
-			}
-
-			// yield message
-			operation(data)
-		}
-	}
-
-	func stream(char: NAOSCharacteristic) async -> (AsyncStream<Data>, AnyCancellable) {
+	func stream() async -> (AsyncStream<Data>, AnyCancellable) {
 		// prepare stream
 		var continuation: AsyncStream<Data>.Continuation?
 		let stream = AsyncStream<Data> { c in
@@ -133,7 +86,7 @@ class NAOSPeripheral {
 		// create subscription
 		let subscription = raw.characteristicValueUpdatedPublisher.sink { rawChar in
 			// check characteristic
-			if rawChar.uuid != char.cbuuid() {
+			if rawChar.uuid != NAOSCharacteristic {
 				return
 			}
 
@@ -156,30 +109,11 @@ class NAOSPeripheral {
 	}
 
 	func disconnect() async throws {
+		// disconenct
 		try await man.cancelPeripheralConnection(raw)
-	}
 
-	// Helpers
-
-	private func fromRawCharacteristic(char: Characteristic) -> NAOSCharacteristic? {
-		for c in NAOSCharacteristic.all {
-			if c.cbuuid() == char.uuid {
-				return c
-			}
-		}
-
-		return nil
-	}
-
-	private func towRawCharacteristic(char: NAOSCharacteristic) -> Characteristic? {
-		for s in raw.discoveredServices ?? [] {
-			for c in s.discoveredCharacteristics ?? [] {
-				if c.uuid == char.cbuuid() {
-					return c
-				}
-			}
-		}
-
-		return nil
+		// clear state
+		svc = nil
+		char = nil
 	}
 }

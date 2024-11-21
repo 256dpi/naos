@@ -97,7 +97,7 @@ public class NAOSSession {
 
 	internal static func open(peripheral: NAOSPeripheral, timeout: TimeInterval) async throws -> NAOSSession {
 		// open stream
-		let (stream, subscription) = await peripheral.stream(char: .msg)
+		let (stream, subscription) = await peripheral.stream()
 
 		// handle cancellaton
 		var ok = false
@@ -115,7 +115,7 @@ public class NAOSSession {
 		msg.append(outHandle.data(using: .utf8)!)
 
 		// send "begin" command
-		try await peripheral.write(char: .msg, data: msg, confirm: false)
+		try await peripheral.write(data: msg, confirm: false)
 
 		// await response
 		let sid = try await withTimeout(seconds: timeout) {
@@ -373,7 +373,7 @@ public class NAOSSession {
 		}
 
 		// forward message
-		try await self.peripheral.write(char: .msg, data: data, confirm: false)
+		try await self.peripheral.write(data: data, confirm: false)
 	}
 
 	private func read(timeout: TimeInterval) async throws -> NAOSMessage {
