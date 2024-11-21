@@ -108,8 +108,7 @@ public class NAOSManager: NSObject {
 		try await centralManager.waitUntilReady()
 
 		// create scan stream
-		let stream = try await centralManager.scanForPeripherals(
-			withServices: [NAOSService])
+		let stream = try await centralManager.scanForPeripherals(withServices: [NAOSService])
 
 		// handle discovered peripherals
 		for await scanData in stream {
@@ -119,8 +118,7 @@ public class NAOSManager: NSObject {
 			}
 
 			// prepare peripheral
-			let peripheral = NAOSPeripheral(
-				man: centralManager, raw: scanData.peripheral)
+			let peripheral = NAOSPeripheral(man: centralManager, raw: scanData.peripheral)
 
 			// otherwise, create new device
 			let device = NAOSDevice(peripheral: peripheral, manager: self)

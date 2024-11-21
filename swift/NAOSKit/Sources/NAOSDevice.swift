@@ -7,30 +7,6 @@ import Combine
 import Foundation
 import Semaphore
 
-/// The available parameter types.
-public enum NAOSType: UInt8 {
-	case raw
-	case string
-	case bool
-	case long
-	case double
-	case action
-}
-
-/// The available parameter modes.
-public struct NAOSMode: OptionSet {
-	public let rawValue: UInt8
-
-	public init(rawValue: UInt8) {
-		self.rawValue = rawValue
-	}
-
-	public static let volatile = NAOSMode(rawValue: 1 << 0)
-	public static let system = NAOSMode(rawValue: 1 << 1)
-	public static let application = NAOSMode(rawValue: 1 << 2)
-	public static let locked = NAOSMode(rawValue: 1 << 4)
-}
-
 /// The object representing a single NAOS parameter.
 public struct NAOSParameter: Hashable {
 	public var name: String
@@ -86,21 +62,6 @@ public struct NAOSParameter: Hashable {
 			return String(format: "%.0f%% (App)", num * 100)
 		default:
 			return value
-		}
-	}
-}
-
-/// The NAOS specific errors.
-public enum NAOSError: LocalizedError {
-	case serviceNotFound
-	case characteristicNotFound
-
-	public var errorDescription: String? {
-		switch self {
-		case .serviceNotFound:
-			return "Device service not found."
-		case .characteristicNotFound:
-			return "Device characteristic not found."
 		}
 	}
 }

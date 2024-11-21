@@ -6,6 +6,30 @@
 import Foundation
 import Semaphore
 
+/// The available parameter types.
+public enum NAOSType: UInt8 {
+	case raw
+	case string
+	case bool
+	case long
+	case double
+	case action
+}
+
+/// The available parameter modes.
+public struct NAOSMode: OptionSet {
+	public let rawValue: UInt8
+
+	public init(rawValue: UInt8) {
+		self.rawValue = rawValue
+	}
+
+	public static let volatile = NAOSMode(rawValue: 1 << 0)
+	public static let system = NAOSMode(rawValue: 1 << 1)
+	public static let application = NAOSMode(rawValue: 1 << 2)
+	public static let locked = NAOSMode(rawValue: 1 << 4)
+}
+
 public struct NAOSParamInfo {
 	public var ref: UInt8
 	public var type: NAOSType

@@ -6,13 +6,13 @@
 import Foundation
 import Semaphore
 
-public struct TimedOutError: LocalizedError, Equatable {
+struct TimedOutError: LocalizedError, Equatable {
 	public var errorDescription: String? {
 		return "Operation timed out."
 	}
 }
 
-public func withTimeout<R>(
+func withTimeout<R>(
 	seconds: TimeInterval, operation: @escaping @Sendable () async throws -> R
 ) async throws -> R {
 	return try await withThrowingTaskGroup(of: R.self) { group in

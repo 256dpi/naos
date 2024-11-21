@@ -11,6 +11,22 @@ import Foundation
 let NAOSService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
 let NAOSCharacteristic = CBUUID(string: "0360744B-A61B-00AD-C945-37f3634130F3")
 
+/// The NAOS specific errors.
+public enum NAOSError: LocalizedError {
+	case serviceNotFound
+	case characteristicNotFound
+
+	public var errorDescription: String? {
+		switch self {
+		case .serviceNotFound:
+			return "Device service not found."
+		case .characteristicNotFound:
+			return "Device characteristic not found."
+		}
+	}
+}
+
+
 class NAOSPeripheral {
 	let man: CentralManager
 	let raw: Peripheral
@@ -68,11 +84,10 @@ class NAOSPeripheral {
 		}
 	}
 
-	func write(data: Data, confirm: Bool) async throws {
+	func write(data: Data) async throws {
 		// read value
 		try await withTimeout(seconds: 2) {
-			try await self.raw.writeValue(
-				data, for: self.char!, type: confirm ? .withResponse : .withoutResponse)
+			try await self.raw.writeValue(data, for: self.char!, type: .withoutResponse)
 		}
 	}
 

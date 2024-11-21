@@ -119,7 +119,7 @@ public class NAOSSession {
 		msg.append(outHandle.data(using: .utf8)!)
 
 		// send "begin" command
-		try await peripheral.write(data: msg, confirm: false)
+		try await peripheral.write(data: msg)
 
 		// await response
 		let sid = try await withTimeout(seconds: timeout) {
@@ -377,7 +377,7 @@ public class NAOSSession {
 		}
 
 		// forward message
-		try await self.peripheral.write(data: data, confirm: false)
+		try await self.peripheral.write(data: data)
 	}
 
 	private func read(timeout: TimeInterval) async throws -> NAOSMessage {
