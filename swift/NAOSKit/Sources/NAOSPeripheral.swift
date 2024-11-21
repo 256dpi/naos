@@ -12,18 +12,13 @@ internal let NAOSService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5"
 
 internal enum NAOSCharacteristic: String {
 	case lock = "F7A5FBA4-4084-239B-684D-07D5902EB591"
-	case list = "AC2289D1-231B-B78B-DF48-7D951A6EA665"
-	case select = "CFC9706D-406F-CCBE-4240-F88D6ED4BACD"
-	case value = "01CA5446-8EE1-7E99-2041-6884B01E71B3"
-	case update = "87BFFDCF-0704-22A2-9C4A-7A61BC8C1726"
-	case flash = "6C114DA1-9AA9-1687-5341-A1fE4C991390"
 	case msg = "0360744B-A61B-00AD-C945-37f3634130F3"
 
 	func cbuuid() -> CBUUID {
 		return CBUUID(string: rawValue)
 	}
 
-	static let all: [NAOSCharacteristic] = [.lock, .list, .select, .value, .update, .flash, .msg]
+	static let all: [NAOSCharacteristic] = [.lock, .msg]
 }
 
 internal class NAOSPeripheral {
