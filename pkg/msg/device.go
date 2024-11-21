@@ -1,7 +1,8 @@
 package msg
 
 import (
-	"sync"
+	"encoding/binary"
+	"errors"
 	"time"
 )
 
@@ -15,180 +16,62 @@ type Device interface {
 	Open() (Channel, error)
 }
 
-// ManagedDevice represents a device that is managed.
-type ManagedDevice struct {
-	dev Device
-	ch  Channel
-	ps  *Session
-	mu  sync.Mutex
+// Queue is used to receive messages from a channel.
+type Queue chan []byte
 
-	Params map[string]ParamInfo
-	Values map[uint8][]byte
+// Channel provides the mechanism to exchange messages between a device and a client.
+type Channel interface {
+	Device() Device
+	Subscribe(Queue)
+	Unsubscribe(Queue)
+	Write([]byte) error
+	Close()
 }
 
-// NewManagedDevice creates a new managed device.
-func NewManagedDevice(dev Device) *ManagedDevice {
-	// create active device
-	ad := &ManagedDevice{
-		dev: dev,
+// Message represents a message exchanged between a device and a client.
+type Message struct {
+	Session  uint16
+	Endpoint uint8
+	Data     []byte
+}
+
+// Size returns the size of the message.
+func (m *Message) Size() int {
+	return len(m.Data)
+}
+
+// Read reads a message from the queue.
+func Read(q Queue, timeout time.Duration) (Message, error) {
+	// read data
+	var data []byte
+	select {
+	case data = <-q:
+	case <-time.After(timeout):
+		return Message{}, errors.New("timeout")
 	}
 
-	// run task
-	go ad.run()
-
-	return ad
-}
-
-// Addr returns the address of the device.
-func (d *ManagedDevice) Addr() string {
-	return d.dev.ID()
-}
-
-// Get returns the value of a parameter.
-func (d *ManagedDevice) Get(name string) []byte {
-	// acquire mutex
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	// get param
-	param, ok := d.Params[name]
-	if !ok {
-		return nil
+	// check length and version
+	if len(data) < 4 || data[0] != 1 {
+		return Message{}, errors.New("invalid message")
 	}
 
-	// get value
-	value, ok := d.Values[param.Ref]
-	if !ok {
-		return nil
-	}
-
-	return value
+	return Message{
+		Session:  binary.LittleEndian.Uint16(data[1:3]),
+		Endpoint: data[3],
+		Data:     data[4:],
+	}, nil
 }
 
-// GetString returns the string value of a parameter.
-func (d *ManagedDevice) GetString(name string) string {
-	// get value
-	value := d.Get(name)
-	if value == nil {
-		return ""
-	}
+// Write writes a message to the channel.
+func Write(ch Channel, msg Message) error {
+	// prepare data
+	data := pack("ohob", 1, msg.Session, msg.Endpoint, msg.Data)
 
-	return string(value)
-}
-
-// Active returns whether the device is active.
-func (d *ManagedDevice) Active() bool {
-	// acquire mutex
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	return d.ch != nil
-}
-
-// Activate activates the device.
-func (d *ManagedDevice) Activate() error {
-	// acquire mutex
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	// check channel
-	if d.ch != nil {
-		return nil
-	}
-
-	// open channel
-	ch, err := d.dev.Open()
+	// write data
+	err := ch.Write(data)
 	if err != nil {
 		return err
-	}
-
-	// set channel
-	d.ch = ch
-
-	return nil
-}
-
-// Refresh refreshes the device.
-func (d *ManagedDevice) Refresh() error {
-	// acquire mutex
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	// check channel
-	if d.ch == nil {
-		return nil
-	}
-
-	// open session
-	ps, err := OpenSession(d.ch)
-	if err != nil {
-		return err
-	}
-
-	// ensure end
-	defer ps.End(time.Second)
-
-	// list params
-	params, err := ListParams(ps, time.Second)
-	if err != nil {
-		return err
-	}
-
-	// set params
-	d.Params = map[string]ParamInfo{}
-	for _, param := range params {
-		d.Params[param.Name] = param
-	}
-
-	// read values
-	d.Values = map[uint8][]byte{}
-	for _, info := range d.Params {
-		if info.Type == ParamTypeAction {
-			continue
-		}
-		value, err := ReadParam(ps, info.Ref, time.Second)
-		if err != nil {
-			return err
-		}
-		d.Values[info.Ref] = value
 	}
 
 	return nil
-}
-
-// Deactivate deactivates the device.
-func (d *ManagedDevice) Deactivate() {
-	// acquire mutex
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	// check channel
-	if d.ch == nil {
-		return
-	}
-
-	// close channel
-	d.ch.Close()
-	d.ch = nil
-}
-
-func (d *ManagedDevice) run() {
-	for {
-		// run check
-		d.check()
-
-		// sleep
-		time.Sleep(time.Second)
-	}
-}
-
-func (d *ManagedDevice) check() {
-	// acquire mutex
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	// return if inactive
-	if d.ch == nil {
-		return
-	}
 }

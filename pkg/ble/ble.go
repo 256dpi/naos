@@ -120,7 +120,7 @@ func (d *device) Open() (msg.Channel, error) {
 
 	// check channel
 	if d.channel != nil {
-		return d.channel, nil
+		return nil, fmt.Errorf("channel already open")
 	}
 
 	// connect to device
