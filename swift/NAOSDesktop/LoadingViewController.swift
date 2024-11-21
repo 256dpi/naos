@@ -11,7 +11,7 @@ class LoadingViewController: NSViewController {
 	@IBOutlet var button: NSButton!
 
 	var message: String = ""
-	var cancelled: (()->Void)?
+	var cancelled: (() -> Void)?
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -20,22 +20,22 @@ class LoadingViewController: NSViewController {
 		if message != "" {
 			label.stringValue = message
 		}
-		
+
 		// hide button by default
 		button.isHidden = true
 
 		// start spinning
 		indicator.startAnimation(self)
 	}
-	
+
 	func onCancel(cancelled: @escaping () -> Void) {
 		// set callback
 		self.cancelled = cancelled
-		
+
 		// show button
 		button.isHidden = false
 	}
-	
+
 	@IBAction func cancelAction(_ sender: Any) {
 		// call callback if available
 		if cancelled != nil {

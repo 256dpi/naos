@@ -18,8 +18,10 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 	@IBAction
 	func refresh(_: AnyObject) {
 		// show loading view controller
-		lvc = NSStoryboard(name: "Main", bundle: nil)
-			.instantiateController(withIdentifier: "LoadingViewController") as? LoadingViewController
+		lvc =
+			NSStoryboard(name: "Main", bundle: nil)
+			.instantiateController(withIdentifier: "LoadingViewController")
+			as? LoadingViewController
 		lvc!.message = "Refreshing..."
 		lvc!.preferredContentSize = CGSize(width: 200, height: 200)
 		presentAsSheet(lvc!)
@@ -37,7 +39,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				// update connection status
 				self.connectionStatusLabel.stringValue =
 					(self.device.parameters[.connectionStatus] ?? "")
-						.capitalized
+					.capitalized
 
 				// reload parameters
 				self.parameterTableView.reloadData()
@@ -56,7 +58,9 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 	@IBAction
 	func flash(_: AnyObject) {
 		// show loading view controller
-		lvc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "LoadingViewController") as? LoadingViewController
+		lvc =
+			NSStoryboard(name: "Main", bundle: nil).instantiateController(
+				withIdentifier: "LoadingViewController") as? LoadingViewController
 		lvc!.message = "Flashing..."
 		lvc!.preferredContentSize = CGSize(width: 200, height: 200)
 		presentAsSheet(lvc!)
@@ -67,13 +71,20 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				let (_, image) = try await openFile()
 
 				// perform flash
-				try await device.flash(data: image, progress: { (progress: NAOSProgress) in
-					DispatchQueue.main.async {
-						self.lvc!.label.stringValue = String(format: "Flashing...\n%.1f %% @ %.1f kB/s", progress.percent, progress.rate / 1000)
-						self.lvc!.indicator.isIndeterminate = false
-						self.lvc!.indicator.doubleValue = progress.percent
-					}
-				})
+				try await device.flash(
+					data: image,
+					progress: { (progress: NAOSProgress) in
+						DispatchQueue.main.async {
+							self.lvc!.label.stringValue = String(
+								format:
+									"Flashing...\n%.1f %% @ %.1f kB/s",
+								progress.percent,
+								progress.rate / 1000)
+							self.lvc!.indicator.isIndeterminate = false
+							self.lvc!.indicator.doubleValue =
+								progress.percent
+						}
+					})
 			} catch {
 				showError(error: error)
 			}
@@ -107,7 +118,11 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				}
 
 				// load files view controller
-				let fvc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "FilesViewController") as! FilesViewController
+				let fvc =
+					NSStoryboard(name: "Main", bundle: nil)
+					.instantiateController(
+						withIdentifier: "FilesViewController")
+					as! FilesViewController
 
 				// assign endpoint
 				fvc.device = device
@@ -127,7 +142,9 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		return device != nil ? device.availableParameters.count : 0
 	}
 
-	func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+	func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int)
+		-> NSView?
+	{
 		// get parameter
 		let p = device.availableParameters[row]
 
@@ -256,7 +273,8 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 		// reload paramter
 		parameterTableView.reloadData(
-			forRowIndexes: IndexSet(integer: index), columnIndexes: IndexSet(integer: 1))
+			forRowIndexes: IndexSet(integer: index), columnIndexes: IndexSet(integer: 1)
+		)
 	}
 
 	// SettingsParameterValueDelegate

@@ -40,12 +40,16 @@ func openFile() async throws -> (String, Data) {
 		// run panel
 		let result = openPanel.runModal()
 		if result != .OK {
-			throw NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError, userInfo: nil)
+			throw NSError(
+				domain: NSCocoaErrorDomain, code: NSUserCancelledError,
+				userInfo: nil)
 		}
 
 		// get URL
 		guard let url = openPanel.urls.first else {
-			throw NSError(domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError, userInfo: nil)
+			throw NSError(
+				domain: NSCocoaErrorDomain, code: NSFileNoSuchFileError,
+				userInfo: nil)
 		}
 
 		// get name and content
@@ -67,13 +71,16 @@ func openFiles() async throws -> [File] {
 		// run panel
 		let result = openPanel.runModal()
 		if result != .OK {
-			throw NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError, userInfo: nil)
+			throw NSError(
+				domain: NSCocoaErrorDomain, code: NSUserCancelledError,
+				userInfo: nil)
 		}
 
 		// collect files
 		var files = [File]()
 		for url in openPanel.urls {
-			try files.append(File(name: url.lastPathComponent, data: Data(contentsOf: url)))
+			try files.append(
+				File(name: url.lastPathComponent, data: Data(contentsOf: url)))
 		}
 
 		return files
@@ -89,12 +96,16 @@ func saveFile(withName name: String, data: Data) async throws {
 		// run panel
 		let result = savePanel.runModal()
 		if result != .OK {
-			throw NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError, userInfo: nil)
+			throw NSError(
+				domain: NSCocoaErrorDomain, code: NSUserCancelledError,
+				userInfo: nil)
 		}
 
 		// get URL
 		guard let url = savePanel.url else {
-			throw NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: nil)
+			throw NSError(
+				domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError,
+				userInfo: nil)
 		}
 
 		// write data to file

@@ -3,9 +3,9 @@
 //  Copyright © 2017 Joël Gähwiler. All rights reserved.
 //
 
+import AsyncBluetooth
 import Combine
 import CoreBluetooth
-import AsyncBluetooth
 
 /// The delegate protocol to be implemented to handle NAOSManager events.
 public protocol NAOSManagerDelegate {
@@ -101,7 +101,7 @@ public class NAOSManager: NSObject {
 	private func scan() async throws {
 		// check if powered on
 		while centralManager.bluetoothState != .poweredOn {
-			try? await Task.sleep(nanoseconds: 1_000_000_000) // 1s
+			try? await Task.sleep(nanoseconds: 1_000_000_000)  // 1s
 		}
 
 		// wait until ready
@@ -119,7 +119,8 @@ public class NAOSManager: NSObject {
 			}
 
 			// prepare peripheral
-			let peripheral = NAOSPeripheral(man: centralManager, raw: scanData.peripheral)
+			let peripheral = NAOSPeripheral(
+				man: centralManager, raw: scanData.peripheral)
 
 			// otherwise, create new device
 			let device = NAOSDevice(peripheral: peripheral, manager: self)
@@ -132,7 +133,8 @@ public class NAOSManager: NSObject {
 			// call callback if present
 			if let d = delegate {
 				DispatchQueue.main.async {
-					d.naosManagerDidDiscoverDevice(manager: self, device: device)
+					d.naosManagerDidDiscoverDevice(
+						manager: self, device: device)
 				}
 			}
 		}

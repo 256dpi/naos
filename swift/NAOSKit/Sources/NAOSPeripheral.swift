@@ -3,14 +3,14 @@
 //  Copyright © 2017 Joël Gähwiler. All rights reserved.
 //
 
-import Combine
-import Foundation
-import CoreBluetooth
 import AsyncBluetooth
+import Combine
+import CoreBluetooth
+import Foundation
 
-internal let NAOSService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
+let NAOSService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
 
-internal enum NAOSCharacteristic: String {
+enum NAOSCharacteristic: String {
 	case lock = "F7A5FBA4-4084-239B-684D-07D5902EB591"
 	case msg = "0360744B-A61B-00AD-C945-37f3634130F3"
 
@@ -21,7 +21,7 @@ internal enum NAOSCharacteristic: String {
 	static let all: [NAOSCharacteristic] = [.lock, .msg]
 }
 
-internal class NAOSPeripheral {
+class NAOSPeripheral {
 	let man: CentralManager
 	let raw: Peripheral
 
@@ -103,11 +103,14 @@ internal class NAOSPeripheral {
 
 		// read value
 		try await withTimeout(seconds: 2) {
-			try await self.raw.writeValue(data, for: char, type: confirm ? .withResponse : .withoutResponse)
+			try await self.raw.writeValue(
+				data, for: char, type: confirm ? .withResponse : .withoutResponse)
 		}
 	}
 
-	func receive(char: NAOSCharacteristic, operation: @escaping (Data) -> Void) -> AnyCancellable {
+	func receive(char: NAOSCharacteristic, operation: @escaping (Data) -> Void)
+		-> AnyCancellable
+	{
 		// create subscription
 		return raw.characteristicValueUpdatedPublisher.sink { rawChar in
 			// check characteristic
@@ -148,10 +151,13 @@ internal class NAOSPeripheral {
 			continuation!.yield(data)
 		}
 
-		return (stream, AnyCancellable {
-			subscription.cancel()
-			continuation!.finish()
-		})
+		return (
+			stream,
+			AnyCancellable {
+				subscription.cancel()
+				continuation!.finish()
+			}
+		)
 	}
 
 	func disconnect() async throws {

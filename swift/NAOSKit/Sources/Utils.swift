@@ -51,7 +51,8 @@ func readUint16(data: Data) -> UInt16 {
 }
 
 func readUint32(data: Data) -> UInt32 {
-	return UInt32(data[0]) | (UInt32(data[1]) << 8) | (UInt32(data[2]) << 16) | (UInt32(data[3]) << 24)
+	return UInt32(data[0]) | (UInt32(data[1]) << 8) | (UInt32(data[2]) << 16)
+		| (UInt32(data[3]) << 24)
 }
 
 func readUint64(data: Data) -> UInt64 {
@@ -70,7 +71,7 @@ func readUint64(data: Data) -> UInt64 {
 func writeUint16(value: UInt16) -> Data {
 	return Data([
 		UInt8(value & 0xFF),
-		UInt8((value >> 8) & 0xFF)
+		UInt8((value >> 8) & 0xFF),
 	])
 }
 
@@ -79,7 +80,7 @@ func writeUint32(value: UInt32) -> Data {
 		UInt8(value & 0xFF),
 		UInt8((value >> 8) & 0xFF),
 		UInt8((value >> 16) & 0xFF),
-		UInt8((value >> 24) & 0xFF)
+		UInt8((value >> 24) & 0xFF),
 	])
 }
 
@@ -92,13 +93,13 @@ func writeUint64(value: UInt64) -> Data {
 		UInt8((value >> 32) & 0xFF),
 		UInt8((value >> 40) & 0xFF),
 		UInt8((value >> 48) & 0xFF),
-		UInt8((value >> 56) & 0xFF)
+		UInt8((value >> 56) & 0xFF),
 	])
 }
 
 func randomString(length: Int) -> String {
 	let letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	return String((0 ..< length).map { _ in letters.randomElement()! })
+	return String((0..<length).map { _ in letters.randomElement()! })
 }
 
 class Channel<T> {

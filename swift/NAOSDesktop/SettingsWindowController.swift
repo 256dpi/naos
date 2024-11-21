@@ -54,13 +54,21 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 			// check if locked
 			if device.locked {
 				// show unlock view
-				uvc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "UnlockViewController") as? UnlockViewController
+				uvc =
+					NSStoryboard(name: "Main", bundle: nil)
+					.instantiateController(
+						withIdentifier: "UnlockViewController")
+					as? UnlockViewController
 				uvc!.device = device
 				uvc!.swc = self
 				contentViewController = uvc
 			} else {
 				// show settings view
-				svc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "SettingsViewController") as? SettingsViewController
+				svc =
+					NSStoryboard(name: "Main", bundle: nil)
+					.instantiateController(
+						withIdentifier: "SettingsViewController")
+					as? SettingsViewController
 				svc!.device = device
 				contentViewController = svc
 
@@ -72,7 +80,9 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 
 	func didUnlock() {
 		// show settings view
-		svc = NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: "SettingsViewController") as? SettingsViewController
+		svc =
+			NSStoryboard(name: "Main", bundle: nil).instantiateController(
+				withIdentifier: "SettingsViewController") as? SettingsViewController
 		svc!.device = device
 		contentViewController = svc
 

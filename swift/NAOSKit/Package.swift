@@ -6,7 +6,7 @@ let package = Package(
 	name: "NAOSKit",
 	platforms: [
 		.macOS(.v12),
-		.iOS(.v14)
+		.iOS(.v14),
 	],
 	products: [
 		.library(
