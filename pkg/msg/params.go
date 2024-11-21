@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -175,9 +176,12 @@ func WriteParam(s *Session, ref uint8, value []byte, timeout time.Duration) erro
 // CollectParams returns a list of parameter updates.
 func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration) ([]ParamUpdate, error) {
 	// prepare map
-	var mp uint64
-	for _, ref := range refs {
-		mp |= 1 << ref
+	var mp uint64 = math.MaxUint64
+	if len(refs) > 0 {
+		mp = 0
+		for _, ref := range refs {
+			mp |= 1 << ref
+		}
 	}
 
 	// prepare command
