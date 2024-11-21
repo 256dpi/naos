@@ -32,8 +32,4 @@ config NAOS_MSG_DEBUG
     bool "Enable debug messages"
     default n
 
-config NAOS_MSG_ONLY
-    bool "Enforce msg-only mode by dropping channel specific params/flash interface"
-    default n
-
 endmenu

@@ -139,63 +139,6 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     res.payload = (uint8_t *)strdup(ctx->locked ? "unlock#locked" : "unlock#unlocked");
   }
 
-#if !defined(CONFIG_NAOS_MSG_ONLY)
-  // handle list
-  if (!ctx->locked && strcmp((char *)req.payload, "list") == 0) {
-    char *list = naos_params_list(0);
-    res.payload = (uint8_t *)naos_concat("list#", list);
-    free(list);
-  }
-
-  // handle read
-  if (!ctx->locked && strncmp((char *)req.payload, "read", 4) == 0) {
-    // get name
-    const char *name = (char *)req.payload + 5;
-
-    // lookup param
-    naos_param_t *param = naos_lookup(name);
-    if (param == NULL) {
-      free(req.payload);
-      return ESP_FAIL;
-    }
-
-    // TODO: Raw param handling.
-
-    // set value
-    res.payload = (uint8_t *)naos_format("read:%s#%s", name, param->current.buf);
-  }
-
-  // handle write
-  if (!ctx->locked && strncmp((char *)req.payload, "write", 5) == 0 && strchr((char *)req.payload, '#') != NULL) {
-    // get name
-    const char *name = (char *)req.payload + 6;
-
-    // replace hash with zero
-    char *hash = strchr(name, '#');
-    *hash = 0;
-
-    // get value
-    char *value = hash + 1;
-
-    // lookup param
-    naos_param_t *param = naos_lookup(name);
-    if (param == NULL) {
-      free(req.payload);
-      return ESP_FAIL;
-    }
-
-    // TODO: Return error when writing locked parameter.
-
-    // set value
-    naos_set_s(param->name, value);
-
-    // TODO: Raw param handling.
-
-    // set value
-    res.payload = (uint8_t *)naos_format("write:%s#%s", name, param->current.buf);
-  }
-#endif
-
   // handle message
   if (!ctx->locked && strncmp((char *)req.payload, "msg", 3) == 0) {
     // dispatch message
@@ -286,48 +229,6 @@ static esp_err_t naos_http_file(httpd_req_t *req) {
   return ESP_OK;
 }
 
-#if !defined(CONFIG_NAOS_MSG_ONLY)
-static void naos_http_update(void *arg) {
-  // get param
-  naos_param_t *param = arg;
-
-  // get sessions
-  size_t num = NAOS_HTTP_MAX_CONNS;
-  int fds[NAOS_HTTP_MAX_CONNS] = {0};
-  ESP_ERROR_CHECK(httpd_get_client_list(naos_http_handle, &num, fds));
-
-  // prepare frame
-  httpd_ws_frame_t frame = {.type = HTTPD_WS_TYPE_TEXT};
-  frame.payload = (uint8_t *)naos_format("update:%s#%s", param->name, param->current.buf);
-  frame.len = strlen((char *)frame.payload);
-
-  // iterate sessions
-  for (size_t i = 0; i < num; i++) {
-    // check if websocket
-    if (httpd_ws_get_fd_info(naos_http_handle, fds[i]) != HTTPD_WS_CLIENT_WEBSOCKET) {
-      continue;
-    }
-
-    // check context
-    naos_http_ctx_t *ctx = httpd_sess_get_ctx(naos_http_handle, fds[i]);
-    if (ctx == NULL || ctx->locked) {
-      continue;
-    }
-
-    // send frame
-    ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_ws_send_frame_async(naos_http_handle, fds[i], &frame));
-  }
-
-  // free payload
-  free(frame.payload);
-}
-
-static void naos_http_param_handler(naos_param_t *param) {
-  // queue function
-  ESP_ERROR_CHECK(httpd_queue_work(naos_http_handle, naos_http_update, param));
-}
-#endif
-
 static void naos_http_send_frame(void *arg) {
   // get message
   naos_http_msg_t *msg = arg;
@@ -388,11 +289,6 @@ void naos_http_init(int core) {
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_script));
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_socket));
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_file));
-
-#if !defined(CONFIG_NAOS_MSG_ONLY)
-  // handle parameters
-  naos_params_subscribe(naos_http_param_handler);
-#endif
 
   // register channel
   naos_http_channel = naos_msg_register((naos_msg_channel_t){
