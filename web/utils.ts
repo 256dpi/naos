@@ -27,7 +27,7 @@ export function random(length: number): string {
   return result;
 }
 
-export function readFile(file: File): Promise<ArrayBuffer> {
+export function requestFile(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => {

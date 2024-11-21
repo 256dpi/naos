@@ -2,12 +2,21 @@ import {
   Manager,
   ManagedDevice,
   Session,
-  FSEndpoint,
   random,
-  readFile,
   toString,
   toBuffer,
+  requestFile,
 } from "./index";
+
+import {
+  listPath,
+  readFile,
+  renamePath,
+  removePath,
+  sha256File,
+  statPath,
+  writeFile,
+} from "./fs";
 
 let device: ManagedDevice | null = null;
 
@@ -56,7 +65,7 @@ async function flash(input) {
     return;
   }
 
-  const data = new Uint8Array(await readFile(input.files[0]));
+  const data = new Uint8Array(await requestFile(input.files[0]));
 
   console.log("Flashing...", data);
   await device.flash(data, (progress) => {
@@ -78,22 +87,20 @@ async function fs() {
   await session.ping(1000);
   console.log(await session.query(0x03, 1000));
 
-  const fs = new FSEndpoint(session);
+  console.log(await statPath(session, "/lol.txt"));
+  console.log(await listPath(session, "/"));
 
-  console.log(await fs.stat("/lol.txt"));
-  console.log(await fs.list("/"));
+  console.log(toString(await readFile(session, "/lol.txt")));
 
-  console.log(toString(await fs.read("/lol.txt")));
+  await writeFile(session, "/test.txt", toBuffer(random(16)));
+  console.log(toString(await readFile(session, "/test.txt")));
+  await renamePath(session, "/test.txt", "/test2.txt");
+  console.log(await sha256File(session, "/test2.txt"));
+  await removePath(session, "/test2.txt");
 
-  await fs.write("/test.txt", toBuffer(random(16)));
-  console.log(toString(await fs.read("/test.txt")));
-  await fs.rename("/test.txt", "/test2.txt");
-  console.log(await fs.sha256("/test2.txt"));
-  await fs.remove("/test2.txt");
-
-  // await fs.write("/data.bin", new Uint8Array(4096));
-  // console.log(await fs.stat("/data.bin"));
-  // console.log(await fs.read("/data.bin"));
+  // await write(session, "/data.bin", new Uint8Array(4096));
+  // console.log(await stat(session, "/data.bin"));
+  // console.log(await read(session, "/data.bin"));
 
   await session.end(1000);
 
