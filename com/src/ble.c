@@ -21,9 +21,6 @@ typedef struct {
   uint16_t mtu;
   bool congested;
   bool connected;
-  bool locked;
-  naos_mode_t mode;
-  naos_param_t *param;
 } naos_ble_conn_t;
 
 static naos_signal_t naos_ble_signal;
@@ -63,22 +60,16 @@ typedef struct {
   esp_bt_uuid_t _uuid;
 } naos_ble_gatts_char_t;
 
-static naos_ble_gatts_char_t naos_ble_char_lock = {
-    .uuid = {0x91, 0xb5, 0x2e, 0x90, 0xd5, 0x07, 0x4d, 0x68, 0x9b, 0x23, 0x84, 0x40, 0xa4, 0xfb, 0xa5, 0xf7},
-    .prop = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR,
-    .max_write_len = 32};
-
 static naos_ble_gatts_char_t naos_ble_char_msg = {
     .uuid = {0xf3, 0x30, 0x41, 0x63, 0xf3, 0x37, 0x45, 0xc9, 0xad, 0x00, 0x1b, 0xa6, 0x4b, 0x74, 0x60, 0x03},
     .prop = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_INDICATE,
     .max_write_len = 512,
 };
 
-#define NAOS_BLE_NUM_CHARS 2
+#define NAOS_BLE_NUM_CHARS 1
 #define NAOS_BLE_MAX_CONNECTIONS 8
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
-    &naos_ble_char_lock,
     &naos_ble_char_msg,
 };
 
@@ -265,7 +256,6 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       naos_ble_conns[p->connect.conn_id].id = p->connect.conn_id;
       naos_ble_conns[p->connect.conn_id].mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
       naos_ble_conns[p->connect.conn_id].connected = true;
-      naos_ble_conns[p->connect.conn_id].locked = strlen(naos_get_s("device-password")) > 0;
 
       // update connection params
       esp_ble_conn_update_params_t conn_params;
@@ -328,11 +318,6 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
         // prepare response
         esp_gatt_rsp_t rsp = {0};
         rsp.attr_value.handle = c->handle;
-
-        // handle characteristic
-        if (c == &naos_ble_char_lock) {
-          strcpy((char *)rsp.attr_value.value, conn->locked ? "locked" : "unlocked");
-        }
 
         // set string length
         if (rsp.attr_value.len == 0 && rsp.attr_value.value[0] != 0) {
@@ -413,14 +398,8 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
         esp_gatt_status_t status = ESP_GATT_OK;
 
         // handle characteristic
-        if (c == &naos_ble_char_lock) {
-          if (conn->locked && naos_equal(p->write.value, p->write.len, naos_get_s("device-password"))) {
-            conn->locked = false;
-          }
-        }
-
         if (c == &naos_ble_char_msg) {
-          if (!conn->locked && p->write.len > 0) {
+          if (p->write.len > 0) {
             bool ok = naos_msg_dispatch(naos_ble_msg_channel_id, p->write.value, p->write.len, conn);
             if (!ok) {
               status = ESP_GATT_UNKNOWN_ERROR;
@@ -494,7 +473,7 @@ static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
   for (int i = 0; i < 5; i++) {
     // get conn
     naos_ble_conn_t *conn = ctx;
-    if (!conn->connected || conn->locked) {
+    if (!conn->connected) {
       return false;
     }
 

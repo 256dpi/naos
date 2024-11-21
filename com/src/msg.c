@@ -1,7 +1,10 @@
+#include <naos.h>
 #include <naos/sys.h>
 #include <naos/msg.h>
 
 #include <string.h>
+
+#include "utils.h"
 
 #define NAOS_MSG_DEBUG CONFIG_NAOS_MSG_DEBUG
 #define NAOS_MSG_MAX_CHANNELS 8
@@ -14,7 +17,17 @@ typedef struct {
   size_t channel;
   void* context;
   int64_t last_msg;
+  bool locked;
 } naos_msg_session_t;
+
+typedef enum {
+  NAOS_MSG_SYS_STATUS_LOCKED = 1 << 0,
+} naos_msg_sys_status_t;
+
+typedef enum {
+  NAOS_MSG_SYS_CMD_STATUS,
+  NAOS_MSG_SYS_CMD_UNLOCK,
+} naos_msg_sys_cmd_t;
 
 static naos_mutex_t naos_msg_mutex;
 static naos_queue_t naos_msg_queue;
@@ -85,7 +98,7 @@ static void naos_msg_worker() {
   }
 }
 
-void naos_msg_cleaner() {
+static void naos_msg_cleaner() {
   // acquire mutex
   NAOS_LOCK(naos_msg_mutex);
 
@@ -120,6 +133,83 @@ void naos_msg_cleaner() {
   NAOS_UNLOCK(naos_msg_mutex);
 }
 
+static naos_msg_reply_t naos_msg_process_system(naos_msg_t msg) {
+  // check length
+  if (msg.len == 0) {
+    return NAOS_MSG_INVALID;
+  }
+
+  // get command
+  naos_msg_sys_cmd_t cmd = msg.data[0];
+
+  // adjust message
+  msg.data++;
+  msg.len--;
+
+  // handle command
+  switch (cmd) {
+    case NAOS_MSG_SYS_CMD_STATUS: {
+      // check length
+      if (msg.len != 0) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // prepare status
+      uint8_t status = 0;
+      if (naos_msg_is_locked(msg.session)) {
+        status |= NAOS_MSG_SYS_STATUS_LOCKED;
+      }
+
+      // send status
+      naos_msg_send((naos_msg_t){
+          .session = msg.session,
+          .endpoint = 0xFD,
+          .data = &status,
+          .len = 1,
+      });
+
+      return NAOS_MSG_OK;
+    }
+
+    case NAOS_MSG_SYS_CMD_UNLOCK: {
+      // check length
+      if (msg.len == 0) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // check lock status
+      if (!naos_msg_is_locked(msg.session)) {
+        return NAOS_MSG_ERROR;
+      }
+
+      // check password
+      bool ok = naos_equal(msg.data, msg.len, naos_get_s("device-password"));
+
+      // unlock session if correct
+      if (ok) {
+        NAOS_LOCK(naos_msg_mutex);
+        naos_msg_session_t* session = naos_msg_find(msg.session);
+        session->locked = false;
+        NAOS_UNLOCK(naos_msg_mutex);
+      }
+
+      // send result
+      uint8_t result = ok ? 1 : 0;
+      naos_msg_send((naos_msg_t){
+          .session = msg.session,
+          .endpoint = 0xFD,
+          .data = &result,
+          .len = 1,
+      });
+
+      return NAOS_MSG_OK;
+    }
+
+    default:
+      return NAOS_MSG_UNKNOWN;
+  }
+}
+
 void naos_msg_init() {
   // create mutex
   naos_msg_mutex = naos_mutex();
@@ -132,6 +222,13 @@ void naos_msg_init() {
 
   // run cleaner
   naos_repeat("msg-cleaner", 1000, naos_msg_cleaner);
+
+  // install system endpoint
+  naos_msg_install((naos_msg_endpoint_t){
+      .ref = 0xFD,
+      .name = "system",
+      .handle = naos_msg_process_system,
+  });
 }
 
 uint8_t naos_msg_register(naos_msg_channel_t channel) {
@@ -239,6 +336,9 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 
     // set time
     session->last_msg = naos_millis();
+
+    // set lock status
+    session->locked = strlen(naos_get_s("device-password")) > 0;
 
     // prepare reply
     memcpy(data + 1, &session->id, 2);
@@ -361,6 +461,9 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     return true;
   }
 
+  // TODO: Pre-check endpoint?
+  //  Return error if endpoint is missing?
+
   // copy data
   uint8_t* copy = malloc(len - 4 + 1);
   memcpy(copy, data + 4, len - 4);
@@ -456,4 +559,25 @@ size_t naos_msg_get_mtu(uint16_t id) {
   NAOS_UNLOCK(naos_msg_mutex);
 
   return channel.mtu;
+}
+
+bool naos_msg_is_locked(uint16_t id) {
+  // acquire mutex
+  NAOS_LOCK(naos_msg_mutex);
+
+  // find session
+  naos_msg_session_t* session = naos_msg_find(id);
+  if (session == NULL) {
+    NAOS_UNLOCK(naos_msg_mutex);
+    ESP_LOGE("MSG", "naos_msg_is_locked: session not found");
+    return 0;
+  }
+
+  // get lock status
+  bool locked = session->locked;
+
+  // release mutex
+  NAOS_UNLOCK(naos_msg_mutex);
+
+  return locked;
 }

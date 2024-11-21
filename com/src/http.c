@@ -10,7 +10,6 @@
 
 typedef struct {
   int fd;
-  bool locked;
 } naos_http_ctx_t;
 
 typedef struct {
@@ -77,7 +76,6 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     // set context
     naos_http_ctx_t *ctx = malloc(sizeof(naos_http_ctx_t));
     ctx->fd = httpd_req_to_sockfd(conn);
-    ctx->locked = strlen(naos_get_s("device-password")) > 0;
     conn->sess_ctx = ctx;
 
     return ESP_OK;
@@ -125,22 +123,8 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     res.payload = (uint8_t *)strdup("ping");
   }
 
-  // handle lock
-  if (strcmp((char *)req.payload, "lock") == 0) {
-    res.payload = (uint8_t *)strdup(ctx->locked ? "lock#locked" : "lock#unlocked");
-  }
-
-  // handle unlock
-  if (strncmp((char *)req.payload, "unlock", 6) == 0) {
-    const char *password = (char *)req.payload + 7;
-    if (ctx->locked) {
-      ctx->locked = strcmp(password, naos_get_s("device-password")) != 0;
-    }
-    res.payload = (uint8_t *)strdup(ctx->locked ? "unlock#locked" : "unlock#unlocked");
-  }
-
   // handle message
-  if (!ctx->locked && strncmp((char *)req.payload, "msg", 3) == 0) {
+  if (strncmp((char *)req.payload, "msg", 3) == 0) {
     // dispatch message
     naos_msg_dispatch(naos_http_channel, req.payload + 4, req.len - 4, ctx);
   }

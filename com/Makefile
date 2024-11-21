@@ -38,6 +38,7 @@ erase:
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py erase-flash
 
 monitor:
+	@echo "Exit monitor by pressing CTRL+T and CTRL+X."
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py monitor
 
 simple-monitor:

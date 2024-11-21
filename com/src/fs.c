@@ -623,6 +623,11 @@ static naos_msg_reply_t naos_fs_handle(naos_msg_t msg) {
     return NAOS_MSG_INVALID;
   }
 
+  // check lock status
+  if (naos_msg_is_locked(msg.session)) {
+    return NAOS_MSG_LOCKED;
+  }
+
   // get command
   naos_fs_cmd_t cmd = msg.data[0];
 

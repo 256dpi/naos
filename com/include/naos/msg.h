@@ -11,19 +11,20 @@
  * allow communication with as set of system and application endpoints.
  *
  * To communicate with endpoints a session needs to be established. This
- * mechanism ensures proper isolation for channels that are shared (BLE, MQTT)
- * or stateless (OSC). Security is enforced by the respective channels.
+ * mechanism ensures proper isolation for shared channels (BLE, MQTT) or
+ * stateless (OSC). These sessions are not secured and rely on the security
+ * mechanisms provided by the channel (none, TLS, etc.).
  *
  * The message frame format is defined as follows:
  * | VERSION (1) | SESSION (2) | ENDPOINT (1) | DATA (...) |
  *
  * Endpoints can further define the structure of the remaining data.
  *
- * The system employs three special endpoints: 0x00, 0xFE and 0xFF. The first is
- * used to begin a session and obtain its ID. The second is used to handle pings
- * and report generic acknowledgements and errors. And the last is used to end a
+ * The system has four system endpoints:. The "0x00" endpoint is used to begin a
+ * session and obtain its ID. The "0xFE" endpoint is used to handle pings and
+ * report generic acknowledgements and errors. And "0xFF" is used to end a
  * session and clean up resources. Existence of endpoints may also be queried by
- * sending an empty message. The message flow is a follows:
+ * sending an empty message. The message basic flows are as follows:
  *
  * > Begin: Session=0, Endpoint=0, Data=Handle(*)
  * < Begin: Session=ID, Endpoint=0, Data=Handle(*)
@@ -40,6 +41,18 @@
  *
  * > End: Session=ID, Endpoint=0xFF
  * < End: Session=ID, Endpoint=0xFF
+ *
+ * The messaging system provides a basic access control mechanism to prevent
+ * endpoints from being accessed by unauthorized sessions. If a device password
+ * is set, all sessions are locked by default and need to be unlocked via the
+ * system endpoint "0xFD" with the correct password. The system endpoint may also
+ * be queried to determine if the session is locked.
+ *
+ * > Query: Session=ID, Endpoint=0xFD Data=1
+ * < Reply: Session=ID, Endpoint=0xFE, Data=[1|0]
+ *
+ * > Unlock: Session=ID, Endpoint=0xFD, Data=2+Password(*)
+ * < Reply: Session=ID, Endpoint=0xFE, Data=[1|0]
  */
 
 /**
@@ -70,6 +83,7 @@ typedef enum {
   NAOS_MSG_INVALID,
   NAOS_MSG_UNKNOWN,
   NAOS_MSG_ERROR,
+  NAOS_MSG_LOCKED,
 } naos_msg_reply_t;
 
 /**
@@ -123,3 +137,11 @@ bool naos_msg_send(naos_msg_t msg);
  * @return The channel MTU in bytes.
  */
 size_t naos_msg_get_mtu(uint16_t id);
+
+/**
+ * Called by endpoints to determine if a session is unlocked.
+ *
+ * @param id The session ID.
+ * @return True if the session is unlocked.
+ */
+bool naos_msg_is_locked(uint16_t id);
