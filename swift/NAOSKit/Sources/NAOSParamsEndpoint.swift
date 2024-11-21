@@ -183,7 +183,7 @@ public class NAOSParamsEndpoint {
 		defer { mutex.signal() }
 
 		// prepare command
-		var cmd = Data([6, ref])
+		let cmd = Data([6, ref])
 
 		// write command
 		try await session.send(endpoint: 0x1, data: cmd, ackTimeout: timeout)

@@ -95,14 +95,7 @@ public class NAOSSession {
 	private var channel: Channel<NAOSMessage>
 	private var mutex = AsyncSemaphore(value: 1)
 
-	internal static func open(peripheral: NAOSPeripheral, timeout: TimeInterval) async throws
-		-> NAOSSession
-	{
-		// check characteristic
-		if !peripheral.exists(char: .msg) {
-			throw NAOSSessionError.unavailable
-		}
-
+	internal static func open(peripheral: NAOSPeripheral, timeout: TimeInterval) async throws -> NAOSSession {
 		// open stream
 		let (stream, subscription) = await peripheral.stream(char: .msg)
 

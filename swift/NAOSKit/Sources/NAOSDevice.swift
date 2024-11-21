@@ -168,65 +168,43 @@ public class NAOSDevice: NSObject {
 					continue
 				}
 
-				// use session or legacy attributes
-				if peripheral.exists(char: .msg) {
-					try? await withParamSession { session in
-						// create endpoint
-						let endpoint = NAOSParamsEndpoint(session: session)
+				// use session
+				try? await withParamSession { session in
+					// create endpoint
+					let endpoint = NAOSParamsEndpoint(session: session)
 
-						// collect parameters
-						var updates: [NAOSParamUpdate] = []
-						do {
-							updates = try await endpoint.collect(refs: nil, since: maxAge)
-						} catch {
-							mutex.signal()
-							return
-						}
-
-						// update parameters
-						for update in updates {
-							if let param =
-								(availableParameters.first { p in p.ref == update.ref })
-							{
-								parameters[param] = String(
-									data: update.value, encoding: .utf8)!
-								maxAge = max(maxAge, update.age)
-							}
-						}
-
-						// release mutex
+					// collect parameters
+					var updates: [NAOSParamUpdate] = []
+					do {
+						updates = try await endpoint.collect(refs: nil, since: maxAge)
+					} catch {
 						mutex.signal()
+						return
+					}
 
-						// notify manager
-						manager.didUpdateDevice(device: self)
-
-						// call delegate if present
-						if let d = delegate {
-							for update in updates {
-								DispatchQueue.main.async {
-									if let param =
-										(self.availableParameters.first { p in
-											p.ref == update.ref
-										})
-									{
-										d.naosDeviceDidUpdate(
-											device: self, parameter: param)
-									}
-								}
-							}
+					// update parameters
+					for update in updates {
+						if let param = (availableParameters.first { p in p.ref == update.ref }) {
+							parameters[param] = String(data: update.value, encoding: .utf8)!
+							maxAge = max(maxAge, update.age)
 						}
 					}
-				} else {
-					// copy and clear updatable params
-					let params = updatable
-					updatable = Set()
 
 					// release mutex
 					mutex.signal()
 
-					// attempt to read params
-					for param in params {
-						try? await self.read(parameter: param)
+					// notify manager
+					manager.didUpdateDevice(device: self)
+
+					// call delegate if present
+					if let d = delegate {
+						for update in updates {
+							DispatchQueue.main.async {
+								if let param = (self.availableParameters.first { p in p.ref == update.ref }) {
+									d.naosDeviceDidUpdate(device: self, parameter: param)
+								}
+							}
+						}
 					}
 				}
 			}

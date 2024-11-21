@@ -69,10 +69,6 @@ class NAOSPeripheral {
 		}
 	}
 
-	func exists(char: NAOSCharacteristic) -> Bool {
-		towRawCharacteristic(char: char) != nil
-	}
-
 	func read(char: NAOSCharacteristic) async throws -> String {
 		// get characteristic
 		guard let char = towRawCharacteristic(char: char) else {

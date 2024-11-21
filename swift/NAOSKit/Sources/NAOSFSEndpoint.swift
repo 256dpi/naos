@@ -100,9 +100,7 @@ public class NAOSFSEndpoint {
 		// read file in chunks of 5 KB
 		while data.count < info.size {
 			// read data
-			let chunk = try await read(
-				path: path, offset: UInt32(data.count), length: 5000
-			) { offset in
+			let chunk = try await read(path: path, offset: UInt32(data.count), length: 5000) { offset in
 				if report != nil {
 					report!(data.count + offset)
 				}
@@ -116,9 +114,7 @@ public class NAOSFSEndpoint {
 	}
 
 	/// Read a range of a file.
-	public func read(path: String, offset: UInt32, length: UInt32, report: ((Int) -> Void)?)
-		async throws -> Data
-	{
+	public func read(path: String, offset: UInt32, length: UInt32, report: ((Int) -> Void)?) async throws -> Data {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }
@@ -297,10 +293,7 @@ public class NAOSFSEndpoint {
 
 	internal func receive(expectAck: Bool) async throws -> Data? {
 		// receive reply
-		guard
-			let data = try await session.receive(
-				endpoint: 0x3, expectAck: expectAck, timeout: timeout)
-		else {
+		guard let data = try await session.receive(endpoint: 0x3, expectAck: expectAck, timeout: timeout) else {
 			return nil
 		}
 
