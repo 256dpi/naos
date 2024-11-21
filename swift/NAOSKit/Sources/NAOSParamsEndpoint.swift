@@ -6,8 +6,11 @@
 import Foundation
 import Semaphore
 
+/// The parameter endpoint number.
+public let NAOSParamsEndpoint: UInt8 = 0x01
+
 /// The available parameter types.
-public enum NAOSType: UInt8 {
+public enum NAOSParamType: UInt8 {
 	case raw
 	case string
 	case bool
@@ -17,66 +20,53 @@ public enum NAOSType: UInt8 {
 }
 
 /// The available parameter modes.
-public struct NAOSMode: OptionSet {
+public struct NAOSParamMode: OptionSet {
 	public let rawValue: UInt8
 
 	public init(rawValue: UInt8) {
 		self.rawValue = rawValue
 	}
 
-	public static let volatile = NAOSMode(rawValue: 1 << 0)
-	public static let system = NAOSMode(rawValue: 1 << 1)
-	public static let application = NAOSMode(rawValue: 1 << 2)
-	public static let locked = NAOSMode(rawValue: 1 << 4)
+	public static let volatile = NAOSParamMode(rawValue: 1 << 0)
+	public static let system = NAOSParamMode(rawValue: 1 << 1)
+	public static let application = NAOSParamMode(rawValue: 1 << 2)
+	public static let locked = NAOSParamMode(rawValue: 1 << 4)
 }
 
+/// A parameter description.
 public struct NAOSParamInfo {
 	public var ref: UInt8
-	public var type: NAOSType
-	public var mode: NAOSMode
+	public var type: NAOSParamType
+	public var mode: NAOSParamMode
 	public var name: String
 }
 
+/// A parameter update.
 public struct NAOSParamUpdate {
 	public var ref: UInt8
 	public var age: UInt64
 	public var value: Data
 }
 
-/// The NAOS paramter endpoint.
-public class NAOSParamsEndpoint {
-	private let session: NAOSSession
-	private let mutex = AsyncSemaphore(value: 1)
-
-	public var timeout: TimeInterval = 5
-
-	public init(session: NAOSSession) {
-		self.session = session
-	}
-
+/// The parameter endpoint methods.
+public class NAOSParams {
 	/// Get a parameter value by name.
-	public func get(name: String) async throws -> Data {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	static public func get(session: NAOSSession, name: String, timeout: TimeInterval = 5000) async throws -> Data {
 		// prepare command
 		var cmd = Data([0])
 		cmd.append(name.data(using: .utf8)!)
 
 		// write command
-		try await session.send(endpoint: 0x1, data: cmd, ackTimeout: 0)
+		try await session.send(endpoint: NAOSParamsEndpoint, data: cmd, ackTimeout: 0)
 
 		// receive value
-		return try await session.receive(endpoint: 0x1, expectAck: false, timeout: timeout)!
+		return try await session.receive(endpoint: NAOSParamsEndpoint, expectAck: false, timeout: timeout)!
 	}
 
 	/// Set a parameter value by name.
-	public func set(name: String, value: Data) async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	static public func set(session: NAOSSession, name: String, value: Data, timeout: TimeInterval = 5000)
+		async throws
+	{
 		// prepare command
 		var cmd = Data([1])
 		cmd.append(name.data(using: .utf8)!)
@@ -84,24 +74,22 @@ public class NAOSParamsEndpoint {
 		cmd.append(value)
 
 		// write command
-		try await session.send(endpoint: 0x1, data: cmd, ackTimeout: timeout)
+		try await session.send(endpoint: NAOSParamsEndpoint, data: cmd, ackTimeout: timeout)
 	}
 
-	/// Obtain a list of all known parameters.
-	public func list() async throws -> [NAOSParamInfo] {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	/// Obtain a list of all known parametersession.
+	static public func list(session: NAOSSession, timeout: TimeInterval = 5000) async throws -> [NAOSParamInfo] {
 		// send command
-		try await session.send(endpoint: 0x1, data: Data([2]), ackTimeout: 0)
+		try await session.send(endpoint: NAOSParamsEndpoint, data: Data([2]), ackTimeout: 0)
 
 		// prepare list
 		var list = [NAOSParamInfo]()
 
 		while true {
 			// receive reply or return list on ack
-			guard let reply = try await session.receive(endpoint: 0x1, expectAck: true, timeout: timeout)
+			guard
+				let reply = try await session.receive(
+					endpoint: NAOSParamsEndpoint, expectAck: true, timeout: timeout)
 			else {
 				return list
 			}
@@ -113,8 +101,8 @@ public class NAOSParamsEndpoint {
 
 			// parse reply
 			let ref = reply[0]
-			let type = NAOSType(rawValue: reply[1])!
-			let mode = NAOSMode(rawValue: reply[2])
+			let type = NAOSParamType(rawValue: reply[1])!
+			let mode = NAOSParamMode(rawValue: reply[2])
 			let name = String(data: Data(reply[3...]), encoding: .utf8)!
 
 			// append info
@@ -123,41 +111,33 @@ public class NAOSParamsEndpoint {
 	}
 
 	/// Read a parameter by reference.
-	public func read(ref: UInt8) async throws -> Data {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	static public func read(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5000) async throws -> Data {
 		// prepare command
 		let cmd = Data([3, ref])
 
 		// write command
-		try await session.send(endpoint: 0x1, data: cmd, ackTimeout: 0)
+		try await session.send(endpoint: NAOSParamsEndpoint, data: cmd, ackTimeout: 0)
 
 		// receive value
-		return try await session.receive(endpoint: 0x1, expectAck: false, timeout: timeout)!
+		return try await session.receive(endpoint: NAOSParamsEndpoint, expectAck: false, timeout: timeout)!
 	}
 
 	/// Write a parameter by reference.
-	public func write(ref: UInt8, value: Data) async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	static public func write(session: NAOSSession, ref: UInt8, value: Data, timeout: TimeInterval = 5000)
+		async throws
+	{
 		// prepare command
 		var cmd = Data([4, ref])
 		cmd.append(value)
 
 		// write command
-		try await session.send(endpoint: 0x1, data: cmd, ackTimeout: timeout)
+		try await session.send(endpoint: NAOSParamsEndpoint, data: cmd, ackTimeout: timeout)
 	}
 
-	/// Collect parameter values by providing a list of refrence, a since timestamp or both.
-	public func collect(refs: [UInt8]?, since: UInt64) async throws -> [NAOSParamUpdate] {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	/// Collect parameter values by providing a list of refrences, a since timestamp or both.
+	static public func collect(session: NAOSSession, refs: [UInt8]?, since: UInt64, timeout: TimeInterval = 5000)
+		async throws -> [NAOSParamUpdate]
+	{
 		// prepare map
 		var map = UINT64_MAX
 		if refs != nil {
@@ -173,14 +153,16 @@ public class NAOSParamsEndpoint {
 		cmd.append(writeUint64(value: since))
 
 		// send command
-		try await session.send(endpoint: 0x1, data: cmd, ackTimeout: 0)
+		try await session.send(endpoint: NAOSParamsEndpoint, data: cmd, ackTimeout: 0)
 
 		// prepare list
 		var list = [NAOSParamUpdate]()
 
 		while true {
 			// receive reply or return list on ack
-			guard let reply = try await session.receive(endpoint: 0x1, expectAck: true, timeout: timeout)
+			guard
+				let reply = try await session.receive(
+					endpoint: NAOSParamsEndpoint, expectAck: true, timeout: timeout)
 			else {
 				return list
 			}
@@ -201,15 +183,11 @@ public class NAOSParamsEndpoint {
 	}
 
 	/// Clear a parameter by reference.
-	public func clear(ref: UInt8) async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	static public func clear(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5000) async throws {
 		// prepare command
 		let cmd = Data([6, ref])
 
 		// write command
-		try await session.send(endpoint: 0x1, data: cmd, ackTimeout: timeout)
+		try await session.send(endpoint: NAOSParamsEndpoint, data: cmd, ackTimeout: timeout)
 	}
 }

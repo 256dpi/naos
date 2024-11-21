@@ -26,7 +26,6 @@ public enum NAOSError: LocalizedError {
 	}
 }
 
-
 class NAOSPeripheral {
 	let man: CentralManager
 	let raw: Peripheral
