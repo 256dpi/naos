@@ -25,6 +25,18 @@ static size_t naos_msg_endpoint_count = 0;
 static naos_msg_session_t naos_msg_session[NAOS_MSG_MAX_SESSIONS] = {0};
 static uint16_t naos_msg_next_session = 1;
 
+static naos_msg_session_t* naos_msg_find(uint16_t id) {
+  // find matching and active session
+  for (size_t i = 0; i < NAOS_MSG_MAX_SESSIONS; i++) {
+    naos_msg_session_t* s = &naos_msg_session[i];
+    if (s->id == id) {
+      return s->active ? s : NULL;
+    }
+  }
+
+  return NULL;
+}
+
 static void naos_msg_worker() {
   for (;;) {
     // await message
@@ -248,13 +260,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
   }
 
   // find session
-  naos_msg_session_t* session = NULL;
-  for (size_t i = 0; i < NAOS_MSG_MAX_SESSIONS; i++) {
-    if (naos_msg_session[i].id == sid) {
-      session = &naos_msg_session[i];
-      break;
-    }
-  }
+  naos_msg_session_t* session = naos_msg_find(sid);
   if (session == NULL) {
     NAOS_UNLOCK(naos_msg_mutex);
     ESP_LOGE("MSG", "naos_msg_dispatch: session not found");
@@ -262,7 +268,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
   }
 
   // verify session
-  if (!session->active || session->channel != channel) {
+  if (session->channel != channel) {
     NAOS_UNLOCK(naos_msg_mutex);
     ESP_LOGE("MSG", "naos_msg_dispatch: session state mismatch");
     return false;
@@ -385,13 +391,7 @@ bool naos_msg_send(naos_msg_t msg) {
   NAOS_LOCK(naos_msg_mutex);
 
   // find session
-  naos_msg_session_t* session = NULL;
-  for (size_t i = 0; i < NAOS_MSG_MAX_SESSIONS; i++) {
-    if (naos_msg_session[i].id == msg.session) {
-      session = &naos_msg_session[i];
-      break;
-    }
-  }
+  naos_msg_session_t* session = naos_msg_find(msg.session);
   if (session == NULL) {
     NAOS_UNLOCK(naos_msg_mutex);
     ESP_LOGE("MSG", "naos_msg_send: session not found");
@@ -442,13 +442,7 @@ size_t naos_msg_get_mtu(uint16_t id) {
   NAOS_LOCK(naos_msg_mutex);
 
   // find session
-  naos_msg_session_t* session = NULL;
-  for (size_t i = 0; i < NAOS_MSG_MAX_SESSIONS; i++) {
-    if (naos_msg_session[i].id == id) {
-      session = &naos_msg_session[i];
-      break;
-    }
-  }
+  naos_msg_session_t* session = naos_msg_find(id);
   if (session == NULL) {
     NAOS_UNLOCK(naos_msg_mutex);
     ESP_LOGE("MSG", "naos_msg_get_mtu: session not found");
