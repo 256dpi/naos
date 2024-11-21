@@ -1,6 +1,6 @@
 module naos-gui
 
-go 1.23.3
+go 1.23
 
 require (
 	github.com/AllenDang/cimgui-go v1.2.0 // indirect
