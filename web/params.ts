@@ -32,7 +32,7 @@ export interface ParamUpdate {
   value: Uint8Array;
 }
 
-async function getParam(
+export async function getParam(
   s: Session,
   name: string,
   timeout: number = 5000
@@ -49,7 +49,7 @@ async function getParam(
   return data;
 }
 
-async function setParam(
+export async function setParam(
   s: Session,
   name: string,
   value: Uint8Array,
@@ -62,7 +62,7 @@ async function setParam(
   await s.send(ParamsEndpoint, cmd, timeout);
 }
 
-async function listParams(
+export async function listParams(
   s: Session,
   timeout: number = 5000
 ): Promise<ParamInfo[]> {
@@ -99,7 +99,7 @@ async function listParams(
   return list;
 }
 
-async function readParam(
+export async function readParam(
   s: Session,
   ref: number,
   timeout: number = 5000
@@ -113,7 +113,7 @@ async function readParam(
   return data;
 }
 
-async function writeParam(
+export async function writeParam(
   s: Session,
   ref: number,
   value: Uint8Array,
@@ -126,7 +126,7 @@ async function writeParam(
   await s.send(ParamsEndpoint, cmd, timeout);
 }
 
-async function collectParams(
+export async function collectParams(
   s: Session,
   refs: number[],
   since: bigint,
@@ -172,7 +172,7 @@ async function collectParams(
   return list;
 }
 
-async function clearParam(
+export async function clearParam(
   s: Session,
   ref: number,
   timeout: number = 5000

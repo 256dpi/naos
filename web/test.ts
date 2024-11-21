@@ -18,37 +18,37 @@ async function run() {
     subscribe: false,
     autoUpdate: false,
   });
-  if (!device) {s
+  if (!device) {
     return;
   }
 
-  console.log("Listening...");
-  device.addEventListener("changed", (event) => {
+  device.addEventListener("changed", (event: CustomEvent) => {
     console.log("changed", event.detail);
   });
-  device.addEventListener("updated", (event) => {
+
+  device.addEventListener("updated", (event: CustomEvent) => {
     console.log("updated", event.detail);
   });
 
   device.addEventListener("connected", async () => {
-    console.log("Online!");
-
-    // console.log("Refreshing...");
-    // await device.refresh();
-    // console.log(device.parameters);
-    //
-    // console.log("Unlocking...");
-    // await device.unlock("secret");
-    //
-    // console.log("Refreshing...");
-    // await device.refresh();
-
-    console.log("Ready!");
+    console.log("connected");
   });
 
   device.addEventListener("disconnected", () => {
-    console.log("Offline!");
+    console.log("disconnected");
   });
+}
+
+async function params() {
+  console.log("Refreshing...");
+  await device.refresh();
+  console.log(device.parameters);
+
+  // console.log("Unlocking...");
+  // await device.unlock("secret");
+  //
+  // console.log("Refreshing...");
+  // await device.refresh();
 }
 
 async function flash(input) {
@@ -100,6 +100,7 @@ async function fs() {
   console.log("Session closed!");
 }
 
-window._run = run;
-window._flash = flash;
-window._fs = fs;
+window["_run"] = run;
+window["_params"] = params;
+window["_flash"] = flash;
+window["_fs"] = fs;

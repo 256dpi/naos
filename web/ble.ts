@@ -1,9 +1,14 @@
-import { Device, UUIDs } from "./device";
+import { Device, DeviceOptions, UUIDs } from "./device";
 
 export class Manager {
   private device: Device | null = null;
 
-  async request(options = {}): Promise<Device | null> {
+  async request(
+    options: DeviceOptions = {
+      subscribe: false,
+      autoUpdate: false,
+    }
+  ): Promise<Device | null> {
     // release existing device
     if (this.device) {
       if (this.device.connected) {
