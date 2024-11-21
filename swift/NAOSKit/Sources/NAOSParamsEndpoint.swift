@@ -77,9 +77,7 @@ public class NAOSParamsEndpoint {
 
 		while true {
 			// receive reply or return list on ack
-			guard
-				let reply = try await session.receive(
-					endpoint: 0x1, expectAck: true, timeout: timeout)
+			guard let reply = try await session.receive(endpoint: 0x1, expectAck: true, timeout: timeout)
 			else {
 				return list
 			}
@@ -158,9 +156,7 @@ public class NAOSParamsEndpoint {
 
 		while true {
 			// receive reply or return list on ack
-			guard
-				let reply = try await session.receive(
-					endpoint: 0x1, expectAck: true, timeout: timeout)
+			guard let reply = try await session.receive(endpoint: 0x1, expectAck: true, timeout: timeout)
 			else {
 				return list
 			}
@@ -178,5 +174,18 @@ public class NAOSParamsEndpoint {
 			// append info
 			list.append(NAOSParamUpdate(ref: ref, age: age, value: value))
 		}
+	}
+
+	/// Clear a parameter by reference.
+	public func clear(ref: UInt8) async throws {
+		// acquire mutex
+		await mutex.wait()
+		defer { mutex.signal() }
+
+		// prepare command
+		var cmd = Data([6, ref])
+
+		// write command
+		try await session.send(endpoint: 0x1, data: cmd, ackTimeout: timeout)
 	}
 }
