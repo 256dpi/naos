@@ -46,22 +46,16 @@ public struct NAOSParameter: Hashable {
 		return lhs.name == rhs.name && lhs.type == rhs.type
 	}
 
-	public static let deviceName = NAOSParameter(
-		name: "device-name", type: .string, mode: .system)
-	public static let deviceType = NAOSParameter(
-		name: "device-type", type: .string, mode: .system)
-	public static let connectionStatus = NAOSParameter(
-		name: "connection-status", type: .string, mode: .system)
+	public static let deviceName = NAOSParameter(name: "device-name", type: .string, mode: .system)
+	public static let deviceType = NAOSParameter(name: "device-type", type: .string, mode: .system)
+	public static let connectionStatus = NAOSParameter(name: "connection-status", type: .string, mode: .system)
 	public static let battery = NAOSParameter(name: "battery", type: .double, mode: .system)
 	public static let uptime = NAOSParameter(name: "uptime", type: .long, mode: .system)
 	public static let freeHeap = NAOSParameter(name: "free-heap", type: .long, mode: .system)
-	public static let freeHeapInt = NAOSParameter(
-		name: "free-heap-int", type: .long, mode: .system)
+	public static let freeHeapInt = NAOSParameter(name: "free-heap-int", type: .long, mode: .system)
 	public static let wifiRSSI = NAOSParameter(name: "wifi-rssi", type: .long, mode: .system)
-	public static let cpuUsage0 = NAOSParameter(
-		name: "cpu-usage0", type: .double, mode: .system)
-	public static let cpuUsage1 = NAOSParameter(
-		name: "cpu-usage1", type: .double, mode: .system)
+	public static let cpuUsage0 = NAOSParameter(name: "cpu-usage0", type: .double, mode: .system)
+	public static let cpuUsage1 = NAOSParameter(name: "cpu-usage1", type: .double, mode: .system)
 
 	public func format(value: String) -> String {
 		let num = Double(value) ?? 0
@@ -183,8 +177,7 @@ public class NAOSDevice: NSObject {
 						// collect parameters
 						var updates: [NAOSParamUpdate] = []
 						do {
-							updates = try await endpoint.collect(
-								refs: nil, since: maxAge)
+							updates = try await endpoint.collect(refs: nil, since: maxAge)
 						} catch {
 							mutex.signal()
 							return
@@ -193,13 +186,10 @@ public class NAOSDevice: NSObject {
 						// update parameters
 						for update in updates {
 							if let param =
-								(availableParameters.first { p in
-									p.ref == update.ref
-								})
+								(availableParameters.first { p in p.ref == update.ref })
 							{
 								parameters[param] = String(
-									data: update.value,
-									encoding: .utf8)!
+									data: update.value, encoding: .utf8)!
 								maxAge = max(maxAge, update.age)
 							}
 						}
@@ -215,23 +205,12 @@ public class NAOSDevice: NSObject {
 							for update in updates {
 								DispatchQueue.main.async {
 									if let param =
-										(self
-											.availableParameters
-											.first {
-												p in
-												p
-													.ref
-													== update
-													.ref
-											})
+										(self.availableParameters.first { p in
+											p.ref == update.ref
+										})
 									{
-										d
-											.naosDeviceDidUpdate(
-												device:
-													self,
-												parameter:
-													param
-											)
+										d.naosDeviceDidUpdate(
+											device: self, parameter: param)
 									}
 								}
 							}
@@ -326,19 +305,12 @@ public class NAOSDevice: NSObject {
 			}
 
 			// prepare map
-			let map = availableParameters.filter { p in
-				p.type != .action
-			}.map { p in
-				p.ref
-			}
+			let map = availableParameters.filter { p in p.type != .action }.map { p in p.ref }
 
 			// refresh parameters
 			for update in try await endpoint.collect(refs: map, since: 0) {
-				if let param = availableParameters.first(where: { p in
-					p.ref == update.ref
-				}) {
-					parameters[param] =
-						String(data: update.value, encoding: .utf8) ?? ""
+				if let param = availableParameters.first(where: { p in p.ref == update.ref }) {
+					parameters[param] = String(data: update.value, encoding: .utf8) ?? ""
 					maxAge = max(maxAge, update.age)
 				}
 			}
@@ -413,7 +385,8 @@ public class NAOSDevice: NSObject {
 			// write parameter
 			try await endpoint.write(
 				ref: parameter.ref,
-				value: parameters[parameter]!.data(using: .utf8)!)
+				value: parameters[parameter]!.data(using: .utf8)!
+			)
 		}
 
 		// notify manager
@@ -448,9 +421,11 @@ public class NAOSDevice: NSObject {
 			let diff = Date().timeIntervalSince(start)
 			progress(
 				NAOSProgress(
-					done: offset, total: data.count,
+					done: offset,
+					total: data.count,
 					rate: Double(offset) / diff,
-					percent: 100 / Double(data.count) * Double(offset)))
+					percent: 100 / Double(data.count) * Double(offset)
+				))
 		}
 
 		// end session
