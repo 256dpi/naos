@@ -36,6 +36,15 @@ public struct NAOSMessage {
 	}
 }
 
+/// The available status flags.
+public struct NAOSSessionStatus: OptionSet {
+	public let rawValue: UInt8
+
+	public init(rawValue: UInt8) { self.rawValue = rawValue }
+
+	public static let locked = NAOSSessionStatus(rawValue: 1 << 0)
+}
+
 /// An session specific error..
 public enum NAOSSessionError: LocalizedError {
 	case unavailable
@@ -281,6 +290,45 @@ public class NAOSSession {
 		} else if msg.data![0] != 1 {
 			throw NAOSSessionError.parse(value: msg.data![0])
 		}
+	}
+
+	/// Request the session status.
+	public func status(timeout: TimeInterval) async throws -> NAOSSessionStatus {
+		// send command
+		try? await send(endpoint: 0xFD, data: Data([0]), ackTimeout: 0)
+
+		// await reply
+		let reply = try await receive(endpoint: 0xFD, expectAck: false, timeout: timeout)!
+
+		// verify reply
+		if reply.count != 1 {
+			throw NAOSSessionError.invalidMessage
+		}
+
+		// get status
+		let status = NAOSSessionStatus(rawValue: reply[0])
+
+		return status
+	}
+
+	/// Unlock  a locked session with the password.
+	public func unlock(password: String, timeout: TimeInterval) async throws -> Bool {
+		// prepare command
+		var cmd = Data([1])
+		cmd.append(password.data(using: .utf8)!)
+
+		// send command
+		try? await send(endpoint: 0xFD, data: cmd, ackTimeout: 0)
+
+		// await reply
+		let reply = try await receive(endpoint: 0xFD, expectAck: false, timeout: timeout)!
+
+		// verify reply
+		if reply.count != 1 {
+			throw NAOSSessionError.invalidMessage
+		}
+
+		return reply[0] == 1
 	}
 
 	/// End the session.

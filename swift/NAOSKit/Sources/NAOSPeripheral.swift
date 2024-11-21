@@ -11,14 +11,13 @@ import Foundation
 let NAOSService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
 
 enum NAOSCharacteristic: String {
-	case lock = "F7A5FBA4-4084-239B-684D-07D5902EB591"
 	case msg = "0360744B-A61B-00AD-C945-37f3634130F3"
 
 	func cbuuid() -> CBUUID {
 		return CBUUID(string: rawValue)
 	}
 
-	static let all: [NAOSCharacteristic] = [.lock, .msg]
+	static let all: [NAOSCharacteristic] = [.msg]
 }
 
 class NAOSPeripheral {

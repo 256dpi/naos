@@ -269,11 +269,10 @@ public class NAOSDevice: NSObject {
 		// set flag
 		connected = true
 
-		// read lock
-		let lock = try await peripheral.read(char: .lock)
-
-		// save lock status
-		locked = lock == "locked"
+		// read lock status
+		try await withParamSession { session in
+			locked = try await session.status(timeout: 1000).contains(.locked)
+		}
 
 		// save if this device is protected
 		if locked {
@@ -298,11 +297,10 @@ public class NAOSDevice: NSObject {
 		refreshing = true
 		defer { refreshing = false }
 
-		// read lock
-		let lock = try await peripheral.read(char: .lock)
-
-		// save lock status
-		locked = lock == "locked"
+		// read lock status
+		try await withParamSession { session in
+			locked = try await session.status(timeout: 1000).contains(.locked)
+		}
 
 		// save if this device is protected and stop
 		if locked {
@@ -362,13 +360,14 @@ public class NAOSDevice: NSObject {
 		await mutex.wait()
 		defer { mutex.signal() }
 
-		// write lock
-		try await peripheral.write(char: .lock, data: password)
+		// read lock status
+		try await withParamSession { session in
+			if try await session.unlock(password: password, timeout: 1000) {
+				locked = false
+			}
+		}
 
-		// read lock
-		let lock = try await peripheral.read(char: .lock)
-
-		return lock == "unlocked"
+		return !locked
 	}
 
 	/// Read will read the specified parameter. The result is placed into the parameters dictionary.
