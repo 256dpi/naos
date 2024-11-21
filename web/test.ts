@@ -1,6 +1,6 @@
 import {
   Manager,
-  Device,
+  ManagedDevice,
   Session,
   FSEndpoint,
   random,
@@ -9,7 +9,7 @@ import {
   toBuffer,
 } from "./index";
 
-let device: Device | null = null;
+let device: ManagedDevice | null = null;
 
 async function run() {
   const manager = new Manager();

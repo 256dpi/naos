@@ -35,7 +35,7 @@ export const Types = {
   Long: "l",
   Double: "d",
   String: "s",
-  Action: "a",
+  Action: "a",  
 };
 
 export const Modes = {
@@ -52,15 +52,15 @@ export interface Param {
   mode: string;
 }
 
-export interface DeviceOptions {
+export interface ManagedDeviceOptions {
   subscribe: boolean;
   autoUpdate: boolean;
 }
 
-export class Device extends EventTarget {
+export class ManagedDevice extends EventTarget {
   wq = new WorkQueue();
 
-  options: DeviceOptions;
+  options: ManagedDeviceOptions;
   device: BluetoothDevice;
   service: BluetoothRemoteGATTService;
   lockChar: BluetoothRemoteGATTCharacteristic;
@@ -81,7 +81,7 @@ export class Device extends EventTarget {
 
   constructor(
     device: BluetoothDevice,
-    options: DeviceOptions = {
+    options: ManagedDeviceOptions = {
       subscribe: false,
       autoUpdate: false,
     }
