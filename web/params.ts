@@ -41,7 +41,7 @@ export async function getParam(
   const cmd = pack("os", 0, name);
 
   // send command
-  s.send(ParamsEndpoint, cmd, 0);
+  await s.send(ParamsEndpoint, cmd, 0);
 
   // receive value
   const [data] = await s.receive(ParamsEndpoint, false, timeout);
@@ -74,7 +74,7 @@ export async function listParams(
 
   for (;;) {
     // receive reply or return list on ack
-    const [reply, ack] = await s.receive(ParamsEndpoint, false, timeout);
+    const [reply, ack] = await s.receive(ParamsEndpoint, true, timeout);
     if (ack) {
       break;
     }
@@ -90,7 +90,7 @@ export async function listParams(
     const mode = reply[2];
     const name = toString(reply.slice(3, -1));
 
-    // TODO: Check type and moe.
+    // TODO: Check type and mode.
 
     // append info
     list.push({ ref, type, mode, name });
@@ -133,13 +133,16 @@ export async function collectParams(
   timeout: number = 5000
 ): Promise<ParamUpdate[]> {
   // prepare map
-  let mp: bigint = BigInt(0);
-  for (const ref of refs) {
-    mp |= BigInt(1) << BigInt(ref);
+  let map: bigint = (BigInt(1) << BigInt(64)) - BigInt(1);
+  if (refs.length > 0) {
+    map = BigInt(0);
+    for (const ref of refs) {
+      map |= BigInt(1) << BigInt(ref);
+    }
   }
 
   // prepare command
-  const cmd = pack("oqq", 5, mp, since);
+  const cmd = pack("oqq", 5, map, since);
 
   // send command
   await s.send(ParamsEndpoint, cmd, 0);
