@@ -2,4 +2,4 @@
 ./CMakeLists.txt
 node_modules/
 .parcel-cache/
-web/dist
+.parcel-dist/
