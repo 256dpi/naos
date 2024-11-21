@@ -138,6 +138,7 @@ public class NAOSDevice: NSObject {
 	public private(set) var locked: Bool = false
 	public private(set) var availableParameters: [NAOSParameter] = []
 	public var parameters: [NAOSParameter: String] = [:]
+	private var password: String = ""
 
 	init(peripheral: NAOSPeripheral, manager: NAOSManager) {
 		// initialize instance
@@ -309,6 +310,9 @@ public class NAOSDevice: NSObject {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }
+		
+		// save password
+		self.password = password
 
 		// read lock status
 		try await withParamSession { session in
@@ -412,7 +416,17 @@ public class NAOSDevice: NSObject {
 
 	/// Session will create a new session and return it.
 	public func session(timeout: TimeInterval) async throws -> NAOSSession {
-		return try await NAOSSession.open(peripheral: peripheral, timeout: timeout)
+		// open session
+		let session = try await NAOSSession.open(peripheral: peripheral, timeout: timeout)
+		
+		// try to unlock if locked
+		if !password.isEmpty {
+			if (try await session.status(timeout: 5)).contains(.locked) {
+				_ = try await session.unlock(password: password, timeout: 5)
+			}
+		}
+		
+		return session
 	}
 
 	/// Disconnect will close the connection to the device.
