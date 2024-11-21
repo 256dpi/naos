@@ -9,8 +9,6 @@ import (
 	"github.com/coder/websocket"
 )
 
-// TODO: Move locking to message protocol.
-
 type httpDevice struct {
 	host string
 }
@@ -22,24 +20,11 @@ func NewHTTPDevice(host string) Device {
 	}
 }
 
-func (h *httpDevice) Addr() string {
-	return "http/" + h.host
+func (d *httpDevice) ID() string {
+	return "http/" + d.host
 }
 
-func (h *httpDevice) Channel() (Channel, error) {
-	return OpenHTTPChannel(h.host, "")
-}
-
-type httpChannel struct {
-	ctx    context.Context
-	conn   *websocket.Conn
-	cancel context.CancelFunc
-	subs   map[Queue]struct{}
-	mutex  sync.Mutex
-}
-
-// OpenHTTPChannel opens a new HTTP channel to the device.
-func OpenHTTPChannel(host, password string) (Channel, error) {
+func (d *httpDevice) Open() (Channel, error) {
 	// create context
 	var ok bool
 	ctx, cancel := context.WithCancel(context.Background())
@@ -50,7 +35,7 @@ func OpenHTTPChannel(host, password string) (Channel, error) {
 	}()
 
 	// connect to server
-	conn, _, err := websocket.Dial(ctx, fmt.Sprintf("http://%s:80/naos.sock", host), &websocket.DialOptions{
+	conn, _, err := websocket.Dial(ctx, fmt.Sprintf("http://%s:80/naos.sock", d.host), &websocket.DialOptions{
 		Subprotocols: []string{"naos"},
 	})
 	if err != nil {
@@ -59,31 +44,11 @@ func OpenHTTPChannel(host, password string) (Channel, error) {
 
 	// prepare channel
 	c := &httpChannel{
+		dev:    d,
 		ctx:    ctx,
 		conn:   conn,
 		cancel: cancel,
 		subs:   make(map[Queue]struct{}),
-	}
-
-	// check lock status
-	lockStatus, err := c.rpc("lock", "lock#")
-	if err != nil {
-		return nil, err
-	}
-
-	// check lock status
-	if lockStatus == "lock#locked" && password == "" {
-		return nil, fmt.Errorf("password required")
-	}
-
-	// unlock channel
-	if lockStatus == "lock#locked" {
-		lockStatus, err = c.rpc("lock#"+password, "lock#")
-		if err != nil {
-			return nil, err
-		} else if lockStatus != "lock#unlocked" {
-			return nil, fmt.Errorf("invalid password")
-		}
 	}
 
 	// set flag
@@ -95,8 +60,17 @@ func OpenHTTPChannel(host, password string) (Channel, error) {
 	return c, nil
 }
 
-func (c *httpChannel) Name() string {
-	return "http"
+type httpChannel struct {
+	dev    *httpDevice
+	ctx    context.Context
+	conn   *websocket.Conn
+	cancel context.CancelFunc
+	subs   map[Queue]struct{}
+	mutex  sync.Mutex
+}
+
+func (c *httpChannel) Device() Device {
+	return c.dev
 }
 
 func (c *httpChannel) Subscribe(ch Queue) {

@@ -10,7 +10,9 @@ import (
 // TODO: Resolve dependency on real device.
 
 func TestHTTPChannel(t *testing.T) {
-	ch, err := OpenHTTPChannel("10.0.1.7", "")
+	dev := NewHTTPDevice("10.0.1.7")
+
+	ch, err := dev.Open()
 	assert.NoError(t, err)
 	assert.NotNil(t, ch)
 

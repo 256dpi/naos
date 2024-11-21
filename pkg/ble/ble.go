@@ -34,7 +34,7 @@ func Config(params map[string]string, timeout time.Duration, out io.Writer) erro
 
 	return Discover(ctx, func(device msg.Device) {
 		// get channel
-		ch, err := device.Channel()
+		ch, err := device.Open()
 		if err != nil {
 			utils.Log(out, fmt.Sprintf("Error: %s", err))
 			return
@@ -59,7 +59,7 @@ func Config(params map[string]string, timeout time.Duration, out io.Writer) erro
 		}
 
 		// log success
-		utils.Log(out, fmt.Sprintf("Configured: %s", device.Addr()))
+		utils.Log(out, fmt.Sprintf("Configured: %s", device.ID()))
 	})
 }
 
@@ -109,11 +109,11 @@ type device struct {
 	mutex   sync.Mutex
 }
 
-func (d *device) Addr() string {
+func (d *device) ID() string {
 	return fmt.Sprintf("ble/%s", d.addr.String())
 }
 
-func (d *device) Channel() (msg.Channel, error) {
+func (d *device) Open() (msg.Channel, error) {
 	// acquire mutex
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
@@ -158,6 +158,7 @@ func (d *device) Channel() (msg.Channel, error) {
 
 	// prepare channel
 	ch := &channel{
+		dev:  d,
 		char: chars[0],
 		subs: map[msg.Queue]struct{}{},
 		close: func() {
@@ -187,14 +188,15 @@ func (d *device) Channel() (msg.Channel, error) {
 }
 
 type channel struct {
+	dev   *device
 	char  bluetooth.DeviceCharacteristic
 	subs  map[msg.Queue]struct{}
 	close func()
 	mutex sync.Mutex
 }
 
-func (c *channel) Name() string {
-	return "ble"
+func (c *channel) Device() msg.Device {
+	return c.dev
 }
 
 func (c *channel) Subscribe(ch msg.Queue) {

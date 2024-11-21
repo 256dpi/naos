@@ -7,8 +7,12 @@ import (
 
 // Device represents a device that can be communicated with.
 type Device interface {
-	Addr() string
-	Channel() (Channel, error)
+	// ID returns a stable identifier for the device.
+	ID() string
+
+	// Open opens a channel to the device. An opened channel must fail or be
+	// closed before another channel can be opened.
+	Open() (Channel, error)
 }
 
 // ManagedDevice represents a device that is managed.
@@ -37,7 +41,7 @@ func NewManagedDevice(dev Device) *ManagedDevice {
 
 // Addr returns the address of the device.
 func (d *ManagedDevice) Addr() string {
-	return d.dev.Addr()
+	return d.dev.ID()
 }
 
 // Get returns the value of a parameter.
@@ -93,7 +97,7 @@ func (d *ManagedDevice) Activate() error {
 	}
 
 	// open channel
-	ch, err := d.dev.Channel()
+	ch, err := d.dev.Open()
 	if err != nil {
 		return err
 	}
