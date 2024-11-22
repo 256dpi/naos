@@ -349,14 +349,11 @@ public class NAOSDevice: NSObject {
 		let session = try await session(timeout: 5)
 		defer { session.cleanup() }
 
-		// create endpoint
-		let endpoint = NAOSUpdateEndpoint(session: session)
-
 		// get time
 		let start = Date()
 
 		// run update
-		try await endpoint.run(image: data) { offset in
+		try await NAOSUpdate.run(session: session, image: data) { offset in
 			let diff = Date().timeIntervalSince(start)
 			progress(
 				NAOSProgress(
