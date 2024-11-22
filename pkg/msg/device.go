@@ -65,7 +65,7 @@ func Read(q Queue, timeout time.Duration) (Message, error) {
 // Write writes a message to the channel.
 func Write(ch Channel, msg Message) error {
 	// prepare data
-	data := pack("ohob", 1, msg.Session, msg.Endpoint, msg.Data)
+	data := pack("ohob", uint8(1), msg.Session, msg.Endpoint, msg.Data)
 
 	// write data
 	err := ch.Write(data)

@@ -13,6 +13,7 @@ var (
 	SessionInvalidMessage = errors.New("invalid message")
 	SessionUnknownMessage = errors.New("unknown message")
 	SessionEndpointError  = errors.New("endpoint error")
+	SessionLockedError    = errors.New("session locked")
 	SessionExpectedAck    = errors.New("expected ack")
 )
 
@@ -234,6 +235,8 @@ func parseError(num uint8) error {
 		return SessionUnknownMessage
 	case 4:
 		return SessionEndpointError
+	case 5:
+		return SessionLockedError
 	default:
 		return SessionExpectedAck
 	}
