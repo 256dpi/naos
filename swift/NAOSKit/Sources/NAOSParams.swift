@@ -4,7 +4,6 @@
 //
 
 import Foundation
-import Semaphore
 
 /// The parameter endpoint number.
 public let NAOSParamsEndpoint: UInt8 = 0x01
@@ -51,7 +50,7 @@ public struct NAOSParamUpdate {
 /// The parameter endpoint methods.
 public class NAOSParams {
 	/// Get a parameter value by name.
-	static public func get(session: NAOSSession, name: String, timeout: TimeInterval = 5000) async throws -> Data {
+	public static func get(session: NAOSSession, name: String, timeout: TimeInterval = 5) async throws -> Data {
 		// prepare command
 		var cmd = Data([0])
 		cmd.append(name.data(using: .utf8)!)
@@ -64,7 +63,7 @@ public class NAOSParams {
 	}
 
 	/// Set a parameter value by name.
-	static public func set(session: NAOSSession, name: String, value: Data, timeout: TimeInterval = 5000)
+	public static func set(session: NAOSSession, name: String, value: Data, timeout: TimeInterval = 5)
 		async throws
 	{
 		// prepare command
@@ -78,7 +77,7 @@ public class NAOSParams {
 	}
 
 	/// Obtain a list of all known parametersession.
-	static public func list(session: NAOSSession, timeout: TimeInterval = 5000) async throws -> [NAOSParamInfo] {
+	public static func list(session: NAOSSession, timeout: TimeInterval = 5) async throws -> [NAOSParamInfo] {
 		// send command
 		try await session.send(endpoint: NAOSParamsEndpoint, data: Data([2]), ackTimeout: 0)
 
@@ -111,7 +110,7 @@ public class NAOSParams {
 	}
 
 	/// Read a parameter by reference.
-	static public func read(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5000) async throws -> Data {
+	public static func read(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> Data {
 		// prepare command
 		let cmd = Data([3, ref])
 
@@ -123,7 +122,7 @@ public class NAOSParams {
 	}
 
 	/// Write a parameter by reference.
-	static public func write(session: NAOSSession, ref: UInt8, value: Data, timeout: TimeInterval = 5000)
+	public static func write(session: NAOSSession, ref: UInt8, value: Data, timeout: TimeInterval = 5)
 		async throws
 	{
 		// prepare command
@@ -135,7 +134,7 @@ public class NAOSParams {
 	}
 
 	/// Collect parameter values by providing a list of refrences, a since timestamp or both.
-	static public func collect(session: NAOSSession, refs: [UInt8]?, since: UInt64, timeout: TimeInterval = 5000)
+	public static func collect(session: NAOSSession, refs: [UInt8]?, since: UInt64, timeout: TimeInterval = 5)
 		async throws -> [NAOSParamUpdate]
 	{
 		// prepare map
@@ -174,7 +173,7 @@ public class NAOSParams {
 
 			// parse reply
 			let ref = reply[0]
-			let age = readUint64(data: Data(reply[1...8]))
+			let age = readUint64(data: Data(reply[1 ... 8]))
 			let value = Data(reply[9...])
 
 			// append info
@@ -183,7 +182,7 @@ public class NAOSParams {
 	}
 
 	/// Clear a parameter by reference.
-	static public func clear(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5000) async throws {
+	public static func clear(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws {
 		// prepare command
 		let cmd = Data([6, ref])
 
