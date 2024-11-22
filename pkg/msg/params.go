@@ -1,7 +1,6 @@
 package msg
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
@@ -210,10 +209,11 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 			return nil, fmt.Errorf("invalid reply")
 		}
 
-		// parse reply
-		ref := reply[0]
-		age := binary.LittleEndian.Uint64(reply[1:9])
-		value := reply[9:]
+		// unpack reply
+		var ref uint8
+		var age uint64
+		var value []byte
+		unpack("oqb", reply, &ref, &age, &value)
 
 		// append info
 		list = append(list, ParamUpdate{

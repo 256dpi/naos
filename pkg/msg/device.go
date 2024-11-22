@@ -1,7 +1,6 @@
 package msg
 
 import (
-	"encoding/binary"
 	"errors"
 	"time"
 )
@@ -55,11 +54,11 @@ func Read(q Queue, timeout time.Duration) (Message, error) {
 		return Message{}, errors.New("invalid message")
 	}
 
-	return Message{
-		Session:  binary.LittleEndian.Uint16(data[1:3]),
-		Endpoint: data[3],
-		Data:     data[4:],
-	}, nil
+	// unpack message
+	var msg Message
+	unpack("hob", data[1:], &msg.Session, &msg.Endpoint, &msg.Data)
+
+	return msg, nil
 }
 
 // Write writes a message to the channel.

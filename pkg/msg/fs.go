@@ -1,7 +1,6 @@
 package msg
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"time"
@@ -36,13 +35,14 @@ func StatPath(s *Session, path string, timeout time.Duration) (*FSInfo, error) {
 		return nil, fmt.Errorf("invalid message")
 	}
 
-	// pare "info" reply
-	isDir := reply[1] == 1
-	size := binary.LittleEndian.Uint32(reply[2:])
+	// unpack "info" reply
+	var isDir uint8
+	var size uint32
+	unpack("oi", reply[1:], &isDir, &size)
 
 	return &FSInfo{
 		Name:  "",
-		IsDir: isDir,
+		IsDir: isDir == 1,
 		Size:  size,
 	}, nil
 }
@@ -72,15 +72,16 @@ func ListDir(s *Session, path string, timeout time.Duration) ([]FSInfo, error) {
 			return nil, fmt.Errorf("invalid message")
 		}
 
-		// pare "info" reply
-		isDir := reply[1] == 1
-		size := binary.LittleEndian.Uint32(reply[2:])
-		name := string(reply[6:])
+		// unpack "info" reply
+		var isDir uint8
+		var size uint32
+		var name string
+		unpack("ois", reply[1:], &isDir, &size, &name)
 
 		// add info
 		infos = append(infos, FSInfo{
 			Name:  name,
-			IsDir: isDir,
+			IsDir: isDir == 1,
 			Size:  size,
 		})
 	}
@@ -155,8 +156,9 @@ func ReadFileRange(s *Session, path string, offset, length uint32, report func(u
 			return nil, fmt.Errorf("invalid message")
 		}
 
-		// get offset
-		replyOffset := binary.LittleEndian.Uint32(reply[1:])
+		// unpack offset
+		var replyOffset uint32
+		unpack("i", reply[1:], &replyOffset)
 
 		// verify offset
 		if replyOffset != offset+count {
