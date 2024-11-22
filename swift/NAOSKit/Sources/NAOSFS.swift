@@ -4,7 +4,6 @@
 //
 
 import Foundation
-import Semaphore
 
 /// Information about a file.
 public struct NAOSFSInfo {
@@ -14,31 +13,18 @@ public struct NAOSFSInfo {
 }
 
 /// The NAOS file system endpoint.
-public class NAOSFSEndpoint {
-	private let session: NAOSSession
-	private let mutex = AsyncSemaphore(value: 1)
-
-	public var timeout: TimeInterval = 5
-
-	public init(session: NAOSSession) {
-		self.session = session
-	}
-
+public class NAOSFS {
 	/// Get information on a file or directory.
-	public func stat(path: String) async throws -> NAOSFSInfo {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	public static func stat(session: NAOSSession, path: String, timeout: TimeInterval = 5) async throws -> NAOSFSInfo {
 		// prepare command
 		var cmd = Data([0])
 		cmd.append(path.data(using: .utf8)!)
 
 		// send command
-		try await send(cmd: cmd, ack: false)
+		try await send(session: session, cmd: cmd, ack: false, timeout: timeout)
 
 		// await reply
-		let reply = try await receive(expectAck: false)!
+		let reply = try await receive(session: session, expectAck: false, timeout: timeout)!
 
 		// verify "info" reply
 		if reply.count != 6 || reply[0] != 1 {
@@ -53,24 +39,20 @@ public class NAOSFSEndpoint {
 	}
 
 	/// List a files and directories.
-	public func list(path: String) async throws -> [NAOSFSInfo] {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	public static func list(session: NAOSSession, dir: String, timeout: TimeInterval = 5) async throws -> [NAOSFSInfo] {
 		// prepare command
 		var cmd = Data([1])
-		cmd.append(path.data(using: .utf8)!)
+		cmd.append(dir.data(using: .utf8)!)
 
 		// send command
-		try await send(cmd: cmd, ack: false)
+		try await send(session: session, cmd: cmd, ack: false, timeout: timeout)
 
 		// prepare infos
 		var infos: [NAOSFSInfo] = []
 
 		while true {
 			// await reply
-			guard let reply = try await receive(expectAck: true) else {
+			guard let reply = try await receive(session: session, expectAck: true, timeout: timeout) else {
 				return infos
 			}
 
@@ -90,9 +72,9 @@ public class NAOSFSEndpoint {
 	}
 
 	/// Read a full file.
-	public func read(path: String, report: ((Int) -> Void)?) async throws -> Data {
+	public static func read(session: NAOSSession, file: String, report: ((Int) -> Void)?, timeout: TimeInterval = 5) async throws -> Data {
 		// stat file
-		let info = try await stat(path: path)
+		let info = try await stat(session: session, path: file)
 
 		// prepare data
 		var data = Data()
@@ -100,7 +82,7 @@ public class NAOSFSEndpoint {
 		// read file in chunks of 5 KB
 		while data.count < info.size {
 			// read data
-			let chunk = try await read(path: path, offset: UInt32(data.count), length: 5000) { offset in
+			let chunk = try await read(session: session, file: file, offset: UInt32(data.count), length: 5000) { offset in
 				if report != nil {
 					report!(data.count + offset)
 				}
@@ -114,17 +96,13 @@ public class NAOSFSEndpoint {
 	}
 
 	/// Read a range of a file.
-	public func read(path: String, offset: UInt32, length: UInt32, report: ((Int) -> Void)?) async throws -> Data {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	public static func read(session: NAOSSession, file: String, offset: UInt32, length: UInt32, report: ((Int) -> Void)?, timeout: TimeInterval = 5) async throws -> Data {
 		// prepare "open" command
 		var cmd = Data([2, 0])
-		cmd.append(path.data(using: .utf8)!)
+		cmd.append(file.data(using: .utf8)!)
 
 		// send "open" command
-		try await send(cmd: cmd, ack: true)
+		try await send(session: session, cmd: cmd, ack: true, timeout: timeout)
 
 		// prepare "read" command
 		cmd = Data([3])
@@ -132,7 +110,7 @@ public class NAOSFSEndpoint {
 		cmd.append(writeUint32(value: length))
 
 		// send "read" command
-		try await send(cmd: cmd, ack: false)
+		try await send(session: session, cmd: cmd, ack: false, timeout: timeout)
 
 		// prepare data
 		var data = Data()
@@ -142,7 +120,7 @@ public class NAOSFSEndpoint {
 
 		while true {
 			// await reply
-			guard let reply = try await receive(expectAck: true) else {
+			guard let reply = try await receive(session: session, expectAck: true, timeout: timeout) else {
 				break
 			}
 
@@ -152,7 +130,7 @@ public class NAOSFSEndpoint {
 			}
 
 			// get offset
-			let replyOffset = readUint32(data: Data(reply[1...5]))
+			let replyOffset = readUint32(data: Data(reply[1 ... 5]))
 
 			// verify offset
 			if replyOffset != offset + count {
@@ -172,23 +150,19 @@ public class NAOSFSEndpoint {
 		}
 
 		// send "close" command
-		try await send(cmd: Data([5]), ack: true)
+		try await send(session: session, cmd: Data([5]), ack: true, timeout: timeout)
 
 		return data
 	}
 
 	/// Write a full file.
-	public func write(path: String, data: Data, report: ((Int) -> Void)?) async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	public static func write(session: NAOSSession, file: String, data: Data, report: ((Int) -> Void)?, timeout: TimeInterval = 5) async throws {
 		// prepare "open" command (create & truncate)
 		var cmd = Data([2, 1 << 0 | 1 << 2])
-		cmd.append(path.data(using: .utf8)!)
+		cmd.append(file.data(using: .utf8)!)
 
 		// send "create" command
-		try await send(cmd: cmd, ack: true)
+		try await send(session: session, cmd: cmd, ack: true, timeout: timeout)
 
 		// TODO: Dynamically determine channel MTU?
 
@@ -198,7 +172,7 @@ public class NAOSFSEndpoint {
 		while offset < data.count {
 			// determine chunk size and chunk data
 			let chunkSize = min(500, data.count - offset)
-			let chunkData = data.subdata(in: offset..<offset + chunkSize)
+			let chunkData = data.subdata(in: offset ..< offset + chunkSize)
 
 			// determine mode
 			let acked = num % 10 == 0
@@ -209,11 +183,11 @@ public class NAOSFSEndpoint {
 			cmd.append(chunkData)
 
 			// send "write" command
-			try await send(cmd: cmd, ack: false)
+			try await send(session: session, cmd: cmd, ack: false, timeout: timeout)
 
 			// receive ack or "error" replies
 			if acked {
-				let _ = try await receive(expectAck: true)
+				_ = try await receive(session: session, expectAck: true, timeout: timeout)
 			}
 
 			// increment offset
@@ -229,15 +203,11 @@ public class NAOSFSEndpoint {
 		}
 
 		// send "close" command
-		try await send(cmd: Data([5]), ack: true)
+		try await send(session: session, cmd: Data([5]), ack: true, timeout: timeout)
 	}
 
 	/// Rename a file.
-	public func rename(from: String, to: String) async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	public static func rename(session: NAOSSession, from: String, to: String, timeout: TimeInterval = 5) async throws {
 		// prepare command
 		var cmd = Data([6])
 		cmd.append(from.data(using: .utf8)!)
@@ -245,38 +215,30 @@ public class NAOSFSEndpoint {
 		cmd.append(to.data(using: .utf8)!)
 
 		// send command
-		try await send(cmd: cmd, ack: true)
+		try await send(session: session, cmd: cmd, ack: true, timeout: timeout)
 	}
 
 	/// Remove a file.
-	public func remove(path: String) async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	public static func remove(session: NAOSSession, path: String, timeout: TimeInterval = 5) async throws {
 		// prepare command
 		var cmd = Data([7])
 		cmd.append(path.data(using: .utf8)!)
 
 		// send command
-		try await send(cmd: cmd, ack: true)
+		try await send(session: session, cmd: cmd, ack: true, timeout: timeout)
 	}
 
 	/// Calculate the SHA256 checksum of a file.
-	public func sha256(path: String) async throws -> Data {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
+	public static func sha256(session: NAOSSession, file: String, timeout: TimeInterval = 5) async throws -> Data {
 		// prepare command
 		var cmd = Data([8])
-		cmd.append(path.data(using: .utf8)!)
+		cmd.append(file.data(using: .utf8)!)
 
 		// send command
-		try await send(cmd: cmd, ack: false)
+		try await send(session: session, cmd: cmd, ack: false, timeout: timeout)
 
 		// await reply
-		let reply = try await receive(expectAck: false)!
+		let reply = try await receive(session: session, expectAck: false, timeout: timeout)!
 
 		// verify "chunk" reply
 		if reply.count != 33 || reply[0] != 3 {
@@ -291,7 +253,7 @@ public class NAOSFSEndpoint {
 
 	// - Helpers
 
-	internal func receive(expectAck: Bool) async throws -> Data? {
+	static func receive(session: NAOSSession, expectAck: Bool, timeout: TimeInterval) async throws -> Data? {
 		// receive reply
 		guard let data = try await session.receive(endpoint: 0x3, expectAck: expectAck, timeout: timeout) else {
 			return nil
@@ -305,7 +267,7 @@ public class NAOSFSEndpoint {
 		return data
 	}
 
-	internal func send(cmd: Data, ack: Bool) async throws {
+	static func send(session: NAOSSession, cmd: Data, ack: Bool, timeout: TimeInterval) async throws {
 		// send command
 		try await session.send(endpoint: 0x3, data: cmd, ackTimeout: ack ? timeout : 0)
 	}

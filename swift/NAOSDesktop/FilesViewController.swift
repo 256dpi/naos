@@ -21,11 +21,7 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 		Task {
 			// list directory
 			await run(title: "Listing...") { session in
-				// create endpoint
-				let endpoint = NAOSFSEndpoint(session: session)
-
-				// list files
-				self.files = try await endpoint.list(path: self.root())
+				self.files = try await NAOSFS.list(session: session, dir: self.root())
 			}
 
 			// reload list
@@ -45,15 +41,13 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 
 				// write file
 				await process(title: "Uploading...") { session, progress in
-					// create endpoint
-					let endpoint = NAOSFSEndpoint(session: session)
-
 					// get time
 					let start = Date()
 
 					// write file
-					try await endpoint.write(
-						path: path, data: file.data,
+					try await NAOSFS.write(
+						session: session,
+						file: path, data: file.data,
 						report: { done in
 							// calculate delta
 							let delta = Date().timeIntervalSince(start)
@@ -85,15 +79,13 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 			// read file
 			var data: Data?
 			await process(title: "Downloading...") { session, progress in
-				// create endpoint
-				let endpoint = NAOSFSEndpoint(session: session)
-
 				// get time
 				let start = Date()
 
 				// read file
-				data = try await endpoint.read(
-					path: self.root() + "/" + file.name,
+				data = try await NAOSFS.read(
+					session: session,
+					file: self.root() + "/" + file.name,
 					report: { done in
 						// calculate delta
 						let delta = Date().timeIntervalSince(start)
@@ -130,11 +122,9 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 
 			// rename file
 			await run(title: "Renaming...") { session in
-				// create endpoint
-				let endpoint = NAOSFSEndpoint(session: session)
-
 				// rename file
-				try await endpoint.rename(
+				try await NAOSFS.rename(
+					session: session,
 					from: self.root() + "/" + file.name,
 					to: self.root() + "/" + name)
 			}
@@ -154,13 +144,9 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 		let file = files[listTable.selectedRow]
 
 		Task {
-			// rename file
+			// remove file
 			await run(title: "Removing...") { session in
-				// create endpoint
-				let endpoint = NAOSFSEndpoint(session: session)
-
-				// remove file
-				try await endpoint.remove(path: self.root() + "/" + file.name)
+				try await NAOSFS.remove(session: session, path: self.root() + "/" + file.name)
 			}
 
 			// re-list
@@ -181,11 +167,7 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 			// hash file
 			var sum: Data?
 			await run(title: "Hashing...") { session in
-				// create endpoint
-				let endpoint = NAOSFSEndpoint(session: session)
-
-				// hash file
-				sum = try await endpoint.sha256(path: self.root() + "/" + file.name)
+				sum = try await NAOSFS.sha256(session: session, file: self.root() + "/" + file.name)
 			}
 			if sum == nil {
 				return
