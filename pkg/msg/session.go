@@ -8,6 +8,17 @@ import (
 	"time"
 )
 
+// The SystemEndpoint number.
+const SystemEndpoint = 0xFD
+
+// Status represents the status of a session.
+type Status uint8
+
+// The available session status flags.
+const (
+	StatusLocked = Status(1 << 0)
+)
+
 // The available session errors.
 var (
 	SessionInvalidMessage = errors.New("invalid message")
@@ -196,6 +207,56 @@ func (s *Session) Send(endpoint uint8, data []byte, ackTimeout time.Duration) er
 	}
 
 	return nil
+}
+
+// Status returns the status of the session.
+func (s *Session) Status(timeout time.Duration) (Status, error) {
+	// taking the mutex would deadlock
+
+	// write command
+	cmd := pack("o", uint8(0))
+	err := s.Send(0xfd, cmd, 0)
+	if err != nil {
+		return 0, err
+	}
+
+	// await reply
+	msg, err := s.Receive(SystemEndpoint, false, timeout)
+	if err != nil {
+		return 0, err
+	}
+
+	// verify reply
+	if len(msg) != 1 {
+		return 0, fmt.Errorf("invalid message")
+	}
+
+	return Status(msg[0]), nil
+}
+
+// Unlock unlocks the session with the specified password.
+func (s *Session) Unlock(password string, timeout time.Duration) (bool, error) {
+	// taking the mutex would deadlock
+
+	// write command
+	cmd := pack("os", uint8(1), password)
+	err := s.Send(SystemEndpoint, cmd, timeout)
+	if err != nil {
+		return false, err
+	}
+
+	// await reply
+	msg, err := s.Receive(SystemEndpoint, false, timeout)
+	if err != nil {
+		return false, err
+	}
+
+	// verify reply
+	if len(msg) != 1 {
+		return false, fmt.Errorf("invalid message")
+	}
+
+	return msg[0] == 1, nil
 }
 
 // End closes the session.
