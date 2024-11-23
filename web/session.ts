@@ -1,5 +1,9 @@
-import { Channel, Message, Queue, read, write } from "./channel";
-import { random, toBuffer, toString } from "./utils";
+import { Channel, Message, Queue, read, write } from "./device";
+import { pack, random, toBuffer, toString, unpack } from "./utils";
+
+export enum Status {
+  locked = 1 << 0,
+}
 
 export class Session {
   private readonly id: number;
@@ -121,6 +125,41 @@ export class Session {
     } else if (msg.data[0] !== 1) {
       throw parseError(msg.data[0]);
     }
+  }
+
+  async status(timeout: number): Promise<Status> {
+    // write command
+    let cmd = pack("o", 0);
+    await this.send(0xfd, cmd, 0);
+
+    // wait reply
+    const [reply] = await this.receive(0xfd, false, timeout);
+
+    // verify reply
+    if (reply.length !== 1) {
+      throw new Error("invalid message");
+    }
+
+    // unpack status
+    let status = unpack("o", reply)[0];
+
+    return status as Status;
+  }
+
+  async unlock(password: string, timeout: number): Promise<boolean> {
+    // prepare command
+    let cmd = pack("os", 1, password);
+    await this.send(0xfd, cmd, 0);
+
+    // wait reply
+    const [reply] = await this.receive(0xfd, false, timeout);
+
+    // verify reply
+    if (reply.length !== 1) {
+      throw new Error("invalid message");
+    }
+
+    return reply[0] === 1;
   }
 
   async end(timeout: number) {

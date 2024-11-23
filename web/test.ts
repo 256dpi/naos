@@ -1,110 +1,113 @@
-import {
-  Manager,
-  ManagedDevice,
-  Session,
-  random,
-  toString,
-  toBuffer,
-  requestFile,
-} from "./index";
+import { request, random, toString, toBuffer, requestFile } from "./index";
 
 import {
-  listPath,
-  readFile,
-  renamePath,
-  removePath,
-  sha256File,
+  FSEndpoint,
   statPath,
+  listDir,
+  readFile,
   writeFile,
+  renamePath,
+  sha256File,
+  removePath,
 } from "./fs";
+
+import { ParamsEndpoint, listParams } from "./params";
+
+import { UpdateEndpoint, update } from "./index";
+import { ManagedDevice } from "./managed";
 
 let device: ManagedDevice | null = null;
 
 async function run() {
-  const manager = new Manager();
-
-  device = await manager.request({
-    subscribe: false,
-    autoUpdate: false,
-  });
-  if (!device) {
+  // request device
+  let dev = await request();
+  if (!dev) {
     return;
   }
 
-  device.addEventListener("changed", (event: CustomEvent) => {
-    console.log("changed", event.detail);
-  });
+  console.log("Got Device:", dev);
 
-  device.addEventListener("updated", (event: CustomEvent) => {
-    console.log("updated", event.detail);
-  });
+  // create device
+  device = new ManagedDevice(dev);
 
-  device.addEventListener("connected", async () => {
-    console.log("connected");
-  });
+  // activate device
+  await device.activate();
 
-  device.addEventListener("disconnected", () => {
-    console.log("disconnected");
-  });
+  // unlock locked device
+  if (await device.locked()) {
+    console.log("Unlock", await device.unlock(prompt("Password")));
+  }
+
+  console.log("Ready!");
 }
 
 async function params() {
-  console.log("Refreshing...");
-  await device.refresh();
-  console.log(device.parameters);
+  console.log("Testing Params...");
 
-  // console.log("Unlocking...");
-  // await device.unlock("secret");
-  //
-  // console.log("Refreshing...");
-  // await device.refresh();
+  await device.activate();
+
+  await device.useSession(async (session) => {
+    console.log(await session.query(ParamsEndpoint, 1000));
+
+    const params = await listParams(session);
+    console.log(params);
+  });
+
+  await device.deactivate();
+
+  console.log("Done!");
 }
 
-async function flash(input) {
+async function flash(input: HTMLInputElement) {
   if (!device || !input.files.length) {
     return;
   }
 
+  console.log("Flashing...");
+
   const data = new Uint8Array(await requestFile(input.files[0]));
 
-  console.log("Flashing...", data);
-  await device.flash(data, (progress) => {
-    console.log(progress);
+  await device.activate();
+  const session = await device.newSession();
+
+  await session.ping(1000);
+  console.log(await session.query(UpdateEndpoint, 1000));
+
+  await update(session, data, (progress) => {
+    console.log((progress / data.length) * 100);
   });
 
-  console.log("Flashing done!");
+  await session.end(1000);
+  await device.deactivate();
+
+  console.log("Done!");
 }
 
 async function fs() {
-  if (!device) {
-    return;
-  }
+  console.log("Testing FS...");
 
-  console.log("Opening session...");
+  await device.activate();
 
-  const channel = device.getChannel();
-  const session = await Session.open(channel);
-  await session.ping(1000);
-  console.log(await session.query(0x03, 1000));
+  await device.useSession(async (session) => {
+    console.log(await session.query(FSEndpoint, 1000));
 
-  console.log(await statPath(session, "/lol.txt"));
-  console.log(await listPath(session, "/"));
+    console.log(await statPath(session, "/lol.txt"));
+    console.log(await listDir(session, "/"));
 
-  console.log(toString(await readFile(session, "/lol.txt")));
+    console.log(toString(await readFile(session, "/lol.txt")));
 
-  await writeFile(session, "/test.txt", toBuffer(random(16)));
-  console.log(toString(await readFile(session, "/test.txt")));
-  await renamePath(session, "/test.txt", "/test2.txt");
-  console.log(await sha256File(session, "/test2.txt"));
-  await removePath(session, "/test2.txt");
+    await writeFile(session, "/test.txt", toBuffer(random(16)));
+    console.log(toString(await readFile(session, "/test.txt")));
+    await renamePath(session, "/test.txt", "/test2.txt");
+    console.log(await sha256File(session, "/test2.txt"));
+    await removePath(session, "/test2.txt");
 
-  // await write(session, "/data.bin", new Uint8Array(4096));
-  // console.log(await stat(session, "/data.bin"));
-  // console.log(await read(session, "/data.bin"));
+    // await write(session, "/data.bin", new Uint8Array(4096));
+    // console.log(await stat(session, "/data.bin"));
+    // console.log(await read(session, "/data.bin"));
+  });
 
-  await session.end(1000);
-
-  console.log("Session closed!");
+  console.log("Done!");
 }
 
 window["_run"] = run;
