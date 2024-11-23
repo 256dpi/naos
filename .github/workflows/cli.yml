@@ -13,7 +13,7 @@ jobs:
       - name: Install
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.22"
 
       - name: Prepare (Linux)
         run: sudo apt-get install bluez -y
