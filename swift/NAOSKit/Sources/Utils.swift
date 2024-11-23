@@ -118,8 +118,84 @@ class Channel<T> {
 		return try await withTimeout(seconds: timeout) {
 			try await self.semaphore.waitUnlessCancelled()
 			return self.queue.sync {
-				return self.buffer.removeFirst()
+				self.buffer.removeFirst()
 			}
 		}
 	}
+}
+
+func pack(fmt: String, args: [Any]) -> Data {
+	var buffer = Data()
+
+	for (index, code) in fmt.enumerated() {
+		switch code {
+		case "s":
+			let str = args[index] as! String
+			buffer.append(Data(str.utf8))
+		case "b":
+			let bytes = args[index] as! Data
+			buffer.append(bytes)
+		case "o":
+			let byte = args[index] as! UInt8
+			buffer.append(byte)
+		case "h":
+			let value = args[index] as! UInt16
+			buffer.append(writeUint16(value: value))
+		case "i":
+			let value = args[index] as! UInt32
+			buffer.append(writeUint32(value: value))
+		case "q":
+			let value = args[index] as! UInt64
+			buffer.append(writeUint64(value: value))
+		default:
+			fatalError("Invalid format code: \(code)")
+		}
+	}
+
+	return buffer
+}
+
+func unpack(format: String, buffer: Data, start: Int = 0) -> [Any] {
+	var offset = start
+	var results: [Any] = []
+
+	for code in format {
+		switch code {
+		case "s":
+			if let end = buffer[offset...].firstIndex(of: 0) {
+				let stringData = buffer[offset..<end]
+				let value = String(data: stringData, encoding: .utf8) ?? ""
+				results.append(value)
+				offset = end + 1
+			} else {
+				let stringData = buffer[offset...]
+				let value = String(data: stringData, encoding: .utf8) ?? ""
+				results.append(value)
+				offset += stringData.count
+			}
+		case "b":
+			let value = Data(buffer[offset...])
+			results.append(value)
+			offset += value.count
+		case "o":
+			results.append(buffer[offset])
+			offset += 1
+		case "h":
+			let value = readUint16(data: Data(buffer[offset..<offset + 2]))
+			results.append(value)
+			offset += 2
+		case "i":
+			let value = readUint32(data: Data(buffer[offset..<offset + 4]))
+			results.append(value)
+			offset += 4
+		case "q":
+			let value = readUint64(data: Data(buffer[offset..<offset + 8]))
+			results.append(value)
+			offset += 8
+		default:
+			fatalError("Invalid format code: \(code)")
+		}
+	}
+
+	return results
 }
