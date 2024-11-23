@@ -61,10 +61,8 @@ type ParamUpdate struct {
 
 // GetParam returns the value of the named parameter.
 func GetParam(s *Session, name string, timeout time.Duration) ([]byte, error) {
-	// prepare command
-	cmd := pack("os", uint8(0), name)
-
 	// send command
+	cmd := pack("os", uint8(0), name)
 	err := s.Send(ParamsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
@@ -81,10 +79,8 @@ func GetParam(s *Session, name string, timeout time.Duration) ([]byte, error) {
 
 // SetParam sets the value of the named parameter.
 func SetParam(s *Session, name string, value []byte, timeout time.Duration) error {
-	// prepare command
-	cmd := pack("osob", uint8(1), name, uint8(0), value)
-
 	// send command
+	cmd := pack("osob", uint8(1), name, uint8(0), value)
 	err := s.Send(ParamsEndpoint, cmd, timeout)
 	if err != nil {
 		return err
@@ -96,7 +92,8 @@ func SetParam(s *Session, name string, value []byte, timeout time.Duration) erro
 // ListParams returns a list of all parameters.
 func ListParams(s *Session, timeout time.Duration) ([]ParamInfo, error) {
 	// send command
-	err := s.Send(ParamsEndpoint, []byte{2}, 0)
+	cmd := []byte{2}
+	err := s.Send(ParamsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +141,8 @@ func ListParams(s *Session, timeout time.Duration) ([]ParamInfo, error) {
 // ReadParam return the value of the referenced parameter.
 func ReadParam(s *Session, ref uint8, timeout time.Duration) ([]byte, error) {
 	// send command
-	err := s.Send(ParamsEndpoint, []byte{3, ref}, 0)
+	cmd := []byte{3, ref}
+	err := s.Send(ParamsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -160,10 +158,8 @@ func ReadParam(s *Session, ref uint8, timeout time.Duration) ([]byte, error) {
 
 // WriteParam sets the value of the referenced parameter.
 func WriteParam(s *Session, ref uint8, value []byte, timeout time.Duration) error {
-	// prepare command
-	cmd := pack("oob", uint8(4), ref, value)
-
 	// send command
+	cmd := pack("oob", uint8(4), ref, value)
 	err := s.Send(ParamsEndpoint, cmd, timeout)
 	if err != nil {
 		return err
@@ -183,10 +179,8 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 		}
 	}
 
-	// prepare command
-	cmd := pack("oqq", uint8(5), mp, since)
-
 	// send command
+	cmd := pack("oqq", uint8(5), mp, since)
 	err := s.Send(ParamsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
@@ -229,7 +223,8 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 // ClearParam clears the value of the referenced parameter.
 func ClearParam(s *Session, ref uint8, timeout time.Duration) error {
 	// send command
-	err := s.Send(ParamsEndpoint, []byte{6, ref}, timeout)
+	cmd := []byte{6, ref}
+	err := s.Send(ParamsEndpoint, cmd, timeout)
 	if err != nil {
 		return err
 	}
