@@ -11,11 +11,11 @@ public let NAOSUpdateEndpoint: UInt8 = 0x2
 public class NAOSUpdate {
 	/// Perform a firmware update.
 	public static func run(session: NAOSSession, image: Data, report: ((Int) -> Void)?, timeout: TimeInterval = 30) async throws {
-		// write "begin" command
+		// send "begin" command
 		var cmd = pack(fmt: "oi", args: [UInt8(0), UInt32(image.count)])
 		try await session.send(endpoint: NAOSUpdateEndpoint, data: cmd, ackTimeout: 0)
 
-		// receive value
+		// receive reply
 		var reply = try await session.receive(endpoint: NAOSUpdateEndpoint, expectAck: false, timeout: timeout)!
 
 		// verify reply
@@ -52,11 +52,11 @@ public class NAOSUpdate {
 			num += 1
 		}
 
-		// write "finish" command
+		// send "finish" command
 		cmd = pack(fmt: "o", args: [UInt8(3)])
 		try await session.send(endpoint: NAOSUpdateEndpoint, data: cmd, ackTimeout: 0)
 
-		// receive value
+		// receive reply
 		reply = try await session.receive(endpoint: NAOSUpdateEndpoint, expectAck: false, timeout: timeout)!
 
 		// verify reply

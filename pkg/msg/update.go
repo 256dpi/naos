@@ -10,16 +10,14 @@ const UpdateEndpoint = 0x2
 
 // Update performs a firmware update.
 func Update(s *Session, image []byte, report func(int), timeout time.Duration) error {
-	// prepare "begin" command
+	// send "begin" command
 	cmd := pack("oi", uint8(0), uint32(len(image)))
-
-	// write "begin" command
 	err := s.Send(UpdateEndpoint, cmd, 0)
 	if err != nil {
 		return err
 	}
 
-	// receive value
+	// receive reply
 	reply, err := s.Receive(UpdateEndpoint, false, timeout)
 	if err != nil {
 		return err
@@ -43,10 +41,8 @@ func Update(s *Session, image []byte, report func(int), timeout time.Duration) e
 		// determine acked
 		acked := num%10 == 0
 
-		// prepare "write" command
-		cmd = pack("oob", uint8(1), b2u(acked), chunkData)
-
 		// send "write" command
+		cmd = pack("oob", uint8(1), b2u(acked), chunkData)
 		err = s.Send(UpdateEndpoint, cmd, b2v(acked, timeout, 0))
 		if err != nil {
 			return err
@@ -64,16 +60,14 @@ func Update(s *Session, image []byte, report func(int), timeout time.Duration) e
 		num += 1
 	}
 
-	// prepare "finish" command
+	// send "finish" command
 	cmd = pack("o", uint8(3))
-
-	// write "finish" command
 	err = s.Send(UpdateEndpoint, cmd, 0)
 	if err != nil {
 		return err
 	}
 
-	// receive value
+	// receive reply
 	reply, err = s.Receive(UpdateEndpoint, false, timeout)
 	if err != nil {
 		return err
