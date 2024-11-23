@@ -105,3 +105,54 @@ export function pack(fmt: string, ...args: any[]): Uint8Array {
 
   return buffer;
 }
+
+export function unpack(fmt: string, buffer: Uint8Array): any[] {
+  // get view
+  const view = new DataView(buffer.buffer);
+
+  // prepare result
+  const result: any[] = [];
+
+  // read arguments
+  let pos = 0;
+  for (const code of fmt) {
+    switch (code) {
+      case "s": {
+        let end = buffer.indexOf(0, pos);
+        if (end === -1) end = buffer.length;
+        result.push(toString(buffer.slice(pos, end)));
+        pos = end;
+        break;
+      }
+      case "b": {
+        result.push(buffer.slice(pos));
+        pos = buffer.length;
+        break;
+      }
+      case "o": {
+        result.push(buffer[pos]);
+        pos += 1;
+        break;
+      }
+      case "h": {
+        result.push(view.getUint16(pos, true));
+        pos += 2;
+        break;
+      }
+      case "i": {
+        result.push(view.getUint32(pos, true));
+        pos += 4;
+        break;
+      }
+      case "q": {
+        result.push(view.getBigUint64(pos, true));
+        pos += 8;
+        break;
+      }
+      default:
+        throw new Error(`Invalid format code: ${code}`);
+    }
+  }
+
+  return result;
+}
