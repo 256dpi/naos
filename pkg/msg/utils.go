@@ -6,6 +6,18 @@ import (
 	"encoding/binary"
 )
 
+func b2u(b bool) uint8 {
+	return b2v(b, uint8(1), uint8(0))
+}
+
+func b2v[T any](b bool, t, f T) T {
+	if b {
+		return t
+	} else {
+		return f
+	}
+}
+
 func random(n int) []byte {
 	handle := make([]byte, n)
 	_, err := rand.Read(handle)
