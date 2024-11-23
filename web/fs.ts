@@ -1,34 +1,7 @@
 import { Session } from "./session";
-import { pack, toString } from "./utils";
+import { pack, unpack } from "./utils";
 
-async function receive(
-  s: Session,
-  expectAck: boolean,
-  timeout = 5000
-): Promise<Uint8Array> {
-  // receive reply
-  let [data] = await s.receive(0x3, expectAck, timeout);
-  if (!data) {
-    return null;
-  }
-
-  // handle errors
-  if (data[0] === 0) {
-    throw new Error("posix error: " + data[1]);
-  }
-
-  return data;
-}
-
-async function send(
-  s: Session,
-  data: Uint8Array,
-  awaitAck: boolean,
-  timeout = 5000
-) {
-  // send command
-  await s.send(0x3, data, awaitAck ? timeout : 0);
-}
+export const FSEndpoint = 0x3;
 
 export interface FSInfo {
   name: string;
@@ -37,42 +10,45 @@ export interface FSInfo {
 }
 
 export async function statPath(
-  s: Session,
+  session: Session,
   path: string
 ): Promise<FSInfo | null> {
   // send command
-  await send(s, pack("os", 0, path), false);
+  const cmd = pack("os", 0, path);
+  await send(session, cmd, false);
 
   // await reply
-  const reply = await receive(s, false);
+  const reply = await receive(session, false);
 
   // verify "info" reply
   if (reply.length !== 6 || reply[0] !== 1) {
     throw new Error("invalid message");
   }
 
-  // parse "info" reply
-  const view = new DataView(reply.buffer);
-  const isDir = reply[1] === 1;
-  const size = view.getUint32(2, true);
+  // unpack "info" reply
+  const args = unpack("oi", reply.slice(1));
 
   return {
     name: "",
-    isDir: isDir,
-    size: size,
+    isDir: args[0] === 1,
+    size: args[1],
   };
 }
 
-export async function listPath(s: Session, path: string): Promise<FSInfo[]> {
+export async function listDir(
+  session: Session,
+  dir: string
+): Promise<FSInfo[]> {
   // send command
-  await send(s, pack("os", 1, path), false);
+  const cmd = pack("os", 1, dir);
+  await send(session, cmd, false);
 
   // prepare infos
   const infos = [];
 
   while (true) {
     // await reply
-    const reply = await receive(s, true);
+    const reply = await receive(session, true);
     if (!reply) {
       return infos;
     }
@@ -82,28 +58,25 @@ export async function listPath(s: Session, path: string): Promise<FSInfo[]> {
       throw new Error("invalid message");
     }
 
-    // parse "info" reply
-    const view = new DataView(reply.buffer);
-    const isDir = reply[1] === 1;
-    const size = view.getUint32(2, true);
-    const name = toString(reply.slice(6));
+    // unpack "info" reply
+    const args = unpack("ois", reply.slice(1));
 
     // add info
     infos.push({
-      name: name,
-      isDir: isDir,
-      size: size,
+      name: args[2],
+      isDir: args[0] == 1,
+      size: args[1],
     });
   }
 }
 
 export async function readFile(
-  s: Session,
-  path: string,
+  session: Session,
+  file: string,
   report: (count: number) => void = null
 ): Promise<Uint8Array> {
   // stat file
-  const info = await statPath(s, path);
+  const info = await statPath(session, file);
 
   // prepare data
   const data = new Uint8Array(info.size);
@@ -115,11 +88,17 @@ export async function readFile(
     const length = Math.min(5000, info.size - offset);
 
     // read range
-    let range = await readFileRange(s, path, offset, length, (pos: number) => {
-      if (report) {
-        report(offset + pos);
+    let range = await readFileRange(
+      session,
+      file,
+      offset,
+      length,
+      (pos: number) => {
+        if (report) {
+          report(offset + pos);
+        }
       }
-    });
+    );
 
     // append range
     data.set(range, offset);
@@ -130,17 +109,19 @@ export async function readFile(
 }
 
 export async function readFileRange(
-  s: Session,
-  path: string,
+  session: Session,
+  file: string,
   offset: number,
   length: number,
   report: (count: number) => void = null
 ): Promise<Uint8Array> {
   // send "open" command
-  await send(s, pack("oos", 2, 0, path), true);
+  let cmd = pack("oos", 2, 0, file);
+  await send(session, cmd, true);
 
   // send "read" command
-  await send(s, pack("oii", 3, offset, length), false);
+  cmd = pack("oii", 3, offset, length);
+  await send(session, cmd, false);
 
   // prepare data
   let data = new Uint8Array(length);
@@ -150,7 +131,7 @@ export async function readFileRange(
 
   while (true) {
     // await reply
-    let reply = await receive(s, true);
+    let reply = await receive(session, true);
     if (!reply) {
       break;
     }
@@ -161,8 +142,7 @@ export async function readFileRange(
     }
 
     // get offset
-    let view = new DataView(reply.buffer);
-    let replyOffset = view.getUint32(1, true);
+    let replyOffset = unpack("i", reply.slice(1))[0];
 
     // verify offset
     if (replyOffset !== offset + count) {
@@ -182,19 +162,21 @@ export async function readFileRange(
   }
 
   // send "close" command
-  await send(s, pack("o", 5), true);
+  cmd = pack("o", 5);
+  await send(session, cmd, true);
 
   return data;
 }
 
 export async function writeFile(
-  s: Session,
-  path: string,
+  session: Session,
+  file: string,
   data: Uint8Array,
   report: (count: number) => void = null
 ) {
   // send "create" command (create & truncate)
-  await send(s, pack("oos", 2, (1 << 0) | (1 << 2), path), true);
+  let cmd = pack("oos", 2, (1 << 0) | (1 << 2), file);
+  await send(session, cmd, true);
 
   // TODO: Dynamically determine channel MTU?
 
@@ -210,20 +192,14 @@ export async function writeFile(
     let acked = num % 10 === 0;
 
     // prepare "write" command (acked or silent & sequential)
-    let cmd = pack(
-      "ooib",
-      4,
-      acked ? 0 : (1 << 0) | (1 << 1),
-      offset,
-      chunkData
-    );
+    cmd = pack("ooib", 4, acked ? 0 : (1 << 0) | (1 << 1), offset, chunkData);
 
     // send "write" command
-    await send(s, cmd, false);
+    await send(session, cmd, false);
 
     // receive ack or "error" replies
     if (acked) {
-      await receive(s, true);
+      await receive(session, true);
     }
 
     // increment offset
@@ -239,43 +215,69 @@ export async function writeFile(
   }
 
   // send "close" command
-  await send(s, pack("o", 5), true);
+  cmd = pack("o", 5);
+  await send(session, cmd, true);
 }
 
-export async function renamePath(s: Session, from: string, to: string) {
-  // prepare command
+export async function renamePath(session: Session, from: string, to: string) {
+  // send command
   let cmd = pack("osos", 6, from, 0, to);
-
-  // send command
-  await send(s, cmd, false);
+  await send(session, cmd, false);
 
   // await reply
-  await receive(s, true);
+  await receive(session, true);
 }
 
-export async function removePath(s: Session, path: string) {
-  // prepare command
+export async function removePath(session: Session, path: string) {
+  // send command
   let cmd = pack("os", 7, path);
-
-  // send command
-  await send(s, cmd, true);
+  await send(session, cmd, true);
 }
 
-export async function sha256File(s: Session, path: string) {
-  // prepare command
-  let cmd = pack("os", 8, path);
-
+export async function sha256File(session: Session, file: string) {
   // send command
-  await send(s, cmd, false);
+  let cmd = pack("os", 8, file);
+  await send(session, cmd, false);
 
   // await reply
-  let reply = await receive(s, false);
+  let reply = await receive(session, false);
 
   // verify "chunk" reply
   if (reply.byteLength !== 33 || reply[0] !== 3) {
     throw new Error("invalid message");
   }
 
-  // get sum
+  // return hash
   return new Uint8Array(reply.buffer.slice(1));
+}
+
+/* Helpers */
+
+async function receive(
+  session: Session,
+  expectAck: boolean,
+  timeout = 5000
+): Promise<Uint8Array> {
+  // receive reply
+  let [data] = await session.receive(FSEndpoint, expectAck, timeout);
+  if (!data) {
+    return null;
+  }
+
+  // handle errors
+  if (data[0] === 0) {
+    throw new Error("posix error: " + data[1]);
+  }
+
+  return data;
+}
+
+async function send(
+  session: Session,
+  data: Uint8Array,
+  awaitAck: boolean,
+  timeout = 5000
+) {
+  // send command
+  await session.send(FSEndpoint, data, awaitAck ? timeout : 0);
 }

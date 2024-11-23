@@ -182,7 +182,8 @@ func ReadFileRange(s *Session, file string, offset, length uint32, report func(u
 	}
 
 	// send "close" command
-	err = fsSend(s, pack("o", uint8(5)), true, timeout)
+	cmd = pack("o", uint8(5))
+	err = fsSend(s, cmd, true, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -298,6 +299,8 @@ func SHA256File(s *Session, file string, timeout time.Duration) ([]byte, error) 
 	// return hash
 	return reply[1:], nil
 }
+
+/* Helpers */
 
 func fsReceive(s *Session, expectAck bool, timeout time.Duration) ([]byte, error) {
 	// await reply
