@@ -82,41 +82,40 @@ func pack(fmt string, args ...any) []byte {
 	return buffer
 }
 
-func unpack(fmt string, buffer []byte, args ...any) {
+func unpack(fmt string, buffer []byte) []any {
+	// prepare result
+	result := make([]any, 0, len(fmt))
+
 	// read arguments
 	pos := 0
-	for i, code := range fmt {
+	for _, code := range fmt {
 		switch code {
 		case 's':
-			ptr := args[i].(*string)
-			n := bytes.IndexByte(buffer[pos:], 0)
-			if n == -1 {
-				n = len(buffer) - pos
+			length := bytes.IndexByte(buffer[pos:], 0)
+			if length == -1 {
+				length = len(buffer) - pos
 			}
-			*ptr = string(buffer[pos : pos+n])
-			pos += len(*ptr)
+			result = append(result, string(buffer[pos:pos+length]))
+			pos += length
 		case 'b':
-			ptr := args[i].(*[]byte)
-			*ptr = buffer[pos:]
-			pos += len(*ptr)
+			result = append(result, buffer[pos:])
+			pos += len(buffer) - pos
 		case 'o':
-			ptr := args[i].(*byte)
-			*ptr = buffer[pos]
+			result = append(result, buffer[pos])
 			pos++
 		case 'h':
-			ptr := args[i].(*uint16)
-			*ptr = binary.LittleEndian.Uint16(buffer[pos:])
+			result = append(result, binary.LittleEndian.Uint16(buffer[pos:]))
 			pos += 2
 		case 'i':
-			ptr := args[i].(*uint32)
-			*ptr = binary.LittleEndian.Uint32(buffer[pos:])
+			result = append(result, binary.LittleEndian.Uint32(buffer[pos:]))
 			pos += 4
 		case 'q':
-			ptr := args[i].(*uint64)
-			*ptr = binary.LittleEndian.Uint64(buffer[pos:])
+			result = append(result, binary.LittleEndian.Uint64(buffer[pos:]))
 			pos += 8
 		default:
 			panic("invalid format")
 		}
 	}
+
+	return result
 }

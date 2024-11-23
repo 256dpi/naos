@@ -21,19 +21,12 @@ func TestPacking(t *testing.T) {
 		'w', 'o', 'r', 'l', 'd',
 	}, buf)
 
-	var o byte
-	var h uint16
-	var i uint32
-	var q uint64
-	var s string
-	var n byte
-	var b []byte
-	unpack("ohiqsob", buf, &o, &h, &i, &q, &s, &n, &b)
-	assert.Equal(t, byte(1), o)
-	assert.Equal(t, uint16(2), h)
-	assert.Equal(t, uint32(3), i)
-	assert.Equal(t, uint64(4), q)
-	assert.Equal(t, "hello", s)
-	assert.Equal(t, byte(0), n)
-	assert.Equal(t, []byte("world"), b)
+	args := unpack("ohiqsob", buf)
+	assert.Equal(t, byte(1), args[0].(byte))
+	assert.Equal(t, uint16(2), args[1].(uint16))
+	assert.Equal(t, uint32(3), args[2].(uint32))
+	assert.Equal(t, uint64(4), args[3].(uint64))
+	assert.Equal(t, "hello", args[4].(string))
+	assert.Equal(t, byte(0), args[5].(byte))
+	assert.Equal(t, []byte("world"), args[6].([]byte))
 }

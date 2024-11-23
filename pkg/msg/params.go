@@ -204,16 +204,13 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 		}
 
 		// unpack reply
-		var ref uint8
-		var age uint64
-		var value []byte
-		unpack("oqb", reply, &ref, &age, &value)
+		args := unpack("oqb", reply)
 
 		// append info
 		list = append(list, ParamUpdate{
-			Ref:   ref,
-			Age:   age,
-			Value: value,
+			Ref:   args[0].(uint8),
+			Age:   args[1].(uint64),
+			Value: args[2].([]byte),
 		})
 	}
 

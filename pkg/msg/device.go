@@ -55,10 +55,13 @@ func Read(q Queue, timeout time.Duration) (Message, error) {
 	}
 
 	// unpack message
-	var msg Message
-	unpack("hob", data[1:], &msg.Session, &msg.Endpoint, &msg.Data)
+	args := unpack("hob", data[1:])
 
-	return msg, nil
+	return Message{
+		Session:  args[0].(uint16),
+		Endpoint: args[1].(uint8),
+		Data:     args[2].([]byte),
+	}, nil
 }
 
 // Write writes a message to the channel.
