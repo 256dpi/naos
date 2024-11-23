@@ -23,14 +23,14 @@ public struct NAOSMessage {
 			throw NAOSSessionError.invalidMessage
 		}
 
-		// read session ID
-		let sid = readUint16(data: Data(data[1...2]))
-
-		// read endpoint ID
-		let eid = data[3]
+		// unpack message
+		let args = unpack(format: "hob", buffer: data, start: 1)
+		let sid = args[0] as! UInt16
+		let eid = args[1] as! UInt8
+		let data = args[2] as! Data
 
 		// prepare message
-		let msg = NAOSMessage(session: sid, endpoint: eid, data: Data(data[4...]))
+		let msg = NAOSMessage(session: sid, endpoint: eid, data: data)
 
 		return msg
 	}

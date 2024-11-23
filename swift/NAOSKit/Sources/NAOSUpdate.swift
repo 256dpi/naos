@@ -6,16 +6,13 @@
 import Foundation
 
 /// The update endpoint number.
-public let NAOSUpdateEndpoint: UInt8 = 0x02
+public let NAOSUpdateEndpoint: UInt8 = 0x2
 
 public class NAOSUpdate {
 	/// Perform a firmware update.
 	public static func run(session: NAOSSession, image: Data, report: ((Int) -> Void)?, timeout: TimeInterval = 30) async throws {
-		// prepare "begin" command
-		var cmd = Data([0])
-		cmd.append(writeUint32(value: UInt32(image.count)))
-
 		// write "begin" command
+		var cmd = pack(fmt: "oi", args: [UInt8(0), UInt32(image.count)])
 		try await session.send(endpoint: NAOSUpdateEndpoint, data: cmd, ackTimeout: 0)
 
 		// receive value
@@ -39,11 +36,8 @@ public class NAOSUpdate {
 			// determine acked
 			let acked = num % 10 == 0
 
-			// prepare "write" command
-			cmd = Data([1, acked ? 1 : 0])
-			cmd.append(chunkData)
-
 			// send "write" command
+			cmd = pack(fmt: "oob", args: [UInt8(1), UInt8(acked ? 1 : 0), chunkData])
 			try await session.send(endpoint: NAOSUpdateEndpoint, data: cmd, ackTimeout: acked ? timeout : 0)
 
 			// increment offset
@@ -58,10 +52,8 @@ public class NAOSUpdate {
 			num += 1
 		}
 
-		// prepare "finish" command
-		cmd = Data([3])
-
 		// write "finish" command
+		cmd = pack(fmt: "o", args: [UInt8(3)])
 		try await session.send(endpoint: NAOSUpdateEndpoint, data: cmd, ackTimeout: 0)
 
 		// receive value

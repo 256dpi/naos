@@ -6,7 +6,7 @@
 import Foundation
 
 /// The parameter endpoint number.
-public let NAOSParamsEndpoint: UInt8 = 0x01
+public let NAOSParamsEndpoint: UInt8 = 0x1
 
 /// The available parameter types.
 public enum NAOSParamType: UInt8 {
@@ -146,12 +146,8 @@ public class NAOSParams {
 			}
 		}
 
-		// prepare command
-		var cmd = Data([5])
-		cmd.append(writeUint64(value: map))
-		cmd.append(writeUint64(value: since))
-
 		// send command
+		let cmd = pack(fmt: "oqq", args: [UInt8(5), map, since])
 		try await session.send(endpoint: NAOSParamsEndpoint, data: cmd, ackTimeout: 0)
 
 		// prepare list
@@ -171,10 +167,11 @@ public class NAOSParams {
 				throw NAOSSessionError.invalidMessage
 			}
 
-			// parse reply
-			let ref = reply[0]
-			let age = readUint64(data: Data(reply[1 ... 8]))
-			let value = Data(reply[9...])
+			// unpack reply
+			let args = unpack(format: "oqb", buffer: reply)
+			let ref = args[0] as! UInt8
+			let age = args[1] as! UInt64
+			let value = args[2] as! Data
 
 			// append info
 			list.append(NAOSParamUpdate(ref: ref, age: age, value: value))
