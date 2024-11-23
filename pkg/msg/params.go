@@ -8,7 +8,7 @@ import (
 )
 
 // The ParamsEndpoint number.
-const ParamsEndpoint = 0x01
+const ParamsEndpoint = 0x1
 
 // ParamType represents a parameter type.
 type ParamType uint8

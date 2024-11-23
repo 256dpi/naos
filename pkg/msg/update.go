@@ -6,7 +6,7 @@ import (
 )
 
 // The UpdateEndpoint number.
-const UpdateEndpoint = 0x02
+const UpdateEndpoint = 0x2
 
 // Update performs a firmware update.
 func Update(s *Session, image []byte, report func(int), timeout time.Duration) error {

@@ -40,7 +40,7 @@ func OpenSession(channel Channel) (*Session, error) {
 	handle := random(16)
 
 	// begin session
-	err := Write(channel, Message{Session: 0, Endpoint: 0x00, Data: handle})
+	err := Write(channel, Message{Session: 0, Endpoint: 0x0, Data: handle})
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func OpenSession(channel Channel) (*Session, error) {
 		if err != nil {
 			return nil, err
 		}
-		if msg.Endpoint == 0x00 && bytes.Equal(msg.Data, handle) {
+		if msg.Endpoint == 0x0 && bytes.Equal(msg.Data, handle) {
 			sid = msg.Session
 			break
 		}
