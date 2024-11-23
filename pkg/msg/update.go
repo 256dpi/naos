@@ -11,7 +11,7 @@ const UpdateEndpoint = 0x2
 // Update performs a firmware update.
 func Update(s *Session, image []byte, report func(int), timeout time.Duration) error {
 	// prepare "begin" command
-	cmd := pack("oi", 0, len(image))
+	cmd := pack("oi", uint8(0), uint32(len(image)))
 
 	// write "begin" command
 	err := s.Send(UpdateEndpoint, cmd, 0)
@@ -44,7 +44,7 @@ func Update(s *Session, image []byte, report func(int), timeout time.Duration) e
 		acked := num%10 == 0
 
 		// prepare "write" command
-		cmd = pack("ob", 1, b2u(acked), chunkData)
+		cmd = pack("oob", uint8(1), b2u(acked), chunkData)
 
 		// send "write" command
 		err = s.Send(UpdateEndpoint, cmd, b2v(acked, timeout, 0))
@@ -65,7 +65,7 @@ func Update(s *Session, image []byte, report func(int), timeout time.Duration) e
 	}
 
 	// prepare "finish" command
-	cmd = pack("o", 3)
+	cmd = pack("o", uint8(3))
 
 	// write "finish" command
 	err = s.Send(UpdateEndpoint, cmd, 0)
