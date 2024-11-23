@@ -7,7 +7,7 @@ import (
 )
 
 // The FSEndpoint number.
-const FSEndpoint = 0x03
+const FSEndpoint = 0x3
 
 // FSInfo describes a file system entry.
 type FSInfo struct {
@@ -19,7 +19,8 @@ type FSInfo struct {
 // StatPath retrieves information about a file system entry.
 func StatPath(s *Session, path string, timeout time.Duration) (*FSInfo, error) {
 	// send command
-	err := fsSend(s, pack("os", uint8(0), path), false, timeout)
+	cmd := pack("os", uint8(0), path)
+	err := fsSend(s, cmd, false, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -48,9 +49,10 @@ func StatPath(s *Session, path string, timeout time.Duration) (*FSInfo, error) {
 }
 
 // ListDir retrieves a list of file system entries in a directory.
-func ListDir(s *Session, path string, timeout time.Duration) ([]FSInfo, error) {
+func ListDir(s *Session, dir string, timeout time.Duration) ([]FSInfo, error) {
 	// send command
-	err := fsSend(s, pack("os", uint8(1), path), false, timeout)
+	cmd := pack("os", uint8(1), dir)
+	err := fsSend(s, cmd, false, timeout)
 	if err != nil {
 		return nil, nil
 	}
@@ -88,9 +90,9 @@ func ListDir(s *Session, path string, timeout time.Duration) ([]FSInfo, error) {
 }
 
 // ReadFile reads the contents of a file.
-func ReadFile(s *Session, path string, report func(uint32), timeout time.Duration) ([]byte, error) {
+func ReadFile(s *Session, file string, report func(uint32), timeout time.Duration) ([]byte, error) {
 	// stat file
-	info, err := StatPath(s, path, timeout)
+	info, err := StatPath(s, file, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +107,7 @@ func ReadFile(s *Session, path string, report func(uint32), timeout time.Duratio
 		length := min(5000, info.Size-offset)
 
 		// read range
-		rng, err := ReadFileRange(s, path, offset, length, func(pos uint32) {
+		rng, err := ReadFileRange(s, file, offset, length, func(pos uint32) {
 			if report != nil {
 				report(offset + pos)
 			}
@@ -123,15 +125,17 @@ func ReadFile(s *Session, path string, report func(uint32), timeout time.Duratio
 }
 
 // ReadFileRange reads a range of bytes from a file.
-func ReadFileRange(s *Session, path string, offset, length uint32, report func(uint32), timeout time.Duration) ([]byte, error) {
+func ReadFileRange(s *Session, file string, offset, length uint32, report func(uint32), timeout time.Duration) ([]byte, error) {
 	// send "open" command
-	err := fsSend(s, pack("oos", uint8(2), uint8(0), path), true, timeout)
+	cmd := pack("oos", uint8(2), uint8(0), file)
+	err := fsSend(s, cmd, true, timeout)
 	if err != nil {
 		return nil, err
 	}
 
 	// send "read" command
-	err = fsSend(s, pack("oii", uint8(3), offset, length), false, timeout)
+	cmd = pack("oii", uint8(3), offset, length)
+	err = fsSend(s, cmd, false, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -187,9 +191,10 @@ func ReadFileRange(s *Session, path string, offset, length uint32, report func(u
 }
 
 // WriteFile writes data to a file.
-func WriteFile(s *Session, path string, data []byte, report func(uint32), timeout time.Duration) error {
+func WriteFile(s *Session, file string, data []byte, report func(uint32), timeout time.Duration) error {
 	// send "create" command
-	err := fsSend(s, pack("oos", uint8(2), uint8((1<<0)|(1<<2)), path), true, timeout)
+	cmd := pack("oos", uint8(2), uint8((1<<0)|(1<<2)), file)
+	err := fsSend(s, cmd, true, timeout)
 	if err != nil {
 		return err
 	}
@@ -237,7 +242,8 @@ func WriteFile(s *Session, path string, data []byte, report func(uint32), timeou
 	}
 
 	// send "close" command
-	err = fsSend(s, pack("o", uint8(5)), true, timeout)
+	cmd = pack("o", uint8(5))
+	err = fsSend(s, cmd, true, timeout)
 	if err != nil {
 		return err
 	}
@@ -248,14 +254,9 @@ func WriteFile(s *Session, path string, data []byte, report func(uint32), timeou
 // RenamePath renames a file system entry.
 func RenamePath(s *Session, from, to string, timeout time.Duration) error {
 	// send command
-	err := fsSend(s, pack("osos", uint8(6), from, uint8(0), to), false, timeout)
+	cmd := pack("osos", uint8(6), from, uint8(0), to)
+	err := fsSend(s, cmd, true, timeout)
 	if err != nil {
-		return err
-	}
-
-	// await reply
-	_, err = fsReceive(s, true, timeout)
-	if err != nil && !errors.Is(err, Ack) {
 		return err
 	}
 
@@ -265,7 +266,8 @@ func RenamePath(s *Session, from, to string, timeout time.Duration) error {
 // RemovePath removes a file system entry.
 func RemovePath(s *Session, path string, timeout time.Duration) error {
 	// send command
-	err := fsSend(s, pack("os", uint8(7), path), true, timeout)
+	cmd := pack("os", uint8(7), path)
+	err := fsSend(s, cmd, true, timeout)
 	if err != nil {
 		return err
 	}
@@ -274,9 +276,10 @@ func RemovePath(s *Session, path string, timeout time.Duration) error {
 }
 
 // SHA256File retrieves the SHA-256 hash of a file.
-func SHA256File(s *Session, path string, timeout time.Duration) ([]byte, error) {
+func SHA256File(s *Session, file string, timeout time.Duration) ([]byte, error) {
 	// send command
-	err := fsSend(s, pack("os", uint8(8), path), false, timeout)
+	cmd := pack("os", uint8(8), file)
+	err := fsSend(s, cmd, false, timeout)
 	if err != nil {
 		return nil, err
 	}
