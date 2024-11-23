@@ -8,35 +8,22 @@ import (
 )
 
 type managedDevice struct {
-	dev msg.Device
-	ch  msg.Channel
-	ps  *msg.Session
-	mu  sync.Mutex
-
+	Device *msg.ManagedDevice
 	Params map[string]msg.ParamInfo
 	Values map[uint8][]byte
+	mutex  sync.Mutex
 }
 
 func newManagedDevice(dev msg.Device) *managedDevice {
-	// create active device
-	ad := &managedDevice{
-		dev: dev,
+	return &managedDevice{
+		Device: msg.NewManagedDevice(dev),
 	}
-
-	// run task
-	go ad.run()
-
-	return ad
-}
-
-func (d *managedDevice) Device() msg.Device {
-	return d.dev
 }
 
 func (d *managedDevice) Get(name string) []byte {
 	// acquire mutex
-	d.mu.Lock()
-	defer d.mu.Unlock()
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
 
 	// get param
 	param, ok := d.Params[name]
@@ -63,58 +50,19 @@ func (d *managedDevice) GetString(name string) string {
 	return string(value)
 }
 
-func (d *managedDevice) Active() bool {
-	// acquire mutex
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	return d.ch != nil
-}
-
-func (d *managedDevice) Activate() error {
-	// acquire mutex
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	// check channel
-	if d.ch != nil {
-		return nil
-	}
-
-	// open channel
-	ch, err := d.dev.Open()
-	if err != nil {
-		return err
-	}
-
-	// set channel
-	d.ch = ch
-
-	return nil
-}
-
 // Refresh refreshes the device.
 func (d *managedDevice) Refresh() error {
 	// acquire mutex
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	// check channel
-	if d.ch == nil {
-		return nil
-	}
-
-	// open session
-	ps, err := msg.OpenSession(d.ch)
-	if err != nil {
-		return err
-	}
-
-	// ensure end
-	defer ps.End(time.Second)
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
 
 	// list params
-	params, err := msg.ListParams(ps, time.Second)
+	var params []msg.ParamInfo
+	err := d.Device.UseSession(func(s *msg.Session) error {
+		var err error
+		params, err = msg.ListParams(s, time.Second)
+		return err
+	})
 	if err != nil {
 		return err
 	}
@@ -125,54 +73,22 @@ func (d *managedDevice) Refresh() error {
 		d.Params[param.Name] = param
 	}
 
-	// read values
+	// collect params
+	var updates []msg.ParamUpdate
+	err = d.Device.UseSession(func(s *msg.Session) error {
+		var err error
+		updates, err = msg.CollectParams(s, nil, 0, time.Second)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+
+	// set values
 	d.Values = map[uint8][]byte{}
-	for _, info := range d.Params {
-		if info.Type == msg.ParamTypeAction {
-			continue
-		}
-		value, err := msg.ReadParam(ps, info.Ref, time.Second)
-		if err != nil {
-			return err
-		}
-		d.Values[info.Ref] = value
+	for _, update := range updates {
+		d.Values[update.Ref] = update.Value
 	}
 
 	return nil
-}
-
-func (d *managedDevice) Deactivate() {
-	// acquire mutex
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	// check channel
-	if d.ch == nil {
-		return
-	}
-
-	// close channel
-	d.ch.Close()
-	d.ch = nil
-}
-
-func (d *managedDevice) run() {
-	for {
-		// run check
-		d.check()
-
-		// sleep
-		time.Sleep(time.Second)
-	}
-}
-
-func (d *managedDevice) check() {
-	// acquire mutex
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	// return if inactive
-	if d.ch == nil {
-		return
-	}
 }

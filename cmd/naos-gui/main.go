@@ -66,26 +66,26 @@ func loop() {
 			giu.TableColumn("Actions"),
 		).Rows(
 			lo.Map(devices, func(device *managedDevice, _ int) *giu.TableRowWidget {
-				active := device.Active()
+				active := device.Device.Active()
 				return giu.TableRow(
 					// giu.Selectable(device.ID()).Selected(selected).OnClick(func() {
 					// 	selected = !selected
 					// }).Flags(giu.SelectableFlagsSpanAllColumns),
-					giu.Label(device.Device().ID()),
+					giu.Label(device.Device.Device().ID()),
 					giu.Checkbox("", &active).OnChange(func() {
 						if active {
-							err := device.Activate()
+							err := device.Device.Activate()
 							if err != nil {
 								fmt.Println(err)
 							}
 						} else {
-							device.Deactivate()
+							device.Device.Deactivate()
 						}
 					}),
 					giu.Label(device.GetString("device-name")),
 					giu.Label(device.GetString("device-type")),
 					giu.Label(device.GetString("device-version")),
-					giu.Button("Refresh").Disabled(!device.Active()).OnClick(func() {
+					giu.Button("Refresh").Disabled(!device.Device.Active()).OnClick(func() {
 						err := device.Refresh()
 						if err != nil {
 							fmt.Println(err)
