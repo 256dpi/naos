@@ -47,7 +47,7 @@ export class Session {
     await write(this.ch, new Message(this.id, 0xfe, null));
 
     // read reply
-    const msg = await read(this.qu, timeout);
+    const msg = await this.read(timeout);
 
     // verify reply
     if (msg.endpoint !== 0xfe || msg.size() !== 1) {
@@ -62,7 +62,7 @@ export class Session {
     await write(this.ch, new Message(this.id, endpoint, null));
 
     // read reply
-    const msg = await read(this.qu, timeout);
+    const msg = await this.read(timeout);
 
     // verify message
     if (msg.endpoint !== 0xfe || msg.data.byteLength !== 1) {
@@ -78,7 +78,7 @@ export class Session {
     timeout: number
   ): Promise<[Uint8Array | null, boolean]> {
     // await message
-    const msg = await read(this.qu, timeout);
+    const msg = await this.read(timeout);
 
     // handle ack
     if (msg.endpoint === 0xfe) {
@@ -117,7 +117,7 @@ export class Session {
     }
 
     // await reply
-    const msg = await read(this.qu, ackTimeout);
+    const msg = await this.read(ackTimeout);
 
     // check reply
     if (msg.data.byteLength !== 1 || msg.endpoint !== 0xfe) {
@@ -167,7 +167,7 @@ export class Session {
     await write(this.ch, new Message(this.id, 0xff, null));
 
     // read reply
-    const msg = await read(this.qu, timeout);
+    const msg = await this.read(timeout);
 
     // verify reply if available
     if (msg && (msg.endpoint !== 0xff || msg.size() > 0)) {
@@ -176,6 +176,15 @@ export class Session {
 
     // unsubscribe from channel
     this.ch.unsubscribe(this.qu);
+  }
+
+  async read(timeout: number): Promise<Message> {
+    for (;;) {
+      const msg = await read(this.qu, timeout);
+      if (msg.session === this.id) {
+        return msg;
+      }
+    }
   }
 }
 
