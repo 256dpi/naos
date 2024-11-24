@@ -86,7 +86,7 @@ public class NAOSManagedDevice: NSObject {
 	private var mutex = AsyncSemaphore(value: 1)
 	private var session: NAOSSession?
 
-	var peripheral: NAOSBLEDevice
+	var device: NAOSDevice
 	var channel: NAOSChannel? = nil
 	var updatable: Set<NAOSParameter> = Set()
 	var maxAge: UInt64 = 0
@@ -98,15 +98,15 @@ public class NAOSManagedDevice: NSObject {
 	public var parameters: [NAOSParameter: String] = [:]
 	private var password: String = ""
 
-	init(peripheral: NAOSBLEDevice) {
+	init(device: NAOSDevice) {
 		// initialize instance
-		self.peripheral = peripheral
+		self.device = device
 
 		// finish init
 		super.init()
 
 		// initialize device name and type
-		parameters[.deviceName] = peripheral.name()
+		parameters[.deviceName] = device.name()
 		parameters[.deviceType] = "unknown"
 
 		// run updater
@@ -180,7 +180,7 @@ public class NAOSManagedDevice: NSObject {
 		}
 
 		// open channel
-		channel = try await peripheral.open()
+		channel = try await device.open()
 
 		// set flag
 		connected = true

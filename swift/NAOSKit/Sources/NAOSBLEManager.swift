@@ -122,11 +122,9 @@ public class NAOSBLEManager: NSObject {
 				continue
 			}
 
-			// prepare peripheral
-			let peripheral = NAOSBLEDevice(manager: centralManager, peripheral: scanData.peripheral)
-
 			// otherwise, create new device
-			let device = NAOSManagedDevice(peripheral: peripheral)
+			let bleDevice = NAOSBLEDevice(manager: centralManager, peripheral: scanData.peripheral)
+			let device = NAOSManagedDevice(device: bleDevice)
 
 			// add device
 			queue.sync {
@@ -154,7 +152,8 @@ public class NAOSBLEManager: NSObject {
 
 		// find device
 		for device in list! {
-			if device.peripheral.identifier() == peripheral.identifier {
+			let bleDevice = device.device as! NAOSBLEDevice
+			if bleDevice.peripheral.identifier == peripheral.identifier {
 				return device
 			}
 		}

@@ -26,7 +26,7 @@ public enum NAOSBLEError: LocalizedError {
 	}
 }
 
-class NAOSBLEDevice {
+class NAOSBLEDevice: NAOSDevice {
 	let manager: CentralManager
 	let peripheral: Peripheral
 	var service: Service?
@@ -36,16 +36,16 @@ class NAOSBLEDevice {
 		self.manager = manager
 		self.peripheral = peripheral
 	}
+	
+	public func id() -> String {
+		return "ble/" + peripheral.identifier.uuidString
+	}
 
-	func name() -> String {
+	public func name() -> String {
 		peripheral.name ?? "Unnamed"
 	}
 
-	func identifier() -> UUID {
-		return peripheral.identifier
-	}
-
-	func open() async throws -> NAOSChannel {
+	public func open() async throws -> NAOSChannel {
 		// connect
 		try await manager.connect(peripheral)
 
