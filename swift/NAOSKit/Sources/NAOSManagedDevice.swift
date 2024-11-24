@@ -183,9 +183,6 @@ public class NAOSManagedDevice: NSObject {
 		// connect
 		try await peripheral.connect()
 
-		// discover
-		try await peripheral.discover()
-
 		// set flag
 		connected = true
 

@@ -108,7 +108,7 @@ public class NAOSBLEManager: NSObject {
 		try await centralManager.waitUntilReady()
 
 		// create scan stream
-		let stream = try await centralManager.scanForPeripherals(withServices: [NAOSBLEService])
+		let stream = try await centralManager.scanForPeripherals(withServices: [bleService])
 
 		// handle discovered peripherals
 		for await scanData in stream {

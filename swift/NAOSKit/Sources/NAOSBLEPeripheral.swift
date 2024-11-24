@@ -8,10 +8,10 @@ import Combine
 import CoreBluetooth
 import Foundation
 
-let NAOSBLEService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
-let NAOSBLECharacteristic = CBUUID(string: "0360744B-A61B-00AD-C945-37f3634130F3")
+let bleService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
+let bleCharacteristic = CBUUID(string: "0360744B-A61B-00AD-C945-37f3634130F3")
 
-/// The NAOS specific errors.
+/// The NAOS BLE specific errors.
 public enum NAOSBLEError: LocalizedError {
 	case serviceNotFound
 	case characteristicNotFound
@@ -19,9 +19,9 @@ public enum NAOSBLEError: LocalizedError {
 	public var errorDescription: String? {
 		switch self {
 		case .serviceNotFound:
-			return "Device service not found."
+			return "BLE service not found."
 		case .characteristicNotFound:
-			return "Device characteristic not found."
+			return "BLE characteristic not found."
 		}
 	}
 }
@@ -48,16 +48,14 @@ class NAOSBLEPeripheral {
 
 	func connect() async throws {
 		try await man.connect(raw)
-	}
-
-	func discover() async throws {
+	
 		try await withTimeout(seconds: 10) {
 			// discover service
-			try await self.raw.discoverServices([NAOSBLEService])
+			try await self.raw.discoverServices([bleService])
 
 			// find service
 			for s in self.raw.discoveredServices ?? [] {
-				if s.uuid == NAOSBLEService {
+				if s.uuid == bleService {
 					self.svc = s
 				}
 			}
@@ -70,7 +68,7 @@ class NAOSBLEPeripheral {
 
 			// find characteristic
 			for c in self.svc!.discoveredCharacteristics ?? [] {
-				if c.uuid == NAOSBLECharacteristic {
+				if c.uuid == bleCharacteristic {
 					self.char = c
 				}
 			}
@@ -84,7 +82,7 @@ class NAOSBLEPeripheral {
 	}
 	
 	func channel() async -> NAOSChannel {
-		return await NAOSBLEChannel.create(peripheral: self)
+		return await bleChannel.create(peripheral: self)
 	}
 
 	func write(data: Data) async throws {
@@ -104,7 +102,7 @@ class NAOSBLEPeripheral {
 		// create subscription
 		let subscription = raw.characteristicValueUpdatedPublisher.sink { rawChar in
 			// check characteristic
-			if rawChar.uuid != NAOSBLECharacteristic {
+			if rawChar.uuid != bleCharacteristic {
 				return
 			}
 
@@ -136,17 +134,17 @@ class NAOSBLEPeripheral {
 	}
 }
 
-public class NAOSBLEChannel: NAOSChannel {
+class bleChannel: NAOSChannel {
 	private var peripheral: NAOSBLEPeripheral
 	private var subscription: AnyCancellable
 	private var queues: [NAOSQueue] = []
 	
-	static func create(peripheral: NAOSBLEPeripheral) async -> NAOSBLEChannel {
+	static func create(peripheral: NAOSBLEPeripheral) async -> bleChannel {
 		// open stream
 		let (stream, subscription) = await peripheral.stream()
 		
 		// create channel
-		let ch = NAOSBLEChannel(peripheral: peripheral, subscription: subscription)
+		let ch = bleChannel(peripheral: peripheral, subscription: subscription)
 		
 		// run forwarder
 		Task {
