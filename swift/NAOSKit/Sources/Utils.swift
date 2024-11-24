@@ -102,7 +102,7 @@ func randomString(length: Int) -> String {
 	return String((0..<length).map { _ in letters.randomElement()! })
 }
 
-class Channel<T> {
+public class Channel<T> {
 	private var queue = DispatchQueue(label: "Channel")
 	private var buffer: [T] = []
 	private var semaphore = AsyncSemaphore(value: 0)
@@ -155,41 +155,41 @@ func pack(fmt: String, args: [Any]) -> Data {
 	return buffer
 }
 
-func unpack(format: String, buffer: Data, start: Int = 0) -> [Any] {
+func unpack(fmt: String, data: Data, start: Int = 0) -> [Any] {
 	var offset = start
 	var results: [Any] = []
 
-	for code in format {
+	for code in fmt {
 		switch code {
 		case "s":
-			if let end = buffer[offset...].firstIndex(of: 0) {
-				let stringData = buffer[offset..<end]
+			if let end = data[offset...].firstIndex(of: 0) {
+				let stringData = data[offset..<end]
 				let value = String(data: stringData, encoding: .utf8) ?? ""
 				results.append(value)
 				offset = end + 1
 			} else {
-				let stringData = buffer[offset...]
+				let stringData = data[offset...]
 				let value = String(data: stringData, encoding: .utf8) ?? ""
 				results.append(value)
 				offset += stringData.count
 			}
 		case "b":
-			let value = Data(buffer[offset...])
+			let value = Data(data[offset...])
 			results.append(value)
 			offset += value.count
 		case "o":
-			results.append(buffer[offset])
+			results.append(data[offset])
 			offset += 1
 		case "h":
-			let value = readUint16(data: Data(buffer[offset..<offset + 2]))
+			let value = readUint16(data: Data(data[offset..<offset + 2]))
 			results.append(value)
 			offset += 2
 		case "i":
-			let value = readUint32(data: Data(buffer[offset..<offset + 4]))
+			let value = readUint32(data: Data(data[offset..<offset + 4]))
 			results.append(value)
 			offset += 4
 		case "q":
-			let value = readUint64(data: Data(buffer[offset..<offset + 8]))
+			let value = readUint64(data: Data(data[offset..<offset + 8]))
 			results.append(value)
 			offset += 8
 		default:

@@ -24,7 +24,7 @@ public struct NAOSMessage {
 		}
 
 		// unpack message
-		let args = unpack(format: "hob", buffer: data, start: 1)
+		let args = unpack(fmt: "hob", data: data, start: 1)
 		let sid = args[0] as! UInt16
 		let eid = args[1] as! UInt8
 		let data = args[2] as! Data

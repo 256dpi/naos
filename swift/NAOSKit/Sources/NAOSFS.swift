@@ -32,7 +32,7 @@ public class NAOSFS {
 		}
 
 		// unpack "info" reply
-		let args = unpack(format: "oi", buffer: reply, start: 1)
+		let args = unpack(fmt: "oi", data: reply, start: 1)
 		let isDir = args[0] as! UInt8 == 1
 		let size = args[1] as! UInt32
 
@@ -60,7 +60,7 @@ public class NAOSFS {
 			}
 
 			// unpack "info" reply
-			let args = unpack(format: "ois", buffer: reply, start: 1)
+			let args = unpack(fmt: "ois", data: reply, start: 1)
 			let isDir = args[0] as! UInt8 == 1
 			let size = args[1] as! UInt32
 			let name = args[2] as! String
@@ -125,7 +125,7 @@ public class NAOSFS {
 			}
 
 			// unpack offset
-			let args = unpack(format: "i", buffer: reply, start: 1)
+			let args = unpack(fmt: "i", data: reply, start: 1)
 			let replyOffset = args[0] as! UInt32
 
 			// verify offset

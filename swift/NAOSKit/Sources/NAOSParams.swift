@@ -168,7 +168,7 @@ public class NAOSParams {
 			}
 
 			// unpack reply
-			let args = unpack(format: "oqb", buffer: reply)
+			let args = unpack(fmt: "oqb", data: reply)
 			let ref = args[0] as! UInt8
 			let age = args[1] as! UInt64
 			let value = args[2] as! Data
