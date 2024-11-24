@@ -15,7 +15,7 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/manolofdez/AsyncBluetooth", revision: "4.0.0"),
-		.package(url: "https://github.com/groue/Semaphore", from: "0.0.8"),
+		.package(url: "https://github.com/groue/Semaphore", from: "0.1.0"),
 	],
 	targets: [
 		.target(
