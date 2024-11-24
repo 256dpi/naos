@@ -9,7 +9,7 @@ import NAOSKit
 class UnlockViewController: NSViewController {
 	@IBOutlet var passwordField: NSSecureTextField!
 
-	internal var device: NAOSDevice!
+	internal var device: NAOSManagedDevice!
 	internal var swc: SettingsWindowController!
 
 	@IBAction

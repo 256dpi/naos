@@ -6,8 +6,8 @@
 import Cocoa
 import NAOSKit
 
-class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDeviceDelegate {
-	private var device: NAOSDevice!
+class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManagedDeviceDelegate {
+	private var device: NAOSManagedDevice!
 	private var manager: BluetoothManager!
 	private var lvc: LoadingViewController!
 	private var uvc: UnlockViewController?
@@ -20,7 +20,7 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 		window!.delegate = self
 	}
 
-	func configure(device: NAOSDevice, manager: BluetoothManager) {
+	func configure(device: NAOSManagedDevice, manager: BluetoothManager) {
 		// save device
 		self.device = device
 		device.delegate = self
@@ -83,16 +83,16 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSDevice
 		svc!.refresh(self)
 	}
 
-	// NAOSDeviceDelegate
+	// NAOSManagedDeviceDelegate
 
-	func naosDeviceDidUpdate(device _: NAOSDevice, parameter: NAOSParameter) {
+	func naosDeviceDidUpdate(device _: NAOSManagedDevice, parameter: NAOSParameter) {
 		// forward parameter update
 		if let svc = svc {
 			svc.didUpdateParameter(parameter: parameter)
 		}
 	}
 
-	func naosDeviceDidDisconnect(device _: NAOSDevice, error _: Error) {
+	func naosDeviceDidDisconnect(device _: NAOSManagedDevice, error _: Error) {
 		// show connecting view
 		contentViewController = lvc
 		svc = nil

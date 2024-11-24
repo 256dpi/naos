@@ -13,8 +13,8 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 	@IBOutlet private var devicesMenu: NSMenu!
 
 	private var manager: NAOSManager!
-	private var devices: [NAOSDevice: NSMenuItem] = [:]
-	private var controllers: [NAOSDevice: SettingsWindowController] = [:]
+	private var devices: [NAOSManagedDevice: NSMenuItem] = [:]
+	private var controllers: [NAOSManagedDevice: SettingsWindowController] = [:]
 
 	override init() {
 		// call superclass
@@ -26,7 +26,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 
 	@objc func open(_ menuItem: NSMenuItem) {
 		// get associated device
-		let device = menuItem.representedObject as! NAOSDevice
+		let device = menuItem.representedObject as! NAOSManagedDevice
 
 		// check if a controller already exists
 		for (d, wc) in controllers {
@@ -80,7 +80,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 
 	// NAOSManagerDelegate
 
-	func naosManagerDidDiscoverDevice(manager _: NAOSManager, device: NAOSDevice) {
+	func naosManagerDidDiscoverDevice(manager _: NAOSManager, device: NAOSManagedDevice) {
 		// add menu item for new device
 		let item = NSMenuItem()
 		item.title = device.title()
@@ -100,7 +100,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		}
 	}
 
-	func naosManagerDidUpdateDevice(manager _: NAOSManager, device: NAOSDevice) {
+	func naosManagerDidUpdateDevice(manager _: NAOSManager, device: NAOSManagedDevice) {
 		// update menu item title
 		devices[device]?.title = device.title()
 

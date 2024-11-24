@@ -12,7 +12,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 	@IBOutlet var connectionStatusLabel: NSTextField!
 	@IBOutlet var parameterTableView: NSTableView!
 
-	internal var device: NAOSDevice!
+	internal var device: NAOSManagedDevice!
 	private var lvc: LoadingViewController?
 
 	@IBAction

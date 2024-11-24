@@ -75,12 +75,12 @@ public struct NAOSProgress {
 }
 
 /// The delegate implemented by objects
-public protocol NAOSDeviceDelegate {
-	func naosDeviceDidUpdate(device: NAOSDevice, parameter: NAOSParameter)
-	func naosDeviceDidDisconnect(device: NAOSDevice, error: Error)
+public protocol NAOSManagedDeviceDelegate {
+	func naosDeviceDidUpdate(device: NAOSManagedDevice, parameter: NAOSParameter)
+	func naosDeviceDidDisconnect(device: NAOSManagedDevice, error: Error)
 }
 
-public class NAOSDevice: NSObject {
+public class NAOSManagedDevice: NSObject {
 	private var manager: NAOSManager
 	private var mutex = AsyncSemaphore(value: 1)
 	private var paramSession: NAOSSession?
@@ -93,7 +93,7 @@ public class NAOSDevice: NSObject {
 	var updatable: Set<NAOSParameter> = Set()
 	var maxAge: UInt64 = 0
 
-	public var delegate: NAOSDeviceDelegate?
+	public var delegate: NAOSManagedDeviceDelegate?
 	public private(set) var connected: Bool = false
 	public private(set) var protected: Bool = false
 	public private(set) var locked: Bool = false

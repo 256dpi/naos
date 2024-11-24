@@ -10,10 +10,10 @@ import CoreBluetooth
 /// The delegate protocol to be implemented to handle NAOSManager events.
 public protocol NAOSManagerDelegate {
 	/// The manager discovered a new device.
-	func naosManagerDidDiscoverDevice(manager: NAOSManager, device: NAOSDevice)
+	func naosManagerDidDiscoverDevice(manager: NAOSManager, device: NAOSManagedDevice)
 
 	/// The settings of a device have been updated because of a read(), write() or refresh() call on a device.
-	func naosManagerDidUpdateDevice(manager: NAOSManager, device: NAOSDevice)
+	func naosManagerDidUpdateDevice(manager: NAOSManager, device: NAOSManagedDevice)
 
 	/// The manager did reset either because of a Bluetooth availability change or a manual reset().
 	func naosManagerDidReset(manager: NAOSManager)
@@ -23,7 +23,7 @@ public protocol NAOSManagerDelegate {
 public class NAOSManager: NSObject {
 	internal var delegate: NAOSManagerDelegate?
 	internal var centralManager: CentralManager!
-	private var devices: [NAOSDevice]
+	private var devices: [NAOSManagedDevice]
 	private var subscription: AnyCancellable?
 	private var queue = DispatchQueue(label: "devices", attributes: .concurrent)
 
@@ -121,7 +121,7 @@ public class NAOSManager: NSObject {
 			let peripheral = NAOSPeripheral(man: centralManager, raw: scanData.peripheral)
 
 			// otherwise, create new device
-			let device = NAOSDevice(peripheral: peripheral, manager: self)
+			let device = NAOSManagedDevice(peripheral: peripheral, manager: self)
 
 			// add device
 			queue.sync {
@@ -138,9 +138,9 @@ public class NAOSManager: NSObject {
 		}
 	}
 
-	// NAOSDevice
+	// NAOSManagedDevice
 
-	internal func didUpdateDevice(device: NAOSDevice) {
+	internal func didUpdateDevice(device: NAOSManagedDevice) {
 		// call callback if available
 		if let d = delegate {
 			DispatchQueue.main.async {
@@ -151,9 +151,9 @@ public class NAOSManager: NSObject {
 
 	// Helpers
 
-	private func findDevice(peripheral: Peripheral) -> NAOSDevice? {
+	private func findDevice(peripheral: Peripheral) -> NAOSManagedDevice? {
 		// copy list
-		var list: [NAOSDevice]?
+		var list: [NAOSManagedDevice]?
 		queue.sync {
 			list = devices
 		}
