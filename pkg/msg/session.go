@@ -47,6 +47,14 @@ func OpenSession(channel Channel) (*Session, error) {
 	// subscribe to channel
 	channel.Subscribe(queue)
 
+	// handle cleanup
+	var ok bool
+	defer func() {
+		if !ok {
+			channel.Unsubscribe(queue)
+		}
+	}()
+
 	// prepare handle
 	handle := random(16)
 
@@ -68,6 +76,9 @@ func OpenSession(channel Channel) (*Session, error) {
 			break
 		}
 	}
+
+	// set flag
+	ok = true
 
 	return &Session{
 		id: sid,
