@@ -51,12 +51,11 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 		}
 	}
 
-	@IBAction
-	func flash(_: AnyObject) {
+	@IBAction func flash(_: AnyObject) {
 		Task {
 			// open file
 			let (_, image) = try await openFile()
-			
+
 			await process(title: "Flashing...") { session, progress in
 				// get time
 				let start = Date()
@@ -184,24 +183,11 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 
 		// return type cell
 		if tableView.tableColumns[2] == tableColumn {
-			let v =
-				tableView.makeView(
-					withIdentifier: NSUserInterfaceItemIdentifier("TypeCell"),
-					owner: nil) as! NSTableCellView
-			switch p.type {
-			case .raw:
-				v.textField!.stringValue = "Raw"
-			case .string:
-				v.textField!.stringValue = "String"
-			case .bool:
-				v.textField!.stringValue = "Bool"
-			case .long:
-				v.textField!.stringValue = "Long"
-			case .double:
-				v.textField!.stringValue = "Double"
-			case .action:
-				v.textField!.stringValue = "Action"
-			}
+			let v = tableView.makeView(
+				withIdentifier: NSUserInterfaceItemIdentifier("TypeCell"),
+				owner: nil) as! NSTableCellView
+
+			v.textField!.stringValue = p.type.string()
 
 			return v
 		}

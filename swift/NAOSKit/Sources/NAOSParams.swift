@@ -15,6 +15,23 @@ public enum NAOSParamType: UInt8 {
 	case long
 	case double
 	case action
+
+	public func string() -> String {
+		switch self {
+		case .raw:
+			return "Raw"
+		case .string:
+			return "String"
+		case .bool:
+			return "Bool"
+		case .long:
+			return "Long"
+		case .double:
+			return "Double"
+		case .action:
+			return "Action"
+		}
+	}
 }
 
 /// The available parameter modes.
