@@ -85,9 +85,6 @@ public class NAOSManagedDevice: NSObject {
 	private var mutex = AsyncSemaphore(value: 1)
 	private var paramSession: NAOSSession?
 	private var refreshing: Bool = false
-	private var updater: AnyCancellable?
-	private var readier: AnyCancellable?
-	private var updateReady: CheckedContinuation<Void, Never>?
 
 	var peripheral: NAOSBLEPeripheral
 	var updatable: Set<NAOSParameter> = Set()
@@ -204,10 +201,6 @@ public class NAOSManagedDevice: NSObject {
 
 		// reset max aage
 		maxAge = 0
-
-		// cancel previous subscriptions
-		updater?.cancel()
-		readier?.cancel()
 	}
 
 	/// Refresh will perform a full device refresh and update all parameters.
@@ -400,9 +393,6 @@ public class NAOSManagedDevice: NSObject {
 		// set flag
 		connected = false
 
-		// cancel subscription
-		updater?.cancel()
-
 		// disconnect from device
 		try await peripheral.disconnect()
 	}
@@ -443,9 +433,6 @@ public class NAOSManagedDevice: NSObject {
 
 		// set flag
 		connected = false
-
-		// cancel subscription
-		updater?.cancel()
 
 		// call delegate if available
 		if let d = delegate {
