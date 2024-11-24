@@ -1,7 +1,7 @@
 import { Session } from "./session";
 import { pack, toString } from "./utils";
 
-export const ParamsEndpoint = 0x01;
+const paramsEndpoint = 0x01;
 
 export enum ParamType {
   raw = 0,
@@ -41,10 +41,10 @@ export async function getParam(
   const cmd = pack("os", 0, name);
 
   // send command
-  await s.send(ParamsEndpoint, cmd, 0);
+  await s.send(paramsEndpoint, cmd, 0);
 
   // receive value
-  const [data] = await s.receive(ParamsEndpoint, false, timeout);
+  const [data] = await s.receive(paramsEndpoint, false, timeout);
 
   return data;
 }
@@ -59,7 +59,7 @@ export async function setParam(
   const cmd = pack("osob", 1, name, 0, value);
 
   // send command
-  await s.send(ParamsEndpoint, cmd, timeout);
+  await s.send(paramsEndpoint, cmd, timeout);
 }
 
 export async function listParams(
@@ -67,14 +67,14 @@ export async function listParams(
   timeout: number = 5000
 ): Promise<ParamInfo[]> {
   // send command
-  await s.send(ParamsEndpoint, pack("o", 2), 0);
+  await s.send(paramsEndpoint, pack("o", 2), 0);
 
   // prepare list
   const list: ParamInfo[] = [];
 
   for (;;) {
     // receive reply or return list on ack
-    const [reply, ack] = await s.receive(ParamsEndpoint, true, timeout);
+    const [reply, ack] = await s.receive(paramsEndpoint, true, timeout);
     if (ack) {
       break;
     }
@@ -105,10 +105,10 @@ export async function readParam(
   timeout: number = 5000
 ): Promise<Uint8Array> {
   // send command
-  await s.send(ParamsEndpoint, pack("oo", 3, ref), 0);
+  await s.send(paramsEndpoint, pack("oo", 3, ref), 0);
 
   // receive value
-  const [data] = await s.receive(ParamsEndpoint, false, timeout);
+  const [data] = await s.receive(paramsEndpoint, false, timeout);
 
   return data;
 }
@@ -123,7 +123,7 @@ export async function writeParam(
   const cmd = pack("oob", 4, ref, value);
 
   // send command
-  await s.send(ParamsEndpoint, cmd, timeout);
+  await s.send(paramsEndpoint, cmd, timeout);
 }
 
 export async function collectParams(
@@ -145,14 +145,14 @@ export async function collectParams(
   const cmd = pack("oqq", 5, map, since);
 
   // send command
-  await s.send(ParamsEndpoint, cmd, 0);
+  await s.send(paramsEndpoint, cmd, 0);
 
   // prepare list
   const list: ParamUpdate[] = [];
 
   for (;;) {
     // receive reply or return list on ack
-    const [reply, ack] = await s.receive(ParamsEndpoint, false, timeout);
+    const [reply, ack] = await s.receive(paramsEndpoint, false, timeout);
     if (ack) {
       break;
     }
@@ -181,5 +181,5 @@ export async function clearParam(
   timeout: number = 5000
 ): Promise<void> {
   // send command
-  await s.send(ParamsEndpoint, pack("oo", 6, ref), timeout);
+  await s.send(paramsEndpoint, pack("oo", 6, ref), timeout);
 }

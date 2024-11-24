@@ -1,7 +1,6 @@
 import { request, random, toString, toBuffer, requestFile } from "./index";
 
 import {
-  FSEndpoint,
   statPath,
   listDir,
   readFile,
@@ -11,9 +10,9 @@ import {
   removePath,
 } from "./fs";
 
-import { ParamsEndpoint, listParams } from "./params";
+import { listParams } from "./params";
 
-import { UpdateEndpoint, update } from "./index";
+import { update } from "./index";
 import { ManagedDevice } from "./managed";
 
 let device: ManagedDevice | null = null;
@@ -53,8 +52,6 @@ async function params() {
   await device.activate();
 
   await device.useSession(async (session) => {
-    console.log(await session.query(ParamsEndpoint, 1000));
-
     const params = await listParams(session);
     console.log(params);
   });
@@ -76,9 +73,6 @@ async function flash(input: HTMLInputElement) {
   await device.activate();
   const session = await device.newSession();
 
-  await session.ping(1000);
-  console.log(await session.query(UpdateEndpoint, 1000));
-
   await update(session, data, (progress) => {
     console.log((progress / data.length) * 100);
   });
@@ -95,8 +89,6 @@ async function fs() {
   await device.activate();
 
   await device.useSession(async (session) => {
-    console.log(await session.query(FSEndpoint, 1000));
-
     console.log(await statPath(session, "/lol.txt"));
     console.log(await listDir(session, "/"));
 

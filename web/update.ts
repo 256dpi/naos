@@ -1,7 +1,7 @@
 import { Session } from "./session";
 import { pack } from "./utils";
 
-export const UpdateEndpoint = 0x2;
+const updateEndpoint = 0x2;
 
 export async function update(
   session: Session,
@@ -11,10 +11,10 @@ export async function update(
 ) {
   // send "begin" command
   let cmd = pack("oi", 0, data.length);
-  await session.send(UpdateEndpoint, cmd, 0);
+  await session.send(updateEndpoint, cmd, 0);
 
   // receive reply
-  let [reply] = await session.receive(UpdateEndpoint, false, timeout);
+  let [reply] = await session.receive(updateEndpoint, false, timeout);
 
   // verify reply
   if (reply.length !== 1 && reply[0] !== 0) {
@@ -36,7 +36,7 @@ export async function update(
 
     // send "write" command
     cmd = pack("oob", 1, acked ? 1 : 0, chunkData);
-    await session.send(UpdateEndpoint, cmd, acked ? timeout : 0);
+    await session.send(updateEndpoint, cmd, acked ? timeout : 0);
 
     // increment offset
     offset += chunkSize;
@@ -52,10 +52,10 @@ export async function update(
 
   // send "finish" command
   cmd = pack("o", 3);
-  await session.send(UpdateEndpoint, cmd, 0);
+  await session.send(updateEndpoint, cmd, 0);
 
   // receive reply
-  [reply] = await session.receive(UpdateEndpoint, false, timeout);
+  [reply] = await session.receive(updateEndpoint, false, timeout);
 
   // verify reply
   if (reply.length !== 1 && reply[0] !== 1) {

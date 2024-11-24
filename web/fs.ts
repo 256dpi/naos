@@ -1,7 +1,7 @@
 import { Session } from "./session";
 import { pack, unpack } from "./utils";
 
-export const FSEndpoint = 0x3;
+const fsEndpoint = 0x3;
 
 export interface FSInfo {
   name: string;
@@ -259,7 +259,7 @@ async function receive(
   timeout = 5000
 ): Promise<Uint8Array> {
   // receive reply
-  let [data] = await session.receive(FSEndpoint, expectAck, timeout);
+  let [data] = await session.receive(fsEndpoint, expectAck, timeout);
   if (!data) {
     return null;
   }
@@ -279,5 +279,5 @@ async function send(
   timeout = 5000
 ) {
   // send command
-  await session.send(FSEndpoint, data, awaitAck ? timeout : 0);
+  await session.send(fsEndpoint, data, awaitAck ? timeout : 0);
 }
