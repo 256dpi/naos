@@ -3,7 +3,6 @@
 //  Copyright © 2017 Joël Gähwiler. All rights reserved.
 //
 
-import Combine
 import Foundation
 import Semaphore
 
