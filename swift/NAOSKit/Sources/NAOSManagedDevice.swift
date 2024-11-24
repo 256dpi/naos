@@ -94,7 +94,6 @@ public class NAOSManagedDevice: NSObject {
 	private var manager: NAOSBLEManager
 	private var mutex = AsyncSemaphore(value: 1)
 	private var session: NAOSSession?
-	private var refreshing: Bool = false
 
 	var peripheral: NAOSBLEDevice
 	var channel: NAOSChannel? = nil
@@ -103,7 +102,6 @@ public class NAOSManagedDevice: NSObject {
 
 	public var delegate: NAOSManagedDeviceDelegate?
 	public private(set) var connected: Bool = false
-	public private(set) var protected: Bool = false
 	public private(set) var locked: Bool = false
 	public private(set) var availableParameters: [NAOSParameter] = []
 	public var parameters: [NAOSParameter: String] = [:]
@@ -130,8 +128,8 @@ public class NAOSManagedDevice: NSObject {
 				// acquire mutex
 				await mutex.wait()
 
-				// skip if not connected or refreshing
-				if !connected || refreshing {
+				// skip if not connected
+				if !connected {
 					// release mutex
 					mutex.signal()
 
@@ -143,8 +141,7 @@ public class NAOSManagedDevice: NSObject {
 					// collect parameters
 					var updates: [NAOSParamUpdate] = []
 					do {
-						updates = try await NAOSParams.collect(
-							session: session, refs: nil, since: maxAge)
+						updates = try await NAOSParams.collect(session: session, refs: nil, since: maxAge)
 					} catch {
 						mutex.signal()
 						return
@@ -206,11 +203,6 @@ public class NAOSManagedDevice: NSObject {
 			locked = try await session.status(timeout: 5).contains(.locked)
 		}
 
-		// save if this device is protected
-		if locked {
-			protected = true
-		}
-
 		// reset max aage
 		maxAge = 0
 	}
@@ -224,21 +216,6 @@ public class NAOSManagedDevice: NSObject {
 		// check state
 		if !connected {
 			throw NAOSManagedError.notConnected
-		}
-
-		// manage flag
-		refreshing = true
-		defer { refreshing = false }
-
-		// read lock status
-		try await withSession { session in
-			locked = try await session.status(timeout: 5).contains(.locked)
-		}
-
-		// save if this device is protected and stop
-		if locked {
-			protected = true
-			return
 		}
 
 		// use session
@@ -437,18 +414,12 @@ public class NAOSManagedDevice: NSObject {
 			return
 		}
 
-		// clear session
+		// cleanup session
+		session?.cleanup()
 		session = nil
-
-		// lock again if protected
-		if protected {
-			locked = true
-		}
 
 		// close channel
 		channel?.close()
-
-		// clear channel
 		channel = nil
 
 		// set flag
@@ -497,11 +468,10 @@ public class NAOSManagedDevice: NSObject {
 		// clear session
 		session?.cleanup()
 		session = nil
-
-		// lock again if protected
-		if protected {
-			locked = true
-		}
+		
+		// close channel
+		channel?.close()
+		channel = nil
 
 		// set flag
 		connected = false
