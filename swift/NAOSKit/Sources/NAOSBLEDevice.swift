@@ -26,70 +26,62 @@ public enum NAOSBLEError: LocalizedError {
 	}
 }
 
-class NAOSBLEPeripheral {
-	let man: CentralManager
-	let raw: Peripheral
+class NAOSBLEDevice {
+	let manager: CentralManager
+	let peripheral: Peripheral
+	var service: Service?
+	var characteristic: Characteristic?
 
-	var svc: Service? = nil
-	var char: Characteristic? = nil
-
-	init(man: CentralManager, raw: Peripheral) {
-		self.man = man
-		self.raw = raw
+	init(manager: CentralManager, peripheral: Peripheral) {
+		self.manager = manager
+		self.peripheral = peripheral
 	}
 
 	func name() -> String {
-		raw.name ?? "Unnamed"
+		peripheral.name ?? "Unnamed"
 	}
 
 	func identifier() -> UUID {
-		return raw.identifier
+		return peripheral.identifier
 	}
 
-	func connect() async throws {
-		try await man.connect(raw)
-	
+	func open() async throws -> NAOSChannel {
+		// connect
+		try await manager.connect(peripheral)
+
+		// discovet device
 		try await withTimeout(seconds: 10) {
 			// discover service
-			try await self.raw.discoverServices([bleService])
+			try await self.peripheral.discoverServices([bleService])
 
 			// find service
-			for s in self.raw.discoveredServices ?? [] {
+			for s in self.peripheral.discoveredServices ?? [] {
 				if s.uuid == bleService {
-					self.svc = s
+					self.service = s
 				}
 			}
-			if self.svc == nil {
+			if self.service == nil {
 				throw NAOSBLEError.serviceNotFound
 			}
 
 			// discover characteristics
-			try await self.raw.discoverCharacteristics(nil, for: self.svc!)
+			try await self.peripheral.discoverCharacteristics(nil, for: self.service!)
 
 			// find characteristic
-			for c in self.svc!.discoveredCharacteristics ?? [] {
+			for c in self.service!.discoveredCharacteristics ?? [] {
 				if c.uuid == bleCharacteristic {
-					self.char = c
+					self.characteristic = c
 				}
 			}
-			if self.char == nil {
+			if self.characteristic == nil {
 				throw NAOSBLEError.characteristicNotFound
 			}
 
 			// enable indication notifications
-			try await self.raw.setNotifyValue(true, for: self.char!)
+			try await self.peripheral.setNotifyValue(true, for: self.characteristic!)
 		}
-	}
-	
-	func channel() async -> NAOSChannel {
-		return await bleChannel.create(peripheral: self)
-	}
 
-	func write(data: Data) async throws {
-		// read value
-		try await withTimeout(seconds: 2) {
-			try await self.raw.writeValue(data, for: self.char!, type: .withoutResponse)
-		}
+		return await bleChannel.create(peripheral: self)
 	}
 
 	func stream() async -> (AsyncStream<Data>, AnyCancellable) {
@@ -100,7 +92,7 @@ class NAOSBLEPeripheral {
 		}
 
 		// create subscription
-		let subscription = await raw.characteristicValueUpdatedPublisher.sink { event in
+		let subscription = await peripheral.characteristicValueUpdatedPublisher.sink { event in
 			// check characteristic
 			if event.characteristic.uuid != bleCharacteristic {
 				return
@@ -124,28 +116,35 @@ class NAOSBLEPeripheral {
 		)
 	}
 
-	func disconnect() async throws {
+	func write(data: Data) async throws {
+		// read value
+		try await withTimeout(seconds: 2) {
+			try await self.peripheral.writeValue(data, for: self.characteristic!, type: .withoutResponse)
+		}
+	}
+
+	func close() async throws {
 		// disconenct
-		try await man.cancelPeripheralConnection(raw)
+		try await manager.cancelPeripheralConnection(peripheral)
 
 		// clear state
-		svc = nil
-		char = nil
+		service = nil
+		characteristic = nil
 	}
 }
 
 class bleChannel: NAOSChannel {
-	private var peripheral: NAOSBLEPeripheral
+	private var peripheral: NAOSBLEDevice
 	private var subscription: AnyCancellable
 	private var queues: [NAOSQueue] = []
-	
-	static func create(peripheral: NAOSBLEPeripheral) async -> bleChannel {
+
+	static func create(peripheral: NAOSBLEDevice) async -> bleChannel {
 		// open stream
 		let (stream, subscription) = await peripheral.stream()
-		
+
 		// create channel
 		let ch = bleChannel(peripheral: peripheral, subscription: subscription)
-		
+
 		// run forwarder
 		Task {
 			for await data in stream {
@@ -154,30 +153,31 @@ class bleChannel: NAOSChannel {
 				}
 			}
 		}
-		
+
 		return ch
 	}
-	
-	init(peripheral: NAOSBLEPeripheral, subscription: AnyCancellable) {
+
+	init(peripheral: NAOSBLEDevice, subscription: AnyCancellable) {
 		self.peripheral = peripheral
 		self.subscription = subscription
 	}
-	
+
 	public func subscribe(queue: NAOSQueue) {
-		if queues.first(where: {$0 === queue}) == nil {
+		if queues.first(where: { $0 === queue }) == nil {
 			queues.append(queue)
 		}
 	}
-	
+
 	public func unsubscribe(queue: NAOSQueue) {
-		queues.removeAll{$0 === queue}
+		queues.removeAll { $0 === queue }
 	}
-	
+
 	public func write(data: Data) async throws {
 		try await peripheral.write(data: data)
 	}
-	
+
 	public func close() {
 		subscription.cancel()
+		Task { try await peripheral.close() }
 	}
 }

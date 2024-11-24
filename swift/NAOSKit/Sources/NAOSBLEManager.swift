@@ -126,7 +126,7 @@ public class NAOSBLEManager: NSObject {
 			}
 
 			// prepare peripheral
-			let peripheral = NAOSBLEPeripheral(man: centralManager, raw: scanData.peripheral)
+			let peripheral = NAOSBLEDevice(manager: centralManager, peripheral: scanData.peripheral)
 
 			// otherwise, create new device
 			let device = NAOSManagedDevice(peripheral: peripheral, manager: self)
