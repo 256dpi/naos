@@ -98,7 +98,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 		Task {
 			do {
 				// open a new session
-				let sess = try await self.device.session(timeout: 5)
+				let sess = try await self.device.newSession(timeout: 5)
 				defer { sess.cleanup() }
 
 				// query endpoint existence
