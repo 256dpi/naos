@@ -364,7 +364,7 @@ public class NAOSManagedDevice: NSObject {
 	/// Session will create a new session and return it.
 	public func session(timeout: TimeInterval) async throws -> NAOSSession {
 		// open session
-		let session = try await NAOSSession.open(peripheral: peripheral, timeout: timeout)
+		let session = try await NAOSSession.open(channel: peripheral.channel(), timeout: timeout)
 
 		// try to unlock if locked
 		if !password.isEmpty {

@@ -65,78 +65,43 @@ public enum NAOSSessionError: LocalizedError {
 /// A session to communicate with endpoints.
 public class NAOSSession {
 	private var id: UInt16
-	private var peripheral: NAOSBLEPeripheral
-	private var subscription: AnyCancellable
-	private var channel: Channel<NAOSMessage>
+	private var channel: NAOSChannel
+	private var queue: NAOSQueue
 	private var mutex = AsyncSemaphore(value: 1)
 
-	internal static func open(peripheral: NAOSBLEPeripheral, timeout: TimeInterval) async throws -> NAOSSession {
-		// open stream
-		let (stream, subscription) = await peripheral.stream()
+	internal static func open(channel: NAOSChannel, timeout: TimeInterval) async throws -> NAOSSession {
+		// create queue
+		let queue = NAOSQueue()
+	
+		// subscribe queue
+		channel.subscribe(queue: queue)
 
 		// handle cancellaton
 		var ok = false
 		defer {
 			if !ok {
-				subscription.cancel()
+				channel.unsubscribe(queue: queue)
 			}
 		}
 
 		// generate handle
-		let outHandle = randomString(length: 16)
-
-		// prepare message
-		var msg = Data([1, 0, 0, 0])
-		msg.append(outHandle.data(using: .utf8)!)
+		let outHandle = randomString(length: 16).data(using: .utf8)!
 
 		// send "begin" command
-		try await peripheral.write(data: msg)
+		try await NAOSWrite(channel: channel, msg: NAOSMessage(session: 0, endpoint: 0, data: outHandle))
 
 		// await response
-		let sid = try await withTimeout(seconds: timeout) {
-			for await data in stream {
-				// parse message
-				let msg = try NAOSMessage.parse(data: data)
-
-				// check endpoint
-				if msg.endpoint != 0 {
-					continue
-				}
-
-				// get handle
-				let inHandle = String(data: Data(data[4...]), encoding: .utf8)!
-
-				// check handle
-				if inHandle != outHandle {
-					continue
-				}
-
-				return msg.session
-			}
-
-			throw NAOSSessionError.closed
-		}
-
-		// create channel
-		let channel = Channel<NAOSMessage>()
-
-		// run forwarder
-		Task {
-			for await data in stream {
-				// parse message
-				let msg = try NAOSMessage.parse(data: data)
-
-				// forward matchin messages
-				if msg.session == sid {
-					channel.send(value: msg)
-				}
+		var sid: UInt16 = 0
+		while true {
+			let msg = try await NAOSRead(queue: queue, timeout: timeout)
+			if msg.endpoint == 0 && msg.data == outHandle {
+				sid = msg.session
+				break
 			}
 		}
 
 		// create session
-		let session = NAOSSession(
-			id: sid, peripheral: peripheral, subscription: subscription,
-			channel: channel)
+		let session = NAOSSession(id: sid, channel: channel, queue: queue)
 
 		// set flag
 		ok = true
@@ -144,15 +109,11 @@ public class NAOSSession {
 		return session
 	}
 
-	init(
-		id: UInt16, peripheral: NAOSBLEPeripheral, subscription: AnyCancellable,
-		channel: Channel<NAOSMessage>
-	) {
+	init(id: UInt16, channel: NAOSChannel, queue: NAOSQueue) {
 		// setup session
 		self.id = id
-		self.peripheral = peripheral
-		self.subscription = subscription
 		self.channel = channel
+		self.queue = queue
 	}
 
 	/// Ping will check the session and keep it alive.
@@ -304,6 +265,9 @@ public class NAOSSession {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }
+		
+		// ensure unsubscribe
+		defer { channel.unsubscribe(queue: queue) }
 
 		// write command
 		try await self.write(msg: NAOSMessage(session: self.id, endpoint: 0xFF, data: nil))
@@ -315,43 +279,19 @@ public class NAOSSession {
 		if msg.endpoint != 0xFF || msg.size() > 0 {
 			throw NAOSSessionError.invalidMessage
 		}
-
-		// close channel
-		self.subscription.cancel()
 	}
-
-	/// Cleanup the session.
+		
 	public func cleanup() {
-		// cancel subscription
-		self.subscription.cancel()
+		Task{ try? await end(timeout: 0) }
 	}
 
 	// Helpers
 
 	private func write(msg: NAOSMessage) async throws {
-		// frame message
-		var data = Data(count: 4 + msg.size())
-
-		// write version
-		data[0] = 1
-
-		// write session
-		data[1] = UInt8(self.id & 0xFF)
-		data[2] = UInt8(self.id >> 8)
-
-		// write endpoint
-		data[3] = msg.endpoint
-
-		// copy data if available
-		if let bytes = msg.data {
-			data.replaceSubrange(4..., with: bytes)
-		}
-
-		// forward message
-		try await self.peripheral.write(data: data)
+		try await NAOSWrite(channel: channel, msg: msg)
 	}
 
 	private func read(timeout: TimeInterval) async throws -> NAOSMessage {
-		return try await channel.receive(timeout: timeout)
+		return try await NAOSRead(queue: queue, timeout: timeout)
 	}
 }
