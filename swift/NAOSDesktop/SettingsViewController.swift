@@ -14,8 +14,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 
 	private var lvc: LoadingViewController?
 
-	@IBAction
-	func refresh(_: AnyObject) {
+	@IBAction func refresh(_: AnyObject) {
 		// show loading view controller
 		lvc = loadVC("LoadingViewController") as? LoadingViewController
 		lvc!.message = "Refreshing..."

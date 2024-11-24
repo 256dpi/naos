@@ -12,8 +12,7 @@ class UnlockViewController: NSViewController {
 	internal var device: NAOSManagedDevice!
 	internal var swc: SettingsWindowController!
 
-	@IBAction
-	func unlock(_: AnyObject) {
+	@IBAction func unlock(_: AnyObject) {
 		// copy and reset password
 		let password = passwordField.stringValue
 		passwordField.stringValue = ""
