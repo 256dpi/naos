@@ -17,10 +17,10 @@ export async function request(): Promise<Device | null> {
     return null;
   }
 
-  return new device(dev);
+  return new BLEDevice(dev);
 }
 
-class device implements Device {
+export class BLEDevice implements Device {
   private dev: BluetoothDevice;
   private svc: BluetoothRemoteGATTService | null = null;
   private char: BluetoothRemoteGATTCharacteristic | null = null;
@@ -49,7 +49,7 @@ class device implements Device {
       throw new Error("channel already open");
     }
 
-    // connect, if not connected
+    // connect, if not connected already
     if (!this.dev.gatt.connected) {
       await this.dev.gatt.connect();
     }
