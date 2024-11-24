@@ -7,35 +7,6 @@ import Combine
 import Foundation
 import Semaphore
 
-/// A session message.
-public struct NAOSMessage {
-	public var session: UInt16
-	public var endpoint: UInt8
-	public var data: Data?
-
-	public func size() -> Int {
-		return self.data?.count ?? 0
-	}
-
-	public static func parse(data: Data) throws -> NAOSMessage {
-		// verify size and version
-		if data.count < 4 || data[0] != 1 {
-			throw NAOSSessionError.invalidMessage
-		}
-
-		// unpack message
-		let args = unpack(fmt: "hob", data: data, start: 1)
-		let sid = args[0] as! UInt16
-		let eid = args[1] as! UInt8
-		let data = args[2] as! Data
-
-		// prepare message
-		let msg = NAOSMessage(session: sid, endpoint: eid, data: data)
-
-		return msg
-	}
-}
-
 /// The available status flags.
 public struct NAOSSessionStatus: OptionSet {
 	public let rawValue: UInt8
