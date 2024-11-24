@@ -65,14 +65,6 @@ public struct NAOSParameter: Hashable {
 	}
 }
 
-/// The NAOS update progress.
-public struct NAOSProgress {
-	public var done: Int
-	public var total: Int
-	public var rate: Double
-	public var percent: Double
-}
-
 /// The delegate implemented by objects
 public protocol NAOSManagedDeviceDelegate {
 	func naosDeviceDidUpdate(device: NAOSManagedDevice, parameter: NAOSParameter)
@@ -338,39 +330,6 @@ public class NAOSManagedDevice: NSObject {
 				d.naosDeviceDidUpdate(device: self, parameter: parameter)
 			}
 		}
-	}
-
-	/// Flash will upload the provided firmware to the device and reset the device when done.
-	public func flash(data: Data, progress: @escaping (NAOSProgress) -> Void) async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
-		// check state
-		if !connected {
-			throw NAOSManagedError.notConnected
-		}
-
-		// open session
-		let session = try await openSession(timeout: 5)
-		defer { session.cleanup() }
-
-		// get time
-		let start = Date()
-
-		// run update
-		try await NAOSUpdate.run(session: session, image: data) { offset in
-			let diff = Date().timeIntervalSince(start)
-			progress(
-				NAOSProgress(
-					done: offset,
-					total: data.count,
-					rate: Double(offset) / diff,
-					percent: 100 / Double(data.count) * Double(offset)))
-		}
-
-		// end session
-		try await session.end(timeout: 5)
 	}
 
 	/// NewSession will create a new session and return it.

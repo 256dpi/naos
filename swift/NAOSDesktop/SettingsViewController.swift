@@ -6,13 +6,12 @@
 import Cocoa
 import NAOSKit
 
-class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate,
+class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTableViewDelegate,
 	SettingsParameterValueDelegate
 {
 	@IBOutlet var connectionStatusLabel: NSTextField!
 	@IBOutlet var parameterTableView: NSTableView!
 
-	internal var device: NAOSManagedDevice!
 	private var lvc: LoadingViewController?
 
 	@IBAction
@@ -36,7 +35,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				// update connection status
 				self.connectionStatusLabel.stringValue =
 					(self.device.parameters[.connectionStatus] ?? "")
-					.capitalized
+						.capitalized
 
 				// reload parameters
 				self.parameterTableView.reloadData()
@@ -54,43 +53,25 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 	@IBAction
 	func flash(_: AnyObject) {
-		// show loading view controller
-		lvc = loadVC("LoadingViewController") as? LoadingViewController
-		lvc!.message = "Flashing..."
-		lvc!.preferredContentSize = CGSize(width: 200, height: 200)
-		presentAsSheet(lvc!)
-
-		let task = Task {
-			do {
-				// open file
-				let (_, image) = try await openFile()
+		Task {
+			// open file
+			let (_, image) = try await openFile()
+			
+			await process(title: "Flashing...") { session, progress in
+				// get time
+				let start = Date()
 
 				// perform flash
-				try await device.flash(
-					data: image,
-					progress: { (progress: NAOSProgress) in
-						DispatchQueue.main.async {
-							self.lvc!.label.stringValue = String(
-								format:
-									"Flashing...\n%.1f %% @ %.1f kB/s",
-								progress.percent,
-								progress.rate / 1000)
-							self.lvc!.indicator.isIndeterminate = false
-							self.lvc!.indicator.doubleValue =
-								progress.percent
-						}
-					})
-			} catch {
-				showError(error: error)
+				try await NAOSUpdate.run(session: session, image: image) { done in
+					// calculate delta
+					let delta = Date().timeIntervalSince(start)
+
+					// report progress
+					progress(
+						Double(done) / Double(image.count),
+						Double(done) / delta)
+				}
 			}
-
-			// dismiss sheet
-			self.dismiss(self.lvc!)
-		}
-
-		// assign cancel action
-		lvc!.onCancel {
-			task.cancel()
 		}
 	}
 
@@ -264,8 +245,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 		// reload paramter
 		parameterTableView.reloadData(
-			forRowIndexes: IndexSet(integer: index), columnIndexes: IndexSet(integer: 1)
-		)
+			forRowIndexes: IndexSet(integer: index), columnIndexes: IndexSet(integer: 1))
 	}
 
 	// SettingsParameterValueDelegate
