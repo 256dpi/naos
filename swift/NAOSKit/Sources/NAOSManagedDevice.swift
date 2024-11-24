@@ -9,8 +9,8 @@ import Semaphore
 /// The object representing a single NAOS parameter.
 public struct NAOSParameter: Hashable {
 	public var name: String
-	public var type: NAOSParamType
-	public var mode: NAOSParamMode
+	public var type: NAOSParamType = .raw
+	public var mode: NAOSParamMode = .init(rawValue: 0)
 	public var ref: UInt8 = 0
 
 	public func hash(into hasher: inout Hasher) {
@@ -18,19 +18,19 @@ public struct NAOSParameter: Hashable {
 	}
 
 	public static func == (lhs: NAOSParameter, rhs: NAOSParameter) -> Bool {
-		return lhs.name == rhs.name && lhs.type == rhs.type
+		return lhs.name == rhs.name
 	}
 
-	public static let deviceName = NAOSParameter(name: "device-name", type: .string, mode: .system)
-	public static let deviceType = NAOSParameter(name: "device-type", type: .string, mode: .system)
-	public static let connectionStatus = NAOSParameter(name: "connection-status", type: .string, mode: .system)
-	public static let battery = NAOSParameter(name: "battery", type: .double, mode: .system)
-	public static let uptime = NAOSParameter(name: "uptime", type: .long, mode: .system)
-	public static let freeHeap = NAOSParameter(name: "free-heap", type: .long, mode: .system)
-	public static let freeHeapInt = NAOSParameter(name: "free-heap-int", type: .long, mode: .system)
-	public static let wifiRSSI = NAOSParameter(name: "wifi-rssi", type: .long, mode: .system)
-	public static let cpuUsage0 = NAOSParameter(name: "cpu-usage0", type: .double, mode: .system)
-	public static let cpuUsage1 = NAOSParameter(name: "cpu-usage1", type: .double, mode: .system)
+	public static let deviceName = NAOSParameter(name: "device-name")
+	public static let deviceType = NAOSParameter(name: "device-type")
+	public static let connectionStatus = NAOSParameter(name: "connection-status")
+	public static let battery = NAOSParameter(name: "battery")
+	public static let uptime = NAOSParameter(name: "uptime")
+	public static let freeHeap = NAOSParameter(name: "free-heap")
+	public static let freeHeapInt = NAOSParameter(name: "free-heap-int")
+	public static let wifiRSSI = NAOSParameter(name: "wifi-rssi")
+	public static let cpuUsage0 = NAOSParameter(name: "cpu-usage0")
+	public static let cpuUsage1 = NAOSParameter(name: "cpu-usage1")
 
 	public func format(value: String) -> String {
 		let num = Double(value) ?? 0
@@ -140,8 +140,7 @@ public class NAOSManagedDevice: NSObject {
 
 					// update parameters
 					for update in updates {
-						if let param = (availableParameters.first { p in p.ref == update.ref })
-						{
+						if let param = (availableParameters.first { p in p.ref == update.ref }) {
 							parameters[param] = String(data: update.value, encoding: .utf8)!
 							maxAge = max(maxAge, update.age)
 						}
@@ -313,8 +312,7 @@ public class NAOSManagedDevice: NSObject {
 			try await NAOSParams.write(
 				session: session,
 				ref: parameter.ref,
-				value: parameters[parameter]!.data(using: .utf8)!
-			)
+				value: parameters[parameter]!.data(using: .utf8)!)
 		}
 
 		// notify manager
@@ -349,8 +347,7 @@ public class NAOSManagedDevice: NSObject {
 					done: offset,
 					total: data.count,
 					rate: Double(offset) / diff,
-					percent: 100 / Double(data.count) * Double(offset)
-				))
+					percent: 100 / Double(data.count) * Double(offset)))
 		}
 
 		// end session
@@ -364,7 +361,7 @@ public class NAOSManagedDevice: NSObject {
 
 		// try to unlock if locked
 		if !password.isEmpty {
-			if (try await session.status(timeout: 5)).contains(.locked) {
+			if try (await session.status(timeout: 5)).contains(.locked) {
 				_ = try await session.unlock(password: password, timeout: 5)
 			}
 		}
