@@ -7,8 +7,7 @@ import (
 	"time"
 )
 
-// The ParamsEndpoint number.
-const ParamsEndpoint = 0x1
+const paramsEndpoint = 0x1
 
 // ParamType represents a parameter type.
 type ParamType uint8
@@ -63,13 +62,13 @@ type ParamUpdate struct {
 func GetParam(s *Session, name string, timeout time.Duration) ([]byte, error) {
 	// send command
 	cmd := pack("os", uint8(0), name)
-	err := s.Send(ParamsEndpoint, cmd, 0)
+	err := s.Send(paramsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
 	}
 
 	// receive value
-	value, err := s.Receive(ParamsEndpoint, false, timeout)
+	value, err := s.Receive(paramsEndpoint, false, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +80,7 @@ func GetParam(s *Session, name string, timeout time.Duration) ([]byte, error) {
 func SetParam(s *Session, name string, value []byte, timeout time.Duration) error {
 	// send command
 	cmd := pack("osob", uint8(1), name, uint8(0), value)
-	err := s.Send(ParamsEndpoint, cmd, timeout)
+	err := s.Send(paramsEndpoint, cmd, timeout)
 	if err != nil {
 		return err
 	}
@@ -93,7 +92,7 @@ func SetParam(s *Session, name string, value []byte, timeout time.Duration) erro
 func ListParams(s *Session, timeout time.Duration) ([]ParamInfo, error) {
 	// send command
 	cmd := []byte{2}
-	err := s.Send(ParamsEndpoint, cmd, 0)
+	err := s.Send(paramsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +102,7 @@ func ListParams(s *Session, timeout time.Duration) ([]ParamInfo, error) {
 
 	for {
 		// receive reply or return list on ack
-		reply, err := s.Receive(ParamsEndpoint, true, timeout)
+		reply, err := s.Receive(paramsEndpoint, true, timeout)
 		if errors.Is(err, Ack) {
 			break
 		} else if err != nil {
@@ -142,13 +141,13 @@ func ListParams(s *Session, timeout time.Duration) ([]ParamInfo, error) {
 func ReadParam(s *Session, ref uint8, timeout time.Duration) ([]byte, error) {
 	// send command
 	cmd := []byte{3, ref}
-	err := s.Send(ParamsEndpoint, cmd, 0)
+	err := s.Send(paramsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
 	}
 
 	// receive value
-	value, err := s.Receive(ParamsEndpoint, false, timeout)
+	value, err := s.Receive(paramsEndpoint, false, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +159,7 @@ func ReadParam(s *Session, ref uint8, timeout time.Duration) ([]byte, error) {
 func WriteParam(s *Session, ref uint8, value []byte, timeout time.Duration) error {
 	// send command
 	cmd := pack("oob", uint8(4), ref, value)
-	err := s.Send(ParamsEndpoint, cmd, timeout)
+	err := s.Send(paramsEndpoint, cmd, timeout)
 	if err != nil {
 		return err
 	}
@@ -181,7 +180,7 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 
 	// send command
 	cmd := pack("oqq", uint8(5), mp, since)
-	err := s.Send(ParamsEndpoint, cmd, 0)
+	err := s.Send(paramsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +190,7 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 
 	for {
 		// receive reply or return list on ack
-		reply, err := s.Receive(ParamsEndpoint, true, timeout)
+		reply, err := s.Receive(paramsEndpoint, true, timeout)
 		if errors.Is(err, Ack) {
 			break
 		} else if err != nil {
@@ -221,7 +220,7 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 func ClearParam(s *Session, ref uint8, timeout time.Duration) error {
 	// send command
 	cmd := []byte{6, ref}
-	err := s.Send(ParamsEndpoint, cmd, timeout)
+	err := s.Send(paramsEndpoint, cmd, timeout)
 	if err != nil {
 		return err
 	}

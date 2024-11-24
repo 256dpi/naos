@@ -6,8 +6,7 @@ import (
 	"time"
 )
 
-// The FSEndpoint number.
-const FSEndpoint = 0x3
+const fsEndpoint = 0x3
 
 // FSInfo describes a file system entry.
 type FSInfo struct {
@@ -297,7 +296,7 @@ func SHA256File(s *Session, file string, timeout time.Duration) ([]byte, error) 
 
 func fsReceive(s *Session, expectAck bool, timeout time.Duration) ([]byte, error) {
 	// await reply
-	reply, err := s.Receive(FSEndpoint, expectAck, timeout)
+	reply, err := s.Receive(fsEndpoint, expectAck, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -313,8 +312,8 @@ func fsReceive(s *Session, expectAck bool, timeout time.Duration) ([]byte, error
 func fsSend(s *Session, data []byte, awaitAck bool, timeout time.Duration) error {
 	// send data
 	if awaitAck {
-		return s.Send(FSEndpoint, data, timeout)
+		return s.Send(fsEndpoint, data, timeout)
 	} else {
-		return s.Send(FSEndpoint, data, 0)
+		return s.Send(fsEndpoint, data, 0)
 	}
 }

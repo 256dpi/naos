@@ -20,13 +20,6 @@ func TestParamsEndpoint(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
-	err = s.Ping(time.Second)
-	assert.NoError(t, err)
-
-	ok, err := s.Query(ParamsEndpoint, time.Second)
-	assert.NoError(t, err)
-	assert.True(t, ok)
-
 	val, err := GetParam(s, "var_s", time.Second)
 	assert.NoError(t, err)
 

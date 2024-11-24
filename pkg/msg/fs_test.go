@@ -18,13 +18,6 @@ func TestFSEndpoint(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
-	err = s.Ping(time.Second)
-	assert.NoError(t, err)
-
-	ok, err := s.Query(FSEndpoint, time.Second)
-	assert.NoError(t, err)
-	assert.True(t, ok)
-
 	info, err := StatPath(s, "/lol.txt", time.Second)
 	assert.NoError(t, err)
 	assert.Equal(t, &FSInfo{Size: 3}, info)

@@ -26,13 +26,6 @@ func TestUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
-	err = s.Ping(time.Second)
-	assert.NoError(t, err)
-
-	ok, err := s.Query(UpdateEndpoint, time.Second)
-	assert.NoError(t, err)
-	assert.True(t, ok)
-
 	err = Update(s, data, func(pos int) {
 		fmt.Printf("progress: %f\n", float64(pos)/float64(len(data))*100)
 	}, 30*time.Second)

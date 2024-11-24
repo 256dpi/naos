@@ -22,7 +22,7 @@ func TestManagedDevice(t *testing.T) {
 	assert.True(t, device.Active())
 
 	_ = device.UseSession(func(session *Session) error {
-		ok, err := session.Query(ParamsEndpoint, time.Second)
+		ok, err := session.Query(paramsEndpoint, time.Second)
 		assert.NoError(t, err)
 		assert.True(t, ok)
 		return nil
@@ -31,7 +31,7 @@ func TestManagedDevice(t *testing.T) {
 	session, err := device.NewSession()
 	assert.NoError(t, err)
 
-	ok, err := session.Query(ParamsEndpoint, time.Second)
+	ok, err := session.Query(paramsEndpoint, time.Second)
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
