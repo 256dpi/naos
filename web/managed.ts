@@ -146,8 +146,13 @@ export class ManagedDevice {
   }
 
   async stop() {
-    this.device = null;
-    clearInterval(this.pinger);
+    // deactivate
     await this.deactivate();
+
+    // stop pinger
+    clearInterval(this.pinger);
+
+    // clear device
+    this.device = null;
   }
 }

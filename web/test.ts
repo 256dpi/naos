@@ -19,6 +19,12 @@ import { ManagedDevice } from "./managed";
 let device: ManagedDevice | null = null;
 
 async function run() {
+  // stop device
+  if (device) {
+    await device.stop();
+    device = null;
+  }
+
   // request device
   let dev = await request();
   if (!dev) {

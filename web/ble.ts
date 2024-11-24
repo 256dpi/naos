@@ -52,6 +52,10 @@ class device implements Device {
     // connect, if not connected
     if (!this.dev.gatt.connected) {
       await this.dev.gatt.connect();
+    }
+
+    // get service and characteristic if not available
+    if (!this.svc) {
       this.svc = await this.dev.gatt.getPrimaryService(svcUUID);
       this.char = await this.svc.getCharacteristic(charUUID);
       if (!this.char) {
