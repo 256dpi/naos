@@ -94,7 +94,7 @@ func (s *Session) Ping(timeout time.Duration) error {
 	}
 
 	// await reply
-	msg, err := Read(s.qu, timeout)
+	msg, err := s.read(timeout)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (s *Session) Query(endpoint uint8, timeout time.Duration) (bool, error) {
 	}
 
 	// read reply
-	msg, err := Read(s.qu, timeout)
+	msg, err := s.read(timeout)
 	if err != nil {
 		return false, err
 	}
@@ -142,7 +142,7 @@ func (s *Session) Receive(endpoint uint8, expectAck bool, timeout time.Duration)
 	defer s.mu.Unlock()
 
 	// read message
-	msg, err := Read(s.qu, timeout)
+	msg, err := s.read(timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (s *Session) Send(endpoint uint8, data []byte, ackTimeout time.Duration) er
 	}
 
 	// await reply
-	msg, err := Read(s.qu, ackTimeout)
+	msg, err := s.read(ackTimeout)
 	if err != nil {
 		return err
 	}
@@ -272,7 +272,7 @@ func (s *Session) End(timeout time.Duration) error {
 	}
 
 	// read reply
-	msg, err := Read(s.qu, timeout)
+	msg, err := s.read(timeout)
 	if err != nil {
 		return err
 	}
@@ -286,6 +286,17 @@ func (s *Session) End(timeout time.Duration) error {
 	s.ch.Unsubscribe(s.qu)
 
 	return nil
+}
+
+func (s *Session) read(timeout time.Duration) (Message, error) {
+	for {
+		msg, err := Read(s.qu, timeout)
+		if err != nil {
+			return Message{}, err
+		} else if msg.Session == s.id {
+			return msg, nil
+		}
+	}
 }
 
 func parseError(num uint8) error {
