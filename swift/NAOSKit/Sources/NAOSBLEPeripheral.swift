@@ -82,6 +82,10 @@ class NAOSBLEPeripheral {
 			try await self.raw.setNotifyValue(true, for: self.char!)
 		}
 	}
+	
+	func channel() async -> NAOSChannel {
+		return await NAOSBLEChannel.create(peripheral: self)
+	}
 
 	func write(data: Data) async throws {
 		// read value
@@ -129,5 +133,53 @@ class NAOSBLEPeripheral {
 		// clear state
 		svc = nil
 		char = nil
+	}
+}
+
+public class NAOSBLEChannel: NAOSChannel {
+	private var peripheral: NAOSBLEPeripheral
+	private var subscription: AnyCancellable
+	private var queues: [NAOSQueue] = []
+	
+	static func create(peripheral: NAOSBLEPeripheral) async -> NAOSBLEChannel {
+		// open stream
+		let (stream, subscription) = await peripheral.stream()
+		
+		// create channel
+		let ch = NAOSBLEChannel(peripheral: peripheral, subscription: subscription)
+		
+		// run forwarder
+		Task {
+			for await data in stream {
+				for queue in ch.queues {
+					queue.send(value: data)
+				}
+			}
+		}
+		
+		return ch
+	}
+	
+	init(peripheral: NAOSBLEPeripheral, subscription: AnyCancellable) {
+		self.peripheral = peripheral
+		self.subscription = subscription
+	}
+	
+	public func subscribe(queue: NAOSQueue) {
+		if queues.first(where: {$0 === queue}) == nil {
+			queues.append(queue)
+		}
+	}
+	
+	public func unsubscribe(queue: NAOSQueue) {
+		queues.removeAll{$0 === queue}
+	}
+	
+	public func write(data: Data) async throws {
+		try await peripheral.write(data: data)
+	}
+	
+	public func close() {
+		subscription.cancel()
 	}
 }
