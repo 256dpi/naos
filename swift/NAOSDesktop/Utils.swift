@@ -20,6 +20,10 @@ struct CustomError: LocalizedError {
 	}
 }
 
+public func loadVC(_ name: String) -> Any {
+	return NSStoryboard(name: "Main", bundle: nil).instantiateController(withIdentifier: name)
+}
+
 public func showError(error: Error) {
 	// show error
 	DispatchQueue.main.async {

@@ -38,10 +38,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		}
 
 		// instantiate window controller
-		let controller =
-			NSStoryboard(name: "Main", bundle: nil).instantiateController(
-				withIdentifier: "SettingsWindowController")
-			as! SettingsWindowController
+		let controller = loadVC("SettingsWindowController") as! SettingsWindowController
 
 		// store and show window
 		controllers[device] = controller

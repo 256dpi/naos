@@ -13,9 +13,7 @@ internal class SessionViewController: NSViewController {
 		async
 	{
 		// show loading view controller
-		let lvc =
-			NSStoryboard(name: "Main", bundle: nil).instantiateController(
-				withIdentifier: "LoadingViewController") as! LoadingViewController
+		let lvc = loadVC("LoadingViewController") as! LoadingViewController
 		lvc.message = title
 		lvc.preferredContentSize = CGSize(width: 200, height: 200)
 
@@ -56,9 +54,7 @@ internal class SessionViewController: NSViewController {
 			-> Void
 	) async {
 		// show loading view controller
-		let lvc =
-			NSStoryboard(name: "Main", bundle: nil).instantiateController(
-				withIdentifier: "LoadingViewController") as! LoadingViewController
+		let lvc = loadVC("LoadingViewController") as! LoadingViewController
 		lvc.message = title
 		lvc.preferredContentSize = CGSize(width: 200, height: 200)
 		DispatchQueue.main.async {

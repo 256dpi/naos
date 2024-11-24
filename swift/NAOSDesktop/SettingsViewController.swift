@@ -18,10 +18,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 	@IBAction
 	func refresh(_: AnyObject) {
 		// show loading view controller
-		lvc =
-			NSStoryboard(name: "Main", bundle: nil)
-			.instantiateController(withIdentifier: "LoadingViewController")
-			as? LoadingViewController
+		lvc = loadVC("LoadingViewController") as? LoadingViewController
 		lvc!.message = "Refreshing..."
 		lvc!.preferredContentSize = CGSize(width: 200, height: 200)
 		presentAsSheet(lvc!)
@@ -58,9 +55,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 	@IBAction
 	func flash(_: AnyObject) {
 		// show loading view controller
-		lvc =
-			NSStoryboard(name: "Main", bundle: nil).instantiateController(
-				withIdentifier: "LoadingViewController") as? LoadingViewController
+		lvc = loadVC("LoadingViewController") as? LoadingViewController
 		lvc!.message = "Flashing..."
 		lvc!.preferredContentSize = CGSize(width: 200, height: 200)
 		presentAsSheet(lvc!)
@@ -118,11 +113,7 @@ class SettingsViewController: NSViewController, NSTableViewDataSource, NSTableVi
 				}
 
 				// load files view controller
-				let fvc =
-					NSStoryboard(name: "Main", bundle: nil)
-					.instantiateController(
-						withIdentifier: "FilesViewController")
-					as! FilesViewController
+				let fvc = loadVC("FilesViewController") as! FilesViewController
 
 				// assign endpoint
 				fvc.device = device
