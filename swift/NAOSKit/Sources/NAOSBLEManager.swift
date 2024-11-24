@@ -21,8 +21,8 @@ public protocol NAOSBLEManagerDelegate {
 
 /// The main class that handles NAOS device discovery and handling.
 public class NAOSBLEManager: NSObject {
-	internal var delegate: NAOSBLEManagerDelegate?
-	internal var centralManager: CentralManager!
+	var delegate: NAOSBLEManagerDelegate?
+	var centralManager: CentralManager!
 	private var devices: [NAOSManagedDevice]
 	private var subscription: AnyCancellable?
 	private var queue = DispatchQueue(label: "devices", attributes: .concurrent)
@@ -41,8 +41,16 @@ public class NAOSBLEManager: NSObject {
 		// create central manager
 		centralManager = CentralManager()
 
+		// disable logging
+		AsyncBluetoothLogging.setEnabled(false)
+
+		// start scanning
+		Task { try await self.start() }
+	}
+
+	private func start() async throws {
 		// subscribe events
-		subscription = centralManager.eventPublisher.sink { event in
+		subscription = await centralManager.eventPublisher.sink(receiveValue: { event in
 			switch event {
 			case .didUpdateState(let state):
 				switch state {
@@ -57,7 +65,7 @@ public class NAOSBLEManager: NSObject {
 				default:
 					break
 				}
-			case .didDisconnectPeripheral(let peripheral, let error):
+			case .didDisconnectPeripheral(let peripheral, _, let error):
 				// forward disconnect error to device
 				if error != nil {
 					if let device = self.findDevice(peripheral: peripheral) {
@@ -69,7 +77,7 @@ public class NAOSBLEManager: NSObject {
 			default:
 				break
 			}
-		}
+		})
 
 		// scan forever
 		Task {
@@ -101,7 +109,7 @@ public class NAOSBLEManager: NSObject {
 	private func scan() async throws {
 		// check if powered on
 		while centralManager.bluetoothState != .poweredOn {
-			try? await Task.sleep(nanoseconds: 1_000_000_000)  // 1s
+			try? await Task.sleep(nanoseconds: 1_000_000_000) // 1s
 		}
 
 		// wait until ready
@@ -140,7 +148,7 @@ public class NAOSBLEManager: NSObject {
 
 	// NAOSManagedDevice
 
-	internal func didUpdateDevice(device: NAOSManagedDevice) {
+	func didUpdateDevice(device: NAOSManagedDevice) {
 		// call callback if available
 		if let d = delegate {
 			DispatchQueue.main.async {

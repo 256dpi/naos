@@ -100,14 +100,14 @@ class NAOSBLEPeripheral {
 		}
 
 		// create subscription
-		let subscription = raw.characteristicValueUpdatedPublisher.sink { rawChar in
+		let subscription = await raw.characteristicValueUpdatedPublisher.sink { event in
 			// check characteristic
-			if rawChar.uuid != bleCharacteristic {
+			if event.characteristic.uuid != bleCharacteristic {
 				return
 			}
 
 			// get data
-			guard let data = rawChar.value else {
+			guard let data = event.value else {
 				return
 			}
 
