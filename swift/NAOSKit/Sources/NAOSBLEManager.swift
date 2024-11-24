@@ -12,9 +12,6 @@ public protocol NAOSBLEManagerDelegate {
 	/// The manager discovered a new device.
 	func naosManagerDidDiscoverDevice(manager: NAOSBLEManager, device: NAOSManagedDevice)
 
-	/// The settings of a device have been updated because of a read(), write() or refresh() call on a device.
-	func naosManagerDidUpdateDevice(manager: NAOSBLEManager, device: NAOSManagedDevice)
-
 	/// The manager did reset either because of a Bluetooth availability change or a manual reset().
 	func naosManagerDidReset(manager: NAOSBLEManager)
 }
@@ -129,7 +126,7 @@ public class NAOSBLEManager: NSObject {
 			let peripheral = NAOSBLEDevice(manager: centralManager, peripheral: scanData.peripheral)
 
 			// otherwise, create new device
-			let device = NAOSManagedDevice(peripheral: peripheral, manager: self)
+			let device = NAOSManagedDevice(peripheral: peripheral)
 
 			// add device
 			queue.sync {
@@ -142,17 +139,6 @@ public class NAOSBLEManager: NSObject {
 					d.naosManagerDidDiscoverDevice(
 						manager: self, device: device)
 				}
-			}
-		}
-	}
-
-	// NAOSManagedDevice
-
-	func didUpdateDevice(device: NAOSManagedDevice) {
-		// call callback if available
-		if let d = delegate {
-			DispatchQueue.main.async {
-				d.naosManagerDidUpdateDevice(manager: self, device: device)
 			}
 		}
 	}

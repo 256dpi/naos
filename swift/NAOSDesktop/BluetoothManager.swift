@@ -22,6 +22,25 @@ class BluetoothManager: NSObject, NAOSBLEManagerDelegate {
 
 		// create naos manager
 		manager = NAOSBLEManager(delegate: self)
+
+		// update device information every second
+		Task { @MainActor in
+			while true {
+				// wait a second
+				try await Task.sleep(nanoseconds: 1_000_000_000)
+
+				for item in devices {
+					// get device
+					let device = item.key
+
+					// update menu item title
+					devices[device]?.title = device.title()
+
+					// update eventual window titles
+					controllers[device]?.window!.title = device.title()
+				}
+			}
+		}
 	}
 
 	@objc func open(_ menuItem: NSMenuItem) {
@@ -58,7 +77,7 @@ class BluetoothManager: NSObject, NAOSBLEManagerDelegate {
 
 	@IBAction func reset(_: AnyObject) {
 		// reset manager
-		self.manager.reset()
+		manager.reset()
 	}
 
 	// SettingsWindowController
@@ -98,14 +117,6 @@ class BluetoothManager: NSObject, NAOSBLEManagerDelegate {
 		} else {
 			devicesMenuItem.title = String(format: "%d Devices", devices.count)
 		}
-	}
-
-	func naosManagerDidUpdateDevice(manager _: NAOSBLEManager, device: NAOSManagedDevice) {
-		// update menu item title
-		devices[device]?.title = device.title()
-
-		// update eventual window titles
-		controllers[device]?.window!.title = device.title()
 	}
 
 	func naosManagerDidReset(manager _: NAOSBLEManager) {

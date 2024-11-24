@@ -83,7 +83,6 @@ public enum NAOSManagedError: LocalizedError {
 }
 
 public class NAOSManagedDevice: NSObject {
-	private var manager: NAOSBLEManager
 	private var mutex = AsyncSemaphore(value: 1)
 	private var session: NAOSSession?
 
@@ -99,10 +98,9 @@ public class NAOSManagedDevice: NSObject {
 	public var parameters: [NAOSParameter: String] = [:]
 	private var password: String = ""
 
-	init(peripheral: NAOSBLEDevice, manager: NAOSBLEManager) {
+	init(peripheral: NAOSBLEDevice) {
 		// initialize instance
 		self.peripheral = peripheral
-		self.manager = manager
 
 		// finish init
 		super.init()
@@ -149,9 +147,6 @@ public class NAOSManagedDevice: NSObject {
 
 					// release mutex
 					mutex.signal()
-
-					// notify manager
-					manager.didUpdateDevice(device: self)
 
 					// call delegate if present
 					if let d = delegate {
@@ -235,9 +230,6 @@ public class NAOSManagedDevice: NSObject {
 				}
 			}
 		}
-
-		// notify manager
-		manager.didUpdateDevice(device: self)
 	}
 
 	/// Returns the title of the device.
@@ -290,9 +282,6 @@ public class NAOSManagedDevice: NSObject {
 			parameters[parameter] = String(data: value, encoding: String.Encoding.utf8)
 		}
 
-		// notify manager
-		manager.didUpdateDevice(device: self)
-
 		// call delegate if present
 		if let d = delegate {
 			DispatchQueue.main.async {
@@ -320,9 +309,6 @@ public class NAOSManagedDevice: NSObject {
 				ref: parameter.ref,
 				value: parameters[parameter]!.data(using: .utf8)!)
 		}
-
-		// notify manager
-		manager.didUpdateDevice(device: self)
 
 		// call delegate if present
 		if let d = delegate {
