@@ -26,29 +26,10 @@ public protocol NAOSChannel {
 public struct NAOSMessage {
 	public var session: UInt16
 	public var endpoint: UInt8
-	public var data: Data?
+	public var data: Data
 
 	public func size() -> Int {
-		return self.data?.count ?? 0
-	}
-
-	// TODO: Remove.
-	public static func parse(data: Data) throws -> NAOSMessage {
-		// verify size and version
-		if data.count < 4 || data[0] != 1 {
-			throw NAOSSessionError.invalidMessage
-		}
-
-		// unpack message
-		let args = unpack(fmt: "hob", data: data, start: 1)
-		let sid = args[0] as! UInt16
-		let eid = args[1] as! UInt8
-		let data = args[2] as! Data
-
-		// prepare message
-		let msg = NAOSMessage(session: sid, endpoint: eid, data: data)
-
-		return msg
+		return self.data.count
 	}
 }
 
@@ -67,13 +48,13 @@ func NAOSRead(queue: NAOSQueue, timeout: TimeInterval) async throws -> NAOSMessa
 	return NAOSMessage(
 		session: args[0] as! UInt16,
 		endpoint: args[1] as! UInt8,
-		data: args[2] as? Data
+		data: args[2] as! Data
 	)
 }
 
 func NAOSWrite(channel: NAOSChannel, msg: NAOSMessage) async throws {
 	// pack message
-	let data = pack(fmt: "ohob", args: [UInt8(1), msg.session, msg.endpoint, msg.data ?? Data()])
+	let data = pack(fmt: "ohob", args: [UInt8(1), msg.session, msg.endpoint, msg.data])
 
 	// write data
 	try await channel.write(data: data)

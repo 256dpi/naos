@@ -123,7 +123,7 @@ public class NAOSSession {
 		defer { mutex.signal() }
 
 		// write command
-		try await self.write(msg: NAOSMessage(session: self.id, endpoint: 0xFE, data: nil))
+		try await self.write(msg: NAOSMessage(session: self.id, endpoint: 0xFE, data: Data()))
 
 		// read reply
 		let msg = try await self.read(timeout: timeout)
@@ -131,8 +131,8 @@ public class NAOSSession {
 		// verify reply
 		if msg.endpoint != 0xFE || msg.size() != 1 {
 			throw NAOSSessionError.invalidMessage
-		} else if msg.data![0] != 1 {
-			throw NAOSSessionError.parse(value: msg.data![0])
+		} else if msg.data[0] != 1 {
+			throw NAOSSessionError.parse(value: msg.data[0])
 		}
 	}
 
@@ -144,7 +144,7 @@ public class NAOSSession {
 
 		// write command
 		try await self.write(
-			msg: NAOSMessage(session: self.id, endpoint: endpoint, data: nil))
+			msg: NAOSMessage(session: self.id, endpoint: endpoint, data: Data()))
 
 		// erad reply
 		let msg = try await self.read(timeout: timeout)
@@ -154,7 +154,7 @@ public class NAOSSession {
 			throw NAOSSessionError.invalidMessage
 		}
 
-		return msg.data![0] == 1
+		return msg.data[0] == 1
 	}
 
 	/// Wait and receive the next message for the specified endpoint with reply handling.
@@ -176,7 +176,7 @@ public class NAOSSession {
 			}
 
 			// check if OK
-			if msg.data![0] == 1 {
+			if msg.data[0] == 1 {
 				if expectAck {
 					return nil
 				} else {
@@ -184,7 +184,7 @@ public class NAOSSession {
 				}
 			}
 
-			throw NAOSSessionError.parse(value: msg.data![0])
+			throw NAOSSessionError.parse(value: msg.data[0])
 		}
 
 		// check endpoint
@@ -216,8 +216,8 @@ public class NAOSSession {
 		// check reply
 		if msg.size() != 1 || msg.endpoint != 0xFE {
 			throw NAOSSessionError.invalidMessage
-		} else if msg.data![0] != 1 {
-			throw NAOSSessionError.parse(value: msg.data![0])
+		} else if msg.data[0] != 1 {
+			throw NAOSSessionError.parse(value: msg.data[0])
 		}
 	}
 
@@ -270,7 +270,7 @@ public class NAOSSession {
 		defer { channel.unsubscribe(queue: queue) }
 
 		// write command
-		try await self.write(msg: NAOSMessage(session: self.id, endpoint: 0xFF, data: nil))
+		try await self.write(msg: NAOSMessage(session: self.id, endpoint: 0xFF, data: Data()))
 
 		// read reply
 		let msg = try await self.read(timeout: timeout)
@@ -292,6 +292,11 @@ public class NAOSSession {
 	}
 
 	private func read(timeout: TimeInterval) async throws -> NAOSMessage {
-		return try await NAOSRead(queue: queue, timeout: timeout)
+		while true {
+			let msg = try await NAOSRead(queue: queue, timeout: timeout)
+			if msg.session == id {
+				return msg
+			}
+		}
 	}
 }
