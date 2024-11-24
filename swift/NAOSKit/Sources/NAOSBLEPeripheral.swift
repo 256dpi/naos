@@ -8,11 +8,11 @@ import Combine
 import CoreBluetooth
 import Foundation
 
-let NAOSService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
-let NAOSCharacteristic = CBUUID(string: "0360744B-A61B-00AD-C945-37f3634130F3")
+let NAOSBLEService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
+let NAOSBLECharacteristic = CBUUID(string: "0360744B-A61B-00AD-C945-37f3634130F3")
 
 /// The NAOS specific errors.
-public enum NAOSError: LocalizedError {
+public enum NAOSBLEError: LocalizedError {
 	case serviceNotFound
 	case characteristicNotFound
 
@@ -26,7 +26,7 @@ public enum NAOSError: LocalizedError {
 	}
 }
 
-class NAOSPeripheral {
+class NAOSBLEPeripheral {
 	let man: CentralManager
 	let raw: Peripheral
 
@@ -53,16 +53,16 @@ class NAOSPeripheral {
 	func discover() async throws {
 		try await withTimeout(seconds: 10) {
 			// discover service
-			try await self.raw.discoverServices([NAOSService])
+			try await self.raw.discoverServices([NAOSBLEService])
 
 			// find service
 			for s in self.raw.discoveredServices ?? [] {
-				if s.uuid == NAOSService {
+				if s.uuid == NAOSBLEService {
 					self.svc = s
 				}
 			}
 			if self.svc == nil {
-				throw NAOSError.serviceNotFound
+				throw NAOSBLEError.serviceNotFound
 			}
 
 			// discover characteristics
@@ -70,12 +70,12 @@ class NAOSPeripheral {
 
 			// find characteristic
 			for c in self.svc!.discoveredCharacteristics ?? [] {
-				if c.uuid == NAOSCharacteristic {
+				if c.uuid == NAOSBLECharacteristic {
 					self.char = c
 				}
 			}
 			if self.char == nil {
-				throw NAOSError.characteristicNotFound
+				throw NAOSBLEError.characteristicNotFound
 			}
 
 			// enable indication notifications
@@ -100,7 +100,7 @@ class NAOSPeripheral {
 		// create subscription
 		let subscription = raw.characteristicValueUpdatedPublisher.sink { rawChar in
 			// check characteristic
-			if rawChar.uuid != NAOSCharacteristic {
+			if rawChar.uuid != NAOSBLECharacteristic {
 				return
 			}
 

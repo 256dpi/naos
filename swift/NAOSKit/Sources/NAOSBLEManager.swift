@@ -8,27 +8,27 @@ import Combine
 import CoreBluetooth
 
 /// The delegate protocol to be implemented to handle NAOSManager events.
-public protocol NAOSManagerDelegate {
+public protocol NAOSBLEManagerDelegate {
 	/// The manager discovered a new device.
-	func naosManagerDidDiscoverDevice(manager: NAOSManager, device: NAOSManagedDevice)
+	func naosManagerDidDiscoverDevice(manager: NAOSBLEManager, device: NAOSManagedDevice)
 
 	/// The settings of a device have been updated because of a read(), write() or refresh() call on a device.
-	func naosManagerDidUpdateDevice(manager: NAOSManager, device: NAOSManagedDevice)
+	func naosManagerDidUpdateDevice(manager: NAOSBLEManager, device: NAOSManagedDevice)
 
 	/// The manager did reset either because of a Bluetooth availability change or a manual reset().
-	func naosManagerDidReset(manager: NAOSManager)
+	func naosManagerDidReset(manager: NAOSBLEManager)
 }
 
 /// The main class that handles NAOS device discovery and handling.
-public class NAOSManager: NSObject {
-	internal var delegate: NAOSManagerDelegate?
+public class NAOSBLEManager: NSObject {
+	internal var delegate: NAOSBLEManagerDelegate?
 	internal var centralManager: CentralManager!
 	private var devices: [NAOSManagedDevice]
 	private var subscription: AnyCancellable?
 	private var queue = DispatchQueue(label: "devices", attributes: .concurrent)
 
 	/// Initializes the manager and sets the specified class as the delegate.
-	public init(delegate: NAOSManagerDelegate?) {
+	public init(delegate: NAOSBLEManagerDelegate?) {
 		// set delegate
 		self.delegate = delegate
 
@@ -108,7 +108,7 @@ public class NAOSManager: NSObject {
 		try await centralManager.waitUntilReady()
 
 		// create scan stream
-		let stream = try await centralManager.scanForPeripherals(withServices: [NAOSService])
+		let stream = try await centralManager.scanForPeripherals(withServices: [NAOSBLEService])
 
 		// handle discovered peripherals
 		for await scanData in stream {
@@ -118,7 +118,7 @@ public class NAOSManager: NSObject {
 			}
 
 			// prepare peripheral
-			let peripheral = NAOSPeripheral(man: centralManager, raw: scanData.peripheral)
+			let peripheral = NAOSBLEPeripheral(man: centralManager, raw: scanData.peripheral)
 
 			// otherwise, create new device
 			let device = NAOSManagedDevice(peripheral: peripheral, manager: self)

@@ -81,7 +81,7 @@ public protocol NAOSManagedDeviceDelegate {
 }
 
 public class NAOSManagedDevice: NSObject {
-	private var manager: NAOSManager
+	private var manager: NAOSBLEManager
 	private var mutex = AsyncSemaphore(value: 1)
 	private var paramSession: NAOSSession?
 	private var refreshing: Bool = false
@@ -89,7 +89,7 @@ public class NAOSManagedDevice: NSObject {
 	private var readier: AnyCancellable?
 	private var updateReady: CheckedContinuation<Void, Never>?
 
-	var peripheral: NAOSPeripheral
+	var peripheral: NAOSBLEPeripheral
 	var updatable: Set<NAOSParameter> = Set()
 	var maxAge: UInt64 = 0
 
@@ -101,7 +101,7 @@ public class NAOSManagedDevice: NSObject {
 	public var parameters: [NAOSParameter: String] = [:]
 	private var password: String = ""
 
-	init(peripheral: NAOSPeripheral, manager: NAOSManager) {
+	init(peripheral: NAOSBLEPeripheral, manager: NAOSBLEManager) {
 		// initialize instance
 		self.peripheral = peripheral
 		self.manager = manager

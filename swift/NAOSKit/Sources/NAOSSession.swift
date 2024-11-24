@@ -94,12 +94,12 @@ public enum NAOSSessionError: LocalizedError {
 /// A session to communicate with endpoints.
 public class NAOSSession {
 	private var id: UInt16
-	private var peripheral: NAOSPeripheral
+	private var peripheral: NAOSBLEPeripheral
 	private var subscription: AnyCancellable
 	private var channel: Channel<NAOSMessage>
 	private var mutex = AsyncSemaphore(value: 1)
 
-	internal static func open(peripheral: NAOSPeripheral, timeout: TimeInterval) async throws -> NAOSSession {
+	internal static func open(peripheral: NAOSBLEPeripheral, timeout: TimeInterval) async throws -> NAOSSession {
 		// open stream
 		let (stream, subscription) = await peripheral.stream()
 
@@ -174,7 +174,7 @@ public class NAOSSession {
 	}
 
 	init(
-		id: UInt16, peripheral: NAOSPeripheral, subscription: AnyCancellable,
+		id: UInt16, peripheral: NAOSBLEPeripheral, subscription: AnyCancellable,
 		channel: Channel<NAOSMessage>
 	) {
 		// setup session

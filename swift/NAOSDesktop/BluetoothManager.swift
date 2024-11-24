@@ -8,11 +8,11 @@ import NAOSKit
 
 // TODO: Add multiple menus per device type.
 
-class BluetoothManager: NSObject, NAOSManagerDelegate {
+class BluetoothManager: NSObject, NAOSBLEManagerDelegate {
 	@IBOutlet private var devicesMenuItem: NSMenuItem!
 	@IBOutlet private var devicesMenu: NSMenu!
 
-	private var manager: NAOSManager!
+	private var manager: NAOSBLEManager!
 	private var devices: [NAOSManagedDevice: NSMenuItem] = [:]
 	private var controllers: [NAOSManagedDevice: SettingsWindowController] = [:]
 
@@ -21,7 +21,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		super.init()
 
 		// create naos manager
-		manager = NAOSManager(delegate: self)
+		manager = NAOSBLEManager(delegate: self)
 	}
 
 	@objc func open(_ menuItem: NSMenuItem) {
@@ -80,7 +80,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 
 	// NAOSManagerDelegate
 
-	func naosManagerDidDiscoverDevice(manager _: NAOSManager, device: NAOSManagedDevice) {
+	func naosManagerDidDiscoverDevice(manager _: NAOSBLEManager, device: NAOSManagedDevice) {
 		// add menu item for new device
 		let item = NSMenuItem()
 		item.title = device.title()
@@ -100,7 +100,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		}
 	}
 
-	func naosManagerDidUpdateDevice(manager _: NAOSManager, device: NAOSManagedDevice) {
+	func naosManagerDidUpdateDevice(manager _: NAOSBLEManager, device: NAOSManagedDevice) {
 		// update menu item title
 		devices[device]?.title = device.title()
 
@@ -108,7 +108,7 @@ class BluetoothManager: NSObject, NAOSManagerDelegate {
 		controllers[device]?.window!.title = device.title()
 	}
 
-	func naosManagerDidReset(manager _: NAOSManager) {
+	func naosManagerDidReset(manager _: NAOSBLEManager) {
 		// close all controllers
 		for (_, c) in controllers {
 			close(c)
