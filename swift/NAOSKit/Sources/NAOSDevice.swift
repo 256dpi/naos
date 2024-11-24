@@ -7,13 +7,16 @@
 
 import Foundation
 
+/// A generic message device.
 public protocol NAOSDevice {
 	func id() -> String
 	func open() async throws -> NAOSChannel
 }
 
+/// A generic message queue.
 public typealias NAOSQueue = Channel<Data>
 
+/// A generic message channel.
 public protocol NAOSChannel {
 	// func device() -> NAOSDevice
 	func subscribe(queue: NAOSQueue)
@@ -33,6 +36,7 @@ public struct NAOSMessage {
 	}
 }
 
+/// Read a message from a queue.
 func NAOSRead(queue: NAOSQueue, timeout: TimeInterval) async throws -> NAOSMessage {
 	// read data
 	let data = try await queue.receive(timeout: timeout)
@@ -52,6 +56,7 @@ func NAOSRead(queue: NAOSQueue, timeout: TimeInterval) async throws -> NAOSMessa
 	)
 }
 
+/// Write a message to a channel.
 func NAOSWrite(channel: NAOSChannel, msg: NAOSMessage) async throws {
 	// pack message
 	let data = pack(fmt: "ohob", args: [UInt8(1), msg.session, msg.endpoint, msg.data])

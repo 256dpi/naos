@@ -5,18 +5,18 @@
 
 import Foundation
 
-/// The update endpoint number.
-public let NAOSUpdateEndpoint: UInt8 = 0x2
+let updateEndpoint: UInt8 = 0x2
 
+/// The NAOS update endpoint.
 public class NAOSUpdate {
 	/// Perform a firmware update.
 	public static func run(session: NAOSSession, image: Data, report: ((Int) -> Void)?, timeout: TimeInterval = 30) async throws {
 		// send "begin" command
 		var cmd = pack(fmt: "oi", args: [UInt8(0), UInt32(image.count)])
-		try await session.send(endpoint: NAOSUpdateEndpoint, data: cmd, ackTimeout: 0)
+		try await session.send(endpoint: updateEndpoint, data: cmd, ackTimeout: 0)
 
 		// receive reply
-		var reply = try await session.receive(endpoint: NAOSUpdateEndpoint, expectAck: false, timeout: timeout)!
+		var reply = try await session.receive(endpoint: updateEndpoint, expectAck: false, timeout: timeout)!
 
 		// verify reply
 		if reply.count != 1 || reply[0] != 0 {
@@ -38,7 +38,7 @@ public class NAOSUpdate {
 
 			// send "write" command
 			cmd = pack(fmt: "oob", args: [UInt8(1), UInt8(acked ? 1 : 0), chunkData])
-			try await session.send(endpoint: NAOSUpdateEndpoint, data: cmd, ackTimeout: acked ? timeout : 0)
+			try await session.send(endpoint: updateEndpoint, data: cmd, ackTimeout: acked ? timeout : 0)
 
 			// increment offset
 			offset += chunkSize
@@ -54,10 +54,10 @@ public class NAOSUpdate {
 
 		// send "finish" command
 		cmd = pack(fmt: "o", args: [UInt8(3)])
-		try await session.send(endpoint: NAOSUpdateEndpoint, data: cmd, ackTimeout: 0)
+		try await session.send(endpoint: updateEndpoint, data: cmd, ackTimeout: 0)
 
 		// receive reply
-		reply = try await session.receive(endpoint: NAOSUpdateEndpoint, expectAck: false, timeout: timeout)!
+		reply = try await session.receive(endpoint: updateEndpoint, expectAck: false, timeout: timeout)!
 
 		// verify reply
 		if reply.count != 1 || reply[0] != 1 {
