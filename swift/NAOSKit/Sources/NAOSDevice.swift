@@ -62,7 +62,7 @@ func NAOSRead(queue: NAOSQueue, timeout: TimeInterval) async throws -> NAOSMessa
 	}
 
 	// unpack message
-	let args = unpack(fmt: "ohob", data: data, start: 1)
+	let args = unpack(fmt: "hob", data: data, start: 1)
 
 	return NAOSMessage(
 		session: args[0] as! UInt16,
@@ -73,7 +73,7 @@ func NAOSRead(queue: NAOSQueue, timeout: TimeInterval) async throws -> NAOSMessa
 
 func NAOSWrite(channel: NAOSChannel, msg: NAOSMessage) async throws {
 	// pack message
-	let data = pack(fmt: "ohob", args: [UInt8(0), msg.session, msg.endpoint, msg.data ?? Data()])
+	let data = pack(fmt: "ohob", args: [UInt8(1), msg.session, msg.endpoint, msg.data ?? Data()])
 
 	// write data
 	try await channel.write(data: data)
