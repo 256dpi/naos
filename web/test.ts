@@ -1,4 +1,4 @@
-import { request, random, toString, toBuffer, requestFile } from "./index";
+import { bleRequest, random, toString, toBuffer, requestFile } from "./index";
 
 import {
   statPath,
@@ -17,7 +17,7 @@ import { ManagedDevice } from "./managed";
 
 let device: ManagedDevice | null = null;
 
-async function run() {
+async function ble() {
   // stop device
   if (device) {
     await device.stop();
@@ -25,7 +25,7 @@ async function run() {
   }
 
   // request device
-  let dev = await request();
+  let dev = await bleRequest();
   if (!dev) {
     return;
   }
@@ -108,7 +108,7 @@ async function fs() {
   console.log("Done!");
 }
 
-window["_run"] = run;
+window["_ble"] = ble;
 window["_params"] = params;
 window["_flash"] = flash;
 window["_fs"] = fs;
