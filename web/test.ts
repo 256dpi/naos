@@ -14,6 +14,7 @@ import { listParams } from "./params";
 
 import { update } from "./index";
 import { ManagedDevice } from "./managed";
+import { serialRequest } from "./serial";
 
 let device: ManagedDevice | null = null;
 
@@ -26,6 +27,35 @@ async function ble() {
 
   // request device
   let dev = await bleRequest();
+  if (!dev) {
+    return;
+  }
+
+  console.log("Got Device:", dev);
+
+  // create device
+  device = new ManagedDevice(dev);
+
+  // activate device
+  await device.activate();
+
+  // unlock locked device
+  if (await device.locked()) {
+    console.log("Unlock", await device.unlock(prompt("Password")));
+  }
+
+  console.log("Ready!");
+}
+
+async function serial() {
+  // stop device
+  if (device) {
+    await device.stop();
+    device = null;
+  }
+
+  // request device
+  let dev = await serialRequest();
   if (!dev) {
     return;
   }
@@ -109,6 +139,7 @@ async function fs() {
 }
 
 window["_ble"] = ble;
+window["_serial"] = serial;
 window["_params"] = params;
 window["_flash"] = flash;
 window["_fs"] = fs;

@@ -9,6 +9,18 @@ export function toString(buffer: ArrayBufferLike): string {
   return utf8Dec.decode(buffer);
 }
 
+export function toBase64(buffer: ArrayBufferLike): Uint8Array {
+  return toBuffer(btoa(String.fromCharCode(...new Uint8Array(buffer))));
+}
+
+export function fromBase64(base64: string): Uint8Array {
+  return new Uint8Array(
+    atob(base64)
+      .split("")
+      .map((c) => c.charCodeAt(0))
+  );
+}
+
 export function concat(buf1: Uint8Array, buf2: Uint8Array): Uint8Array {
   const buf = new Uint8Array(buf1.byteLength + buf2.byteLength);
   buf.set(buf1, 0);
