@@ -2,6 +2,8 @@
 #define NAOS_ETH_H
 
 #include <driver/gpio.h>
+#include <esp_eth_mac.h>
+#include <esp_eth_phy.h>
 
 typedef struct {
   gpio_num_t mosi;
@@ -21,6 +23,11 @@ void naos_eth_olimex();
  * Prepare Ethernet using a W5500 chip/module.
  */
 void naos_eth_w5500(naos_eth_w5500_t config);
+
+/**
+ * Prepare a custom ethernet MAC/PHY driver.
+ */
+void naos_eth_custom(esp_eth_mac_t *mac, esp_eth_phy_t *phy);
 
 /**
  * Initialize the Ethernet network link.

@@ -130,27 +130,12 @@ void naos_eth_olimex() {
   esp_eth_phy_t *phy = esp_eth_phy_new_lan87xx(&phy_config);
 
   // install driver
-  esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
-  ESP_ERROR_CHECK(esp_eth_driver_install(&config, &naos_eth_handle));
-
-  // create interface
-  esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
-  naos_eth_netif = esp_netif_new(&cfg);
-
-  // attach ethernet
-  ESP_ERROR_CHECK(esp_netif_attach(naos_eth_netif, esp_eth_new_netif_glue(naos_eth_handle)));
+  naos_eth_custom(mac, phy);
 }
 #endif
 
 #if defined(CONFIG_ETH_SPI_ETHERNET_W5500)
 void naos_eth_w5500(naos_eth_w5500_t cfg) {
-  // create network interface
-  esp_netif_config_t config = ESP_NETIF_DEFAULT_ETH();
-  naos_eth_netif = esp_netif_new(&config);
-  if (naos_eth_netif == NULL) {
-    ESP_ERROR_CHECK(ESP_FAIL);
-  }
-
   // ensure GPIO interrupt handler
   esp_err_t err = gpio_install_isr_service(0);
   if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
@@ -197,7 +182,7 @@ void naos_eth_w5500(naos_eth_w5500_t cfg) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
-  // install ethernet driver
+  // install driver
   esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
   ESP_ERROR_CHECK(esp_eth_driver_install(&eth_config, &naos_eth_handle));
 
@@ -206,10 +191,33 @@ void naos_eth_w5500(naos_eth_w5500_t cfg) {
   ESP_ERROR_CHECK(esp_read_mac(mac_addr, ESP_MAC_ETH));
   ESP_ERROR_CHECK(esp_eth_ioctl(naos_eth_handle, ETH_CMD_S_MAC_ADDR, mac_addr));
 
-  // attach ethernet interface
+  // create interface
+  esp_netif_config_t config = ESP_NETIF_DEFAULT_ETH();
+  naos_eth_netif = esp_netif_new(&config);
+  if (naos_eth_netif == NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // attach interface
   ESP_ERROR_CHECK(esp_netif_attach(naos_eth_netif, esp_eth_new_netif_glue(naos_eth_handle)));
 }
 #endif
+
+void naos_eth_custom(esp_eth_mac_t *mac, esp_eth_phy_t *phy) {
+  // install driver
+  esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
+  ESP_ERROR_CHECK(esp_eth_driver_install(&config, &naos_eth_handle));
+
+  // create interface
+  esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
+  naos_eth_netif = esp_netif_new(&cfg);
+  if (naos_eth_netif == NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // attach interface
+  ESP_ERROR_CHECK(esp_netif_attach(naos_eth_netif, esp_eth_new_netif_glue(naos_eth_handle)));
+}
 
 void naos_eth_init() {
   // create mutex
