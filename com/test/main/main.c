@@ -12,6 +12,7 @@
 #include <naos/manager.h>
 #include <naos/bridge.h>
 #include <naos/fs.h>
+#include <naos/serial.h>
 
 #define ETHERNET false
 
@@ -192,6 +193,7 @@ void app_main() {
   naos_osc_init(1);
   naos_osc_filter(osc_filter);
   naos_manager_init();
+  naos_serial_init();
   if (ETHERNET) {
     naos_eth_olimex();
     // naos_eth_w5500((naos_eth_w5500_t){});
