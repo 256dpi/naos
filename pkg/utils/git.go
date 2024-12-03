@@ -84,7 +84,7 @@ func Fetch(path, commit string, ignoredSubmodules []string, out io.Writer) error
 // Original will return the original, unmodified contents of the specified file.
 func Original(path, name string) (string, error) {
 	// get file
-	cmd := exec.Command("git", "show", "HEAD^^^:"+name)
+	cmd := exec.Command("git", "show", "HEAD:"+name)
 	cmd.Dir = path
 	buf, err := cmd.Output()
 	if err != nil {
