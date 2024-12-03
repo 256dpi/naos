@@ -7,35 +7,37 @@
 #include <mbedtls/base64.h>
 
 #define NAOS_SERIAL_BUFFER_SIZE 4096
+#define NAOS_SERIAL_MSG_MTU 2560
 
-uint8_t naos_serial_stdio_channel = 0;
-uint8_t naos_serial_output[NAOS_SERIAL_BUFFER_SIZE + 8];
-uint8_t naos_serial_input[NAOS_SERIAL_BUFFER_SIZE];
+typedef size_t (*naos_serial_read_t)(uint8_t* data, size_t len);
 
-static bool naos_serial_send(const uint8_t* data, size_t len, void* _) {
+typedef struct {
+  uint8_t* buffer;
+  naos_serial_read_t read;
+  uint8_t channel;
+} naos_serial_decoder_t;
+
+static bool naos_serial_encode(const uint8_t* data, size_t len, uint8_t* out_data, size_t* out_len) {
   // add magic
-  memcpy(naos_serial_output, "\nNAOS!", 6);
+  memcpy(out_data, "\nNAOS!", 6);
 
   // encode message
   size_t n = 0;
-  int ret = mbedtls_base64_encode(naos_serial_output + 6, NAOS_SERIAL_BUFFER_SIZE - 6, &n, data, len);
+  int ret = mbedtls_base64_encode(out_data + 6, NAOS_SERIAL_BUFFER_SIZE - 6, &n, data, len);
   if (ret != 0) {
     return false;
   }
 
   // add newline
-  naos_serial_output[6 + n] = '\n';
+  out_data[6 + n] = '\n';
 
-  // write message
-  ret = (int)fwrite(naos_serial_output, 1, 7 + n, stdout);
-  if (ret != 7 + n) {
-    return false;
-  }
+  // set length
+  *out_len = 7 + n;
 
   return true;
 }
 
-static void naos_serial_task() {
+static bool naos_serial_decode(naos_serial_decoder_t decoder) {
   // prepare position
   size_t len = 0;
   size_t discard = 0;
@@ -43,32 +45,32 @@ static void naos_serial_task() {
   for (;;) {
     // discard buffer
     if (discard > 0) {
-      memmove(naos_serial_input, naos_serial_input + discard, len - discard);
+      memmove(decoder.buffer, decoder.buffer + discard, len - discard);
       len -= discard;
-      naos_serial_input[len] = 0;
+      decoder.buffer[len] = 0;
       discard = 0;
     }
 
     // fill buffer
-    while (strchr((char*)naos_serial_input, '\n') == NULL) {
-      size_t ret = fread(naos_serial_input + len, 1, NAOS_SERIAL_BUFFER_SIZE - len, stdin);
+    while (strchr((char*)decoder.buffer, '\n') == NULL) {
+      size_t ret = decoder.read(decoder.buffer + len, NAOS_SERIAL_BUFFER_SIZE - len);
       len += ret;
-      naos_serial_input[len] = 0;
+      decoder.buffer[len] = 0;
       naos_delay(5);
     }
 
     /* got new line */
 
     // determine end
-    uint8_t* end = (uint8_t*)strchr((char*)naos_serial_input, '\n');
+    uint8_t* end = (uint8_t*)strchr((char*)decoder.buffer, '\n');
     if (end == NULL) {
       ESP_ERROR_CHECK(ESP_FAIL);
       continue;
     }
 
     // check magic
-    if (memcmp(naos_serial_input, "NAOS!", 5) != 0) {
-      discard = end - naos_serial_input + 1;
+    if (memcmp(decoder.buffer, "NAOS!", 5) != 0) {
+      discard = end - decoder.buffer + 1;
       continue;
     }
 
@@ -76,59 +78,92 @@ static void naos_serial_task() {
 
     // decode message
     size_t n = 0;
-    int r = mbedtls_base64_decode(naos_serial_input, NAOS_SERIAL_BUFFER_SIZE, &n, naos_serial_input + 5,
-                                  end - naos_serial_input - 5);
+    int r = mbedtls_base64_decode(decoder.buffer, NAOS_SERIAL_BUFFER_SIZE, &n, decoder.buffer + 5,
+                                  end - decoder.buffer - 5);
     if (r != 0) {
-      discard = end - naos_serial_input + 1;
+      discard = end - decoder.buffer + 1;
       continue;
     }
 
     // dispatch message
-    naos_msg_dispatch(naos_serial_stdio_channel, naos_serial_input, n, NULL);
+    naos_msg_dispatch(decoder.channel, decoder.buffer, n, NULL);
 
     // discard message
-    discard = end - naos_serial_input + 1;
+    discard = end - decoder.buffer + 1;
   }
+}
+
+/* STDIO Interface */
+
+static uint8_t naos_serial_stdio_channel = 0;
+static uint8_t naos_serial_stdio_input[NAOS_SERIAL_BUFFER_SIZE];
+static uint8_t naos_serial_stdio_output[NAOS_SERIAL_BUFFER_SIZE];
+
+static bool naos_serial_stdio_send(const uint8_t* data, size_t len, void* _) {
+  // encode message
+  size_t enc_len;
+  if (!naos_serial_encode(data, len, naos_serial_stdio_output, &enc_len)) {
+    return false;
+  }
+
+  // write message
+  size_t ret = fwrite(naos_serial_stdio_output, 1, enc_len, stdout);
+  if (ret != enc_len) {
+    return false;
+  }
+
+  return true;
+}
+
+static size_t naos_serial_stdio_read_stdio(uint8_t* data, size_t len) {
+  // read input
+  size_t ret = fread(data, 1, len, stdin);
+
+  return ret;
+}
+
+static void naos_serial_stdio_task() {
+  // run decoder
+  naos_serial_decode((naos_serial_decoder_t){
+      .buffer = naos_serial_stdio_input,
+      .read = naos_serial_stdio_read_stdio,
+      .channel = naos_serial_stdio_channel,
+  });
 }
 
 void naos_serial_init_stdio() {
   // register channel
   naos_serial_stdio_channel = naos_msg_register((naos_msg_channel_t){
-      .name = "serial",
-      .mtu = NAOS_SERIAL_BUFFER_SIZE,
-      .send = naos_serial_send,
+      .name = "serial-stdio",
+      .mtu = NAOS_SERIAL_MSG_MTU,
+      .send = naos_serial_stdio_send,
   });
 
   // start task
-  naos_run("serial", 4096, 1, naos_serial_task);
+  naos_run("serial-stdio", 4096, 1, naos_serial_stdio_task);
 }
+
+/* USB Interface */
 
 #if NAOS_SERIAL_USB_AVAILABLE
 
 #include <tinyusb.h>
 #include <tusb_cdc_acm.h>
 
-uint8_t naos_serial_usb_channel = 0;
-uint8_t naos_serial_usb_output[NAOS_SERIAL_BUFFER_SIZE + 8];
-uint8_t naos_serial_usb_input[NAOS_SERIAL_BUFFER_SIZE];
+static uint8_t naos_serial_usb_channel = 0;
+static uint8_t naos_serial_usb_input[NAOS_SERIAL_BUFFER_SIZE];
+static uint8_t naos_serial_usb_output[NAOS_SERIAL_BUFFER_SIZE];
 
-static bool naos_serial_usb_write(const uint8_t* data, size_t len, void* ctx) {
-  // add magic
-  memcpy(naos_serial_usb_output, "\nNAOS!", 6);
-
+static bool naos_serial_usb_send(const uint8_t* data, size_t len, void* ctx) {
   // encode message
-  size_t n = 0;
-  int ret = mbedtls_base64_encode(naos_serial_usb_output + 6, NAOS_SERIAL_BUFFER_SIZE - 6, &n, data, len);
-  if (ret != 0) {
+  size_t enc_len;
+  if (!naos_serial_encode(data, len, naos_serial_usb_output, &enc_len)) {
     return false;
   }
 
-  // add newline
-  naos_serial_usb_output[6 + n] = '\n';
-
   // write message
-  ret = (int)tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_0, naos_serial_usb_output, 7 + n);
-  if (ret != 7 + n) {
+  size_t ret = tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_0, naos_serial_usb_output, enc_len);
+  if (ret != enc_len) {
     return false;
   }
 
@@ -141,62 +176,21 @@ static bool naos_serial_usb_write(const uint8_t* data, size_t len, void* ctx) {
   return true;
 }
 
+static size_t naos_serial_usb_read(uint8_t* data, size_t len) {
+  // read interface
+  size_t ret;
+  ESP_ERROR_CHECK(tinyusb_cdcacm_read(TINYUSB_CDC_ACM_0, data, len, &ret));
+
+  return ret;
+}
+
 static void naos_serial_usb_task() {
-  // prepare position
-  size_t len = 0;
-  size_t discard = 0;
-
-  for (;;) {
-    // discard buffer
-    if (discard > 0) {
-      memmove(naos_serial_usb_input, naos_serial_usb_input + discard, len - discard);
-      len -= discard;
-      naos_serial_usb_input[len] = 0;
-      discard = 0;
-    }
-
-    // fill buffer
-    while (strchr((char*)naos_serial_usb_input, '\n') == NULL) {
-      size_t ret = 0;
-      ESP_ERROR_CHECK(
-          tinyusb_cdcacm_read(TINYUSB_CDC_ACM_0, naos_serial_usb_input + len, NAOS_SERIAL_BUFFER_SIZE - len, &ret));
-      len += ret;
-      naos_serial_usb_input[len] = 0;
-      naos_delay(5);
-    }
-
-    /* got new line */
-
-    // determine end
-    uint8_t* end = (uint8_t*)strchr((char*)naos_serial_usb_input, '\n');
-    if (end == NULL) {
-      ESP_ERROR_CHECK(ESP_FAIL);
-      continue;
-    }
-
-    // check magic
-    if (memcmp(naos_serial_usb_input, "NAOS!", 5) != 0) {
-      discard = end - naos_serial_usb_input + 1;
-      continue;
-    }
-
-    /* found magic, read message */
-
-    // decode message
-    size_t n = 0;
-    int r = mbedtls_base64_decode(naos_serial_usb_input, NAOS_SERIAL_BUFFER_SIZE, &n, naos_serial_usb_input + 5,
-                                  end - naos_serial_usb_input - 5);
-    if (r != 0) {
-      discard = end - naos_serial_usb_input + 1;
-      continue;
-    }
-
-    // dispatch message
-    naos_msg_dispatch(naos_serial_usb_channel, naos_serial_usb_input, n, NULL);
-
-    // discard message
-    discard = end - naos_serial_usb_input + 1;
-  }
+  // run decoder
+  naos_serial_decode((naos_serial_decoder_t){
+      .buffer = naos_serial_usb_input,
+      .read = naos_serial_usb_read,
+      .channel = naos_serial_usb_channel,
+  });
 }
 
 void naos_serial_init_usb() {
@@ -211,13 +205,13 @@ void naos_serial_init_usb() {
 
   // register USB channel
   naos_serial_usb_channel = naos_msg_register((naos_msg_channel_t){
-      .name = "usb",
-      .mtu = 4096,
-      .send = naos_serial_usb_write,
+      .name = "serial-usb",
+      .mtu = NAOS_SERIAL_MSG_MTU,
+      .send = naos_serial_usb_send,
   });
 
   // run task
-  naos_run("usb", 4096, 1, naos_serial_usb_task);
+  naos_run("serial-usb", 4096, 1, naos_serial_usb_task);
 }
 
 #endif  // NAOS_SERIAL_USB_AVAILABLE
