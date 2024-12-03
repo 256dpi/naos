@@ -178,7 +178,7 @@ func (p *Project) Install(force bool, out io.Writer) error {
 	}
 
 	// install registry components
-	registryComponents := []tree.IDFComponent{}
+	var registryComponents []tree.IDFComponent
 	for _, com := range p.Inventory.Components {
 		if com.Registry != "" {
 			registryComponents = append(registryComponents, tree.IDFComponent{
