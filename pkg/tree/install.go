@@ -9,9 +9,26 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/256dpi/naos/pkg/sdk"
 	"github.com/256dpi/naos/pkg/utils"
 )
+
+// https://github.com/espressif/idf-component-manager
+
+type idfComponentFile struct {
+	Dependencies map[string]idfComponentItem `yaml:"dependencies"`
+}
+
+type idfComponentItem struct {
+	Version string             `yaml:"version"`
+	Rules   []idfComponentRule `yaml:"rules"`
+}
+
+type idfComponentRule struct {
+	If string `yaml:"if"`
+}
 
 // IDFComponent represents a component in the idf-components.yml file.
 type IDFComponent struct {
@@ -186,24 +203,34 @@ func InstallComponent(projectPath, naosPath, name, path, repository, version str
 
 // InstallRegistryComponents will install the specified registry components.
 func InstallRegistryComponents(projectPath, naosPath string, components []IDFComponent, force bool, out io.Writer) error {
-	// if empty remove file
-	if len(components) == 0 {
-		utils.Log(out, "Removing IDF dependencies...")
-		err := os.Remove(filepath.Join(Directory(naosPath), "main", "idf_component.yml"))
-		if err != nil && !os.IsNotExist(err) {
-			return err
-		}
-		return nil
+	// load original file
+	original, err := utils.Original(naosPath, filepath.Join("tree", "main", "idf_component.yml"))
+	if err != nil {
+		return err
 	}
 
-	// compile idf_components.yml
-	componentsYAML := "dependencies:\n"
+	// unmarshal original file
+	var file idfComponentFile
+	err = yaml.Unmarshal([]byte(original), &file)
+	if err != nil {
+		return err
+	}
+
+	// add components
 	for _, c := range components {
-		componentsYAML += fmt.Sprintf("  %s: \"%s\"\n", c.Name, c.Version)
+		file.Dependencies[c.Name] = idfComponentItem{
+			Version: c.Version,
+		}
 	}
 
-	// update idf_components.yml
-	err := utils.Update(filepath.Join(Directory(naosPath), "main", "idf_component.yml"), componentsYAML)
+	// marshal updated file
+	updated, err := yaml.Marshal(file)
+	if err != nil {
+		return err
+	}
+
+	// update file
+	err = utils.Update(filepath.Join(Directory(naosPath), "main", "idf_component.yml"), string(updated))
 	if err != nil {
 		return err
 	}
