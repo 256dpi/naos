@@ -3,6 +3,7 @@ IF(DEFINED ENV{IDF_PATH})
     file(GLOB srcs ./src/*.c)
     idf_component_register(SRCS ${srcs}
         INCLUDE_DIRS "include"
+        # Note: Managed components are added automatically
         REQUIRES nvs_flash bt esp_eth esp_http_server esp-mqtt esp-osc app_update fatfs
         EMBED_TXTFILES naos.html naos.js
     )
@@ -19,6 +20,8 @@ ELSE()
         ./test/components/esp-mqtt
         ./test/components/esp-mqtt/lwmqtt/include
         ./test/components/esp-osc
+        ./test/managed_components/espressif__tinyusb/src
+        ./test/managed_components/espressif__esp_tinyusb/include
         ./test/esp-idf/components/newlib/platform_include
         ./test/esp-idf/components/freertos/config/include
         ./test/esp-idf/components/freertos/config/include/freertos
