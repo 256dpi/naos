@@ -61,6 +61,9 @@ func Exec(naosPath string, out io.Writer, in io.Reader, noEnv, usePty bool, name
 	// add IDF tools path
 	cmd.Env = append(cmd.Env, "IDF_TOOLS_PATH="+filepath.Join(Directory(naosPath), "toolchain"))
 
+	// add managed components tweak
+	cmd.Env = append(cmd.Env, "IDF_COMPONENT_OVERWRITE_MANAGED_COMPONENTS=1")
+
 	// add ADF path if existing
 	ok, err := utils.Exists(ADFDirectory(naosPath))
 	if err != nil {
