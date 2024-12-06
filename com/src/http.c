@@ -1,4 +1,5 @@
 #include <naos/msg.h>
+#include <naos/http.h>
 
 #include <esp_http_server.h>
 
@@ -15,7 +16,8 @@ typedef struct {
   const char *path;
   const char *type;
   const char *encoding;
-  const char *content;
+  const uint8_t *content;
+  size_t length;
 } naos_http_file_t;
 
 typedef struct {
@@ -188,7 +190,7 @@ static esp_err_t naos_http_file(httpd_req_t *req) {
     }
 
     // send response
-    err = httpd_resp_sendstr(req, file->content);
+    err = httpd_resp_send(req, (char *)file->content, (ssize_t)file->length);
     if (err != ESP_OK) {
       return err;
     }
@@ -290,7 +292,12 @@ void naos_http_init(int core) {
   });
 }
 
-void naos_http_serve(const char *path, const char *type, const char *encoding, const char *content) {
+void naos_http_serve_str(const char *path, const char *type, const char *content) {
+  naos_http_serve_bin(path, type, NULL, (uint8_t *)content, strlen(content));
+}
+
+void naos_http_serve_bin(const char *path, const char *type, const char *encoding, const uint8_t *content,
+                         size_t length) {
   // check count
   if (naos_http_file_count >= NAOS_HTTP_MAX_FILES) {
     ESP_ERROR_CHECK(ESP_FAIL);
@@ -300,8 +307,9 @@ void naos_http_serve(const char *path, const char *type, const char *encoding, c
   naos_http_file_t file = {
       .path = path,
       .type = type,
-      .content = content,
       .encoding = encoding,
+      .content = content,
+      .length = length,
   };
 
   // store file
