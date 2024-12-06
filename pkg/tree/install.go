@@ -216,6 +216,11 @@ func InstallRegistryComponents(projectPath, naosPath string, components []IDFCom
 		return err
 	}
 
+	// ensure map
+	if file.Dependencies == nil {
+		file.Dependencies = make(map[string]idfComponentItem)
+	}
+
 	// add components
 	for _, c := range components {
 		file.Dependencies[c.Name] = idfComponentItem{
