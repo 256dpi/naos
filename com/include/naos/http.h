@@ -13,8 +13,9 @@ void naos_http_init(int core);
  *
  * @param path The file path.
  * @param type The file type.
+ * @param encoding  The file encoding.
  * @param content  The file content.
  */
-void naos_http_serve(const char *path, const char *type, const char *content);
+void naos_http_serve(const char *path, const char *type, const char *encoding, const char *content);
 
 #endif  // NAOS_HTTP_H

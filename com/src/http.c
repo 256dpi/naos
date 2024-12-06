@@ -2,7 +2,6 @@
 
 #include <esp_http_server.h>
 
-#include "params.h"
 #include "utils.h"
 
 #define NAOS_HTTP_MAX_CONNS 7
@@ -15,6 +14,7 @@ typedef struct {
 typedef struct {
   const char *path;
   const char *type;
+  const char *encoding;
   const char *content;
 } naos_http_file_t;
 
@@ -179,6 +179,14 @@ static esp_err_t naos_http_file(httpd_req_t *req) {
       return err;
     }
 
+    // set content encoding if available
+    if (file->encoding != NULL) {
+      err = httpd_resp_set_hdr(req, "Content-Encoding", file->encoding);
+      if (err != ESP_OK) {
+        return err;
+      }
+    }
+
     // send response
     err = httpd_resp_sendstr(req, file->content);
     if (err != ESP_OK) {
@@ -282,7 +290,7 @@ void naos_http_init(int core) {
   });
 }
 
-void naos_http_serve(const char *path, const char *type, const char *content) {
+void naos_http_serve(const char *path, const char *type, const char *encoding, const char *content) {
   // check count
   if (naos_http_file_count >= NAOS_HTTP_MAX_FILES) {
     ESP_ERROR_CHECK(ESP_FAIL);
@@ -293,6 +301,7 @@ void naos_http_serve(const char *path, const char *type, const char *content) {
       .path = path,
       .type = type,
       .content = content,
+      .encoding = encoding,
   };
 
   // store file
