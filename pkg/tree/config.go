@@ -17,7 +17,7 @@ func Config(naosPath string, values map[string]string, port, baudRate string, ou
 	buf.WriteString("key,type,encoding,value\n")
 	buf.WriteString("naos,namespace,,\n")
 	for key, value := range values {
-		buf.WriteString(fmt.Sprintf("%s,data,string,%s\n", key, value))
+		buf.WriteString(fmt.Sprintf("%s,data,binary,%s\n", key, value))
 	}
 
 	// calculate paths
