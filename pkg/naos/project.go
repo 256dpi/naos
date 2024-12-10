@@ -354,7 +354,15 @@ func (p *Project) Exec(cmd string, out io.Writer, in io.Reader) error {
 }
 
 // Config will write settings and parameters to an attached device.
-func (p *Project) Config(file, device string, useBLE bool, out io.Writer) error {
+func (p *Project) Config(file, device, baudRate string, useBLE bool, out io.Writer) error {
+	// ensure baud rate
+	if baudRate == "" {
+		baudRate = p.Inventory.BaudRate
+		if baudRate == "" {
+			baudRate = "921600"
+		}
+	}
+	
 	// load file
 	data, err := os.ReadFile(file)
 	if err != nil {
@@ -378,7 +386,7 @@ func (p *Project) Config(file, device string, useBLE bool, out io.Writer) error 
 		return ble.Config(values, 0, out)
 	}
 
-	return tree.Config(p.Tree(), values, device, out)
+	return tree.Config(p.Tree(), values, device, baudRate, out)
 }
 
 // Format will format all source files in the project if 'clang-format' is

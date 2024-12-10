@@ -153,7 +153,7 @@ func exec(cmd *command, p *naos.Project) {
 
 func config(cmd *command, p *naos.Project) {
 	// configure device
-	exitIfSet(p.Config(cmd.aFile, cmd.aDevice, cmd.oBLE, os.Stdout))
+	exitIfSet(p.Config(cmd.aFile, cmd.aDevice, cmd.oBaudRate, cmd.oBLE, os.Stdout))
 }
 
 func format(_ *command, p *naos.Project) {

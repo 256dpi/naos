@@ -53,7 +53,7 @@ Usage:
   naos run [<device>] [--clean --reconfigure --app-only --baud=<rate> --erase --alt]
   naos trace [<device>] [--cpu=<core> --clean --reconfigure --app-only --baud=<rate> --erase --alt]
   naos exec <command>
-  naos config <file> [<device>] [--ble]
+  naos config <file> [<device>] [--baud=<rate> --ble]
   naos format
   naos list
   naos collect [--clear --duration=<time>]

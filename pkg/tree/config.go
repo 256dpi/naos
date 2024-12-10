@@ -11,7 +11,7 @@ import (
 )
 
 // Config will write settings and parameters to an attached device.
-func Config(naosPath string, values map[string]string, port string, out io.Writer) error {
+func Config(naosPath string, values map[string]string, port, baudRate string, out io.Writer) error {
 	// assemble CSV
 	var buf bytes.Buffer
 	buf.WriteString("key,type,encoding,value\n")
@@ -61,7 +61,7 @@ func Config(naosPath string, values map[string]string, port string, out io.Write
 	err = Exec(naosPath, out, nil, false, false, "python", []string{
 		espTool,
 		"--port", port,
-		"--baud", "921600",
+		"--baud", baudRate,
 		"--before", "default_reset",
 		"--after", "hard_reset",
 		"write_flash",
