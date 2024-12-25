@@ -143,6 +143,11 @@ void naos_unlock(naos_mutex_t mutex) {
   xSemaphoreGive(mutex);
 }
 
+void naos_mutex_delete(naos_mutex_t mutex) {
+  // delete mutex
+  vSemaphoreDelete(mutex);
+}
+
 naos_signal_t naos_signal() {
   // create event group
   return xEventGroupCreate();
@@ -187,6 +192,11 @@ void naos_await(naos_signal_t signal, uint16_t bits, bool clear) {
   }
 }
 
+void naos_signal_delete(naos_signal_t signal) {
+  // delete event group
+  vEventGroupDelete(signal);
+}
+
 naos_queue_t naos_queue(uint16_t length, uint16_t size) {
   // create queue
   return xQueueCreate(length, size);
@@ -210,4 +220,9 @@ bool naos_pop(naos_queue_t queue, void *item, int32_t timeout_ms) {
   while (xQueueReceive(queue, item, portMAX_DELAY) != pdPASS) {
   }
   return true;
+}
+
+void naos_queue_delete(naos_queue_t queue) {
+  // delete queue
+  vQueueDelete(queue);
 }

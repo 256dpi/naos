@@ -114,6 +114,13 @@ void naos_lock(naos_mutex_t mutex);
 void naos_unlock(naos_mutex_t mutex);
 
 /**
+ * Deletes the specified mutex.
+ *
+ * @param mutex The mutex.
+ */
+void naos_mutex_delete(naos_mutex_t mutex);
+
+/**
  * A signal handle.
  */
 typedef EventGroupHandle_t naos_signal_t;
@@ -143,6 +150,13 @@ void naos_trigger_isr(naos_signal_t signal, uint16_t bits, bool clear);
  * @param clear Whether the bits should be cleared.
  */
 void naos_await(naos_signal_t signal, uint16_t bits, bool clear);
+
+/**
+ * Deletes the specified signal.
+ *
+ * @param signal The signal.
+ */
+void naos_signal_delete(naos_signal_t signal);
 
 /**
  * A queue handle.
@@ -178,5 +192,12 @@ bool naos_push_isr(naos_queue_t queue, void *item);
  * @return Whether the item was popped.
  */
 bool naos_pop(naos_queue_t queue, void *item, int32_t timeout_ms);
+
+/**
+ * Deletes the specified queue.
+ *
+ * @param queue The queue.
+ */
+void naos_queue_delete(naos_queue_t queue);
 
 #endif  // NAOS_SYS_H
