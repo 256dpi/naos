@@ -118,51 +118,31 @@ public class NAOSManagedDevice: NSObject {
 				// wait a second
 				try await Task.sleep(nanoseconds: 1_000_000_000)
 
-				// acquire mutex
-				await mutex.wait()
-
-				// skip if not connected
-				if !connected {
-					// release mutex
-					mutex.signal()
-
-					continue
+				// collect updates
+				var updates = [NAOSParamUpdate]()
+				try? await useSession { session in
+					updates = try await NAOSParams.collect(session: session, refs: nil, since: maxAge)
 				}
 
-				// use session
-				try? await withSession { session in
-					// collect parameters
-					var updates: [NAOSParamUpdate] = []
-					do {
-						updates = try await NAOSParams.collect(session: session, refs: nil, since: maxAge)
-					} catch {
-						mutex.signal()
-						return
+				// update parameters
+				for update in updates {
+					if let param = (availableParameters.first { p in p.ref == update.ref }) {
+						parameters[param] = String(data: update.value, encoding: .utf8)!
+						maxAge = max(maxAge, update.age)
 					}
+				}
 
-					// update parameters
+				// call delegate if present
+				if let d = delegate {
 					for update in updates {
-						if let param = (availableParameters.first { p in p.ref == update.ref }) {
-							parameters[param] = String(data: update.value, encoding: .utf8)!
-							maxAge = max(maxAge, update.age)
-						}
-					}
-
-					// release mutex
-					mutex.signal()
-
-					// call delegate if present
-					if let d = delegate {
-						for update in updates {
-							DispatchQueue.main.async {
-								if let param =
-									(self.availableParameters.first { p in
-										p.ref == update.ref
-									})
-								{
-									d.naosDeviceDidUpdate(
-										device: self, parameter: param)
-								}
+						DispatchQueue.main.async {
+							if let param =
+								(self.availableParameters.first { p in
+									p.ref == update.ref
+								})
+							{
+								d.naosDeviceDidUpdate(
+									device: self, parameter: param)
 							}
 						}
 					}
@@ -214,7 +194,7 @@ public class NAOSManagedDevice: NSObject {
 			self.canUpdate = try await session.query(endpoint: NAOSUpdate.endpoint)
 			self.canFS = try await session.query(endpoint: NAOSFS.endpoint)
 			self.canRelay = try await session.query(endpoint: NAOSRelay.endpoint)
-			
+
 			// list parameters
 			let list = try await NAOSParams.list(session: session)
 
@@ -421,7 +401,7 @@ public class NAOSManagedDevice: NSObject {
 		// clear session
 		session?.cleanup()
 		session = nil
-		
+
 		// close channel
 		channel?.close()
 		channel = nil
