@@ -5,8 +5,6 @@
 
 import Foundation
 
-let paramsEndpoint: UInt8 = 0x1
-
 /// The available parameter types.
 public enum NAOSParamType: UInt8 {
 	case raw
@@ -65,6 +63,9 @@ public struct NAOSParamUpdate {
 
 /// The NAOS parameter endpoint.
 public class NAOSParams {
+	/// The endpoint number
+	public static let endpoint: UInt8 = 0x1
+	
 	/// Get a parameter value by name.
 	public static func get(session: NAOSSession, name: String, timeout: TimeInterval = 5) async throws -> Data {
 		// prepare command
@@ -72,10 +73,10 @@ public class NAOSParams {
 		cmd.append(name.data(using: .utf8)!)
 
 		// write command
-		try await session.send(endpoint: paramsEndpoint, data: cmd, ackTimeout: 0)
+		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: 0)
 
 		// receive value
-		return try await session.receive(endpoint: paramsEndpoint, expectAck: false, timeout: timeout)!
+		return try await session.receive(endpoint: self.endpoint, expectAck: false, timeout: timeout)!
 	}
 
 	/// Set a parameter value by name.
@@ -89,13 +90,13 @@ public class NAOSParams {
 		cmd.append(value)
 
 		// write command
-		try await session.send(endpoint: paramsEndpoint, data: cmd, ackTimeout: timeout)
+		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: timeout)
 	}
 
 	/// Obtain a list of all known parametersession.
 	public static func list(session: NAOSSession, timeout: TimeInterval = 5) async throws -> [NAOSParamInfo] {
 		// send command
-		try await session.send(endpoint: paramsEndpoint, data: Data([2]), ackTimeout: 0)
+		try await session.send(endpoint: self.endpoint, data: Data([2]), ackTimeout: 0)
 
 		// prepare list
 		var list = [NAOSParamInfo]()
@@ -104,7 +105,7 @@ public class NAOSParams {
 			// receive reply or return list on ack
 			guard
 				let reply = try await session.receive(
-					endpoint: paramsEndpoint, expectAck: true, timeout: timeout)
+					endpoint: self.endpoint, expectAck: true, timeout: timeout)
 			else {
 				return list
 			}
@@ -131,10 +132,10 @@ public class NAOSParams {
 		let cmd = Data([3, ref])
 
 		// write command
-		try await session.send(endpoint: paramsEndpoint, data: cmd, ackTimeout: 0)
+		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: 0)
 
 		// receive value
-		return try await session.receive(endpoint: paramsEndpoint, expectAck: false, timeout: timeout)!
+		return try await session.receive(endpoint: self.endpoint, expectAck: false, timeout: timeout)!
 	}
 
 	/// Write a parameter by reference.
@@ -146,7 +147,7 @@ public class NAOSParams {
 		cmd.append(value)
 
 		// write command
-		try await session.send(endpoint: paramsEndpoint, data: cmd, ackTimeout: timeout)
+		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: timeout)
 	}
 
 	/// Collect parameter values by providing a list of refrences, a since timestamp or both.
@@ -164,7 +165,7 @@ public class NAOSParams {
 
 		// send command
 		let cmd = pack(fmt: "oqq", args: [UInt8(5), map, since])
-		try await session.send(endpoint: paramsEndpoint, data: cmd, ackTimeout: 0)
+		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: 0)
 
 		// prepare list
 		var list = [NAOSParamUpdate]()
@@ -173,7 +174,7 @@ public class NAOSParams {
 			// receive reply or return list on ack
 			guard
 				let reply = try await session.receive(
-					endpoint: paramsEndpoint, expectAck: true, timeout: timeout)
+					endpoint: self.endpoint, expectAck: true, timeout: timeout)
 			else {
 				return list
 			}
@@ -200,6 +201,6 @@ public class NAOSParams {
 		let cmd = Data([6, ref])
 
 		// write command
-		try await session.send(endpoint: paramsEndpoint, data: cmd, ackTimeout: timeout)
+		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: timeout)
 	}
 }

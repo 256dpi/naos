@@ -5,8 +5,6 @@
 
 import Foundation
 
-let fsEndpoint: UInt8 = 0x3
-
 /// Information about a file.
 public struct NAOSFSInfo {
 	public var name: String
@@ -16,6 +14,9 @@ public struct NAOSFSInfo {
 
 /// The NAOS file system endpoint.
 public class NAOSFS {
+	/// The endpoint number.
+	public static let endpoint: UInt8 = 0x3
+	
 	/// Get information on a file or directory.
 	public static func stat(session: NAOSSession, path: String, timeout: TimeInterval = 5) async throws -> NAOSFSInfo {
 		// send command
@@ -236,7 +237,7 @@ public class NAOSFS {
 
 	static func receive(session: NAOSSession, expectAck: Bool, timeout: TimeInterval) async throws -> Data? {
 		// receive reply
-		guard let data = try await session.receive(endpoint: fsEndpoint, expectAck: expectAck, timeout: timeout) else {
+		guard let data = try await session.receive(endpoint: self.endpoint, expectAck: expectAck, timeout: timeout) else {
 			return nil
 		}
 
@@ -250,6 +251,6 @@ public class NAOSFS {
 
 	static func send(session: NAOSSession, cmd: Data, ack: Bool, timeout: TimeInterval) async throws {
 		// send command
-		try await session.send(endpoint: fsEndpoint, data: cmd, ackTimeout: ack ? timeout : 0)
+		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: ack ? timeout : 0)
 	}
 }
