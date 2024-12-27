@@ -93,6 +93,9 @@ public class NAOSManagedDevice: NSObject {
 
 	public var delegate: NAOSManagedDeviceDelegate?
 	public private(set) var connected: Bool = false
+	public private(set) var canUpdate: Bool = false
+	public private(set) var canFS: Bool = false
+	public private(set) var canRelay: Bool = false
 	public private(set) var locked: Bool = false
 	public private(set) var availableParameters: [NAOSParameter] = []
 	public var parameters: [NAOSParameter: String] = [:]
@@ -207,6 +210,11 @@ public class NAOSManagedDevice: NSObject {
 
 		// use session
 		try await withSession { session in
+			// check endpoint existence
+			self.canUpdate = try await session.query(endpoint: NAOSUpdate.endpoint)
+			self.canFS = try await session.query(endpoint: NAOSFS.endpoint)
+			self.canRelay = try await session.query(endpoint: NAOSRelay.endpoint)
+			
 			// list parameters
 			let list = try await NAOSParams.list(session: session)
 

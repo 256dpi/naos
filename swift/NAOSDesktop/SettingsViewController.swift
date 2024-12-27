@@ -10,6 +10,8 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 	SettingsParameterValueDelegate
 {
 	@IBOutlet var connectionStatusLabel: NSTextField!
+	@IBOutlet var flashButton: NSButton!
+	@IBOutlet var filesbutton: NSButton!
 	@IBOutlet var parameterTableView: NSTableView!
 
 	private var lvc: LoadingViewController?
@@ -35,6 +37,10 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 				self.connectionStatusLabel.stringValue =
 					(self.device.parameters[.connectionStatus] ?? "")
 						.capitalized
+
+				// update buttons
+				self.flashButton.isEnabled = self.device.canUpdate
+				self.filesbutton.isEnabled = self.device.canFS
 
 				// reload parameters
 				self.parameterTableView.reloadData()
@@ -74,35 +80,14 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 	}
 
 	@IBAction func files(_: AnyObject) {
-		Task {
-			do {
-				// open a new session
-				let sess = try await self.device.newSession(timeout: 5)
-				defer { sess.cleanup() }
+		// load files view controller
+		let fvc = loadVC("FilesViewController") as! FilesViewController
 
-				// query endpoint existence
-				let exists = try await sess.query(endpoint: 0x3, timeout: 5)
+		// assign endpoint
+		fvc.device = device
 
-				// close session
-				try await sess.end(timeout: 5)
-
-				// check endpoint existence
-				if !exists {
-					throw CustomError(title: "Missing FS Endpoint.")
-				}
-
-				// load files view controller
-				let fvc = loadVC("FilesViewController") as! FilesViewController
-
-				// assign endpoint
-				fvc.device = device
-
-				// present view controller
-				self.presentAsSheet(fvc)
-			} catch {
-				showError(error: error)
-			}
-		}
+		// present view controller
+		presentAsSheet(fvc)
 	}
 
 	// NSTableView
