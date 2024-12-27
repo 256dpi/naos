@@ -23,14 +23,14 @@ internal class SessionViewController: NSViewController {
 		// run task
 		let task = Task {
 			// open session
-			let session = try await device.newSession(timeout: 5)
+			let session = try await device.newSession()
 			defer { session.cleanup() }
 
 			// run operation
 			try await operation(session)
 
 			// end session
-			try await session.end(timeout: 5)
+			try await session.end()
 		}
 
 		// set cancel action
@@ -67,7 +67,7 @@ internal class SessionViewController: NSViewController {
 		// run task
 		let task = Task.detached {
 			// open session
-			let session = try await self.device.newSession(timeout: 5)
+			let session = try await self.device.newSession()
 			defer { session.cleanup() }
 
 			// run operation
@@ -83,7 +83,7 @@ internal class SessionViewController: NSViewController {
 			}
 
 			// end session
-			try await session.end(timeout: 5)
+			try await session.end()
 		}
 
 		// set cancel action

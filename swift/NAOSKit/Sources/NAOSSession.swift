@@ -116,7 +116,7 @@ public class NAOSSession {
 	}
 
 	/// Ping will check the session and keep it alive.
-	public func ping(timeout: TimeInterval) async throws {
+	public func ping(timeout: TimeInterval = 5) async throws {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }
@@ -136,7 +136,7 @@ public class NAOSSession {
 	}
 
 	/// Query will check an endpoints existence.
-	public func query(endpoint: UInt8, timeout: TimeInterval) async throws -> Bool {
+	public func query(endpoint: UInt8, timeout: TimeInterval = 5) async throws -> Bool {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }
@@ -157,7 +157,7 @@ public class NAOSSession {
 	}
 
 	/// Wait and receive the next message for the specified endpoint with reply handling.
-	public func receive(endpoint: UInt8, expectAck: Bool, timeout: TimeInterval) async throws
+	public func receive(endpoint: UInt8, expectAck: Bool, timeout: TimeInterval = 5) async throws
 		-> Data?
 	{
 		// acquire mutex
@@ -221,7 +221,7 @@ public class NAOSSession {
 	}
 
 	/// Request the session status.
-	public func status(timeout: TimeInterval) async throws -> NAOSSessionStatus {
+	public func status(timeout: TimeInterval = 5) async throws -> NAOSSessionStatus {
 		// send command
 		try? await send(endpoint: 0xFD, data: Data([0]), ackTimeout: 0)
 
@@ -240,7 +240,7 @@ public class NAOSSession {
 	}
 
 	/// Unlock  a locked session with the password.
-	public func unlock(password: String, timeout: TimeInterval) async throws -> Bool {
+	public func unlock(password: String, timeout: TimeInterval = 5) async throws -> Bool {
 		// prepare command
 		var cmd = Data([1])
 		cmd.append(password.data(using: .utf8)!)
@@ -260,7 +260,7 @@ public class NAOSSession {
 	}
 
 	/// End the session.
-	public func end(timeout: TimeInterval) async throws {
+	public func end(timeout: TimeInterval = 5) async throws {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }

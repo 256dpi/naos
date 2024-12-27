@@ -187,7 +187,7 @@ public class NAOSManagedDevice: NSObject {
 
 		// read lock status
 		try await withSession { session in
-			locked = try await session.status(timeout: 5).contains(.locked)
+			locked = try await session.status().contains(.locked)
 		}
 
 		// reset max aage
@@ -254,7 +254,7 @@ public class NAOSManagedDevice: NSObject {
 
 		// read lock status
 		try await withSession { session in
-			if try await session.unlock(password: password, timeout: 5) {
+			if try await session.unlock(password: password) {
 				locked = false
 			}
 		}
@@ -319,7 +319,7 @@ public class NAOSManagedDevice: NSObject {
 	}
 
 	/// NewSession will create a new session and return it.
-	public func newSession(timeout: TimeInterval) async throws -> NAOSSession {
+	public func newSession(timeout: TimeInterval = 5) async throws -> NAOSSession {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }
@@ -373,14 +373,14 @@ public class NAOSManagedDevice: NSObject {
 
 	// Helpers
 
-	private func openSession(timeout: TimeInterval) async throws -> NAOSSession {
+	private func openSession(timeout: TimeInterval = 5) async throws -> NAOSSession {
 		// open session
 		let session = try await NAOSSession.open(channel: channel!, timeout: timeout)
 
 		// try to unlock if locked
 		if !password.isEmpty {
-			if try (await session.status(timeout: 5)).contains(.locked) {
-				_ = try await session.unlock(password: password, timeout: 5)
+			if try (await session.status()).contains(.locked) {
+				_ = try await session.unlock(password: password)
 			}
 		}
 
@@ -390,7 +390,7 @@ public class NAOSManagedDevice: NSObject {
 	private func withSession(callback: (NAOSSession) async throws -> Void) async throws {
 		// ensure session
 		if session == nil {
-			session = try await openSession(timeout: 5)
+			session = try await openSession()
 		}
 
 		// yield session
