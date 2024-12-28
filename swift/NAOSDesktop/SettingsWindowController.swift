@@ -8,7 +8,6 @@ import NAOSKit
 
 class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManagedDeviceDelegate {
 	private var device: NAOSManagedDevice!
-	private var manager: DeviceManager!
 	private var lvc: LoadingViewController!
 	private var uvc: UnlockViewController?
 	private var svc: SettingsViewController?
@@ -20,13 +19,10 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 		window!.delegate = self
 	}
 
-	func configure(device: NAOSManagedDevice, manager: DeviceManager) {
+	func configure(device: NAOSManagedDevice) {
 		// save device
 		self.device = device
 		device.delegate = self
-
-		// save manager
-		self.manager = manager
 
 		// grab connecting view controller
 		lvc = (contentViewController as! LoadingViewController)
@@ -105,7 +101,7 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 
 	func windowShouldClose(_: NSWindow) -> Bool {
 		// let manager close window
-		manager.close(self)
+		DeviceManager.shared.closeDevice(device: device)
 
 		// disconnect device
 		Task {

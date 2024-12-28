@@ -16,85 +16,110 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 	private var devices: [NAOSManagedDevice: NSMenuItem] = [:]
 	private var controllers: [NAOSManagedDevice: SettingsWindowController] = [:]
 
+	static var shared: DeviceManager!
+
 	override init() {
 		// call superclass
 		super.init()
 
-		// create naos manager
+		// hide dock icon
+		NSApp.setActivationPolicy(.accessory)
+
+		// create BLE manager
 		manager = NAOSBLEManager(delegate: self)
 
-		// update device information every second
+		// run updater
 		Task { @MainActor in
 			while true {
 				// wait a second
-				try await Task.sleep(nanoseconds: 1_000_000_000)
+				try await Task.sleep(for: .seconds(1))
 
-				for item in devices {
-					// get device
-					let device = item.key
+				// update menu items
+				for (d, i) in devices {
+					i.title = d.title()
+				}
 
-					// update menu item title
-					devices[device]?.title = device.title()
-
-					// update eventual window titles
-					controllers[device]?.window!.title = device.title()
+				// update window titles
+				for (d, c) in controllers {
+					c.window!.title = d.title()
 				}
 			}
 		}
+
+		// set shared instance
+		DeviceManager.shared = self
 	}
+
+	func openDevice(device: NAOSManagedDevice) {
+		Task { @MainActor in
+			// check if a controller already exists
+			for (d, c) in controllers {
+				if d == device {
+					// bring window to front
+					NSApp.activate(ignoringOtherApps: true)
+					c.window!.orderFrontRegardless()
+					c.window!.makeKey()
+					return
+				}
+			}
+
+			// create window controller
+			let controller = loadVC("SettingsWindowController") as! SettingsWindowController
+
+			// store controller for device
+			controllers[device] = controller
+
+			// show and configure window
+			controller.showWindow(self)
+			controller.window!.title = device.title()
+
+			// show dock icon again on first window
+			if controllers.count == 1 {
+				NSApp.setActivationPolicy(.regular)
+			}
+
+			// bring window to front
+			NSApp.activate(ignoringOtherApps: true)
+			controller.window!.orderFrontRegardless()
+			controller.window!.makeKey()
+
+			// configure device and manager
+			controller.configure(device: device)
+		}
+	}
+
+	func closeDevice(device: NAOSManagedDevice) {
+		Task { @MainActor in
+			// close window
+			for (d, c) in controllers {
+				if d == device {
+					c.close()
+				}
+			}
+
+			// remove controller for device
+			controllers.removeValue(forKey: device)
+
+			// hide dock icon on last window
+			if controllers.count == 0 {
+				NSApp.setActivationPolicy(.accessory)
+			}
+		}
+	}
+
+	// UI Actions
 
 	@objc func open(_ menuItem: NSMenuItem) {
 		// get associated device
 		let device = menuItem.representedObject as! NAOSManagedDevice
 
-		// check if a controller already exists
-		for (d, wc) in controllers {
-			if d == device {
-				// bring window to front
-				wc.window?.orderFrontRegardless()
-				return
-			}
-		}
-
-		// instantiate window controller
-		let controller = loadVC("SettingsWindowController") as! SettingsWindowController
-
-		// store and show window
-		controllers[device] = controller
-		controller.showWindow(self)
-
-		// configure window
-		controller.window!.title = device.title()
-		controller.window!.orderFrontRegardless()
-		controller.window!.makeKey()
-
-		// send notification
-		NotificationCenter.default.post(name: .open, object: nil)
-
-		// configure device and manager
-		controller.configure(device: device, manager: self)
+		// open device
+		openDevice(device: device)
 	}
 
 	@IBAction func reset(_: AnyObject) {
 		// reset manager
 		manager.reset()
-	}
-
-	// SettingsWindowController
-
-	func close(_ wc: SettingsWindowController) {
-		// remove controller
-		for (d, c) in controllers {
-			if c == wc {
-				controllers.removeValue(forKey: d)
-			}
-		}
-
-		// close window
-		wc.close()
-
-		// send notification
-		NotificationCenter.default.post(name: .close, object: nil)
 	}
 
 	// NAOSManagerDelegate
@@ -120,9 +145,9 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 	}
 
 	func naosManagerDidReset(manager _: NAOSBLEManager) {
-		// close all controllers
-		for (_, c) in controllers {
-			close(c)
+		// close all devices
+		for (device, _) in controllers {
+			closeDevice(device: device)
 		}
 
 		// remove all controllers
