@@ -8,7 +8,7 @@ import NAOSKit
 
 // TODO: Add multiple menus per device type.
 
-class BluetoothManager: NSObject, NAOSBLEManagerDelegate {
+class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 	@IBOutlet private var devicesMenuItem: NSMenuItem!
 	@IBOutlet private var devicesMenu: NSMenu!
 

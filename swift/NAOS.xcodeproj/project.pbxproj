@@ -12,7 +12,7 @@
 		52BD19B92561EA93006D3507 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19B82561EA93006D3507 /* AppDelegate.swift */; };
 		52BD19BD2561EA95006D3507 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 52BD19BC2561EA95006D3507 /* Assets.xcassets */; };
 		52BD19C02561EA95006D3507 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 52BD19BE2561EA95006D3507 /* Main.storyboard */; };
-		52BD19C92561EB20006D3507 /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19C82561EB20006D3507 /* BluetoothManager.swift */; };
+		52BD19C92561EB20006D3507 /* DeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19C82561EB20006D3507 /* DeviceManager.swift */; };
 		52BD19CB2561EB27006D3507 /* LoadingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CA2561EB27006D3507 /* LoadingViewController.swift */; };
 		52BD19D92561EB2E006D3507 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19CF2561EB2D006D3507 /* SettingsWindowController.swift */; };
 		52BD19DC2561EB2E006D3507 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19D22561EB2D006D3507 /* SettingsViewController.swift */; };
@@ -32,7 +32,7 @@
 		52BD19BF2561EA95006D3507 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		52BD19C12561EA95006D3507 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		52BD19C22561EA95006D3507 /* NAOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NAOS.entitlements; sourceTree = "<group>"; };
-		52BD19C82561EB20006D3507 /* BluetoothManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
+		52BD19C82561EB20006D3507 /* DeviceManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeviceManager.swift; sourceTree = "<group>"; };
 		52BD19CA2561EB27006D3507 /* LoadingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoadingViewController.swift; sourceTree = "<group>"; };
 		52BD19CF2561EB2D006D3507 /* SettingsWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		52BD19D22561EB2D006D3507 /* SettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
@@ -78,7 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				52BD19B82561EA93006D3507 /* AppDelegate.swift */,
-				52BD19C82561EB20006D3507 /* BluetoothManager.swift */,
+				52BD19C82561EB20006D3507 /* DeviceManager.swift */,
 				52BD19CA2561EB27006D3507 /* LoadingViewController.swift */,
 				52BD19D32561EB2D006D3507 /* UnlockViewController.swift */,
 				52BD19D42561EB2D006D3507 /* SettingsParameterValue.swift */,
@@ -182,7 +182,7 @@
 				52BD19DD2561EB2E006D3507 /* UnlockViewController.swift in Sources */,
 				5224D3C72A8BF554003D5484 /* SessionViewController.swift in Sources */,
 				52BD19DE2561EB2E006D3507 /* SettingsParameterValue.swift in Sources */,
-				52BD19C92561EB20006D3507 /* BluetoothManager.swift in Sources */,
+				52BD19C92561EB20006D3507 /* DeviceManager.swift in Sources */,
 				52BD19DC2561EB2E006D3507 /* SettingsViewController.swift in Sources */,
 				52F8D09E2909D89700F8A59C /* Utils.swift in Sources */,
 				52BD19B92561EA93006D3507 /* AppDelegate.swift in Sources */,

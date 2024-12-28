@@ -682,7 +682,7 @@
                         </menuItem>
                     </items>
                 </menu>
-                <customObject id="ofH-Ex-qnF" customClass="BluetoothManager" customModule="NAOS" customModuleProvider="target">
+                <customObject id="ofH-Ex-qnF" customClass="DeviceManager" customModule="NAOS" customModuleProvider="target">
                     <connections>
                         <outlet property="devicesMenu" destination="V7S-Yb-XJw" id="8yt-w4-qGS"/>
                         <outlet property="devicesMenuItem" destination="1ao-5n-Zdl" id="FTe-bS-BNf"/>

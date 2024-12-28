@@ -8,7 +8,7 @@ import NAOSKit
 
 class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManagedDeviceDelegate {
 	private var device: NAOSManagedDevice!
-	private var manager: BluetoothManager!
+	private var manager: DeviceManager!
 	private var lvc: LoadingViewController!
 	private var uvc: UnlockViewController?
 	private var svc: SettingsViewController?
@@ -20,7 +20,7 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 		window!.delegate = self
 	}
 
-	func configure(device: NAOSManagedDevice, manager: BluetoothManager) {
+	func configure(device: NAOSManagedDevice, manager: DeviceManager) {
 		// save device
 		self.device = device
 		device.delegate = self
