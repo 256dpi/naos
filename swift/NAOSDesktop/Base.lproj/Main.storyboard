@@ -1053,7 +1053,7 @@ Gw
                     </view>
                     <connections>
                         <outlet property="connectionStatusLabel" destination="eJN-Ld-xoS" id="e7z-w5-02k"/>
-                        <outlet property="filesbutton" destination="zuP-Z1-Oyq" id="pjZ-2T-0fY"/>
+                        <outlet property="filesButton" destination="zuP-Z1-Oyq" id="pjZ-2T-0fY"/>
                         <outlet property="flashButton" destination="sl6-1t-1bN" id="y6R-nN-bsJ"/>
                         <outlet property="parameterTableView" destination="R4Z-Qg-sbl" id="aBH-DO-Ddq"/>
                     </connections>

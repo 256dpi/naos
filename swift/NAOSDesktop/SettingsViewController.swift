@@ -11,7 +11,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 {
 	@IBOutlet var connectionStatusLabel: NSTextField!
 	@IBOutlet var flashButton: NSButton!
-	@IBOutlet var filesbutton: NSButton!
+	@IBOutlet var filesButton: NSButton!
 	@IBOutlet var parameterTableView: NSTableView!
 
 	private var lvc: LoadingViewController?
@@ -40,7 +40,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 
 				// update buttons
 				self.flashButton.isEnabled = self.device.canUpdate
-				self.filesbutton.isEnabled = self.device.canFS
+				self.filesButton.isEnabled = self.device.canFS
 
 				// reload parameters
 				self.parameterTableView.reloadData()
