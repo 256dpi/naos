@@ -101,7 +101,7 @@ public class NAOSManagedDevice: NSObject {
 	public var parameters: [NAOSParameter: String] = [:]
 	private var password: String = ""
 
-	init(device: NAOSDevice) {
+	public init(device: NAOSDevice) {
 		// initialize instance
 		self.device = device
 

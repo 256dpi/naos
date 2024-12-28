@@ -68,7 +68,7 @@ public class NAOSSession {
 	private var queue: NAOSQueue
 	private var mutex = AsyncSemaphore(value: 1)
 
-	internal static func open(channel: NAOSChannel, timeout: TimeInterval) async throws -> NAOSSession {
+	public static func open(channel: NAOSChannel, timeout: TimeInterval) async throws -> NAOSSession {
 		// create queue
 		let queue = NAOSQueue()
 	
@@ -270,6 +270,11 @@ public class NAOSSession {
 
 		// write command
 		try await self.write(msg: NAOSMessage(session: self.id, endpoint: 0xFF, data: Data()))
+		
+		// stop if timeout is zero
+		if timeout == 0 {
+			return
+		}
 
 		// read reply
 		let msg = try await self.read(timeout: timeout)

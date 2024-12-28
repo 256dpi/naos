@@ -46,6 +46,10 @@ func withTimeout<R>(
 	}
 }
 
+func toHex(data: Data) -> String {
+	return data.map { String(format: "%02hhx ", $0) }.joined()
+}
+
 func readUint16(data: Data) -> UInt16 {
 	return UInt16(data[0]) | (UInt16(data[1]) << 8)
 }
