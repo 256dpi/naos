@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
 	name: "NAOSKit",
 	platforms: [
-		.macOS(.v12),
+		.macOS(.v13),
 		.iOS(.v14),
 	],
 	products: [

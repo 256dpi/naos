@@ -27,7 +27,7 @@ func withTimeout<R>(
 		group.addTask {
 			let interval = deadline.timeIntervalSinceNow
 			if interval > 0 {
-				try await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+				try await Task.sleep(for: .seconds(interval))
 			}
 			try Task.checkCancellation()
 			throw TimedOutError()

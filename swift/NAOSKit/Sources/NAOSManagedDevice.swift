@@ -116,7 +116,7 @@ public class NAOSManagedDevice: NSObject {
 		Task {
 			while true {
 				// wait a second
-				try await Task.sleep(nanoseconds: 1_000_000_000)
+				try await Task.sleep(for: .seconds(1))
 
 				// collect updates
 				var updates = [NAOSParamUpdate]()
