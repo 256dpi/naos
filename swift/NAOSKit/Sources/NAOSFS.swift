@@ -160,12 +160,12 @@ public class NAOSFS {
 
 		// TODO: Dynamically determine channel MTU?
 
-		// write data in 500-byte chunks
+		// write data in 490-byte chunks
 		var num = 0
 		var offset = 0
 		while offset < data.count {
 			// determine chunk size and chunk data
-			let chunkSize = min(500, data.count - offset)
+			let chunkSize = min(490, data.count - offset)
 			let chunkData = data.subdata(in: offset ..< offset + chunkSize)
 
 			// determine mode

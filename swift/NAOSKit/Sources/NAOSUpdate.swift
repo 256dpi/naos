@@ -26,12 +26,12 @@ public class NAOSUpdate {
 
 		// TODO: Dynamically determine channel MTU?
 
-		// write data in 500-byte chunks
+		// write data in 490-byte chunks
 		var num = 0
 		var offset = 0
 		while offset < image.count {
 			// determine chunk size and chunk data
-			let chunkSize = min(500, image.count - offset)
+			let chunkSize = min(490, image.count - offset)
 			let chunkData = image.subdata(in: offset ..< offset + chunkSize)
 
 			// determine acked
