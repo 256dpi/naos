@@ -13,6 +13,8 @@
 #include <naos/bridge.h>
 #include <naos/fs.h>
 #include <naos/serial.h>
+#include <naos/relay.h>
+#include <naos/sys.h>
 
 #define ETHERNET false
 
@@ -139,6 +141,25 @@ static bool osc_filter(const char *topic, const char *format, esp_osc_value_t *v
   return true;
 }
 
+static uint64_t host_scan() {
+  // enumerate one device
+  return 0b1;
+}
+
+static bool host_to_device(uint8_t num, uint8_t *data, size_t len) {
+  // relay message
+  naos_relay_device_process(data, len);
+
+  return true;
+}
+
+static bool device_to_host(uint8_t *data, size_t len) {
+  // relay message
+  naos_relay_host_process(0, data, len);
+
+  return true;
+}
+
 static naos_param_t params[] = {
     {.name = "var_s", .type = NAOS_STRING, .default_s = "", .sync_s = &var_s},
     {.name = "var_l", .type = NAOS_LONG, .default_l = 0, .sync_l = &var_l},
@@ -214,6 +235,15 @@ void app_main() {
       .root = "/data",
   });
 
+  // initialize relay
+  naos_relay_host_init((naos_relay_host_t){
+      .scan = host_scan,
+      .send = host_to_device,
+  });
+  naos_relay_device_init((naos_relay_device_t){
+      .send = device_to_host,
+  });
+
   // register parameters
   naos_register(&param_counter);
   naos_register(&param_message);
@@ -222,5 +252,5 @@ void app_main() {
   counter = naos_get_l("counter");
 
   // start
-  naos_start();
+  // naos_start();
 }
