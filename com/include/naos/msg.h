@@ -67,6 +67,10 @@ typedef struct {
 
 /**
  * A message channel.
+ *
+ * @param name The channel name.
+ * @param mtu The maximum channel MTU.
+ * @param send The function to send messages.
  */
 typedef struct {
   const char *name;
@@ -86,8 +90,17 @@ typedef enum {
   NAOS_MSG_LOCKED,
 } naos_msg_reply_t;
 
+// TODO: Ensure that handle is never called after cleanup.
+
 /**
  * A message endpoint.
+ *
+ * Note: Messages are dispatched by a single background task sequentially.
+ *
+ * @param ref The endpoint number.
+ * @param name The endpoint name.
+ * @param handle The function to handle messages.
+ * @param cleanup The function to clean up sessions.
  */
 typedef struct {
   uint8_t ref;
