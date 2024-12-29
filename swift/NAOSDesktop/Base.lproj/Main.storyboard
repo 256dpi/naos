@@ -3,6 +3,7 @@
     <dependencies>
         <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22689"/>
+        <capability name="Combo buttons" minToolsVersion="14.0" minSystemVersion="13.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -791,7 +792,7 @@ Gw
                                 </textFieldCell>
                             </textField>
                             <textField horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eJN-Ld-xoS">
-                                <rect key="frame" x="148" y="444" width="193" height="16"/>
+                                <rect key="frame" x="148" y="444" width="128" height="16"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Unknown" id="2qI-H7-l32">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1029,13 +1030,26 @@ Gw
                                     <action selector="files:" target="c3R-v8-FCu" id="2E8-UO-NIB"/>
                                 </connections>
                             </button>
+                            <comboButton verticalHuggingPriority="750" baseWritingDirection="leftToRight" alignment="center" title="Relay" imageScaling="proportionallyDown" style="unified" translatesAutoresizingMaskIntoConstraints="NO" id="2on-EL-sqI">
+                                <rect key="frame" x="279" y="438" width="61" height="24"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="55" id="Ake-mt-qQD"/>
+                                </constraints>
+                                <menu key="menu" id="fej-WQ-hz5">
+                                    <items>
+                                        <menuItem title="Item 1" id="t1r-nV-PWk"/>
+                                        <menuItem title="Item 2" id="Tmm-fP-Moz"/>
+                                    </items>
+                                </menu>
+                            </comboButton>
                         </subviews>
                         <constraints>
                             <constraint firstAttribute="bottom" secondItem="6b4-qo-6vn" secondAttribute="bottom" constant="20" symbolic="YES" id="0Nm-3z-4bT"/>
                             <constraint firstAttribute="trailing" secondItem="Btq-GW-2uI" secondAttribute="trailing" constant="20" symbolic="YES" id="1Le-RM-1X9"/>
                             <constraint firstItem="6b4-qo-6vn" firstAttribute="top" secondItem="Btq-GW-2uI" secondAttribute="bottom" constant="20" symbolic="YES" id="4eL-O6-aAm"/>
-                            <constraint firstItem="zuP-Z1-Oyq" firstAttribute="leading" secondItem="eJN-Ld-xoS" secondAttribute="trailing" constant="8" symbolic="YES" id="6MP-OY-yC1"/>
+                            <constraint firstItem="2on-EL-sqI" firstAttribute="top" secondItem="zuP-Z1-Oyq" secondAttribute="top" id="8WT-ho-OPo"/>
                             <constraint firstItem="Btq-GW-2uI" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="9He-E1-vOp"/>
+                            <constraint firstItem="2on-EL-sqI" firstAttribute="leading" secondItem="eJN-Ld-xoS" secondAttribute="trailing" constant="8" symbolic="YES" id="CBP-fT-1zc"/>
                             <constraint firstItem="eJN-Ld-xoS" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="IXy-PI-EKU"/>
                             <constraint firstItem="Btq-GW-2uI" firstAttribute="leading" secondItem="sl6-1t-1bN" secondAttribute="trailing" constant="12" symbolic="YES" id="P5W-Nt-P8K"/>
                             <constraint firstItem="sl6-1t-1bN" firstAttribute="leading" secondItem="zuP-Z1-Oyq" secondAttribute="trailing" constant="12" symbolic="YES" id="PEg-MJ-1CN"/>
@@ -1046,6 +1060,7 @@ Gw
                             <constraint firstItem="6b4-qo-6vn" firstAttribute="top" secondItem="zuP-Z1-Oyq" secondAttribute="bottom" constant="20" symbolic="YES" id="eH2-mW-uZo"/>
                             <constraint firstItem="uyZ-Nk-Zew" firstAttribute="leading" secondItem="lYY-xl-sde" secondAttribute="leading" constant="24" id="qod-tz-cdb"/>
                             <constraint firstItem="sl6-1t-1bN" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="sJE-uG-HPn"/>
+                            <constraint firstItem="zuP-Z1-Oyq" firstAttribute="leading" secondItem="2on-EL-sqI" secondAttribute="trailing" constant="10" id="u8V-bg-hnC"/>
                             <constraint firstItem="zuP-Z1-Oyq" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="uOE-mN-bkx"/>
                             <constraint firstItem="6b4-qo-6vn" firstAttribute="top" secondItem="sl6-1t-1bN" secondAttribute="bottom" constant="20" symbolic="YES" id="vlN-s7-gR9"/>
                             <constraint firstItem="uyZ-Nk-Zew" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="zR9-y9-0Zj"/>
@@ -1056,11 +1071,12 @@ Gw
                         <outlet property="filesButton" destination="zuP-Z1-Oyq" id="pjZ-2T-0fY"/>
                         <outlet property="flashButton" destination="sl6-1t-1bN" id="y6R-nN-bsJ"/>
                         <outlet property="parameterTableView" destination="R4Z-Qg-sbl" id="aBH-DO-Ddq"/>
+                        <outlet property="relayButton" destination="2on-EL-sqI" id="11J-AE-jx0"/>
                     </connections>
                 </viewController>
                 <customObject id="iOt-wM-IIl" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="514" y="593.5"/>
+            <point key="canvasLocation" x="514" y="593"/>
         </scene>
         <!--Files View Controller-->
         <scene sceneID="Nel-CO-yxl">

@@ -100,6 +100,7 @@ public class NAOSManagedDevice: NSObject {
 	public private(set) var availableParameters: [NAOSParameter] = []
 	public var parameters: [NAOSParameter: String] = [:]
 	private var password: String = ""
+	public private(set) var relayDevices: [NAOSDevice] = []
 
 	public init(device: NAOSDevice) {
 		// initialize instance
@@ -215,6 +216,13 @@ public class NAOSManagedDevice: NSObject {
 				if let param = availableParameters.first(where: { p in p.ref == update.ref }) {
 					parameters[param] = String(data: update.value, encoding: .utf8) ?? ""
 					maxAge = max(maxAge, update.age)
+				}
+			}
+
+			// scan relay devices
+			if self.canRelay {
+				self.relayDevices = try (await NAOSRelay.scan(session: session)).map { device in
+					NAOSRelayDevice(host: self, device: device)
 				}
 			}
 		}

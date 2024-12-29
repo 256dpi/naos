@@ -12,6 +12,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 	@IBOutlet var connectionStatusLabel: NSTextField!
 	@IBOutlet var flashButton: NSButton!
 	@IBOutlet var filesButton: NSButton!
+	@IBOutlet var relayButton: NSComboButton!
 	@IBOutlet var parameterTableView: NSTableView!
 
 	private var lvc: LoadingViewController?
@@ -41,9 +42,17 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 				// update buttons
 				self.flashButton.isEnabled = self.device.canUpdate
 				self.filesButton.isEnabled = self.device.canFS
+				self.relayButton.isEnabled = self.device.canRelay
 
 				// reload parameters
 				self.parameterTableView.reloadData()
+
+				// update relay menu
+				self.relayButton.menu.items = self.device.relayDevices.map { device in
+					let item = NSMenuItem(title: device.name(), action: #selector(SettingsViewController.relay), keyEquivalent: "")
+					item.representedObject = device
+					return item
+				}
 
 				// dismiss sheet
 				self.dismiss(self.lvc!)
@@ -88,6 +97,19 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 
 		// present view controller
 		presentAsSheet(fvc)
+	}
+
+	@objc func relay(a: NSMenuItem) {
+		// get device
+		let device = a.representedObject as! NAOSDevice
+
+		Task {
+			// prepare device
+			let managedDevice = NAOSManagedDevice(device: device)
+
+			// let manager open device
+			DeviceManager.shared.openDevice(device: managedDevice)
+		}
 	}
 
 	// NSTableView
