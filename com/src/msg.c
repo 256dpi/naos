@@ -555,10 +555,13 @@ size_t naos_msg_get_mtu(uint16_t id) {
   // get channel
   naos_msg_channel_t channel = naos_msg_channels[session->channel];
 
+  // determine MTU
+  size_t mtu = channel.mtu(session->context);
+
   // release mutex
   NAOS_UNLOCK(naos_msg_mutex);
 
-  return channel.mtu;
+  return mtu;
 }
 
 bool naos_msg_is_locked(uint16_t id) {

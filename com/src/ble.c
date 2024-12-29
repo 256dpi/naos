@@ -469,6 +469,14 @@ static void naos_ble_param_handler(naos_param_t *param) {
   }
 }
 
+static size_t naos_ble_msg_mtu(void *ctx) {
+  // get conn
+  naos_ble_conn_t *conn = ctx;
+
+  // return MTU
+  return conn->mtu;
+}
+
 static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
   for (int i = 0; i < 5; i++) {
     // get conn
@@ -568,7 +576,7 @@ void naos_ble_init(naos_ble_config_t cfg) {
   // register channel
   naos_ble_msg_channel_id = naos_msg_register((naos_msg_channel_t){
       .name = "ble",
-      .mtu = 512,
+      .mtu = naos_ble_msg_mtu,
       .send = naos_ble_msg_send,
   });
 }

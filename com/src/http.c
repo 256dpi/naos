@@ -241,6 +241,8 @@ static void naos_http_send_frame(void *arg) {
   free(msg);
 }
 
+static size_t naos_http_msg_mtu() { return 4096; }
+
 static bool naos_http_msg_send(const uint8_t *data, size_t len, void *ctx) {
   // prepare message
   naos_http_msg_t *msg = malloc(sizeof(naos_http_msg_t) + 4 + len);
@@ -287,7 +289,7 @@ void naos_http_init(int core) {
   // register channel
   naos_http_channel = naos_msg_register((naos_msg_channel_t){
       .name = "http",
-      .mtu = 4096,
+      .mtu = naos_http_msg_mtu,
       .send = naos_http_msg_send,
   });
 }

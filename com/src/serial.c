@@ -7,7 +7,6 @@
 #include <mbedtls/base64.h>
 
 #define NAOS_SERIAL_BUFFER_SIZE 4096
-#define NAOS_SERIAL_MSG_MTU 2560
 
 typedef size_t (*naos_serial_read_t)(uint8_t* data, size_t len);
 
@@ -99,6 +98,8 @@ static uint8_t naos_serial_stdio_channel = 0;
 static uint8_t naos_serial_stdio_input[NAOS_SERIAL_BUFFER_SIZE];
 static uint8_t naos_serial_stdio_output[NAOS_SERIAL_BUFFER_SIZE];
 
+static size_t naos_serial_mtu() { return 2560; }
+
 static bool naos_serial_stdio_send(const uint8_t* data, size_t len, void* _) {
   // encode message
   size_t enc_len;
@@ -135,7 +136,7 @@ void naos_serial_init_stdio() {
   // register channel
   naos_serial_stdio_channel = naos_msg_register((naos_msg_channel_t){
       .name = "serial-stdio",
-      .mtu = NAOS_SERIAL_MSG_MTU,
+      .mtu = naos_serial_mtu,
       .send = naos_serial_stdio_send,
   });
 
@@ -206,7 +207,7 @@ void naos_serial_init_usb() {
   // register USB channel
   naos_serial_usb_channel = naos_msg_register((naos_msg_channel_t){
       .name = "serial-usb",
-      .mtu = NAOS_SERIAL_MSG_MTU,
+      .mtu = naos_serial_mtu,
       .send = naos_serial_usb_send,
   });
 

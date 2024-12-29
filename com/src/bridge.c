@@ -28,6 +28,8 @@ static void naos_bridge_handler(naos_scope_t scope, const char *topic, const uin
   naos_msg_dispatch(naos_bridge_channel, (uint8_t *)payload, len, NULL);
 }
 
+static size_t naos_bridge_mtu() { return 4096; }
+
 static bool naos_bridge_send(const uint8_t *data, size_t len, void *ctx) {
   // publish message
   bool ok = naos_publish("naos/outbox", (void *)data, len, 0, false, NAOS_LOCAL);
@@ -45,7 +47,7 @@ void naos_bridge_install() {
   // register channel
   naos_bridge_channel = naos_msg_register((naos_msg_channel_t){
       .name = "bridge",
-      .mtu = 4096,
+      .mtu = naos_bridge_mtu,
       .send = naos_bridge_send,
   });
 }

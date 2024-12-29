@@ -6,7 +6,6 @@
 // TODO: Find a way to align the MTU with the underlying channel.
 
 #define NAOS_RELAY_ENDPOINT 0x4
-#define NAOS_RELAY_MTU 1024
 #define NAOS_RELAY_LINKS 8
 
 typedef enum {
@@ -168,6 +167,8 @@ static bool naos_relay_send(const uint8_t *data, size_t len, void *ctx) {
   return naos_relay_device.send(data, len);
 }
 
+static size_t naos_relay_mtu(void *ctx) { return 1024; }
+
 void naos_relay_host_init(naos_relay_host_t config) {
   // store config
   naos_relay_host = config;
@@ -188,7 +189,7 @@ void naos_relay_device_init(naos_relay_device_t config) {
   // register channel
   naos_relay_channel = naos_msg_register((naos_msg_channel_t){
       .name = "relay",
-      .mtu = NAOS_RELAY_MTU,
+      .mtu = naos_relay_mtu,
       .send = naos_relay_send,
   });
 }

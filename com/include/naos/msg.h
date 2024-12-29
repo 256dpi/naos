@@ -69,12 +69,12 @@ typedef struct {
  * A message channel.
  *
  * @param name The channel name.
- * @param mtu The maximum channel MTU.
+ * @param mtu The function to determine the MTU.
  * @param send The function to send messages.
  */
 typedef struct {
   const char *name;
-  size_t mtu;
+  size_t (*mtu)(void *ctx);
   bool (*send)(const uint8_t *data, size_t len, void *ctx);
 } naos_msg_channel_t;
 
