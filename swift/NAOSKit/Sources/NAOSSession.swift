@@ -71,7 +71,7 @@ public class NAOSSession {
 	public static func open(channel: NAOSChannel, timeout: TimeInterval) async throws -> NAOSSession {
 		// create queue
 		let queue = NAOSQueue()
-	
+
 		// subscribe queue
 		channel.subscribe(queue: queue)
 
@@ -145,7 +145,7 @@ public class NAOSSession {
 		try await self.write(
 			msg: NAOSMessage(session: self.id, endpoint: endpoint, data: Data()))
 
-		// erad reply
+		// reaad reply
 		let msg = try await self.read(timeout: timeout)
 
 		// verify message
@@ -201,8 +201,7 @@ public class NAOSSession {
 		defer { mutex.signal() }
 
 		// write message
-		try await self.write(
-			msg: NAOSMessage(session: self.id, endpoint: endpoint, data: data))
+		try await write(msg: NAOSMessage(session: self.id, endpoint: endpoint, data: data))
 
 		// return if timeout is zero
 		if ackTimeout == 0 {
@@ -264,13 +263,13 @@ public class NAOSSession {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }
-		
+
 		// ensure unsubscribe
 		defer { channel.unsubscribe(queue: queue) }
 
 		// write command
-		try await self.write(msg: NAOSMessage(session: self.id, endpoint: 0xFF, data: Data()))
-		
+		try await write(msg: NAOSMessage(session: self.id, endpoint: 0xFF, data: Data()))
+
 		// stop if timeout is zero
 		if timeout == 0 {
 			return
@@ -284,18 +283,22 @@ public class NAOSSession {
 			throw NAOSSessionError.invalidMessage
 		}
 	}
-		
+
+	/// Clean  up the session.
 	public func cleanup() {
+		// end session in background
 		Task{ try? await end(timeout: 0) }
 	}
 
 	// Helpers
 
-	private func write(msg: NAOSMessage) async throws {
+	/// Write a message directly to the sessions underyling channel.
+	public func write(msg: NAOSMessage) async throws {
 		try await NAOSWrite(channel: channel, msg: msg)
 	}
 
-	private func read(timeout: TimeInterval) async throws -> NAOSMessage {
+	/// Read a message directly from the sessions underlying queue.
+	public func read(timeout: TimeInterval) async throws -> NAOSMessage {
 		while true {
 			let msg = try await NAOSRead(queue: queue, timeout: timeout)
 			if msg.session == id {
