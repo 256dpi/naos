@@ -23,15 +23,16 @@ public class NAOSUpdate {
 		if reply.count != 1 || reply[0] != 0 {
 			throw NAOSSessionError.invalidMessage
 		}
+		
+		// determine MTU
+		let mtu = session.channel.getMTU() - 2
 
-		// TODO: Dynamically determine channel MTU?
-
-		// write data in 490-byte chunks
+		// write data in chunks
 		var num = 0
 		var offset = 0
 		while offset < image.count {
 			// determine chunk size and chunk data
-			let chunkSize = min(490, image.count - offset)
+			let chunkSize = min(mtu, image.count - offset)
 			let chunkData = image.subdata(in: offset ..< offset + chunkSize)
 
 			// determine acked

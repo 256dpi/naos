@@ -158,26 +158,43 @@ class bleChannel: NAOSChannel {
 	}
 
 	init(peripheral: NAOSBLEDevice, subscription: AnyCancellable) {
+		// set fields
 		self.peripheral = peripheral
 		self.subscription = subscription
 	}
 
 	public func subscribe(queue: NAOSQueue) {
+		// add queue
 		if queues.first(where: { $0 === queue }) == nil {
 			queues.append(queue)
 		}
 	}
 
 	public func unsubscribe(queue: NAOSQueue) {
+		// remove queue
 		queues.removeAll { $0 === queue }
 	}
 
 	public func write(data: Data) async throws {
+		// write message
 		try await peripheral.write(data: data)
+	}
+	
+	public func getMTU() -> Int{
+		// determine MTU
+		let max = min(
+			peripheral.peripheral.maximumWriteValueLength(for: .withResponse),
+			peripheral.peripheral.maximumWriteValueLength(for: .withoutResponse)
+		)
+		
+		return max - 4
 	}
 
 	public func close() {
+		// cancel subscription
 		subscription.cancel()
+		
+		// close connection
 		Task { try await peripheral.close() }
 	}
 }

@@ -63,8 +63,9 @@ public enum NAOSSessionError: LocalizedError {
 
 /// A session to communicate with endpoints.
 public class NAOSSession {
-	private var id: UInt16
-	private var channel: NAOSChannel
+	public private(set) var id: UInt16
+	public private(set) var channel: NAOSChannel
+	
 	private var queue: NAOSQueue
 	private var mutex = AsyncSemaphore(value: 1)
 

@@ -157,15 +157,17 @@ public class NAOSFS {
 		// send "create" command
 		var cmd = pack(fmt: "oos", args: [UInt8(2), UInt8(1 << 0 | 1 << 2), file])
 		try await send(session: session, cmd: cmd, ack: true, timeout: timeout)
+		
+		// determine MTU
+		let mtu = session.channel.getMTU() - 6
+		print("MTU", mtu)
 
-		// TODO: Dynamically determine channel MTU?
-
-		// write data in 490-byte chunks
+		// write data in chunks
 		var num = 0
 		var offset = 0
 		while offset < data.count {
 			// determine chunk size and chunk data
-			let chunkSize = min(490, data.count - offset)
+			let chunkSize = min(mtu, data.count - offset)
 			let chunkData = data.subdata(in: offset ..< offset + chunkSize)
 
 			// determine mode

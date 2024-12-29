@@ -136,6 +136,11 @@ public class NAOSRelayChannel: NAOSChannel {
 		try await NAOSRelay.send(session: session, device: device, data: data)
 	}
 	
+	public func getMTU() -> Int {
+		// determine MTU
+		return session.channel.getMTU() - 6
+	}
+	
 	public func close() {
 		// clean up session
 		session.cleanup()

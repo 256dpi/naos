@@ -23,6 +23,7 @@ public protocol NAOSChannel {
 	func subscribe(queue: NAOSQueue)
 	func unsubscribe(queue: NAOSQueue)
 	func write(data: Data) async throws
+	func getMTU() -> Int
 	func close()
 }
 
