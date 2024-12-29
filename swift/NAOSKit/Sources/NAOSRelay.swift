@@ -55,8 +55,8 @@ public class NAOSRelay {
 	
 	/// Receive a message from a downstream device.
 	public static func receive(session: NAOSSession, timeout: TimeInterval = 5) async throws -> Data? {
-		// receive reply
-		return try await session.receive(endpoint: endpoint, expectAck: false, timeout: timeout)
+		// read message
+		return (try await session.read(timeout: timeout)).data
 	}
 }
 
@@ -87,8 +87,6 @@ public class NAOSRelayChannel: NAOSChannel {
 	private var device: UInt8
 	private var queues: [NAOSQueue] = []
 	
-	// TODO: Figure out a way to not make receive and send block each other.
-	
 	public static func open(host: NAOSManagedDevice, device: UInt8) async throws -> NAOSRelayChannel {
 		// open session
 		let session = try await host.newSession()
@@ -109,7 +107,7 @@ public class NAOSRelayChannel: NAOSChannel {
 		Task {
 			while true {
 				// receive message
-				let data = try? await NAOSRelay.receive(session: session, timeout: 0.1) // 100ms
+				let data = try? await NAOSRelay.receive(session: session, timeout: 1)
 				
 				// forward message, if present
 				if let data = data {
