@@ -14,7 +14,6 @@
 #include <naos/fs.h>
 #include <naos/serial.h>
 #include <naos/relay.h>
-#include <naos/sys.h>
 
 #define ETHERNET false
 
@@ -252,5 +251,5 @@ void app_main() {
   counter = naos_get_l("counter");
 
   // start
-  // naos_start();
+  naos_start();
 }
