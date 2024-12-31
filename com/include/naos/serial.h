@@ -1,3 +1,6 @@
+#ifndef NAOS_SERIAL_H
+#define NAOS_SERIAL_H
+
 #include <sdkconfig.h>
 
 /**
@@ -18,3 +21,5 @@ void naos_serial_init_stdio();
  * Initialize the USB based serial configuration.
  */
 void naos_serial_init_usb();
+
+#endif  // NAOS_SERIAL_H

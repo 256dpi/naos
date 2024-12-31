@@ -1,3 +1,6 @@
+#ifndef NAOS_MSG_H
+#define NAOS_MSG_H
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -158,3 +161,5 @@ size_t naos_msg_get_mtu(uint16_t id);
  * @return True if the session is unlocked.
  */
 bool naos_msg_is_locked(uint16_t id);
+
+#endif  // NAOS_MSG_H
