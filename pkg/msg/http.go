@@ -35,7 +35,7 @@ func (d *httpDevice) Open() (Channel, error) {
 	}()
 
 	// connect to server
-	conn, _, err := websocket.Dial(ctx, fmt.Sprintf("http://%s:80/naos.sock", d.host), &websocket.DialOptions{
+	conn, _, err := websocket.Dial(ctx, fmt.Sprintf("http://%s:80", d.host), &websocket.DialOptions{
 		Subprotocols: []string{"naos"},
 	})
 	if err != nil {
