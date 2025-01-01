@@ -14,6 +14,7 @@
 #include <naos/fs.h>
 #include <naos/serial.h>
 #include <naos/relay.h>
+#include <naos/mdns.h>
 
 #define ETHERNET false
 
@@ -217,6 +218,11 @@ void app_main() {
   if (NAOS_SERIAL_USB_AVAILABLE) {
     naos_serial_init_usb();
   }
+  naos_mdns_init((naos_mdns_config_t){
+      .main = true,
+      .http = true,
+      .osc = true,
+  });
   if (ETHERNET) {
     naos_eth_olimex();
     // naos_eth_w5500((naos_eth_w5500_t){});
