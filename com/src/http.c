@@ -39,6 +39,15 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     ctx->fd = httpd_req_to_sockfd(conn);
     conn->sess_ctx = ctx;
 
+    // check if websocket
+    char upgrade[32] = {0};
+    httpd_req_get_hdr_value_str(conn, "Upgrade", upgrade, sizeof(upgrade));
+    bool is_ws = strncmp(upgrade, "websocket", sizeof(upgrade)) == 0;
+    if (!is_ws) {
+      httpd_resp_send_err(conn, HTTPD_400_BAD_REQUEST, NULL);
+      return ESP_OK;
+    }
+
     return ESP_OK;
   }
 
