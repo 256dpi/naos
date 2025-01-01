@@ -32,25 +32,6 @@ static size_t naos_http_file_count = 0;
 static uint8_t naos_http_channel = 0;
 
 static esp_err_t naos_http_socket(httpd_req_t *conn) {
-  // handle GET request
-  if (conn->method == HTTP_GET) {
-    // set context
-    naos_http_ctx_t *ctx = malloc(sizeof(naos_http_ctx_t));
-    ctx->fd = httpd_req_to_sockfd(conn);
-    conn->sess_ctx = ctx;
-
-    // check if websocket
-    char upgrade[32] = {0};
-    httpd_req_get_hdr_value_str(conn, "Upgrade", upgrade, sizeof(upgrade));
-    bool is_ws = strncmp(upgrade, "websocket", sizeof(upgrade)) == 0;
-    if (!is_ws) {
-      httpd_resp_send_err(conn, HTTPD_400_BAD_REQUEST, NULL);
-      return ESP_OK;
-    }
-
-    return ESP_OK;
-  }
-
   // get context
   naos_http_ctx_t *ctx = conn->sess_ctx;
 
@@ -117,7 +98,33 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   return err;
 }
 
-static esp_err_t naos_http_file(httpd_req_t *req) {
+static esp_err_t naos_http_request(httpd_req_t *req) {
+  // handle socket messages immediately
+  if (req->method != HTTP_GET) {
+    return naos_http_socket(req);
+  }
+
+  // check if websocket
+  char upgrade[32] = {0};
+  httpd_req_get_hdr_value_str(req, "Upgrade", upgrade, sizeof(upgrade));
+  bool is_ws = strncmp(upgrade, "websocket", sizeof(upgrade)) == 0;
+
+  // handle initial websocket request
+  if (is_ws) {
+    // prepare context
+    naos_http_ctx_t *ctx = malloc(sizeof(naos_http_ctx_t));
+    *ctx = (naos_http_ctx_t){
+        .fd = httpd_req_to_sockfd(req),
+    };
+
+    // set context
+    req->sess_ctx = ctx;
+
+    return ESP_OK;
+  }
+
+  /* handle non websocket requests */
+
   // set response header
   esp_err_t err = httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
   if (err != ESP_OK) {
@@ -212,18 +219,12 @@ static bool naos_http_msg_send(const uint8_t *data, size_t len, void *ctx) {
   return true;
 }
 
-static httpd_uri_t naos_http_route_socket = {
-    .uri = "/naos.sock",
-    .method = HTTP_GET,
-    .handler = naos_http_socket,
-    .is_websocket = true,
-    .supported_subprotocol = "naos",
-};
-
-static httpd_uri_t naos_http_route_file = {
+static httpd_uri_t naos_http_route = {
     .uri = "*",
     .method = HTTP_GET,
-    .handler = naos_http_file,
+    .handler = naos_http_request,
+    .is_websocket = true,
+    .supported_subprotocol = "naos",
 };
 
 void naos_http_init(int core) {
@@ -237,9 +238,8 @@ void naos_http_init(int core) {
   // start server
   ESP_ERROR_CHECK(httpd_start(&naos_http_handle, &config));
 
-  // register handlers
-  ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_socket));
-  ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route_file));
+  // register handler
+  ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route));
 
   // register channel
   naos_http_channel = naos_msg_register((naos_msg_channel_t){
