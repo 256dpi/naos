@@ -5,7 +5,6 @@ IF(DEFINED ENV{IDF_PATH})
         INCLUDE_DIRS "include"
         # Note: Managed components are added automatically
         REQUIRES nvs_flash bt esp_eth esp_http_server esp-mqtt esp-osc app_update fatfs
-        EMBED_TXTFILES naos.html naos.js
     )
 ELSE()
     # CLion compatible development setup
