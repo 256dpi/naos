@@ -2,6 +2,7 @@
 
 #include <esp_ota_ops.h>
 #include <esp_random.h>
+#include <esp_mac.h>
 #include <string.h>
 
 #include "system.h"
@@ -21,6 +22,7 @@ static naos_system_handler_t naos_system_handlers[NAOS_SYSTEM_MAX_HANDLERS];
 static size_t naos_system_handler_count;
 
 static naos_param_t naos_system_params[] = {
+    {.name = "device-id", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "device-type", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "device-version", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
@@ -127,7 +129,16 @@ void naos_system_init() {
     naos_register(&naos_system_params[i]);
   }
 
+  // read factory MAC
+  uint8_t mac[8] = {0};
+  ESP_ERROR_CHECK(esp_efuse_mac_get_default(mac));
+
+  // format MAC as ID
+  char id[13];
+  sprintf(id, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
   // initialize system parameters
+  naos_set_s("device-id", id);
   naos_set_s("device-type", naos_config()->device_type);
   naos_set_s("device-version", naos_config()->device_version);
   naos_set_s("running-partition", esp_ota_get_running_partition()->label);
