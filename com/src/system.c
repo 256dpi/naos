@@ -123,7 +123,7 @@ void naos_system_init() {
   naos_params_init();
 
   // register system parameters
-  for (size_t i = 0; i < (sizeof(naos_system_params) / sizeof(naos_system_params[0])); i++) {
+  for (size_t i = 0; i < NAOS_NUM_PARAMS(naos_system_params); i++) {
     naos_register(&naos_system_params[i]);
   }
 

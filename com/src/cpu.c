@@ -68,7 +68,7 @@ static naos_param_t naos_cpu_params[] = {
 
 void naos_cpu_init() {
   // register parameters
-  for (size_t i = 0; i < (sizeof(naos_cpu_params) / sizeof(naos_cpu_params[0])); i++) {
+  for (size_t i = 0; i < NAOS_NUM_PARAMS(naos_cpu_params); i++) {
     naos_register(&naos_cpu_params[i]);
   }
 

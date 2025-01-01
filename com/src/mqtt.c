@@ -142,7 +142,7 @@ void naos_mqtt_init(int core) {
                 CONFIG_NAOS_MQTT_COMMAND_TIMEOUT, core);
 
   // register parameters
-  for (size_t i = 0; i < (sizeof(naos_mqtt_params) / sizeof(naos_mqtt_params[0])); i++) {
+  for (size_t i = 0; i < NAOS_NUM_PARAMS(naos_mqtt_params); i++) {
     naos_register(&naos_mqtt_params[i]);
   }
 

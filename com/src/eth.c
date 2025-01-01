@@ -235,7 +235,7 @@ void naos_eth_init() {
   naos_net_register(link);
 
   // register parameters
-  for (size_t i = 0; i < (sizeof(naos_eth_params) / sizeof(naos_eth_params[0])); i++) {
+  for (size_t i = 0; i < NAOS_NUM_PARAMS(naos_eth_params); i++) {
     naos_register(&naos_eth_params[i]);
   }
 

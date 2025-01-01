@@ -6,6 +6,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define NAOS_NUM_PARAMS(x) (sizeof(x) / sizeof((x)[0]))
+
 /**
  * The messages scopes.
  */
