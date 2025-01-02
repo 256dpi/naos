@@ -4,15 +4,15 @@
 //
 
 import Cocoa
+import Combine
 import NAOSKit
-
-// TODO: Add multiple menus per device type.
 
 class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 	@IBOutlet private var devicesMenuItem: NSMenuItem!
 	@IBOutlet private var devicesMenu: NSMenu!
 
 	private var manager: NAOSBLEManager!
+	private var httpDiscover: Cancellable!
 	private var devices: [NAOSManagedDevice: NSMenuItem] = [:]
 	private var controllers: [NAOSManagedDevice: SettingsWindowController] = [:]
 
@@ -27,6 +27,12 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 
 		// create BLE manager
 		manager = NAOSBLEManager(delegate: self)
+		
+		// run HTTP discovery
+		httpDiscover = NAOSHTTPDiscover{ device in
+			// add device
+			self.addDevice(device: NAOSManagedDevice(device: device))
+		}
 
 		// run updater
 		Task { @MainActor in
@@ -48,6 +54,26 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 
 		// set shared instance
 		DeviceManager.shared = self
+	}
+	
+	func addDevice(device: NAOSManagedDevice) {
+		// add menu item for new device
+		let item = NSMenuItem()
+		item.title = device.title()
+		item.representedObject = device
+		item.target = self
+		item.action = #selector(open(_:))
+		devicesMenu.addItem(item)
+
+		// save device
+		devices[device] = item
+
+		// update menu item title
+		if devices.count == 1 {
+			devicesMenuItem.title = "1 Device"
+		} else {
+			devicesMenuItem.title = String(format: "%d Devices", devices.count)
+		}
 	}
 
 	func openDevice(device: NAOSManagedDevice) {
@@ -125,23 +151,8 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 	// NAOSManagerDelegate
 
 	func naosManagerDidDiscoverDevice(manager _: NAOSBLEManager, device: NAOSManagedDevice) {
-		// add menu item for new device
-		let item = NSMenuItem()
-		item.title = device.title()
-		item.representedObject = device
-		item.target = self
-		item.action = #selector(open(_:))
-		devicesMenu.addItem(item)
-
-		// save device
-		devices[device] = item
-
-		// update menu item title
-		if devices.count == 1 {
-			devicesMenuItem.title = "1 Device"
-		} else {
-			devicesMenuItem.title = String(format: "%d Devices", devices.count)
-		}
+		// add device
+		addDevice(device: device)
 	}
 
 	func naosManagerDidReset(manager _: NAOSBLEManager) {
