@@ -6,6 +6,7 @@
 #include <esp_log.h>
 #include <esp_event.h>
 #include <esp_wifi.h>
+#include <esp_eap_client.h>
 #include <string.h>
 
 #include "utils.h"
@@ -30,12 +31,15 @@ static void naos_wifi_configure() {
   // stop station if already started
   if (naos_wifi_started) {
     ESP_ERROR_CHECK(esp_wifi_stop());
+    ESP_ERROR_CHECK(esp_wifi_sta_enterprise_disable());
     naos_wifi_started = false;
   }
 
   // get SSID, password and manual config
   const char *ssid = naos_get_s("wifi-ssid");
   const char *password = naos_get_s("wifi-password");
+  const char *identity = naos_get_s("wifi-identity");
+  const char *username = naos_get_s("wifi-username");
   const char *manual = naos_get_s("wifi-manual");
 
   // return if SSID is missing
@@ -52,6 +56,14 @@ static void naos_wifi_configure() {
   strcpy((char *)naos_wifi_config.sta.password, password);
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &naos_wifi_config));
+
+  // configure enterprise if configured
+  if (strlen(identity) > 0 && strlen(username) > 0) {
+    ESP_ERROR_CHECK(esp_eap_client_set_identity((uint8_t *)identity, (int)strlen(identity)));
+    ESP_ERROR_CHECK(esp_eap_client_set_username((uint8_t *)username, (int)strlen(username)));
+    ESP_ERROR_CHECK(esp_eap_client_set_password((uint8_t *)password, (int)strlen(password)));
+    ESP_ERROR_CHECK(esp_wifi_sta_enterprise_enable());
+  }
 
   // start station
   ESP_ERROR_CHECK(esp_wifi_start());
@@ -147,6 +159,8 @@ static void naos_wifi_update() {
 static naos_param_t naos_wifi_params[] = {
     {.name = "wifi-ssid", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "wifi-identity", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "wifi-username", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-manual", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_wifi_configure},
     {.name = "wifi-addr", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
