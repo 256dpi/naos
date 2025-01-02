@@ -39,7 +39,9 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   ctx->fd = httpd_req_to_sockfd(conn);
 
   // prepare request frame
-  httpd_ws_frame_t req = {.type = HTTPD_WS_TYPE_TEXT};
+  httpd_ws_frame_t req = {
+      .type = HTTPD_WS_TYPE_BINARY,
+  };
 
   // read request frame length
   esp_err_t err = httpd_ws_recv_frame(conn, &req, 0);
@@ -66,36 +68,15 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     req.payload[req.len] = 0;
   }
 
-  // prepare response
-  httpd_ws_frame_t res = {.type = HTTPD_WS_TYPE_TEXT};
-
-  // handle ping
-  if (strcmp((char *)req.payload, "ping") == 0) {
-    res.payload = (uint8_t *)strdup("ping");
-  }
-
   // handle message
-  if (strncmp((char *)req.payload, "msg", 3) == 0) {
-    // dispatch message
+  if (strncmp((char *)req.payload, "msg#", 4) == 0) {
     naos_msg_dispatch(naos_http_channel, req.payload + 4, req.len - 4, ctx);
   }
 
   // free request payload
   free(req.payload);
 
-  // return if no response payload
-  if (res.payload == NULL) {
-    return ESP_OK;
-  }
-
-  // send response frame
-  res.len = strlen((char *)res.payload);
-  err = httpd_ws_send_frame(conn, &res);
-
-  // free response payload
-  free(res.payload);
-
-  return err;
+  return ESP_OK;
 }
 
 static esp_err_t naos_http_request(httpd_req_t *req) {
