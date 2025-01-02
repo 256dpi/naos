@@ -46,7 +46,7 @@ func withTimeout<R>(
 	}
 }
 
-func toHex(data: Data) -> String {
+func toHex(_ data: Data) -> String {
 	return data.map { String(format: "%02hhx ", $0) }.joined()
 }
 

@@ -160,7 +160,6 @@ public class NAOSFS {
 		
 		// determine MTU
 		let mtu = session.channel.getMTU() - 6
-		print("MTU", mtu)
 
 		// write data in chunks
 		var num = 0
