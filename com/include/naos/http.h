@@ -18,7 +18,7 @@ void naos_http_init(int core);
 void naos_http_serve_str(const char *path, const char *type, const char *content);
 
 /**
- * Serve a binary file with the specified content and ecoding.
+ * Serve a binary file with the specified content and encoding.
  *
  * @param path The file path.
  * @param type The file type.
