@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		5211B723299D7AC5007F6EAA /* NAOSKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5211B722299D7AC5007F6EAA /* NAOSKit */; };
 		5224D3C72A8BF554003D5484 /* SessionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5224D3C62A8BF554003D5484 /* SessionViewController.swift */; };
+		52AC78542D2AA8B0007853C9 /* MetricsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52AC78532D2AA8B0007853C9 /* MetricsView.swift */; };
 		52BD19B92561EA93006D3507 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19B82561EA93006D3507 /* AppDelegate.swift */; };
 		52BD19BD2561EA95006D3507 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 52BD19BC2561EA95006D3507 /* Assets.xcassets */; };
 		52BD19C02561EA95006D3507 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 52BD19BE2561EA95006D3507 /* Main.storyboard */; };
@@ -26,6 +27,7 @@
 /* Begin PBXFileReference section */
 		5211B721299D7A7B007F6EAA /* NAOSKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NAOSKit; sourceTree = "<group>"; };
 		5224D3C62A8BF554003D5484 /* SessionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionViewController.swift; sourceTree = "<group>"; };
+		52AC78532D2AA8B0007853C9 /* MetricsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricsView.swift; sourceTree = "<group>"; };
 		52BD19B52561EA93006D3507 /* NAOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NAOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		52BD19B82561EA93006D3507 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		52BD19BC2561EA95006D3507 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -91,6 +93,7 @@
 				52BD19BE2561EA95006D3507 /* Main.storyboard */,
 				52BD19C12561EA95006D3507 /* Info.plist */,
 				52BD19C22561EA95006D3507 /* NAOS.entitlements */,
+				52AC78532D2AA8B0007853C9 /* MetricsView.swift */,
 			);
 			path = NAOSDesktop;
 			sourceTree = "<group>";
@@ -180,6 +183,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				52BD19DD2561EB2E006D3507 /* UnlockViewController.swift in Sources */,
+				52AC78542D2AA8B0007853C9 /* MetricsView.swift in Sources */,
 				5224D3C72A8BF554003D5484 /* SessionViewController.swift in Sources */,
 				52BD19DE2561EB2E006D3507 /* SettingsParameterValue.swift in Sources */,
 				52BD19C92561EB20006D3507 /* DeviceManager.swift in Sources */,

@@ -9,10 +9,11 @@ import NAOSKit
 class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTableViewDelegate,
 	SettingsParameterValueDelegate
 {
-	@IBOutlet var connectionStatusLabel: NSTextField!
+	@IBOutlet var statusLabel: NSTextField!
 	@IBOutlet var flashButton: NSButton!
 	@IBOutlet var filesButton: NSButton!
 	@IBOutlet var relayButton: NSComboButton!
+	@IBOutlet var metricsButton: NSButton!
 	@IBOutlet var parameterTableView: NSTableView!
 
 	private var lvc: LoadingViewController?
@@ -35,7 +36,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 
 			DispatchQueue.main.async {
 				// update connection status
-				self.connectionStatusLabel.stringValue =
+				self.statusLabel.stringValue =
 					(self.device.parameters[.connectionStatus] ?? "")
 						.capitalized
 
@@ -43,6 +44,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 				self.flashButton.isEnabled = self.device.canUpdate
 				self.filesButton.isEnabled = self.device.canFS
 				self.relayButton.isEnabled = self.device.canRelay
+				self.metricsButton.isEnabled = self.device.hasMetrics
 
 				// reload parameters
 				self.parameterTableView.reloadData()
@@ -110,6 +112,19 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 			// let manager open device
 			DeviceManager.shared.openDevice(device: managedDevice)
 		}
+	}
+
+	@IBAction func metrics(_: AnyObject) {
+		// prepare metrics view controller
+		let container = MetricsContainer(series: [])
+		let view = MetricsView(data: container)
+		let hvc = MetricsViewController(rootView: view)
+
+		// present view controller
+		presentAsModalWindow(hvc)
+
+		// collect metrics
+		hvc.collect(device: device)
 	}
 
 	// NSTableView
@@ -228,7 +243,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 	func didUpdateParameter(parameter: NAOSParameter) {
 		// update connection status
 		if parameter == .connectionStatus {
-			connectionStatusLabel.stringValue =
+			statusLabel.stringValue =
 				(device.parameters[.connectionStatus] ?? "").capitalized
 		}
 

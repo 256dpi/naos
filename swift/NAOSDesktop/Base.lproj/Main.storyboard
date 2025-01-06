@@ -783,32 +783,6 @@ Gw
                         <rect key="frame" x="0.0" y="0.0" width="558" height="480"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="uyZ-Nk-Zew">
-                                <rect key="frame" x="22" y="444" width="120" height="16"/>
-                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Connection Status:" id="2tY-WY-TmF">
-                                    <font key="font" metaFont="system"/>
-                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                </textFieldCell>
-                            </textField>
-                            <textField horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eJN-Ld-xoS">
-                                <rect key="frame" x="148" y="444" width="128" height="16"/>
-                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Unknown" id="2qI-H7-l32">
-                                    <font key="font" metaFont="system"/>
-                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                </textFieldCell>
-                            </textField>
-                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Btq-GW-2uI">
-                                <rect key="frame" x="464" y="433" width="81" height="32"/>
-                                <buttonCell key="cell" type="push" title="Refresh" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="DrJ-5f-C9z">
-                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <connections>
-                                    <action selector="refresh:" target="c3R-v8-FCu" id="Eij-rV-1vF"/>
-                                </connections>
-                            </button>
                             <scrollView autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="6b4-qo-6vn">
                                 <rect key="frame" x="20" y="20" width="518" height="400"/>
                                 <clipView key="contentView" id="IDq-2E-72n">
@@ -1011,7 +985,7 @@ Gw
                                 </tableHeaderView>
                             </scrollView>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sl6-1t-1bN">
-                                <rect key="frame" x="400" y="433" width="66" height="32"/>
+                                <rect key="frame" x="479" y="433" width="66" height="32"/>
                                 <buttonCell key="cell" type="push" title="Flash" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="A7N-ff-ceo">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -1021,7 +995,7 @@ Gw
                                 </connections>
                             </button>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zuP-Z1-Oyq">
-                                <rect key="frame" x="340" y="433" width="62" height="32"/>
+                                <rect key="frame" x="419" y="433" width="62" height="32"/>
                                 <buttonCell key="cell" type="push" title="Files" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="XH7-wH-yVn">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -1031,7 +1005,7 @@ Gw
                                 </connections>
                             </button>
                             <comboButton verticalHuggingPriority="750" baseWritingDirection="leftToRight" alignment="center" title="Relay" imageScaling="proportionallyDown" style="unified" translatesAutoresizingMaskIntoConstraints="NO" id="2on-EL-sqI">
-                                <rect key="frame" x="279" y="438" width="61" height="24"/>
+                                <rect key="frame" x="358" y="438" width="61" height="24"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="55" id="Ake-mt-qQD"/>
                                 </constraints>
@@ -1042,41 +1016,70 @@ Gw
                                     </items>
                                 </menu>
                             </comboButton>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ofa-lq-Z0v">
+                                <rect key="frame" x="278" y="433" width="80" height="32"/>
+                                <buttonCell key="cell" type="push" title="Metrics" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="7Tn-cj-SaH">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="metrics:" target="c3R-v8-FCu" id="FQ3-EV-Zw4"/>
+                                </connections>
+                            </button>
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="gGv-bI-ktK">
+                                <rect key="frame" x="93" y="442" width="43" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="clipping" title="Status" id="crG-FB-aXb">
+                                    <font key="font" metaFont="system"/>
+                                    <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Btq-GW-2uI">
+                                <rect key="frame" x="13" y="433" width="81" height="32"/>
+                                <buttonCell key="cell" type="push" title="Refresh" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="DrJ-5f-C9z">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="refresh:" target="c3R-v8-FCu" id="Eij-rV-1vF"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <constraints>
                             <constraint firstAttribute="bottom" secondItem="6b4-qo-6vn" secondAttribute="bottom" constant="20" symbolic="YES" id="0Nm-3z-4bT"/>
-                            <constraint firstAttribute="trailing" secondItem="Btq-GW-2uI" secondAttribute="trailing" constant="20" symbolic="YES" id="1Le-RM-1X9"/>
+                            <constraint firstItem="ofa-lq-Z0v" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="gGv-bI-ktK" secondAttribute="trailing" constant="8" symbolic="YES" id="0V8-Zn-s9Z"/>
+                            <constraint firstItem="gGv-bI-ktK" firstAttribute="centerY" secondItem="Btq-GW-2uI" secondAttribute="centerY" id="3YK-uT-Yen"/>
                             <constraint firstItem="6b4-qo-6vn" firstAttribute="top" secondItem="Btq-GW-2uI" secondAttribute="bottom" constant="20" symbolic="YES" id="4eL-O6-aAm"/>
                             <constraint firstItem="2on-EL-sqI" firstAttribute="top" secondItem="zuP-Z1-Oyq" secondAttribute="top" id="8WT-ho-OPo"/>
                             <constraint firstItem="Btq-GW-2uI" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="9He-E1-vOp"/>
-                            <constraint firstItem="2on-EL-sqI" firstAttribute="leading" secondItem="eJN-Ld-xoS" secondAttribute="trailing" constant="8" symbolic="YES" id="CBP-fT-1zc"/>
-                            <constraint firstItem="eJN-Ld-xoS" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="IXy-PI-EKU"/>
-                            <constraint firstItem="Btq-GW-2uI" firstAttribute="leading" secondItem="sl6-1t-1bN" secondAttribute="trailing" constant="12" symbolic="YES" id="P5W-Nt-P8K"/>
+                            <constraint firstAttribute="trailing" secondItem="sl6-1t-1bN" secondAttribute="trailing" constant="20" symbolic="YES" id="A3r-vD-sdE"/>
+                            <constraint firstItem="6b4-qo-6vn" firstAttribute="top" secondItem="ofa-lq-Z0v" secondAttribute="bottom" constant="20" symbolic="YES" id="Fal-JY-x43"/>
                             <constraint firstItem="sl6-1t-1bN" firstAttribute="leading" secondItem="zuP-Z1-Oyq" secondAttribute="trailing" constant="12" symbolic="YES" id="PEg-MJ-1CN"/>
+                            <constraint firstItem="2on-EL-sqI" firstAttribute="leading" secondItem="ofa-lq-Z0v" secondAttribute="trailing" constant="10" id="R6a-SH-Sab"/>
                             <constraint firstAttribute="trailing" secondItem="6b4-qo-6vn" secondAttribute="trailing" constant="20" symbolic="YES" id="SOb-ff-wrh"/>
-                            <constraint firstItem="eJN-Ld-xoS" firstAttribute="leading" secondItem="uyZ-Nk-Zew" secondAttribute="trailing" constant="10" id="STn-ac-0EN"/>
-                            <constraint firstItem="uyZ-Nk-Zew" firstAttribute="baseline" secondItem="eJN-Ld-xoS" secondAttribute="baseline" id="TVJ-eq-8eU"/>
                             <constraint firstItem="6b4-qo-6vn" firstAttribute="leading" secondItem="lYY-xl-sde" secondAttribute="leading" constant="20" symbolic="YES" id="UNW-ND-J2d"/>
                             <constraint firstItem="6b4-qo-6vn" firstAttribute="top" secondItem="zuP-Z1-Oyq" secondAttribute="bottom" constant="20" symbolic="YES" id="eH2-mW-uZo"/>
-                            <constraint firstItem="uyZ-Nk-Zew" firstAttribute="leading" secondItem="lYY-xl-sde" secondAttribute="leading" constant="24" id="qod-tz-cdb"/>
+                            <constraint firstItem="ofa-lq-Z0v" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="n97-tH-njC"/>
                             <constraint firstItem="sl6-1t-1bN" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="sJE-uG-HPn"/>
                             <constraint firstItem="zuP-Z1-Oyq" firstAttribute="leading" secondItem="2on-EL-sqI" secondAttribute="trailing" constant="10" id="u8V-bg-hnC"/>
+                            <constraint firstItem="Btq-GW-2uI" firstAttribute="leading" secondItem="lYY-xl-sde" secondAttribute="leading" constant="20" symbolic="YES" id="uFo-HQ-jmJ"/>
                             <constraint firstItem="zuP-Z1-Oyq" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="uOE-mN-bkx"/>
                             <constraint firstItem="6b4-qo-6vn" firstAttribute="top" secondItem="sl6-1t-1bN" secondAttribute="bottom" constant="20" symbolic="YES" id="vlN-s7-gR9"/>
-                            <constraint firstItem="uyZ-Nk-Zew" firstAttribute="top" secondItem="lYY-xl-sde" secondAttribute="top" constant="20" symbolic="YES" id="zR9-y9-0Zj"/>
+                            <constraint firstItem="gGv-bI-ktK" firstAttribute="leading" secondItem="Btq-GW-2uI" secondAttribute="trailing" constant="8" symbolic="YES" id="wG8-vv-JQX"/>
                         </constraints>
                     </view>
                     <connections>
-                        <outlet property="connectionStatusLabel" destination="eJN-Ld-xoS" id="e7z-w5-02k"/>
                         <outlet property="filesButton" destination="zuP-Z1-Oyq" id="pjZ-2T-0fY"/>
                         <outlet property="flashButton" destination="sl6-1t-1bN" id="y6R-nN-bsJ"/>
+                        <outlet property="metricsButton" destination="ofa-lq-Z0v" id="I7K-nc-a0b"/>
                         <outlet property="parameterTableView" destination="R4Z-Qg-sbl" id="aBH-DO-Ddq"/>
                         <outlet property="relayButton" destination="2on-EL-sqI" id="11J-AE-jx0"/>
+                        <outlet property="statusLabel" destination="gGv-bI-ktK" id="GQO-S8-Ikh"/>
                     </connections>
                 </viewController>
                 <customObject id="iOt-wM-IIl" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="514" y="593"/>
+            <point key="canvasLocation" x="586" y="593"/>
         </scene>
         <!--Files View Controller-->
         <scene sceneID="Nel-CO-yxl">
@@ -1335,7 +1338,7 @@ Gw
                 </viewController>
                 <customObject id="We1-Jw-qml" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1057" y="508.5"/>
+            <point key="canvasLocation" x="1195" y="509"/>
         </scene>
         <!--Unlock View Controller-->
         <scene sceneID="bpX-mj-PX4">
