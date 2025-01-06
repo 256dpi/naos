@@ -3,7 +3,6 @@ package msg
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/coder/websocket"
@@ -92,9 +91,6 @@ func (c *httpChannel) Unsubscribe(ch Queue) {
 }
 
 func (c *httpChannel) Write(bytes []byte) error {
-	// prefix message
-	bytes = append([]byte("msg:"), bytes...)
-
 	// write message
 	err := c.conn.Write(c.ctx, websocket.MessageBinary, bytes)
 	if err != nil {
@@ -112,28 +108,6 @@ func (c *httpChannel) Close() {
 	_ = c.conn.Close(websocket.StatusNormalClosure, "")
 }
 
-func (c *httpChannel) rpc(msg, filter string) (string, error) {
-	// write message
-	err := c.conn.Write(c.ctx, websocket.MessageText, []byte(msg))
-	if err != nil {
-		return "", err
-	}
-
-	// read response
-	var data []byte
-	for {
-		_, data, err = c.conn.Read(c.ctx)
-		if err != nil {
-			return "", err
-		}
-		if filter == "" || strings.HasPrefix(string(data), filter) {
-			break
-		}
-	}
-
-	return string(data), nil
-}
-
 func (c *httpChannel) reader() {
 	for {
 		// read messages
@@ -142,13 +116,6 @@ func (c *httpChannel) reader() {
 			// TODO: Handle error.
 			fmt.Println(err)
 			return
-		}
-
-		// check prefix
-		if len(data) >= 4 && string(data[:4]) == "msg#" {
-			data = data[4:]
-		} else {
-			continue
 		}
 
 		// yield message

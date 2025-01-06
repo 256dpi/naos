@@ -78,21 +78,15 @@ class httpChannel: NAOSChannel {
 			while true {
 				let msg = try await task.receive()
 				switch msg {
-				case .data(var data):
-					// check prefix
-					if !data.starts(with: "msg#".data(using: .utf8)!) {
-						continue
-					}
-					
-					// unprefix message
-					data = data.subdata(in: 4 ..< data.count)
-					
-					// forward message
+				case .data(let data):
 					for queue in ch.queues {
 						queue.send(value: data)
 					}
 				case .string(let text):
-					print("got text frame", text)
+					let data = text.data(using: .utf8)!
+					for queue in ch.queues {
+						queue.send(value: data)
+					}
 				@unknown default:
 					fatalError("unhandled type")
 				}
@@ -120,12 +114,8 @@ class httpChannel: NAOSChannel {
 	}
 
 	public func write(data: Data) async throws {
-		// prefix message
-		var msg = "msg#".data(using: .utf8)!
-		msg.append(data)
-		
 		// write message
-		try await task.send(.data(msg))
+		try await task.send(.data(data))
 	}
 
 	public func getMTU() -> Int {

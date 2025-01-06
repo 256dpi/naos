@@ -49,29 +49,26 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
     return err;
   }
 
-  // read request frame
-  if (req.len) {
-    // allocate payload
-    req.payload = malloc(req.len + 1);
-    if (req.payload == NULL) {
-      return ESP_ERR_NO_MEM;
-    }
+  // ignore invalid frames
+  if (req.len < 4) {
+    return ESP_OK;
+  }
 
-    // read frame
-    err = httpd_ws_recv_frame(conn, &req, req.len);
-    if (err != ESP_OK) {
-      free(req.payload);
-      return err;
-    }
+  // allocate payload
+  req.payload = malloc(req.len);
+  if (req.payload == NULL) {
+    return ESP_ERR_NO_MEM;
+  }
 
-    // terminate payload
-    req.payload[req.len] = 0;
+  // read frame
+  err = httpd_ws_recv_frame(conn, &req, req.len);
+  if (err != ESP_OK) {
+    free(req.payload);
+    return err;
   }
 
   // handle message
-  if (strncmp((char *)req.payload, "msg#", 4) == 0) {
-    naos_msg_dispatch(naos_http_channel, req.payload + 4, req.len - 4, ctx);
-  }
+  naos_msg_dispatch(naos_http_channel, req.payload, req.len, ctx);
 
   // free request payload
   free(req.payload);
@@ -185,14 +182,13 @@ static size_t naos_http_msg_mtu() { return 4096; }
 
 static bool naos_http_msg_send(const uint8_t *data, size_t len, void *ctx) {
   // prepare message
-  naos_http_msg_t *msg = malloc(sizeof(naos_http_msg_t) + 4 + len);
+  naos_http_msg_t *msg = malloc(sizeof(naos_http_msg_t) + len);
   msg->payload = (void *)msg + sizeof(naos_http_msg_t);
-  msg->len = 4 + len;
+  msg->len = len;
   msg->ctx = ctx;
 
-  // prepare payload
-  memcpy(msg->payload, "msg#", 4);
-  memcpy(msg->payload + 4, data, len);
+  // copy payload
+  memcpy(msg->payload, data, len);
 
   // queue function
   ESP_ERROR_CHECK(httpd_queue_work(naos_http_handle, naos_http_send_frame, msg));
