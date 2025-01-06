@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include <naos.h>
 #include <naos/ble.h>
@@ -15,6 +16,8 @@
 #include <naos/serial.h>
 #include <naos/relay.h>
 #include <naos/mdns.h>
+#include <naos/metrics.h>
+#include <naos/sys.h>
 
 #define ETHERNET false
 
@@ -24,6 +27,7 @@ static double var_d = 0;
 static bool var_b = true;
 
 static int32_t counter = 0;
+static double gauge[2][2] = {0};
 
 static void setup() {
   // log info
@@ -201,6 +205,37 @@ static naos_param_t param_message = {
     .type = NAOS_STRING,
 };
 
+static naos_metric_t counter_metric = {
+    .name = "counter",
+    .kind = NAOS_METRIC_KIND_COUNTER,
+    .type = NAOS_METRIC_TYPE_LONG,
+    .data = &counter,
+};
+
+static naos_metric_t gauge_metric = {
+    .name = "gauge",
+    .kind = NAOS_METRIC_KIND_GAUGE,
+    .type = NAOS_METRIC_TYPE_DOUBLE,
+    .data = gauge,
+    .keys = {"a", "b"},
+    .values = {"a1", "a2", NULL, "b1", "b2"},
+};
+
+static void gauge_task() {
+  for (;;) {
+    for (int i = 0; i < 10; i++) {
+      // calculate sinuses
+      gauge[0][0] = sin(i * 0.1);
+      gauge[0][1] = cos(i * 0.1);
+      gauge[1][0] = tan(i * 0.1);
+      gauge[1][1] = atan(i * 0.1);
+
+      // delay
+      naos_delay(100);
+    }
+  }
+}
+
 void app_main() {
   // initialize naos
   naos_init(&config);
@@ -253,9 +288,17 @@ void app_main() {
   naos_register(&param_counter);
   naos_register(&param_message);
 
+  // add metrics
+  naos_metrics_init();
+  naos_metrics_add(&counter_metric);
+  naos_metrics_add(&gauge_metric);
+
   // initialize counter
   counter = naos_get_l("counter");
 
+  // run metric task
+  naos_run("metrics", 4096, 1, gauge_task);
+
   // start
-  naos_start();
+  // naos_start();
 }
