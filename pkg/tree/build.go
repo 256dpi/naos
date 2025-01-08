@@ -46,8 +46,8 @@ coredump, data, coredump, ,        64K
 	total := int64(p.Total)*1024*1024 - 3<<16
 
 	// calculate partition sizes
-	alpha := int(float64(total) * float64(p.Alpha) / 100)
-	beta := int(float64(total) * float64(p.Beta) / 100)
+	alpha := int(float64(total)*float64(p.Alpha)/100) >> 12 << 12
+	beta := int(float64(total)*float64(p.Beta)/100) >> 12 << 12
 	storage := int(float64(total) * float64(p.Storage) / 100)
 
 	// replace template
