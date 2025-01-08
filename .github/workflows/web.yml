@@ -4,7 +4,7 @@ on:
       - master
 name: Web
 jobs:
-  swift:
+  web:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
