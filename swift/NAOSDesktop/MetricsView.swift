@@ -101,6 +101,10 @@ class MetricsViewController: NSHostingController<MetricsView> {
 						data = try await NAOSMetrics.readLong(session: session, ref: m.ref).map { n in
 							Double(n)
 						}
+					case .float:
+						data = try await NAOSMetrics.readFloat(session: session, ref: m.ref).map { n in
+							Double(n)
+						}
 					case .double:
 						data = try await NAOSMetrics.readDouble(session: session, ref: m.ref)
 					}
@@ -126,7 +130,7 @@ class MetricsViewController: NSHostingController<MetricsView> {
 
 					// trim samples
 					container.series[Int(m.ref)].samples = container.series[Int(m.ref)].samples.filter { sample in
-						return Date.now.timeIntervalSince(sample.time) < 30
+						Date.now.timeIntervalSince(sample.time) < 30
 					}
 				}
 

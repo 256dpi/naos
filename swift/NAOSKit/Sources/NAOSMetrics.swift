@@ -14,6 +14,7 @@ public enum NAOSMetricKind: UInt8 {
 /// The available metric types.
 public enum NAOSMetricType: UInt8 {
 	case long
+	case float
 	case double
 }
 
@@ -144,8 +145,8 @@ public class NAOSMetrics {
 		}
 	}
 
-	/// Read metrics as  long data.
-	public static func readLong(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> [Int32] {
+	/// Read metrics as  raw data.
+	public static func read(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> Data {
 		// prepare command
 		let cmd = Data([2, ref])
 
@@ -155,7 +156,15 @@ public class NAOSMetrics {
 		// receive value
 		let reply = try await session.receive(endpoint: self.endpoint, expectAck: false, timeout: timeout)!
 
-		// convert list
+		return reply
+	}
+
+	/// Read metrics as  long data.
+	public static func readLong(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> [Int32] {
+		// receive value
+		let reply = try await read(session: session, ref: ref, timeout: timeout)
+
+		// convert reply
 		var list = [Int32]()
 		for i in 0..<(reply.count/4) {
 			let n = readUint32(data: reply.subdata(in: i*4..<i*4+4))
@@ -165,18 +174,27 @@ public class NAOSMetrics {
 		return list
 	}
 
+	/// Read metrics as  float data.
+	public static func readFloat(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> [Float] {
+		// receive value
+		let reply = try await read(session: session, ref: ref, timeout: timeout)
+
+		// convert reply
+		var list = [Float]()
+		for i in 0..<(reply.count/4) {
+			let n = readUint32(data: reply.subdata(in: i*4..<i*4+4))
+			list.append(Float(bitPattern: n))
+		}
+
+		return list
+	}
+
 	/// Read metrics as double data.
 	public static func readDouble(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> [Double] {
-		// prepare command
-		let cmd = Data([2, ref])
-
-		// write command
-		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: 0)
-
 		// receive value
-		let reply = try await session.receive(endpoint: self.endpoint, expectAck: false, timeout: timeout)!
+		let reply = try await read(session: session, ref: ref, timeout: timeout)
 
-		// convert list
+		// convert reply
 		var list = [Double]()
 		for i in 0..<(reply.count/8) {
 			let n = readUint64(data: reply.subdata(in: i*8..<i*8+8))
