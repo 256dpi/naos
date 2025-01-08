@@ -1,4 +1,12 @@
-import { bleRequest, random, toString, toBuffer, requestFile } from "./index";
+import {
+  bleRequest,
+  makeHTTPDevice,
+  random,
+  toString,
+  toBuffer,
+  requestFile,
+  collectParams,
+} from "./index";
 
 import {
   statPath,
@@ -76,6 +84,30 @@ async function serial() {
   console.log("Ready!");
 }
 
+async function http() {
+  // stop device
+  if (device) {
+    await device.stop();
+    device = null;
+  }
+
+  // request address
+  const addr = prompt("Address", "192.168.1.1");
+
+  // create device
+  device = new ManagedDevice(makeHTTPDevice(addr));
+
+  // activate device
+  await device.activate();
+
+  // unlock locked device
+  if (await device.locked()) {
+    console.log("Unlock", await device.unlock(prompt("Password")));
+  }
+
+  console.log("Ready!");
+}
+
 async function params() {
   console.log("Testing Params...");
 
@@ -84,6 +116,13 @@ async function params() {
   await device.useSession(async (session) => {
     const params = await listParams(session);
     console.log(params);
+
+    const updates = await collectParams(
+      session,
+      params.map((p) => p.ref),
+      BigInt(0)
+    );
+    console.log(updates);
   });
 
   await device.deactivate();
@@ -140,6 +179,7 @@ async function fs() {
 
 window["_ble"] = ble;
 window["_serial"] = serial;
+window["_http"] = http;
 window["_params"] = params;
 window["_flash"] = flash;
 window["_fs"] = fs;

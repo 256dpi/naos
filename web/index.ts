@@ -1,4 +1,5 @@
 export * from "./ble";
+export * from "./http";
 export * from "./device";
 export * from "./session";
 export * from "./params";
