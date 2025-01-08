@@ -1,23 +1,31 @@
 import {
   bleRequest,
-  makeHTTPDevice,
-  random,
-  toString,
-  toBuffer,
-  requestFile,
   collectParams,
-  statPath,
   listDir,
-  readFile,
-  writeFile,
-  renamePath,
-  sha256File,
-  removePath,
   listParams,
-  update,
+  makeHTTPDevice,
   ManagedDevice,
+  random,
+  readFile,
+  removePath,
+  renamePath,
+  requestFile,
   serialRequest,
+  sha256File,
+  statPath,
+  toBuffer,
+  toString,
+  update,
+  writeFile,
 } from "./src";
+import {
+  describeMetric,
+  listMetrics,
+  MetricType,
+  readDoubleMetrics,
+  readFloatMetrics,
+  readLongMetrics,
+} from "./src/metrics";
 
 let device: ManagedDevice | null = null;
 
@@ -172,12 +180,44 @@ async function fs() {
   console.log("Done!");
 }
 
+async function metrics() {
+  console.log("Testing Metrics...");
+
+  await device.activate();
+
+  await device.useSession(async (session) => {
+    let metrics = await listMetrics(session);
+    console.log(metrics);
+
+    for (let metric of metrics) {
+      console.log(await describeMetric(session, metric.ref));
+    }
+
+    for (let metric of metrics) {
+      switch (metric.type) {
+        case MetricType.long:
+          console.log(await readLongMetrics(session, metric.ref));
+          break;
+        case MetricType.float:
+          console.log(await readFloatMetrics(session, metric.ref));
+          break;
+        case MetricType.double:
+          console.log(await readDoubleMetrics(session, metric.ref));
+          break;
+      }
+    }
+  });
+
+  console.log("Done!");
+}
+
 window["_ble"] = ble;
 window["_serial"] = serial;
 window["_http"] = http;
 window["_params"] = params;
 window["_flash"] = flash;
 window["_fs"] = fs;
+window["_metrics"] = metrics;
 
 // redirect to localhost from '0.0.0.0'
 if (location.hostname === "0.0.0.0") {
