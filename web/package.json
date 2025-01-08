@@ -5,7 +5,7 @@
   "type": "module",
   "source": "src/index.ts",
   "main": "dist/main.js",
-  "exports": "./dist/main.ts",
+  "exports": "./dist/main.js",
   "scripts": {
     "run": "parcel test.html --dist-dir .parcel-dist",
     "build": "parcel build src/index.ts --dist-dir dist",
