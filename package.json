@@ -1,10 +1,10 @@
 {
   "name": "naos",
   "version": "0.1.0",
-  "main": "index.js",
+  "main": "web/index.ts",
   "license": "MIT",
   "type": "module",
-  "exports": "./web/index.js",
+  "exports": "web/index.ts",
   "scripts": {
     "run": "parcel web/test.html --dist-dir .parcel-dist",
     "fmt": "prettier --write web"
