@@ -22,6 +22,7 @@ ELSE()
         ./test/managed_components/espressif__tinyusb/src
         ./test/managed_components/espressif__esp_tinyusb/include
         ./test/managed_components/espressif__mdns/include
+        ./test/managed_components/espressif__esp_websocket_client/include
         ./test/esp-idf/components/newlib/platform_include
         ./test/esp-idf/components/freertos/config/include
         ./test/esp-idf/components/freertos/config/include/freertos

@@ -17,6 +17,7 @@
 #include <naos/relay.h>
 #include <naos/mdns.h>
 #include <naos/metrics.h>
+#include <naos/connect.h>
 #include <naos/sys.h>
 
 #define ETHERNET false
@@ -292,6 +293,9 @@ void app_main() {
   naos_metrics_init();
   naos_metrics_add(&counter_metric);
   naos_metrics_add(&gauge_metric);
+
+  // initialize connect
+  naos_connect_init();
 
   // initialize counter
   counter = naos_get_l("counter");
