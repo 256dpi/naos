@@ -207,15 +207,15 @@ static naos_param_t param_message = {
 
 static naos_metric_t counter_metric = {
     .name = "counter",
-    .kind = NAOS_METRIC_KIND_COUNTER,
-    .type = NAOS_METRIC_TYPE_LONG,
+    .kind = NAOS_METRIC_COUNTER,
+    .type = NAOS_METRIC_LONG,
     .data = &counter,
 };
 
 static naos_metric_t gauge_metric = {
     .name = "gauge",
-    .kind = NAOS_METRIC_KIND_GAUGE,
-    .type = NAOS_METRIC_TYPE_DOUBLE,
+    .kind = NAOS_METRIC_GAUGE,
+    .type = NAOS_METRIC_DOUBLE,
     .data = gauge,
     .keys = {"a", "b"},
     .values = {"a1", "a2", NULL, "b1", "b2"},

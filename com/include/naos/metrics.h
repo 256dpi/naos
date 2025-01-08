@@ -18,8 +18,8 @@
  *  static double temperature = 0.0;
  *  static naos_metric_t metric = {
  *    .name = "temperature",
- *    .kind = NAOS_METRIC_KIND_GAUGE,
- *    .type = NAOS_METRIC_TYPE_DOUBLE,
+ *    .kind = NAOS_METRIC_GAUGE,
+ *    .type = NAOS_METRIC_DOUBLE,
  *    .data = &temperature,
  *  };
  *
@@ -28,8 +28,8 @@
  *  static long transferred_bytes[2][2] = {0};
  *  naos_metric_t metric = {
  *    .name = "transferred_bytes",
- *    .kind = NAOS_METRIC_KIND_COUNTER,
- *    .type = NAOS_METRIC_TYPE_LONG,
+ *    .kind = NAOS_METRIC_COUNTER,
+ *    .type = NAOS_METRIC_LONG,
  *    .data = transferred_bytes,
  *    .keys = {"interface", "direction"},
  *    .values = {
@@ -43,13 +43,14 @@
 #define NAOS_METRIC_VALUES 16
 
 typedef enum {
-  NAOS_METRIC_KIND_COUNTER = 0,
-  NAOS_METRIC_KIND_GAUGE,
+  NAOS_METRIC_COUNTER = 0,
+  NAOS_METRIC_GAUGE,
 } naos_metric_kind_t;
 
 typedef enum {
-  NAOS_METRIC_TYPE_LONG = 0,
-  NAOS_METRIC_TYPE_DOUBLE,
+  NAOS_METRIC_LONG = 0,
+  NAOS_METRIC_FLOAT,
+  NAOS_METRIC_DOUBLE,
 } naos_metric_type_t;
 
 typedef struct {

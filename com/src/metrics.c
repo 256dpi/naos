@@ -135,9 +135,11 @@ static naos_msg_reply_t naos_metrics_handle_read(naos_msg_t msg) {
 
   // determine width
   size_t width = 0;
-  if (metric->type == NAOS_METRIC_TYPE_LONG) {
+  if (metric->type == NAOS_METRIC_LONG) {
     width = sizeof(int32_t);
-  } else if (metric->type == NAOS_METRIC_TYPE_DOUBLE) {
+  } else if (metric->type == NAOS_METRIC_FLOAT) {
+    width = sizeof(float);
+  } else if (metric->type == NAOS_METRIC_DOUBLE) {
     width = sizeof(double);
   }
 
