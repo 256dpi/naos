@@ -7,8 +7,8 @@ import Foundation
 
 /// The available metric kinds.
 public enum NAOSMetricKind: UInt8 {
-	case gauge
 	case counter
+	case gauge
 }
 
 /// The available metric types.
@@ -135,7 +135,7 @@ public class NAOSMetrics {
 				let numValue = args[1] as! UInt8
 				let name = args[2] as! String
 
-				// add key
+				// add value
 				values[Int(numKey)].insert(name, at: Int(numValue))
 
 				continue
@@ -147,10 +147,8 @@ public class NAOSMetrics {
 
 	/// Read metrics as  raw data.
 	public static func read(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> Data {
-		// prepare command
+		// send command
 		let cmd = Data([2, ref])
-
-		// write command
 		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: 0)
 
 		// receive value
