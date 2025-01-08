@@ -3,6 +3,7 @@ export * from "./device";
 export * from "./fs";
 export * from "./http";
 export * from "./managed";
+export * from "./metrics";
 export * from "./params";
 export * from "./queue";
 export * from "./serial";

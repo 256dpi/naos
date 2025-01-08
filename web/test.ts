@@ -17,15 +17,13 @@ import {
   toString,
   update,
   writeFile,
-} from "./src";
-import {
   describeMetric,
   listMetrics,
   MetricType,
   readDoubleMetrics,
   readFloatMetrics,
   readLongMetrics,
-} from "./src/metrics";
+} from "./src";
 
 let device: ManagedDevice | null = null;
 
