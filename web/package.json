@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "license": "MIT",
   "type": "module",
-  "main": "./web/index.ts",
-  "exports": "./web/index.ts",
+  "main": "index.ts",
+  "exports": "./index.ts",
   "scripts": {
-    "run": "parcel web/test.html --dist-dir .parcel-dist",
-    "fmt": "prettier --write web"
+    "run": "parcel test.html --dist-dir .parcel-dist",
+    "fmt": "prettier --write "
   },
   "dependencies": {
     "async-await-queue": "^2.1.2"
