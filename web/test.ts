@@ -6,9 +6,6 @@ import {
   toBuffer,
   requestFile,
   collectParams,
-} from "./index";
-
-import {
   statPath,
   listDir,
   readFile,
@@ -16,13 +13,11 @@ import {
   renamePath,
   sha256File,
   removePath,
-} from "./fs";
-
-import { listParams } from "./params";
-
-import { update } from "./index";
-import { ManagedDevice } from "./managed";
-import { serialRequest } from "./serial";
+  listParams,
+  update,
+  ManagedDevice,
+  serialRequest,
+} from "./src";
 
 let device: ManagedDevice | null = null;
 
