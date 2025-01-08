@@ -194,6 +194,14 @@ bool naos_push_isr(naos_queue_t queue, void *item);
 bool naos_pop(naos_queue_t queue, void *item, int32_t timeout_ms);
 
 /**
+ * Returns the current length of the specified queue.
+ *
+ * @param queue The queue.
+ * @return The length.
+ */
+size_t naos_queue_length(naos_queue_t queue);
+
+/**
  * Deletes the specified queue.
  *
  * @param queue The queue.

@@ -222,6 +222,11 @@ bool naos_pop(naos_queue_t queue, void *item, int32_t timeout_ms) {
   return true;
 }
 
+size_t naos_queue_length(naos_queue_t queue) {
+  // return queue length
+  return uxQueueMessagesWaiting(queue);
+}
+
 void naos_queue_delete(naos_queue_t queue) {
   // delete queue
   vQueueDelete(queue);
