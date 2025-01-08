@@ -88,7 +88,7 @@ export async function listParams(
     const ref = reply[0];
     const type = reply[1];
     const mode = reply[2];
-    const name = toString(reply.slice(3, -1));
+    const name = toString(reply.slice(3));
 
     // TODO: Check type and mode.
 
@@ -152,7 +152,7 @@ export async function collectParams(
 
   for (;;) {
     // receive reply or return list on ack
-    const [reply, ack] = await s.receive(paramsEndpoint, false, timeout);
+    const [reply, ack] = await s.receive(paramsEndpoint, true, timeout);
     if (ack) {
       break;
     }
@@ -166,7 +166,7 @@ export async function collectParams(
     const view = new DataView(reply.buffer);
     const ref = reply[0];
     const age = view.getBigUint64(1, true);
-    const value = reply.slice(9, -1);
+    const value = reply.slice(9);
 
     // append info
     list.push({ ref, age, value });

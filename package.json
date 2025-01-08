@@ -6,7 +6,7 @@
   "type": "module",
   "exports": "./web/index.js",
   "scripts": {
-    "run": "parcel --https web/test.html --dist-dir .parcel-dist",
+    "run": "parcel web/test.html --dist-dir .parcel-dist",
     "fmt": "prettier --write web"
   },
   "dependencies": {

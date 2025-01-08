@@ -143,3 +143,8 @@ window["_serial"] = serial;
 window["_params"] = params;
 window["_flash"] = flash;
 window["_fs"] = fs;
+
+// redirect to localhost from '0.0.0.0'
+if (location.hostname === "0.0.0.0") {
+  location.hostname = "localhost";
+}
