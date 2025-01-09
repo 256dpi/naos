@@ -23,6 +23,8 @@ import {
   readDoubleMetrics,
   readFloatMetrics,
   readLongMetrics,
+  RelayDevice,
+  scanRelay,
 } from "./src";
 
 let device: ManagedDevice | null = null;
@@ -209,6 +211,33 @@ async function metrics() {
   console.log("Done!");
 }
 
+async function relay() {
+  console.log("Testing Relay...");
+
+  await device.activate();
+
+  await device.useSession(async (session) => {
+    let devices = await scanRelay(session);
+    console.log(devices);
+
+    if (devices.length === 0) {
+      return;
+    }
+
+    const sub = new ManagedDevice(new RelayDevice(device, devices[0]));
+
+    await sub.activate();
+
+    await sub.useSession(async (session) => {
+      console.log(await listParams(session));
+    });
+
+    console.log("Done!");
+  });
+
+  console.log("Done!");
+}
+
 window["_ble"] = ble;
 window["_serial"] = serial;
 window["_http"] = http;
@@ -216,6 +245,7 @@ window["_params"] = params;
 window["_flash"] = flash;
 window["_fs"] = fs;
 window["_metrics"] = metrics;
+window["_relay"] = relay;
 
 // redirect to localhost from '0.0.0.0'
 if (location.hostname === "0.0.0.0") {

@@ -6,6 +6,7 @@ export * from "./managed";
 export * from "./metrics";
 export * from "./params";
 export * from "./queue";
+export * from "./relay";
 export * from "./serial";
 export * from "./session";
 export * from "./update";

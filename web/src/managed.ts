@@ -4,7 +4,7 @@ import { Channel, Device } from "./device";
 import { Session, Status } from "./session";
 
 export class ManagedDevice {
-  private device: Device;
+  public device: Device;
   private pinger: number;
   private channel: Channel | null;
   private session: Session | null;
