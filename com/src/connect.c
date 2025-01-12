@@ -134,6 +134,7 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
     case WEBSOCKET_EVENT_DATA:
       // ignore non-binary messages
       if (data->op_code != 0x2) {
+        ESP_LOGE(NAOS_LOG_TAG, "naos_connect_handler: ignored non-binary message");
         break;
       }
 
@@ -216,6 +217,8 @@ void naos_connect_init() {
       .buffer_size = NAOS_CONNECT_BUFFER,
       .transport = WEBSOCKET_TRANSPORT_OVER_TCP,
       .subprotocol = "naos",
+      .reconnect_timeout_ms = 5000,
+      .network_timeout_ms = 5000,
   };
   naos_connect_client = esp_websocket_client_init(&config);
   if (naos_connect_client == NULL) {
