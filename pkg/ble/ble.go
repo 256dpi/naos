@@ -160,7 +160,6 @@ func (d *device) Open() (msg.Channel, error) {
 	ch := &channel{
 		dev:  d,
 		char: chars[0],
-		subs: map[msg.Queue]struct{}{},
 		close: func() {
 			d.mutex.Lock()
 			_ = device.Disconnect()
@@ -173,10 +172,17 @@ func (d *device) Open() (msg.Channel, error) {
 	err = char.EnableNotifications(func(data []byte) {
 		ch.mutex.Lock()
 		defer ch.mutex.Unlock()
-		for sub := range ch.subs {
+		for sub := range ch.subs.Range {
+			queue := sub.(msg.Queue)
 			select {
-			case sub <- data:
+			case queue <- data:
 			default:
+				select {
+				case queue <- data:
+				case <-time.After(time.Second):
+					// TODO: Handle error.
+					fmt.Println("ble: dropped message")
+				}
 			}
 		}
 	})
@@ -190,7 +196,7 @@ func (d *device) Open() (msg.Channel, error) {
 type channel struct {
 	dev   *device
 	char  bluetooth.DeviceCharacteristic
-	subs  map[msg.Queue]struct{}
+	subs  sync.Map
 	close func()
 	mutex sync.Mutex
 }
@@ -199,22 +205,14 @@ func (c *channel) Device() msg.Device {
 	return c.dev
 }
 
-func (c *channel) Subscribe(ch msg.Queue) {
-	// acquire mutex
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
+func (c *channel) Subscribe(queue msg.Queue) {
 	// add subscription
-	c.subs[ch] = struct{}{}
+	c.subs.Store(queue, struct{}{})
 }
 
-func (c *channel) Unsubscribe(ch msg.Queue) {
-	// acquire mutex
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
+func (c *channel) Unsubscribe(queue msg.Queue) {
 	// remove subscription
-	delete(c.subs, ch)
+	c.subs.Delete(queue)
 }
 
 func (c *channel) Write(bytes []byte) error {
@@ -237,12 +235,12 @@ func (c *channel) Close() {
 	defer c.mutex.Unlock()
 
 	// close subscriptions
-	for sub := range c.subs {
-		close(sub)
+	for sub := range c.subs.Range {
+		close(sub.(msg.Queue))
 	}
 
 	// clear subscriptions
-	c.subs = map[msg.Queue]struct{}{}
+	c.subs = sync.Map{}
 
 	// close device
 	c.close()

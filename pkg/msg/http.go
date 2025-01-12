@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/coder/websocket"
 )
@@ -47,7 +48,6 @@ func (d *httpDevice) Open() (Channel, error) {
 		ctx:    ctx,
 		conn:   conn,
 		cancel: cancel,
-		subs:   make(map[Queue]struct{}),
 	}
 
 	// set flag
@@ -64,30 +64,21 @@ type httpChannel struct {
 	ctx    context.Context
 	conn   *websocket.Conn
 	cancel context.CancelFunc
-	subs   map[Queue]struct{}
-	mutex  sync.Mutex
+	subs   sync.Map
 }
 
 func (c *httpChannel) Device() Device {
 	return c.dev
 }
 
-func (c *httpChannel) Subscribe(ch Queue) {
-	// acquire mutex
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
+func (c *httpChannel) Subscribe(queue Queue) {
 	// add subscription
-	c.subs[ch] = struct{}{}
+	c.subs.Store(queue, struct{}{})
 }
 
-func (c *httpChannel) Unsubscribe(ch Queue) {
-	// acquire mutex
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
+func (c *httpChannel) Unsubscribe(queue Queue) {
 	// remove subscription
-	delete(c.subs, ch)
+	c.subs.Delete(queue)
 }
 
 func (c *httpChannel) Write(bytes []byte) error {
@@ -114,18 +105,28 @@ func (c *httpChannel) reader() {
 		_, data, err := c.conn.Read(c.ctx)
 		if err != nil {
 			// TODO: Handle error.
-			fmt.Println(err)
+			fmt.Println("httpChannel.reader: read error: " + err.Error())
 			return
 		}
 
 		// yield message
-		c.mutex.Lock()
-		for ch := range c.subs {
+		for q := range c.subs.Range {
+			queue := q.(Queue)
 			select {
-			case ch <- data:
+			case queue <- data:
 			default:
+				select {
+				case queue <- data:
+				case <-c.ctx.Done():
+					// TODO: Handle error.
+					fmt.Println("httpChannel.reader: context done")
+					return
+				case <-time.After(time.Second):
+					// TODO: Handle error.
+					fmt.Println("httpChannel.reader: queue full")
+					return
+				}
 			}
 		}
-		c.mutex.Unlock()
 	}
 }
