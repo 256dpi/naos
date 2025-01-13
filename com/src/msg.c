@@ -16,6 +16,7 @@ typedef struct {
   uint16_t id;
   size_t channel;
   void* context;
+  uint16_t mtu;
   int64_t last_msg;
   bool locked;
   bool broken;
@@ -343,6 +344,9 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     // set context
     session->context = ctx;
 
+    // set MTU
+    session->mtu = naos_msg_channels[channel].mtu(ctx);
+
     // set time
     session->last_msg = naos_millis();
 
@@ -361,7 +365,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 #endif
 
     // send reply
-    if (!naos_msg_channels[channel].send(data, len, ctx)) {
+    if (!naos_msg_channels[channel].send(data, len, session->context)) {
       ESP_LOGE("MSG", "naos_msg_dispatch: failed to send reply (%s)", name);
       // TODO: Mark session as broken?
     }
@@ -410,7 +414,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 #endif
 
     // send reply
-    if (!naos_msg_channels[channel].send(reply, 5, ctx)) {
+    if (!naos_msg_channels[channel].send(reply, 5, session->context)) {
       ESP_LOGE("MSG", "naos_msg_dispatch: failed to send reply (%s)", name);
       // TODO: Mark session as broken?
     }
@@ -440,7 +444,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 #endif
 
     // send reply
-    if (!naos_msg_channels[channel].send(data, 4, ctx)) {
+    if (!naos_msg_channels[channel].send(data, 4, session->context)) {
       ESP_LOGE("MSG", "naos_msg_dispatch: failed to send reply (%s)", name);
     }
 
@@ -475,7 +479,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 #endif
 
     // send reply
-    if (!naos_msg_channels[channel].send(reply, 5, ctx)) {
+    if (!naos_msg_channels[channel].send(reply, 5, session->context)) {
       ESP_LOGE("MSG", "naos_msg_dispatch: failed to send reply (%s)", name);
       // TODO: Mark session as broken?
     }
@@ -588,11 +592,8 @@ uint16_t naos_msg_get_mtu(uint16_t id) {
     return 0;
   }
 
-  // get channel
-  naos_msg_channel_t channel = naos_msg_channels[session->channel];
-
-  // determine MTU
-  uint16_t mtu = channel.mtu(session->context);
+  // get MTU
+  uint16_t mtu = session->mtu;
 
   // release mutex
   NAOS_UNLOCK(naos_msg_mutex);

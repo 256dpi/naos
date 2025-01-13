@@ -71,6 +71,10 @@ typedef struct {
 /**
  * A message channel.
  *
+ * Note: The `mtu` and `send` functions receive the context pointer passed to
+ * the `naos_msg_dispatch` function during session creation. The result of the
+ * `mtu` function is cached for the session during creation.
+ *
  * @param name The channel name.
  * @param mtu The function to determine the MTU.
  * @param send The function to send messages.
