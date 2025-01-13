@@ -1,8 +1,6 @@
 #include <naos/relay.h>
 #include <naos/msg.h>
 
-#include "utils.h"
-
 // TODO: Find a way to align the MTU with the underlying channel.
 
 #define NAOS_RELAY_ENDPOINT 0x4

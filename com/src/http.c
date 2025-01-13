@@ -3,8 +3,6 @@
 
 #include <esp_http_server.h>
 
-#include "utils.h"
-
 #define NAOS_HTTP_MAX_CONNS 7
 #define NAOS_HTTP_MAX_FILES 8
 
