@@ -165,7 +165,7 @@ static bool naos_relay_send(const uint8_t *data, size_t len, void *ctx) {
   return naos_relay_device.send(data, len);
 }
 
-static size_t naos_relay_mtu(void *ctx) { return 1024; }
+static uint16_t naos_relay_mtu(void *ctx) { return 1024; }
 
 void naos_relay_host_init(naos_relay_host_t config) {
   // store config

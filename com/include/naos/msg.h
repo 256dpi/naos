@@ -77,7 +77,7 @@ typedef struct {
  */
 typedef struct {
   const char *name;
-  size_t (*mtu)(void *ctx);
+  uint16_t (*mtu)(void *ctx);
   bool (*send)(const uint8_t *data, size_t len, void *ctx);
 } naos_msg_channel_t;
 
@@ -152,7 +152,7 @@ bool naos_msg_send(naos_msg_t msg);
  * @param id The session ID.
  * @return The channel MTU in bytes.
  */
-size_t naos_msg_get_mtu(uint16_t id);
+uint16_t naos_msg_get_mtu(uint16_t id);
 
 /**
  * Called by endpoints to determine if a session is unlocked.

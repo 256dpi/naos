@@ -98,7 +98,7 @@ static uint8_t naos_serial_stdio_channel = 0;
 static uint8_t naos_serial_stdio_input[NAOS_SERIAL_BUFFER_SIZE];
 static uint8_t naos_serial_stdio_output[NAOS_SERIAL_BUFFER_SIZE];
 
-static size_t naos_serial_mtu() { return 2560; }
+static uint16_t naos_serial_mtu() { return 2560; }
 
 static bool naos_serial_stdio_send(const uint8_t* data, size_t len, void* _) {
   // encode message

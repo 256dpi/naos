@@ -576,7 +576,7 @@ bool naos_msg_send(naos_msg_t msg) {
   return ok;
 }
 
-size_t naos_msg_get_mtu(uint16_t id) {
+uint16_t naos_msg_get_mtu(uint16_t id) {
   // acquire mutex
   NAOS_LOCK(naos_msg_mutex);
 
@@ -592,7 +592,7 @@ size_t naos_msg_get_mtu(uint16_t id) {
   naos_msg_channel_t channel = naos_msg_channels[session->channel];
 
   // determine MTU
-  size_t mtu = channel.mtu(session->context);
+  uint16_t mtu = channel.mtu(session->context);
 
   // release mutex
   NAOS_UNLOCK(naos_msg_mutex);

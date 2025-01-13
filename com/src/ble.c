@@ -469,7 +469,7 @@ static void naos_ble_param_handler(naos_param_t *param) {
   }
 }
 
-static size_t naos_ble_msg_mtu(void *ctx) {
+static uint16_t naos_ble_msg_mtu(void *ctx) {
   // get conn
   naos_ble_conn_t *conn = ctx;
 

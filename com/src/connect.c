@@ -194,7 +194,7 @@ static bool naos_connect_send(const uint8_t *data, size_t len, void *ctx) {
   return r1 >= 0 && r2 >= 0 && r3 >= 0;
 }
 
-static size_t naos_connect_mtu() { return NAOS_CONNECT_BUFFER; }
+static uint16_t naos_connect_mtu() { return NAOS_CONNECT_BUFFER; }
 
 static naos_param_t naos_connect_params[] = {
     {.name = "connect-url", .type = NAOS_STRING},
