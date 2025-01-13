@@ -186,12 +186,12 @@ static bool naos_connect_send(const uint8_t *data, size_t len, void *ctx) {
       .version = NAOS_CONNECT_VERSION,
       .cmd = NAOS_CONNECT_MSG,
   };
-  esp_websocket_client_send_bin_partial(naos_connect_client, (char *)&header, sizeof(naos_connect_header_t),
-                                        portMAX_DELAY);
-  esp_websocket_client_send_cont_msg(naos_connect_client, (char *)data, (int)len, portMAX_DELAY);
-  esp_websocket_client_send_fin(naos_connect_client, portMAX_DELAY);
+  int r1 = esp_websocket_client_send_bin_partial(naos_connect_client, (char *)&header, sizeof(naos_connect_header_t),
+                                                 portMAX_DELAY);
+  int r2 = esp_websocket_client_send_cont_msg(naos_connect_client, (char *)data, (int)len, portMAX_DELAY);
+  int r3 = esp_websocket_client_send_fin(naos_connect_client, portMAX_DELAY);
 
-  return true;
+  return r1 >= 0 && r2 >= 0 && r3 >= 0;
 }
 
 static size_t naos_connect_mtu() { return NAOS_CONNECT_BUFFER; }
