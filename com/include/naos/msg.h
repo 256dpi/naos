@@ -51,10 +51,10 @@
  * system endpoint "0xFD" with the correct password. The system endpoint may also
  * be queried to determine if the session is locked.
  *
- * > Query: Session=ID, Endpoint=0xFD Data=1
+ * > Query: Session=ID, Endpoint=0xFD Data=0
  * < Reply: Session=ID, Endpoint=0xFE, Data=[1|0]
  *
- * > Unlock: Session=ID, Endpoint=0xFD, Data=2+Password(*)
+ * > Unlock: Session=ID, Endpoint=0xFD, Data=1+Password(*)
  * < Reply: Session=ID, Endpoint=0xFE, Data=[1|0]
  */
 
