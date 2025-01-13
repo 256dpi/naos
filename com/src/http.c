@@ -51,7 +51,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
 
   // ignore invalid frames
   if (req.len < 4) {
-    return ESP_OK;
+    return ESP_FAIL;
   }
 
   // allocate payload
@@ -68,12 +68,12 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   }
 
   // handle message
-  naos_msg_dispatch(naos_http_channel, req.payload, req.len, ctx);
+  bool ok = naos_msg_dispatch(naos_http_channel, req.payload, req.len, ctx);
 
   // free request payload
   free(req.payload);
 
-  return ESP_OK;
+  return ok ? ESP_OK : ESP_FAIL;
 }
 
 static esp_err_t naos_http_request(httpd_req_t *req) {
@@ -186,6 +186,12 @@ static bool naos_http_msg_send(const uint8_t *data, size_t len, void *ctx) {
   msg->payload = (void *)msg + sizeof(naos_http_msg_t);
   msg->len = len;
   msg->ctx = ctx;
+
+  // check if context is still valid
+  if (httpd_ws_get_fd_info(naos_http_handle, msg->ctx->fd) != HTTPD_WS_CLIENT_WEBSOCKET) {
+    free(msg);
+    return false;
+  }
 
   // copy payload
   memcpy(msg->payload, data, len);
