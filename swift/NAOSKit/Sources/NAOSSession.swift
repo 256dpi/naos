@@ -318,7 +318,7 @@ public class NAOSSession {
 
 	// Helpers
 
-	/// Write a message directly to the sessions underyling channel.
+	/// Write a message directly to the sessions underlying channel.
 	public func write(msg: NAOSMessage) async throws {
 		try await NAOSWrite(channel: channel, msg: msg)
 	}
