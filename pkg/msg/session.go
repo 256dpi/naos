@@ -30,10 +30,11 @@ var (
 
 // Session represents a communication session with a NAOS device.
 type Session struct {
-	id uint16
-	ch Channel
-	qu Queue
-	mu sync.Mutex
+	id  uint16
+	ch  Channel
+	qu  Queue
+	mtu uint16
+	mu  sync.Mutex
 }
 
 // Ack is an error returned when an acknowledgement is received.
@@ -268,6 +269,38 @@ func (s *Session) Unlock(password string, timeout time.Duration) (bool, error) {
 	}
 
 	return msg[0] == 1, nil
+}
+
+func (s *Session) GetMTU(timeout time.Duration) (uint16, error) {
+	// taking the mutex would deadlock
+
+	// return cached value
+	if s.mtu != 0 {
+		return s.mtu, nil
+	}
+
+	// write command
+	cmd := pack("o", uint8(2))
+	err := s.Send(SystemEndpoint, cmd, 0)
+	if err != nil {
+		return 0, err
+	}
+
+	// await reply
+	msg, err := s.Receive(SystemEndpoint, false, timeout)
+	if err != nil {
+		return 0, err
+	}
+
+	// verify reply
+	if len(msg) != 2 {
+		return 0, fmt.Errorf("invalid message")
+	}
+
+	// cache value
+	s.mtu = unpack("h", msg)[0].(uint16)
+
+	return s.mtu, nil
 }
 
 // End closes the session.

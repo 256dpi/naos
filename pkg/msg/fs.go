@@ -192,14 +192,18 @@ func WriteFile(s *Session, file string, data []byte, report func(uint32), timeou
 		return err
 	}
 
-	// TODO: Determine channel MTU.
+	// get MTU
+	mtu, err := s.GetMTU(time.Second)
+	if err != nil {
+		return err
+	}
 
-	// write data in 500-byte chunks
+	// write data in chunks
 	num := 0
 	offset := 0
 	for offset < len(data) {
 		// determine chunk size and chunk data
-		chunkSize := min(500, len(data)-offset)
+		chunkSize := min(int(mtu), len(data)-offset)
 		chunkData := data[offset : offset+chunkSize]
 
 		// determine mode

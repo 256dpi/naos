@@ -27,14 +27,18 @@ func Update(s *Session, image []byte, report func(int), timeout time.Duration) e
 		return fmt.Errorf("invalid message")
 	}
 
-	// TODO: Dynamically determine channel MTU?
+	// get MTU
+	mtu, err := s.GetMTU(time.Second)
+	if err != nil {
+		return err
+	}
 
-	// write data in 500-byte chunks
+	// write data in chunks
 	num := 0
 	offset := 0
 	for offset < len(image) {
 		// determine chunk size and chunk data
-		chunkSize := min(500, len(image)-offset)
+		chunkSize := min(int(mtu), len(image)-offset)
 		chunkData := image[offset : offset+chunkSize]
 
 		// determine acked
