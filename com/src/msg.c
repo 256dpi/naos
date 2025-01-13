@@ -452,6 +452,9 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
       }
     }
 
+    // capture context
+    void * session_ctx = session->context;
+
     // clear session
     *session = (naos_msg_session_t){0};
 
@@ -465,7 +468,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 #endif
 
     // send reply
-    if (!naos_msg_channels[channel].send(data, 4, session->context)) {
+    if (!naos_msg_channels[channel].send(data, 4, session_ctx)) {
       ESP_LOGE("MSG", "naos_msg_dispatch: failed to send reply (%s)", name);
     }
 
