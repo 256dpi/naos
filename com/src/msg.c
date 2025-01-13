@@ -511,7 +511,7 @@ bool naos_msg_send(naos_msg_t msg) {
   NAOS_UNLOCK(naos_msg_mutex);
 
   // check channel MTU
-  if (4 + msg.len > channel.mtu) {
+  if (4 + msg.len > channel.mtu(session->context)) {
     ESP_LOGE("MSG", "naos_msg_send: message too large");
     return false;
   }
