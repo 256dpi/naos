@@ -18,6 +18,7 @@ typedef struct {
   void* context;
   int64_t last_msg;
   bool locked;
+  bool broken;
 } naos_msg_session_t;
 
 typedef enum {
@@ -110,13 +111,17 @@ static void naos_msg_cleaner() {
     // get session
     naos_msg_session_t* session = &naos_msg_session[i];
 
-    // skip inactive or young session
-    if (!session->active || now - session->last_msg < 30000) {
+    // skip inactive or recent un-broken sessions
+    if (!session->active || (now - session->last_msg < 30000 && !session->broken)) {
       continue;
     }
 
     // log error
-    ESP_LOGE("MSG", "naos_msg_cleaner: session %d timed out", session->id);
+    if (session->broken) {
+      ESP_LOGE("MSG", "naos_msg_cleaner: session %d broken", session->id);
+    } else {
+      ESP_LOGE("MSG", "naos_msg_cleaner: session %d timed out", session->id);
+    }
 
     // clean up endpoints
     for (size_t j = 0; j < naos_msg_endpoint_count; j++) {
@@ -358,6 +363,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     // send reply
     if (!naos_msg_channels[channel].send(data, len, ctx)) {
       ESP_LOGE("MSG", "naos_msg_dispatch: failed to send reply (%s)", name);
+      // TODO: Mark session as broken?
     }
 
     return true;
@@ -374,7 +380,14 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
   // verify session
   if (session->channel != channel) {
     NAOS_UNLOCK(naos_msg_mutex);
-    ESP_LOGE("MSG", "naos_msg_dispatch: session state mismatch (%s)", name);
+    ESP_LOGE("MSG", "naos_msg_dispatch: session channel mismatch (%s)", name);
+    return false;
+  }
+
+  // check session validity
+  if (session->broken) {
+    NAOS_UNLOCK(naos_msg_mutex);
+    ESP_LOGE("MSG", "naos_msg_dispatch: session is broken (%s)", name);
     return false;
   }
 
@@ -399,6 +412,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     // send reply
     if (!naos_msg_channels[channel].send(reply, 5, ctx)) {
       ESP_LOGE("MSG", "naos_msg_dispatch: failed to send reply (%s)", name);
+      // TODO: Mark session as broken?
     }
 
     return true;
@@ -463,6 +477,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     // send reply
     if (!naos_msg_channels[channel].send(reply, 5, ctx)) {
       ESP_LOGE("MSG", "naos_msg_dispatch: failed to send reply (%s)", name);
+      // TODO: Mark session as broken?
     }
 
     return true;
@@ -508,6 +523,13 @@ bool naos_msg_send(naos_msg_t msg) {
     return false;
   }
 
+  // check session validity
+  if (session->broken) {
+    NAOS_UNLOCK(naos_msg_mutex);
+    ESP_LOGE("MSG", "naos_msg_send: session is broken");
+    return false;
+  }
+
   // get channel
   naos_msg_channel_t channel = naos_msg_channels[session->channel];
 
@@ -542,12 +564,14 @@ bool naos_msg_send(naos_msg_t msg) {
   // free frame
   free(frame);
 
-  // acquire mutex
+  // update session status
+  NAOS_LOCK(naos_msg_mutex);
   if (ok) {
-    NAOS_LOCK(naos_msg_mutex);
     session->last_msg = naos_millis();
-    NAOS_UNLOCK(naos_msg_mutex);
+  } else {
+    session->broken = true;
   }
+  NAOS_UNLOCK(naos_msg_mutex);
 
   return ok;
 }
