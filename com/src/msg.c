@@ -29,6 +29,7 @@ typedef enum {
 typedef enum {
   NAOS_MSG_SYS_CMD_STATUS,
   NAOS_MSG_SYS_CMD_UNLOCK,
+  NAOS_MSG_SYS_CMD_GET_MTU,
 } naos_msg_sys_cmd_t;
 
 static naos_mutex_t naos_msg_mutex;
@@ -206,6 +207,26 @@ static naos_msg_reply_t naos_msg_process_system(naos_msg_t msg) {
           .endpoint = 0xFD,
           .data = &result,
           .len = 1,
+      });
+
+      return NAOS_MSG_OK;
+    }
+
+    case NAOS_MSG_SYS_CMD_GET_MTU: {
+      // check length
+      if (msg.len != 0) {
+        return NAOS_MSG_INVALID;
+      }
+
+      // get MTU
+      uint16_t mtu = (uint16_t)naos_msg_get_mtu(msg.session);
+
+      // send MTU
+      naos_msg_send((naos_msg_t){
+          .session = msg.session,
+          .endpoint = 0xFD,
+          .data = (uint8_t*)&mtu,
+          .len = sizeof(mtu),
       });
 
       return NAOS_MSG_OK;

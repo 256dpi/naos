@@ -56,6 +56,15 @@
  *
  * > Unlock: Session=ID, Endpoint=0xFD, Data=1+Password(*)
  * < Reply: Session=ID, Endpoint=0xFE, Data=[1|0]
+ *
+ * Messaging channels use different physical transports that support different
+ * message sizes. The system provides a mechanism to query the maximum message
+ * size for a given session. This allows clients and endpoints to split messages
+ * into smaller chunks if necessary. While endpoints can use the C API, remote
+ * clients can query the MTU via the system endpoint:
+ *
+ * > Query: Session=ID, Endpoint=0xFD, Data=2
+ * < Reply: Session=ID, Endpoint=0xFE, Data=MTU(2)
  */
 
 /**
