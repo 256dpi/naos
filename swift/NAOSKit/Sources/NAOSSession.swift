@@ -65,9 +65,10 @@ public enum NAOSSessionError: LocalizedError {
 public class NAOSSession {
 	public private(set) var id: UInt16
 	public private(set) var channel: NAOSChannel
-	
+
 	private var queue: NAOSQueue
 	private var mutex = AsyncSemaphore(value: 1)
+	private var mtu: UInt16 = 0
 
 	public static func open(channel: NAOSChannel, timeout: TimeInterval) async throws -> NAOSSession {
 		// create queue
@@ -123,10 +124,10 @@ public class NAOSSession {
 		defer { mutex.signal() }
 
 		// write command
-		try await self.write(msg: NAOSMessage(session: self.id, endpoint: 0xFE, data: Data()))
+		try await write(msg: NAOSMessage(session: id, endpoint: 0xFE, data: Data()))
 
 		// read reply
-		let msg = try await self.read(timeout: timeout)
+		let msg = try await read(timeout: timeout)
 
 		// verify reply
 		if msg.endpoint != 0xFE || msg.size() != 1 {
@@ -143,11 +144,11 @@ public class NAOSSession {
 		defer { mutex.signal() }
 
 		// write command
-		try await self.write(
-			msg: NAOSMessage(session: self.id, endpoint: endpoint, data: Data()))
+		try await write(
+			msg: NAOSMessage(session: id, endpoint: endpoint, data: Data()))
 
 		// reaad reply
-		let msg = try await self.read(timeout: timeout)
+		let msg = try await read(timeout: timeout)
 
 		// verify message
 		if msg.endpoint != 0xFE || msg.size() != 1 {
@@ -202,7 +203,7 @@ public class NAOSSession {
 		defer { mutex.signal() }
 
 		// write message
-		try await write(msg: NAOSMessage(session: self.id, endpoint: endpoint, data: data))
+		try await write(msg: NAOSMessage(session: id, endpoint: endpoint, data: data))
 
 		// return if timeout is zero
 		if ackTimeout == 0 {
@@ -259,6 +260,30 @@ public class NAOSSession {
 		return reply[0] == 1
 	}
 
+	/// Get the cached or request the session MTU.
+	public func getMTU(timeout: TimeInterval = 5) async throws -> UInt16 {
+		// check MTU
+		if mtu != 0 {
+			return mtu
+		}
+
+		// send command
+		try await send(endpoint: 0xFD, data: Data([2]), ackTimeout: 0)
+
+		// await reply
+		let reply = try await receive(endpoint: 0xFD, expectAck: false)!
+
+		// verify reply
+		if reply.count != 2 {
+			throw NAOSSessionError.invalidMessage
+		}
+
+		// set MTU
+		mtu = readUint16(data: reply)
+
+		return mtu
+	}
+
 	/// End the session.
 	public func end(timeout: TimeInterval = 5) async throws {
 		// acquire mutex
@@ -269,7 +294,7 @@ public class NAOSSession {
 		defer { channel.unsubscribe(queue: queue) }
 
 		// write command
-		try await write(msg: NAOSMessage(session: self.id, endpoint: 0xFF, data: Data()))
+		try await write(msg: NAOSMessage(session: id, endpoint: 0xFF, data: Data()))
 
 		// stop if timeout is zero
 		if timeout == 0 {
@@ -277,7 +302,7 @@ public class NAOSSession {
 		}
 
 		// read reply
-		let msg = try await self.read(timeout: timeout)
+		let msg = try await read(timeout: timeout)
 
 		// verify reply
 		if msg.endpoint != 0xFF || msg.size() > 0 {
@@ -288,7 +313,7 @@ public class NAOSSession {
 	/// Clean  up the session.
 	public func cleanup() {
 		// end session in background
-		Task{ try? await end(timeout: 0) }
+		Task { try? await end(timeout: 0) }
 	}
 
 	// Helpers

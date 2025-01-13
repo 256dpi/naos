@@ -179,16 +179,6 @@ class bleChannel: NAOSChannel {
 		// write message
 		try await peripheral.write(data: data)
 	}
-	
-	public func getMTU() -> Int{
-		// determine MTU
-		let max = min(
-			peripheral.peripheral.maximumWriteValueLength(for: .withResponse),
-			peripheral.peripheral.maximumWriteValueLength(for: .withoutResponse)
-		)
-		
-		return max - 4
-	}
 
 	public func close() {
 		// cancel subscription

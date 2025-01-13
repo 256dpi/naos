@@ -159,7 +159,7 @@ public class NAOSFS {
 		try await send(session: session, cmd: cmd, ack: true, timeout: timeout)
 		
 		// determine MTU
-		let mtu = session.channel.getMTU() - 6
+		let mtu = Int(try await session.getMTU() - 6)
 
 		// write data in chunks
 		var num = 0

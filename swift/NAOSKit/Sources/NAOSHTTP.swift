@@ -118,10 +118,6 @@ class httpChannel: NAOSChannel {
 		try await task.send(.data(data))
 	}
 
-	public func getMTU() -> Int {
-		return 4096
-	}
-
 	public func close() {
 		// cancel task
 		task.cancel()
