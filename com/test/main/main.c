@@ -151,9 +151,9 @@ static uint64_t host_scan() {
   return 0b1;
 }
 
-static bool host_to_device(uint8_t num, uint8_t *data, size_t len) {
+static bool host_to_device(uint8_t num, uint8_t *data, size_t len, naos_relay_meta_t meta) {
   // relay message
-  naos_relay_device_process(data, len);
+  naos_relay_device_process(data, len, meta);
 
   return true;
 }

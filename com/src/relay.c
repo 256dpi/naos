@@ -1,8 +1,6 @@
 #include <naos/relay.h>
 #include <naos/msg.h>
 
-// TODO: Find a way to align the MTU with the underlying channel.
-
 #define NAOS_RELAY_ENDPOINT 0x4
 #define NAOS_RELAY_LINKS 8
 
@@ -108,8 +106,13 @@ static naos_msg_reply_t naos_relay_handle_send(naos_msg_t msg) {
     return NAOS_MSG_ERROR;
   }
 
+  // prepare meta
+  naos_relay_meta_t meta = {
+      .mtu = naos_msg_get_mtu(msg.session),
+  };
+
   // send message downstream
-  if (!naos_relay_host.send(num, msg.data, msg.len)) {
+  if (!naos_relay_host.send(num, msg.data, msg.len, meta)) {
     return NAOS_MSG_ERROR;
   }
 
@@ -160,12 +163,19 @@ static void naos_relay_cleanup(uint16_t session) {
   }
 }
 
-static bool naos_relay_send(const uint8_t *data, size_t len, void *ctx) {
+static bool naos_relay_device_send(const uint8_t *data, size_t len, void *ctx) {
+  // CONTEXT MAY BE INVALID!
+
   // send message upstream
   return naos_relay_device.send(data, len);
 }
 
-static uint16_t naos_relay_mtu(void *ctx) { return 1024; }
+static uint16_t naos_relay_device_mtu(void *ctx) {
+  // get meta
+  naos_relay_meta_t *meta = ctx;
+
+  return meta->mtu - 6;
+}
 
 void naos_relay_host_init(naos_relay_host_t config) {
   // store config
@@ -187,8 +197,8 @@ void naos_relay_device_init(naos_relay_device_t config) {
   // register channel
   naos_relay_channel = naos_msg_register((naos_msg_channel_t){
       .name = "relay",
-      .mtu = naos_relay_mtu,
-      .send = naos_relay_send,
+      .mtu = naos_relay_device_mtu,
+      .send = naos_relay_device_send,
   });
 }
 
@@ -211,7 +221,7 @@ void naos_relay_host_process(uint8_t num, uint8_t *data, size_t len) {
   }
 }
 
-void naos_relay_device_process(uint8_t *data, size_t len) {
+void naos_relay_device_process(uint8_t *data, size_t len, naos_relay_meta_t meta) {
   // dispatch message
-  naos_msg_dispatch(naos_relay_channel, data, len, NULL);
+  naos_msg_dispatch(naos_relay_channel, data, len, &meta);
 }

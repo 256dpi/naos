@@ -25,6 +25,15 @@
 #include <stddef.h>
 
 /**
+ * The relay meta information.
+ *
+ * @param mtu The carrier MTU.
+ */
+typedef struct {
+  uint16_t mtu;
+} naos_relay_meta_t;
+
+/**
  * The host relay configuration.
  *
  * @param scan The function to enumerate downstream devices.
@@ -32,7 +41,7 @@
  */
 typedef struct {
   uint64_t (*scan)();
-  bool (*send)(uint8_t num, uint8_t *data, size_t len);
+  bool (*send)(uint8_t num, uint8_t *data, size_t len, naos_relay_meta_t meta);
 } naos_relay_host_t;
 
 /**
@@ -69,6 +78,6 @@ void naos_relay_host_process(uint8_t num, uint8_t *data, size_t len);
  * @param data The message data.
  * @param len The message length.
  */
-void naos_relay_device_process(uint8_t *data, size_t len);
+void naos_relay_device_process(uint8_t *data, size_t len, naos_relay_meta_t meta);
 
 #endif  // NAOS_RELAY_H
