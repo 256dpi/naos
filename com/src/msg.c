@@ -501,9 +501,6 @@ bool naos_msg_send(naos_msg_t msg) {
     return false;
   }
 
-  // update last
-  session->last_msg = naos_millis();
-
   // get channel
   naos_msg_channel_t channel = naos_msg_channels[session->channel];
 
@@ -536,6 +533,13 @@ bool naos_msg_send(naos_msg_t msg) {
 
   // free frame
   free(frame);
+
+  // acquire mutex
+  if (ok) {
+    NAOS_LOCK(naos_msg_mutex);
+    session->last_msg = naos_millis();
+    NAOS_UNLOCK(naos_msg_mutex);
+  }
 
   return ok;
 }
