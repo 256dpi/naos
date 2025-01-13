@@ -10,7 +10,6 @@
 #include <esp_gatt_defs.h>
 #include <esp_gatts_api.h>
 #include <esp_gatt_common_api.h>
-#include <esp_bt_device.h>
 #include <string.h>
 
 #include "params.h"
@@ -294,9 +293,6 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
         break;
       }
 
-      // get connection
-      naos_ble_conn_t *conn = &naos_ble_conns[p->read.conn_id];
-
       // iterate through all characteristics
       for (int j = 0; j < NAOS_BLE_NUM_CHARS; j++) {
         // get pointer of current characteristic
@@ -457,7 +453,6 @@ static void naos_ble_set_name() {
   }
 
   // set name
-  ESP_ERROR_CHECK(esp_bt_dev_set_device_name(name));
   ESP_ERROR_CHECK(esp_ble_gap_set_device_name(name));
   ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&naos_ble_adv_data));
 }
