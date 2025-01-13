@@ -476,7 +476,7 @@ static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
   for (int i = 0; i < 5; i++) {
     // get conn
     naos_ble_conn_t *conn = ctx;
-    if (!conn->connected) {
+    if (!conn || !conn->connected) {
       return false;
     }
 
