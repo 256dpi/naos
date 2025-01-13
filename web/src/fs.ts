@@ -178,14 +178,15 @@ export async function writeFile(
   let cmd = pack("oos", 2, (1 << 0) | (1 << 2), file);
   await send(session, cmd, true);
 
-  // TODO: Dynamically determine channel MTU?
+  // get MTU
+  let mtu = await session.getMTU();
 
-  // write data in 500-byte chunks
+  // write data in chunks
   let num = 0;
   let offset = 0;
   while (offset < data.byteLength) {
     // determine chunk size and chunk data
-    let chunkSize = Math.min(500, data.byteLength - offset);
+    let chunkSize = Math.min(mtu, data.byteLength - offset);
     let chunkData = data.slice(offset, offset + chunkSize);
 
     // determine mode

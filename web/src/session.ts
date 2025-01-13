@@ -9,6 +9,7 @@ export class Session {
   private readonly id: number;
   private readonly ch: Channel;
   private readonly qu: Queue;
+  private mtu: number = 0;
 
   static async open(ch: Channel): Promise<Session> {
     // prepare queue
@@ -42,7 +43,7 @@ export class Session {
     this.qu = qu;
   }
 
-  async ping(timeout: number) {
+  async ping(timeout: number = 5000) {
     // write command
     await write(this.ch, new Message(this.id, 0xfe, null));
 
@@ -57,7 +58,7 @@ export class Session {
     }
   }
 
-  async query(endpoint: number, timeout: number) {
+  async query(endpoint: number, timeout: number = 5000) {
     // write command
     await write(this.ch, new Message(this.id, endpoint, null));
 
@@ -75,7 +76,7 @@ export class Session {
   async receive(
     endpoint: number,
     expectAck: boolean,
-    timeout: number
+    timeout: number = 5000
   ): Promise<[Uint8Array | null, boolean]> {
     // await message
     const msg = await this.read(timeout);
@@ -127,7 +128,7 @@ export class Session {
     }
   }
 
-  async status(timeout: number): Promise<Status> {
+  async status(timeout: number = 5000): Promise<Status> {
     // write command
     let cmd = pack("o", 0);
     await this.send(0xfd, cmd, 0);
@@ -146,7 +147,7 @@ export class Session {
     return status as Status;
   }
 
-  async unlock(password: string, timeout: number): Promise<boolean> {
+  async unlock(password: string, timeout: number = 5000): Promise<boolean> {
     // prepare command
     let cmd = pack("os", 1, password);
     await this.send(0xfd, cmd, 0);
@@ -162,7 +163,31 @@ export class Session {
     return reply[0] === 1;
   }
 
-  async end(timeout: number) {
+  async getMTU(timeout: number = 5000): Promise<number> {
+    // return cached value
+    if (this.mtu > 0) {
+      return this.mtu;
+    }
+
+    // write command
+    let cmd = pack("o", 2);
+    await this.send(0xfd, cmd, 0);
+
+    // wait reply
+    const [reply] = await this.receive(0xfd, false, timeout);
+
+    // verify reply
+    if (reply.length !== 2) {
+      throw new Error("invalid message");
+    }
+
+    // cache value
+    this.mtu = unpack("h", reply)[0];
+
+    return this.mtu;
+  }
+
+  async end(timeout: number = 5000) {
     // write command
     await write(this.ch, new Message(this.id, 0xff, null));
 

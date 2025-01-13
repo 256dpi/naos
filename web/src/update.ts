@@ -21,14 +21,15 @@ export async function update(
     throw new Error("invalid message");
   }
 
-  // TODO: Dynamically determine channel MTU.
+  // get MTU
+  let mtu = await session.getMTU();
 
-  // write data in 500-byte chunks
+  // write data in chunks
   let num = 0;
   let offset = 0;
   while (offset < data.length) {
     // determine chunks size
-    let chunkSize = Math.min(500, data.length - offset);
+    let chunkSize = Math.min(mtu, data.length - offset);
     let chunkData = data.slice(offset, offset + chunkSize);
 
     // determine acked
