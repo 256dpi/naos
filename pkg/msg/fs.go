@@ -198,6 +198,9 @@ func WriteFile(s *Session, file string, data []byte, report func(uint32), timeou
 		return err
 	}
 
+	// subtract overhead
+	mtu -= 6
+
 	// write data in chunks
 	num := 0
 	offset := 0

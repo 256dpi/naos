@@ -181,6 +181,9 @@ export async function writeFile(
   // get MTU
   let mtu = await session.getMTU();
 
+  // subtract overhead
+  mtu -= 6
+
   // write data in chunks
   let num = 0;
   let offset = 0;
