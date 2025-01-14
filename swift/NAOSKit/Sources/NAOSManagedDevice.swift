@@ -86,8 +86,8 @@ public class NAOSManagedDevice: NSObject {
 	private var mutex = AsyncSemaphore(value: 1)
 	private var session: NAOSSession?
 
-	var device: NAOSDevice
-	var channel: NAOSChannel? = nil
+	public private(set) var device: NAOSDevice
+	public private(set) var channel: NAOSChannel? = nil
 	var updatable: Set<NAOSParameter> = Set()
 	var maxAge: UInt64 = 0
 

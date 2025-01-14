@@ -58,7 +58,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 				}
 				
 				// update info label
-				self.infoLabel.stringValue = "MTU: \(self.device.mtu)"
+				self.infoLabel.stringValue = "ID: \(self.device.device.id()) • MTU: \(self.device.mtu)"
 
 				// dismiss sheet
 				self.dismiss(self.lvc!)

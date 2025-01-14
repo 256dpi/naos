@@ -19,7 +19,6 @@ public typealias NAOSQueue = Channel<Data>
 
 /// A generic message channel.
 public protocol NAOSChannel {
-	// func device() -> NAOSDevice
 	func subscribe(queue: NAOSQueue)
 	func unsubscribe(queue: NAOSQueue)
 	func write(data: Data) async throws

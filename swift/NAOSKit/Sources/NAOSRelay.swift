@@ -70,11 +70,11 @@ public class NAOSRelayDevice: NAOSDevice {
 	}
 	
 	public func id() -> String {
-		return String(format: "%s/%d", arguments: [host.device.id(), device])
+		return "\(host.device.id())/\(device)"
 	}
 	
 	public func name() -> String {
-		return String(format: "Relay %d", arguments: [device])
+		return "Relay: \(device)"
 	}
 	
 	public func open() async throws -> any NAOSChannel {
