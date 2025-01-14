@@ -28,9 +28,6 @@ internal class SessionViewController: NSViewController {
 
 			// run operation
 			try await operation(session)
-
-			// end session
-			try await session.end()
 		}
 
 		// set cancel action
@@ -81,9 +78,6 @@ internal class SessionViewController: NSViewController {
 					}
 				}
 			}
-
-			// end session
-			try await session.end()
 		}
 
 		// set cancel action
