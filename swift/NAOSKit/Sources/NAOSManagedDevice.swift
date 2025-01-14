@@ -102,6 +102,7 @@ public class NAOSManagedDevice: NSObject {
 	public var parameters: [NAOSParameter: String] = [:]
 	private var password: String = ""
 	public private(set) var relayDevices: [NAOSDevice] = []
+	public private(set) var mtu: UInt16 = 0
 
 	public init(device: NAOSDevice) {
 		// initialize instance
@@ -227,6 +228,9 @@ public class NAOSManagedDevice: NSObject {
 					NAOSRelayDevice(host: self, device: device)
 				}
 			}
+			
+			// get MTU
+			self.mtu = try await session.getMTU()
 		}
 	}
 

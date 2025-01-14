@@ -15,6 +15,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 	@IBOutlet var relayButton: NSComboButton!
 	@IBOutlet var metricsButton: NSButton!
 	@IBOutlet var parameterTableView: NSTableView!
+	@IBOutlet var infoLabel: NSTextField!
 
 	private var lvc: LoadingViewController?
 
@@ -55,6 +56,9 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 					item.representedObject = device
 					return item
 				}
+				
+				// update info label
+				self.infoLabel.stringValue = "MTU: \(self.device.mtu)"
 
 				// dismiss sheet
 				self.dismiss(self.lvc!)
