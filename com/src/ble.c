@@ -469,7 +469,7 @@ static uint16_t naos_ble_msg_mtu(void *ctx) {
   naos_ble_conn_t *conn = ctx;
 
   // return MTU
-  return conn->mtu;
+  return conn->mtu - 5;  // 5 bytes are reserved for the BLE stack
 }
 
 static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
