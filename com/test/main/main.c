@@ -282,6 +282,7 @@ void app_main() {
       .send = host_to_device,
   });
   naos_relay_device_init((naos_relay_device_t){
+      .mtu = 2048,
       .send = device_to_host,
   });
 

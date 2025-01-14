@@ -47,9 +47,11 @@ typedef struct {
 /**
  * The device relay configuration.
  *
+ * @param mtu The relay MTU.
  * @param send The function to send a message upstream.
  */
 typedef struct {
+  uint16_t mtu;
   bool (*send)(uint8_t *data, size_t len);
 } naos_relay_device_t;
 

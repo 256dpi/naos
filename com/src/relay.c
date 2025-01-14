@@ -174,7 +174,13 @@ static uint16_t naos_relay_device_mtu(void *ctx) {
   // get meta
   naos_relay_meta_t *meta = ctx;
 
-  return meta->mtu - 6;
+  // determine MTU
+  uint16_t mtu = meta->mtu;
+  if (mtu > naos_relay_device.mtu) {
+    mtu = naos_relay_device.mtu;
+  }
+
+  return mtu - 6;
 }
 
 void naos_relay_host_init(naos_relay_host_t config) {
