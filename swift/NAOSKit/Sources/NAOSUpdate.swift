@@ -25,7 +25,7 @@ public class NAOSUpdate {
 		}
 		
 		// determine MTU
-		let mtu = Int(try await session.getMTU() - 2)
+		let mtu = Int(try await session.getMTU() - 6)
 
 		// write data in chunks
 		var num = 0
