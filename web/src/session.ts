@@ -222,6 +222,6 @@ function parseError(num: number): Error {
     case 3:
       return new Error("invalid data");
     default:
-      return new Error("expected ack");
+      return new Error("expected ack, got: " + num);
   }
 }
