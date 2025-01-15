@@ -67,7 +67,6 @@ export class SerialDevice implements Device {
           // read data
           const { done, value } = await reader.read();
           if (done) {
-            console.log("done");
             break;
           }
 
