@@ -1,8 +1,9 @@
+#include <naos.h>
 #include <naos/relay.h>
 #include <naos/msg.h>
 
 #define NAOS_RELAY_ENDPOINT 0x4
-#define NAOS_RELAY_LINKS 8
+#define NAOS_RELAY_LINKS 32
 
 typedef enum {
   NAOS_RELAY_CMD_SCAN,
@@ -54,6 +55,7 @@ static naos_msg_reply_t naos_relay_handle_link(naos_msg_t msg) {
   // check existing links
   for (size_t i = 0; i < NAOS_RELAY_LINKS; i++) {
     if (naos_relay_links[i].session == msg.session) {
+      naos_log("naos_relay_handle_link: session already linked");
       return NAOS_MSG_ERROR;
     }
   }
@@ -74,6 +76,7 @@ static naos_msg_reply_t naos_relay_handle_link(naos_msg_t msg) {
     }
   }
   if (!ok) {
+    naos_log("naos_relay_handle_link: no free link");
     return NAOS_MSG_ERROR;
   }
 
@@ -103,6 +106,7 @@ static naos_msg_reply_t naos_relay_handle_send(naos_msg_t msg) {
     }
   }
   if (!ok) {
+    naos_log("naos_relay_handle_send: link not found");
     return NAOS_MSG_ERROR;
   }
 
