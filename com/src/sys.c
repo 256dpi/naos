@@ -60,6 +60,7 @@ int64_t naos_micros() {
 }
 
 void naos_delay(uint32_t millis) {
+  // delay at least 1ms
   if (millis >= portTICK_PERIOD_MS) {
     vTaskDelay(millis / portTICK_PERIOD_MS);
   } else {
