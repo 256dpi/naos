@@ -11,7 +11,7 @@ void naos_http_init(int core);
 /**
  * Serve a text file with the specified content.
  *
- * @param path The file path.
+ * @param path The file path or NULL for all paths.
  * @param type The file type.
  * @param content  The file content.
  */
@@ -20,7 +20,7 @@ void naos_http_serve_str(const char *path, const char *type, const char *content
 /**
  * Serve a binary file with the specified content and encoding.
  *
- * @param path The file path.
+ * @param path The file path or NULL for all paths.
  * @param type The file type.
  * @param encoding The file encoding.
  * @param content The file content.

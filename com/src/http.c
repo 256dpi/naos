@@ -122,7 +122,7 @@ static esp_err_t naos_http_request(httpd_req_t *req) {
     naos_http_file_t *file = &naos_http_files[i];
 
     // check path
-    if (strncmp(req->uri, file->path, len) != 0) {
+    if (file->path != NULL && strncmp(req->uri, file->path, len) != 0) {
       continue;
     }
 
