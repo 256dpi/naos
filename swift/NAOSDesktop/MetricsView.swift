@@ -29,6 +29,28 @@ class MetricsSeries: Identifiable {
 		self.name = name
 		self.samples = samples
 	}
+
+	func info(time: Date?) -> String {
+		let samples = time != nil ? atTime(time: time!) : last()
+		return samples.map { sample in
+			"\(sample.name): \(sample.value)"
+		}.joined(separator: ", ")
+	}
+
+	func atTime(time: Date) -> [MetricsSample] {
+		let needle = samples.first { s in
+			s.time > time
+		}
+		return samples.filter { s in
+			s.time == needle?.time
+		}
+	}
+
+	func last() -> [MetricsSample] {
+		return samples.filter { s in
+			s.time == samples.last?.time
+		}
+	}
 }
 
 class MetricsContainer: ObservableObject {
@@ -42,17 +64,40 @@ class MetricsContainer: ObservableObject {
 struct MetricsView: View {
 	@ObservedObject var data: MetricsContainer
 
+	@State private var hoverDate: Date?
+
 	var body: some View {
 		ScrollView {
 			ForEach(data.series) { series in
 				VStack {
-					Label(title: { Text(series.name) }, icon: {})
+					HStack {
+						Label(title: { Text(series.name) }, icon: {})
+						Spacer()
+						Label(title: {
+							Text(series.info(time: hoverDate))
+						}, icon: {}).font(.footnote)
+					}
 					Chart(series.samples) {
 						LineMark(
 							x: .value("Date", $0.time),
 							y: .value("Value", $0.value)
 						)
 						.foregroundStyle(by: .value("Name", $0.name))
+						if let hoverDate {
+							RectangleMark(x: .value("Date", hoverDate))
+								.foregroundStyle(.primary.opacity(0.1))
+						}
+					}
+					.chartOverlay { (chartProxy: ChartProxy) in
+						Color.clear
+							.onContinuousHover { hoverPhase in
+								switch hoverPhase {
+								case .active(let hoverLocation):
+									hoverDate = chartProxy.value(atX: hoverLocation.x, as: Date.self)
+								case .ended:
+									hoverDate = nil
+								}
+							}
 					}
 				}.padding()
 			}
@@ -109,6 +154,9 @@ class MetricsViewController: NSHostingController<MetricsView> {
 						data = try await NAOSMetrics.readDouble(session: session, ref: m.ref)
 					}
 
+					// get time
+					let now = Date.now
+
 					// add samples
 					container.series[Int(m.ref)].samples.append(contentsOf: data.enumerated().map { i, n in
 						// find keys and values
@@ -123,9 +171,10 @@ class MetricsViewController: NSHostingController<MetricsView> {
 								let vs = layout.values[key.offset][vn]
 								name += "\(key.element)=\(vs) "
 							}
+							name = name.trimmingCharacters(in: CharacterSet(charactersIn: " "))
 						}
 
-						return MetricsSample(name: name, time: Date.now, value: n)
+						return MetricsSample(name: name, time: now, value: n)
 					})
 
 					// trim samples
