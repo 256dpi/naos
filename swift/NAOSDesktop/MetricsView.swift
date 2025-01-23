@@ -71,7 +71,7 @@ struct MetricsView: View {
 			ForEach(data.series) { series in
 				VStack {
 					HStack {
-						Label(title: { Text(series.name) }, icon: {})
+						Label(title: { Text(series.name).font(.headline) }, icon: {})
 						Spacer()
 						Label(title: {
 							Text(series.info(time: hoverDate))
@@ -84,8 +84,10 @@ struct MetricsView: View {
 						)
 						.foregroundStyle(by: .value("Name", $0.name))
 						if let hoverDate {
-							RectangleMark(x: .value("Date", hoverDate))
-								.foregroundStyle(.primary.opacity(0.1))
+							if let maxTime = series.last().first?.time {
+								RectangleMark(x: .value("Date", min(hoverDate, maxTime)), width: 1)
+									.foregroundStyle(Color.black)
+							}
 						}
 					}
 					.chartOverlay { (chartProxy: ChartProxy) in
