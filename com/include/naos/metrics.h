@@ -1,3 +1,6 @@
+#ifndef NAOS_METRICS_H
+#define NAOS_METRICS_H
+
 #include <stddef.h>
 
 /**
@@ -11,7 +14,7 @@
  *
  * Metrics define either a single scalar value or a set of values. The set
  * is defined by a list of keys with a corresponding list of values. That way
- * multi-dimensional metrics can be defined in a space-efficient way.
+ * multidimensional metrics can be defined in a space-efficient way.
  *
  * The following is an example of a scalar metric definition:
  *
@@ -70,3 +73,5 @@ typedef struct {
 void naos_metrics_init();
 
 void naos_metrics_add(naos_metric_t * metric);
+
+#endif // NAOS_METRICS_H

@@ -9,7 +9,7 @@
 #define NAOS_NUM_PARAMS(x) (sizeof(x) / sizeof((x)[0]))
 
 /**
- * The messages scopes.
+ * The message scopes.
  */
 typedef enum {
   NAOS_LOCAL, /** Messages are transferred under the configured base topic of the device. */
