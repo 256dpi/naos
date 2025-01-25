@@ -28,9 +28,6 @@ public struct NAOSParameter: Hashable {
 	public static let uptime = NAOSParameter(name: "uptime")
 	public static let freeHeap = NAOSParameter(name: "free-heap")
 	public static let freeHeapInt = NAOSParameter(name: "free-heap-int")
-	public static let wifiRSSI = NAOSParameter(name: "wifi-rssi")
-	public static let cpuUsage0 = NAOSParameter(name: "cpu-usage0")
-	public static let cpuUsage1 = NAOSParameter(name: "cpu-usage1")
 
 	public func format(value: String) -> String {
 		let num = Double(value) ?? 0
@@ -47,18 +44,6 @@ public struct NAOSParameter: Hashable {
 		case .freeHeap, .freeHeapInt:
 			return ByteCountFormatter.string(
 				from: Measurement(value: num, unit: .bytes), countStyle: .memory)
-		case .wifiRSSI:
-			var signal = (100 - (num * -1)) * 2
-			if signal > 100 {
-				signal = 100
-			} else if signal < 0 {
-				signal = 0
-			}
-			return String(format: "%.0f%%", signal)
-		case .cpuUsage0:
-			return String(format: "%.0f%% (Sys)", num * 100)
-		case .cpuUsage1:
-			return String(format: "%.0f%% (App)", num * 100)
 		default:
 			return value
 		}
@@ -237,7 +222,9 @@ public class NAOSManagedDevice: NSObject {
 	/// Returns the title of the device.
 	public func title() -> String {
 		// TODO: Precompute during refresh and updates?
-		(parameters[.deviceName] ?? "") + " (" + (parameters[.deviceType] ?? "") + ")"
+		
+		// format title
+		return (parameters[.deviceName] ?? "") + " (" + (parameters[.deviceType] ?? "") + ")"
 	}
 
 	/// Unlock will attempt to unlock the device and returns its success.

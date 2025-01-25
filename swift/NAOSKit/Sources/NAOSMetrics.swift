@@ -165,7 +165,7 @@ public class NAOSMetrics {
 		// convert reply
 		var list = [Int32]()
 		for i in 0..<(reply.count/4) {
-			let n = readUint32(data: reply.subdata(in: i*4..<i*4+4))
+			let n = readInt32(data: reply.subdata(in: i*4..<i*4+4))
 			list.append(Int32(n))
 		}
 

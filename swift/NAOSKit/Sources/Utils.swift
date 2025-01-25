@@ -54,6 +54,12 @@ func readUint16(data: Data) -> UInt16 {
 	return UInt16(data[0]) | (UInt16(data[1]) << 8)
 }
 
+func readInt32(data: Data) -> Int32 {
+	return data.withUnsafeBytes { p in
+		return p.load(as: Int32.self)
+	}
+}
+
 func readUint32(data: Data) -> UInt32 {
 	return UInt32(data[0]) | (UInt32(data[1]) << 8) | (UInt32(data[2]) << 16)
 		| (UInt32(data[3]) << 24)

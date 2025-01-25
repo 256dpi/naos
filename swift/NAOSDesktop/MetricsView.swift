@@ -35,7 +35,7 @@ class MetricsSeries: Identifiable {
 	func info(time: Date?) -> String {
 		let samples = time != nil ? atTime(time: time!) : last()
 		return samples.map { sample in
-			"\(sample.name): \(sample.value)"
+			"\(sample.name): \(String(format: "%.4f", sample.value))"
 		}.joined(separator: ", ")
 	}
 
