@@ -3,7 +3,7 @@
 #include <esp_err.h>
 #include <string.h>
 
-#define NAOS_METRICS_NUM 8
+#define NAOS_METRICS_NUM 32
 #define NAOS_METRICS_ENDPOINT 0x5
 
 typedef enum {
