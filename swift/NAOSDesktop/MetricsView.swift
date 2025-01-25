@@ -12,11 +12,13 @@ struct MetricsSample: Identifiable {
 	var name: String
 	var time: Date
 	var value: Double
+	var rawValue: Double
 
-	init(name: String, time: Date, value: Double) {
+	init(name: String, time: Date, value: Double, rawValue: Double? = nil) {
 		self.name = name
 		self.time = time
 		self.value = value
+		self.rawValue = rawValue ?? value
 	}
 }
 
@@ -38,18 +40,21 @@ class MetricsSeries: Identifiable {
 	}
 
 	func atTime(time: Date) -> [MetricsSample] {
-		let needle = samples.first { s in
-			s.time > time
-		}
-		return samples.filter { s in
-			s.time == needle?.time
-		}
+		guard let needleTime = samples.first(where: { $0.time > time })?.time else { return [] }
+		return samples.filter { $0.time == needleTime }
 	}
 
 	func last() -> [MetricsSample] {
-		return samples.filter { s in
-			s.time == samples.last?.time
-		}
+		guard let lastTime = samples.last?.time else { return [] }
+		return samples.reversed().prefix { $0.time == lastTime }.reversed()
+	}
+
+	func minTime() -> Date {
+		return samples.first?.time ?? Date.now
+	}
+
+	func maxTime() -> Date {
+		return samples.last?.time ?? Date.now
 	}
 }
 
@@ -84,10 +89,10 @@ struct MetricsView: View {
 						)
 						.foregroundStyle(by: .value("Name", $0.name))
 						if let hoverDate {
-							if let maxTime = series.last().first?.time {
-								RectangleMark(x: .value("Date", min(hoverDate, maxTime)), width: 1)
-									.foregroundStyle(Color.black)
-							}
+							RectangleMark(
+								x: .value("Date", max(min(hoverDate, series.maxTime()), series.minTime())),
+								width: 1
+							).foregroundStyle(Color.black)
 						}
 					}
 					.chartOverlay { (chartProxy: ChartProxy) in
@@ -176,7 +181,19 @@ class MetricsViewController: NSHostingController<MetricsView> {
 							name = name.trimmingCharacters(in: CharacterSet(charactersIn: " "))
 						}
 
-						return MetricsSample(name: name, time: now, value: n)
+						// get value
+						var value = n
+						if m.kind == .counter {
+							if let last = container.series[Int(m.ref)].samples.last(where: { s in
+								s.name == name
+							})?.rawValue {
+								value -= last
+							} else {
+								value = 0
+							}
+						}
+
+						return MetricsSample(name: name, time: now, value: value, rawValue: n)
 					})
 
 					// trim samples
