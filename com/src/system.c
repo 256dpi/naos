@@ -1,4 +1,5 @@
 #include <naos/sys.h>
+#include <naos/metrics.h>
 
 #include <esp_ota_ops.h>
 #include <esp_random.h>
@@ -21,6 +22,7 @@ static naos_mutex_t naos_system_mutex;
 static naos_status_t naos_system_status;
 static naos_system_handler_t naos_system_handlers[NAOS_SYSTEM_MAX_HANDLERS];
 static size_t naos_system_handler_count;
+static int32_t naos_system_memory[3] = {0};
 
 static naos_param_t naos_system_params[] = {
     {.name = "device-id", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
@@ -33,8 +35,17 @@ static naos_param_t naos_system_params[] = {
     {.name = "connection-status", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "running-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "uptime", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
-    {.name = "free-heap", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
-    {.name = "free-heap-int", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
+};
+
+static naos_metric_t naos_system_metrics[] = {
+    {
+        .name = "free-memory",
+        .kind = NAOS_METRIC_GAUGE,
+        .type = NAOS_METRIC_LONG,
+        .data = naos_system_memory,
+        .keys = {"type"},
+        .values = {"all", "internal", "external"},
+    },
 };
 
 static void naos_system_set_status(naos_status_t status) {
@@ -57,8 +68,8 @@ static void naos_system_task() {
   // prepare generation
   uint32_t old_generation = 0;
 
-  // prepare updated
-  static int64_t params_updated = 0;
+  // prepare last update
+  static int64_t last_update = 0;
 
   for (;;) {
     // wait some time
@@ -97,12 +108,13 @@ static void naos_system_task() {
     // update generation
     old_generation = new_generation;
 
-    // update parameters
-    if (naos_millis() > params_updated + 1000) {
+    // update parameters and metrics
+    if (naos_millis() > last_update + 1000) {
       naos_set_l("uptime", (int32_t)naos_millis());
-      naos_set_l("free-heap", (int32_t)esp_get_free_heap_size());
-      naos_set_l("free-heap-int", (int32_t)esp_get_free_internal_heap_size());
-      params_updated = naos_millis();
+      naos_system_memory[0] = (int32_t)esp_get_free_heap_size();
+      naos_system_memory[1] = (int32_t)esp_get_free_internal_heap_size();
+      naos_system_memory[2] = (int32_t)heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+      last_update = naos_millis();
     }
 
     // dispatch parameters
@@ -129,6 +141,11 @@ void naos_system_init() {
   // register system parameters
   for (size_t i = 0; i < NAOS_NUM_PARAMS(naos_system_params); i++) {
     naos_register(&naos_system_params[i]);
+  }
+
+  // add system metrics
+  for (size_t i = 0; i < sizeof(naos_system_metrics) / sizeof(naos_metric_t); i++) {
+    naos_metrics_add(&naos_system_metrics[i]);
   }
 
   // read factory MAC
