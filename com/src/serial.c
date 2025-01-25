@@ -141,7 +141,7 @@ void naos_serial_init_stdio() {
   });
 
   // start task
-  naos_run("serial-stdio", 4096, 1, naos_serial_stdio_task);
+  naos_run("naos-serial-s", 4096, 1, naos_serial_stdio_task);
 }
 
 /* USB Interface */
@@ -212,7 +212,7 @@ void naos_serial_init_usb() {
   });
 
   // run task
-  naos_run("serial-usb", 4096, 1, naos_serial_usb_task);
+  naos_run("naos-serial-u", 4096, 1, naos_serial_usb_task);
 }
 
 #endif  // NAOS_SERIAL_USB_AVAILABLE

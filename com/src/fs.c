@@ -729,5 +729,5 @@ void naos_fs_install(naos_fs_config_t cfg) {
   });
 
   // run cleanup periodically
-  naos_repeat("fs", 1000, naos_fs_cleanup);
+  naos_repeat("naos-fs", 1000, naos_fs_cleanup);
 }

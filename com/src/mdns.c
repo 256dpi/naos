@@ -79,6 +79,6 @@ void naos_mdns_init(naos_mdns_config_t config) {
 
   // periodically announce main service
   if (config.main) {
-    naos_repeat("mdns", 1000, naos_mdns_announce);
+    naos_repeat("naos-mdns", 1000, naos_mdns_announce);
   }
 }

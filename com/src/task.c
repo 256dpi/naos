@@ -130,7 +130,7 @@ void naos_start() {
   // register battery parameter if available
   if (naos_config()->battery_callback != NULL) {
     naos_register(&naos_task_param_battery);
-    naos_repeat("battery", 1000, naos_task_battery);
+    naos_repeat("naos-battery", 1000, naos_task_battery);
   }
 
   // register ping parameter if available

@@ -260,7 +260,7 @@ void naos_update_begin(size_t size, naos_update_callback_t cb) {
 
   // begin update async or sync
   if (naos_update_callback != NULL) {
-    naos_run("update-begin", 4096, 1, naos_update_begin_task);
+    naos_run("naos-update-b", 4096, 1, naos_update_begin_task);
   } else {
     naos_update_begin_task();
   }
@@ -345,7 +345,7 @@ void naos_update_finish() {
 
   // finish update async or sync
   if (naos_update_callback != NULL) {
-    naos_run("update-finish", 4096, 1, naos_update_finish_task);
+    naos_run("naos-update-f", 4096, 1, naos_update_finish_task);
   } else {
     naos_update_finish_task();
   }

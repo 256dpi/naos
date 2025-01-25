@@ -245,10 +245,10 @@ void naos_msg_init() {
   naos_msg_queue = naos_queue(NAOS_MSG_MAX_SESSIONS, sizeof(naos_msg_t));
 
   // run worker
-  naos_run("msg-worker", 8192, 1, naos_msg_worker);
+  naos_run("naos-msg-w", 8192, 1, naos_msg_worker);
 
   // run cleaner
-  naos_repeat("msg-cleaner", 1000, naos_msg_cleaner);
+  naos_repeat("naos-msg-c", 1000, naos_msg_cleaner);
 
   // install system endpoint
   naos_msg_install((naos_msg_endpoint_t){
