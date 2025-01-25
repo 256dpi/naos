@@ -1,9 +1,11 @@
 #include <naos.h>
 #include <naos/sys.h>
+#include <naos/metrics.h>
 
 #include <string.h>
 #include <esp_event.h>
 #include <esp_wifi.h>
+#include <naos/wifi.h>
 
 #include "utils.h"
 #include "net.h"
@@ -15,6 +17,7 @@ static bool naos_wifi_started;
 static bool naos_wifi_connected;
 static uint16_t naos_wifi_generation = 0;
 static char naos_wifi_addr[16] = {0};
+static int32_t naos_wifi_rssi = 0;
 
 static void naos_wifi_configure() {
   // log call
@@ -132,10 +135,12 @@ static naos_net_status_t naos_wifi_status() {
 }
 
 static void naos_wifi_update() {
-  // update RSSI
-  wifi_ap_record_t record = {0};
-  esp_wifi_sta_get_ap_info(&record);
-  naos_set_l("wifi-rssi", record.rssi);
+  // get RSSI
+  int8_t rssi = 0;
+  naos_wifi_info(&rssi);
+
+  // set RSSI
+  naos_wifi_rssi = (int32_t)rssi;
 }
 
 static naos_param_t naos_wifi_params[] = {
@@ -143,8 +148,16 @@ static naos_param_t naos_wifi_params[] = {
     {.name = "wifi-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-manual", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_wifi_configure},
-    {.name = "wifi-rssi", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "wifi-addr", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
+};
+
+static naos_metric_t naos_wifi_metrics[] = {
+    {
+        .name = "wifi-rssi",
+        .kind = NAOS_METRIC_GAUGE,
+        .type = NAOS_METRIC_LONG,
+        .data = &naos_wifi_rssi,
+    },
 };
 
 void naos_wifi_init() {
@@ -177,9 +190,23 @@ void naos_wifi_init() {
     naos_register(&naos_wifi_params[i]);
   }
 
+  // add metrics
+  for (size_t i = 0; i < sizeof(naos_wifi_metrics) / sizeof(naos_metric_t); i++) {
+    naos_metrics_add(&naos_wifi_metrics[i]);
+  }
+
   // perform initial configuration
   naos_wifi_configure();
 
   // start update timer
-  naos_repeat("naos-wifi", 1000, naos_wifi_update);
+  naos_repeat("naos-wifi", 250, naos_wifi_update);
+}
+
+void naos_wifi_info(int8_t *rssi) {
+  // get info
+  wifi_ap_record_t record = {0};
+  esp_wifi_sta_get_ap_info(&record);
+
+  // set RSSI
+  *rssi = record.rssi;
 }

@@ -6,4 +6,9 @@
  */
 void naos_wifi_init();
 
+/**
+ * Get the WiFi information.
+ */
+void naos_wifi_info(int8_t * rssi);
+
 #endif  // NAOS_WIFI_H

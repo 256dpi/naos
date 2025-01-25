@@ -1,9 +1,10 @@
 #include <naos/sys.h>
 #include <naos/update.h>
+#include <naos/cpu.h>
+#include <naos/wifi.h>
 
 #include <esp_ota_ops.h>
 #include <string.h>
-#include <naos/cpu.h>
 
 #include "coredump.h"
 #include "params.h"
@@ -26,10 +27,8 @@ static void naos_manager_heartbeat() {
   }
 
   // get WiFi RSSI
-  int32_t rssi = -1;
-  if (naos_lookup("wifi-rssi")) {
-    rssi = naos_get_l("wifi-rssi");
-  }
+  int8_t rssi = 0;
+  naos_wifi_info(&rssi);
 
   // get CPU usage
   float cpu0 = 0, cpu1 = 0;
@@ -37,7 +36,7 @@ static void naos_manager_heartbeat() {
 
   // send heartbeat
   char buf[64];
-  snprintf(buf, sizeof buf, "%s,%s,%s,%ld,%lld,%s,%.2f,%ld,%.2f,%.2f", naos_config()->device_type,
+  snprintf(buf, sizeof buf, "%s,%s,%s,%ld,%lld,%s,%.2f,%d,%.2f,%.2f", naos_config()->device_type,
            naos_config()->device_version, device_name, esp_get_free_heap_size(), naos_millis(),
            esp_ota_get_running_partition()->label, battery, rssi, cpu0, cpu1);
   naos_publish_s("naos/heartbeat", buf, 0, false, NAOS_LOCAL);

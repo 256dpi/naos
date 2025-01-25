@@ -6,7 +6,6 @@
  */
 void naos_cpu_init();
 
-
 /**
  * Get the CPU usage of the two cores.
  */
