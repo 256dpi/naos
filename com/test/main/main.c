@@ -291,7 +291,6 @@ void app_main() {
   naos_register(&param_message);
 
   // add metrics
-  naos_metrics_init();
   naos_metrics_add(&counter_metric);
   naos_metrics_add(&gauge_metric);
 

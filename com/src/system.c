@@ -9,6 +9,7 @@
 #include "msg.h"
 #include "net.h"
 #include "params.h"
+#include "metrics.h"
 #include "update.h"
 #include "utils.h"
 #include "com.h"
@@ -120,9 +121,10 @@ void naos_system_init() {
   // create mutex
   naos_system_mutex = naos_mutex();
 
-  // initialize message and parameter subsystems
+  // initialize message, parameter and metrics subsystems
   naos_msg_init();
   naos_params_init();
+  naos_metrics_init();
 
   // register system parameters
   for (size_t i = 0; i < NAOS_NUM_PARAMS(naos_system_params); i++) {

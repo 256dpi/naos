@@ -70,8 +70,6 @@ typedef struct {
   size_t size;
 } naos_metric_t;
 
-void naos_metrics_init();
-
 void naos_metrics_add(naos_metric_t * metric);
 
 #endif // NAOS_METRICS_H
