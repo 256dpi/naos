@@ -3,6 +3,7 @@
 
 #include <esp_ota_ops.h>
 #include <string.h>
+#include <naos/cpu.h>
 
 #include "coredump.h"
 #include "params.h"
@@ -31,11 +32,8 @@ static void naos_manager_heartbeat() {
   }
 
   // get CPU usage
-  double cpu0 = 0, cpu1 = 0;
-  if (naos_lookup("cpu-usage0")) {
-    cpu0 = naos_get_d("cpu-usage0");
-    cpu1 = naos_get_d("cpu-usage1");
-  }
+  float cpu0 = 0, cpu1 = 0;
+  naos_cpu_get(&cpu0, &cpu1);
 
   // send heartbeat
   char buf[64];

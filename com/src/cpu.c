@@ -1,5 +1,6 @@
 #include <naos.h>
 #include <naos/sys.h>
+#include <naos/metrics.h>
 
 #include <esp_freertos_hooks.h>
 
@@ -18,8 +19,7 @@
 
 static uint64_t naos_cpu_idle0 = 0;
 static uint64_t naos_cpu_idle1 = 0;
-static float naos_cpu_usage0 = 0;
-static float naos_cpu_usage1 = 0;
+static float naos_cpu_usage[2] = {0};
 
 static bool naos_cpu_hook0() {
   naos_cpu_idle0++;
@@ -53,23 +53,24 @@ static void naos_cpu_update() {
   float usage1 = 1.f - idle1 / NAOS_CPU_MAX_IDLE_CALLS;
 
   // add to usage
-  naos_cpu_usage0 = (naos_cpu_usage0 * 4 + usage0) / 5;
-  naos_cpu_usage1 = (naos_cpu_usage1 * 4 + usage1) / 5;
-
-  // set parameters
-  naos_set_d("cpu-usage0", naos_cpu_usage0);
-  naos_set_d("cpu-usage1", naos_cpu_usage1);
+  naos_cpu_usage[0] = (naos_cpu_usage[0] * 4 + usage0) / 5;
+  naos_cpu_usage[1] = (naos_cpu_usage[1] * 4 + usage1) / 5;
 }
 
-static naos_param_t naos_cpu_params[] = {
-    {.name = "cpu-usage0", .type = NAOS_DOUBLE, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
-    {.name = "cpu-usage1", .type = NAOS_DOUBLE, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
-};
+static naos_metric_t naos_cpu_metrics[] = {{
+    .name = "cpu-usage",
+    .kind = NAOS_METRIC_GAUGE,
+    .type = NAOS_METRIC_FLOAT,
+    .data = naos_cpu_usage,
+    .keys = {"cpu"},
+    .values = {"0", "1"},
+}};
 
 void naos_cpu_init() {
-  // register parameters
-  for (size_t i = 0; i < NAOS_NUM_PARAMS(naos_cpu_params); i++) {
-    naos_register(&naos_cpu_params[i]);
+  // add metrics
+  for (size_t i = 0; i < sizeof(naos_cpu_metrics) / sizeof(naos_metric_t); i++) {
+    naos_metric_t *metric = &naos_cpu_metrics[i];
+    naos_metrics_add(metric);
   }
 
   // register hooks
@@ -78,4 +79,10 @@ void naos_cpu_init() {
 
   // start update timer
   naos_repeat("naos-cpu", 1000, naos_cpu_update);
+}
+
+void naos_cpu_get(float *cpu0, float *cpu1) {
+  // set values
+  *cpu0 = naos_cpu_usage[0];
+  *cpu1 = naos_cpu_usage[1];
 }
