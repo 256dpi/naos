@@ -24,10 +24,7 @@
 
 /**
  * Returns the elapsed milliseconds or microseconds since boot.
- *
- * Note: For time calculations `naos_micros` should be used as it is monotonic
- * and will not overflow. The `naos_millis` function uses the ESP log timestamp
- * that will overflow after 49.7 days.
+ * Both values are monotonic and will not overflow in a lifetime.
  *
  * @return The elapsed milliseconds or microseconds.
  */

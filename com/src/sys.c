@@ -51,7 +51,7 @@ static void naos_backtrace_print(TaskHandle_t task, int depth) {
 
 int64_t naos_millis() {
   // return timestamp
-  return (int64_t)esp_log_timestamp();
+  return esp_timer_get_time() / 1000;
 }
 
 int64_t naos_micros() {

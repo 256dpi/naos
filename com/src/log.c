@@ -53,6 +53,9 @@ void naos_log(const char *fmt, ...) {
     device_type = naos_config()->device_type;
   }
 
+  // get log timestamp to synchronize with native logs
+  uint32_t millis = esp_log_timestamp();
+
   // print message
-  printf("N (%lld) %s: %s\n", naos_millis(), device_type, msg);
+  printf("N (%lu) %s: %s\n", millis, device_type, msg);
 }
