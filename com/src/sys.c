@@ -2,7 +2,7 @@
 
 #include <esp_timer.h>
 #include <esp_debug_helpers.h>
-#include <freertos/task_snapshot.h>
+#include <esp_private/freertos_debug.h>
 
 static void naos_backtrace_print(TaskHandle_t task, int depth) {
   // handle current task
@@ -11,42 +11,25 @@ static void naos_backtrace_print(TaskHandle_t task, int depth) {
     return;
   }
 
-  // get task count
-  uint32_t task_count = uxTaskGetNumberOfTasks();
-
-  // allocate snapshots
-  TaskSnapshot_t *snapshots = (TaskSnapshot_t *)calloc(task_count * sizeof(TaskSnapshot_t), 1);
-
-  // get snapshots
-  UBaseType_t tcb_size = 0;
-  uint32_t got = uxTaskGetSnapshotAll(snapshots, task_count, &tcb_size);
-
-  // adjust task count
-  task_count = got < task_count ? got : task_count;
-
-  for (uint32_t i = 0; i < task_count; i++) {
-    // check handle
-    TaskHandle_t handle = (TaskHandle_t)snapshots[i].pxTCB;
-    if (handle != task) {
-      continue;
-    }
-
-    // get top of stack
-    XtExcFrame *xtf = (XtExcFrame *)snapshots[i].pxTopOfStack;
-
-    // prepare backtrace frame
-    esp_backtrace_frame_t frame = {
-        .pc = xtf->pc,
-        .sp = xtf->a1,
-        .next_pc = xtf->a0,
-        .exc_frame = xtf,
-    };
-
-    // print backtrace frame
-    esp_backtrace_print_from_frame(depth, &frame, false);
+  // get task snapshot
+  TaskSnapshot_t snapshot = {0};
+  if (!vTaskGetSnapshot(task, &snapshot)) {
+    return;
   }
 
-  free(snapshots);
+  // get top of stack
+  XtExcFrame *xtf = (XtExcFrame *)snapshot.pxTopOfStack;
+
+  // prepare backtrace frame
+  esp_backtrace_frame_t frame = {
+      .pc = xtf->pc,
+      .sp = xtf->a1,
+      .next_pc = xtf->a0,
+      .exc_frame = xtf,
+  };
+
+  // print backtrace
+  esp_backtrace_print_from_frame(depth, &frame, false);
 }
 
 int64_t naos_millis() {
@@ -123,18 +106,18 @@ void naos_lock(naos_mutex_t mutex) {
     // log error
     ESP_LOGE("NAOS", "naos_lock: was blocked for 10s");
 
-    // get holder holder
+    // get mutex holder
     TaskHandle_t holder = xSemaphoreGetMutexHolder(mutex);
     if (holder == NULL) {
       continue;
     }
 
     // print locker backtrace
-    ESP_LOGE("NAOS", "======= BACKTRACE: %s (locker) =======", pcTaskGetName(NULL));
+    ESP_LOGE("NAOS", "======= LOCKER: %s =======", pcTaskGetName(NULL));
     naos_backtrace_print(NULL, 100);
 
     // print holder backtrace
-    ESP_LOGE("NAOS", "======= BACKTRACE: %s (holder) =======", pcTaskGetName(holder));
+    ESP_LOGE("NAOS", "======= HOLDER: %s =======", pcTaskGetName(holder));
     naos_backtrace_print(holder, 100);
   }
 }
