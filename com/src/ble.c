@@ -1,7 +1,6 @@
 #include <naos/ble.h>
 #include <naos/sys.h>
 #include <naos/msg.h>
-#include <naos/update.h>
 
 #include <esp_bt.h>
 #include <esp_bt_defs.h>

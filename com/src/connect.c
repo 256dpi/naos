@@ -2,7 +2,6 @@
 #include <naos/msg.h>
 #include <naos/sys.h>
 
-#include <string.h>
 #include <esp_websocket_client.h>
 
 #include "system.h"
