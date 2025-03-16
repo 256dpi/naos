@@ -85,6 +85,17 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 		}
 	}
 
+	// resolve links
+	for i, include := range includes {
+		path, err := filepath.EvalSymlinks(include)
+		if err != nil {
+			return nil, err
+		}
+		if path != include {
+			includes[i] = path
+		}
+	}
+
 	return includes, nil
 }
 
