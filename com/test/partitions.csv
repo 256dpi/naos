@@ -1,1 +1,8 @@
-../../tree/partitions.csv
+# Name,   Type, SubType,  Offset,  Size
+nvs,      data, nvs,      0x9000,  0x4000
+otadata,  data, ota,      0xd000,  0x2000
+phy_init, data, phy,      0xf000,  0x1000
+alpha,    app,  ota_0,    0x10000, 3640K
+beta,     app,  ota_1,    ,        3640K
+storage,  data, fat,      ,        528K
+coredump, data, coredump, ,        64K

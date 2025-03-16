@@ -4,3 +4,6 @@ CONFIG_ESP32_REV_MIN_3=y
 
 # enable SPI Ethernet driver
 CONFIG_ETH_SPI_ETHERNET_W5500=y
+
+# increase default flash size
+CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
