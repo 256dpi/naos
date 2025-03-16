@@ -30,4 +30,4 @@ jobs:
         run: cd com; make update
 
       - name: Build
-        run: cd com; make build
+        run: cd com; make reconfigure build
