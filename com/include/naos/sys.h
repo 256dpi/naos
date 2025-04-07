@@ -78,9 +78,11 @@ void naos_repeat(const char *name, uint32_t period_ms, naos_func_t func);
 /**
  * Defer a function call to the background task.
  *
+ * @param name The name.
+ * @param delay_ms The delay in milliseconds.
  * @param func The function.
  */
-void naos_defer(naos_func_t func);
+void naos_defer(const char *name, uint32_t delay_ms, naos_func_t func);
 
 /**
  * Defer a function call to the background task from an ISR.

@@ -84,10 +84,31 @@ void naos_repeat(const char *name, uint32_t period_ms, naos_func_t func) {
   }
 }
 
-void naos_defer(naos_func_t func) {
-  // pend function call
-  while (xTimerPendFunctionCall(func, NULL, 0, portMAX_DELAY) != pdPASS) {
+static void naos_defer_call(TimerHandle_t timer) {
+  // call callback
+  ((naos_func_t)pvTimerGetTimerID(timer))();
+
+  // delete timer
+  while (xTimerDelete(timer, portMAX_DELAY) != pdPASS) {
   }
+}
+
+void naos_defer(const char *name, uint32_t delay_ms, naos_func_t func) {
+  // pend function call
+  if (delay_ms == 0) {
+    while (xTimerPendFunctionCall(func, NULL, 0, portMAX_DELAY) != pdPASS) {
+    }
+    return;
+  }
+
+  // create timer
+  TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(delay_ms), pdFALSE, func, naos_defer_call);
+  if (timer == NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // start timer
+  xTimerStart(timer, portMAX_DELAY);
 }
 
 bool naos_defer_isr(naos_func_t func) {
