@@ -16,6 +16,8 @@
  * of the serial connection. All messages are encoded in base64 and prefixed
  * with the magic string `NAOS!`. Each message is terminated with a newline
  * character.
+ *
+ * Hint: Create a session with "NAOS!AQAAAKq7qrs=" to test a serial connection.
  */
 
 /**
