@@ -21,7 +21,7 @@ cmake_minimum_required(VERSION 3.7)
 project(naos-project)
 
 # this should not be changed
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD 17)
 
 # add your source files
 set(SOURCE_FILES src/main.c)
