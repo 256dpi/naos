@@ -172,6 +172,7 @@ func Build(naosPath, target string, overrides map[string]string, files []string,
 		}
 
 		// update partitions
+		utils.Log(out, "Generating partitions...")
 		err = utils.Update(filepath.Join(Directory(naosPath), "partitions.csv"), table)
 		if err != nil {
 			return err
