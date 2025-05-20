@@ -5,6 +5,7 @@
 
 #include <esp_log.h>
 #include <esp_ota_ops.h>
+#include <esp_system.h>
 #include <string.h>
 
 #include "coredump.h"

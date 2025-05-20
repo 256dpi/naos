@@ -1,10 +1,9 @@
 #ifndef NAOS_SYS_H
 #define NAOS_SYS_H
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/semphr.h>
-#include <freertos/event_groups.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
 
 /**
  * Returns the elapsed milliseconds or microseconds since boot.
@@ -30,7 +29,7 @@ typedef void (*naos_func_t)();
 /**
  * A task handle.
  */
-typedef TaskHandle_t naos_task_t;
+typedef void * naos_task_t;
 
 /**
  * Runs a task with the specified name and stack.
@@ -79,7 +78,7 @@ bool naos_defer_isr(naos_func_t func);
 /**
  * A mutex handle.
  */
-typedef SemaphoreHandle_t naos_mutex_t;
+typedef void * naos_mutex_t;
 
 /**
  * Creates and returns a new mutex.
@@ -110,7 +109,7 @@ void naos_mutex_delete(naos_mutex_t mutex);
 /**
  * A signal handle.
  */
-typedef EventGroupHandle_t naos_signal_t;
+typedef void * naos_signal_t;
 
 /**
  * Creates and returns a signal.
@@ -148,7 +147,7 @@ void naos_signal_delete(naos_signal_t signal);
 /**
  * A queue handle.
  */
-typedef QueueHandle_t naos_queue_t;
+typedef void * naos_queue_t;
 
 /**
  * Creates and returns a queue.

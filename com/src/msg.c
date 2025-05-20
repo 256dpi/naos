@@ -3,6 +3,7 @@
 #include <naos/msg.h>
 
 #include <esp_log.h>
+#include <esp_err.h>
 #include <string.h>
 
 #include "utils.h"

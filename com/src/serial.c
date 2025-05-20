@@ -3,7 +3,7 @@
 #include <naos/sys.h>
 #include <string.h>
 
-#include <stdio.h>
+#include <esp_err.h>
 #include <mbedtls/base64.h>
 
 #define NAOS_SERIAL_BUFFER_SIZE 4096

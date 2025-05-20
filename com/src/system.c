@@ -4,7 +4,9 @@
 #include <esp_log.h>
 #include <esp_ota_ops.h>
 #include <esp_random.h>
+#include <esp_system.h>
 #include <esp_mac.h>
+#include <esp_heap_caps.h>
 #include <string.h>
 
 #include "system.h"
