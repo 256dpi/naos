@@ -369,9 +369,9 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
     file->ts = naos_millis();
 
     // yield to system
-    NAOS_UNLOCK(naos_fs_mutex);
+    naos_unlock(naos_fs_mutex);
     naos_delay(1);
-    NAOS_LOCK(naos_fs_mutex);
+    naos_lock(naos_fs_mutex);
   }
 
   // free data
@@ -636,7 +636,7 @@ static naos_msg_reply_t naos_fs_handle(naos_msg_t msg) {
   msg.len -= 1;
 
   // acquire mutex
-  NAOS_LOCK(naos_fs_mutex);
+  naos_lock(naos_fs_mutex);
 
   // handle command
   naos_msg_reply_t reply;
@@ -673,14 +673,14 @@ static naos_msg_reply_t naos_fs_handle(naos_msg_t msg) {
   }
 
   // acquire mutex
-  NAOS_UNLOCK(naos_fs_mutex);
+  naos_unlock(naos_fs_mutex);
 
   return reply;
 }
 
 static void naos_fs_cleanup() {
   // acquire mutex
-  NAOS_LOCK(naos_fs_mutex);
+  naos_lock(naos_fs_mutex);
 
   // get time
   int64_t now = naos_millis();
@@ -694,7 +694,7 @@ static void naos_fs_cleanup() {
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_fs_mutex);
+  naos_unlock(naos_fs_mutex);
 }
 
 void naos_fs_mount_fat(const char *path, const char *label, int max_files) {

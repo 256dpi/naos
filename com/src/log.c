@@ -1,6 +1,8 @@
 #include <naos.h>
 #include <naos/sys.h>
 
+#include <esp_log.h>
+
 #include "log.h"
 
 #define NAOS_LOG_MAX_SINKS 8
@@ -16,7 +18,7 @@ void naos_log_init() {
 
 void naos_log_register(naos_log_sink_t sink) {
   // acquire mutex
-  NAOS_LOCK(naos_log_mutex);
+  naos_lock(naos_log_mutex);
 
   // check count
   if (naos_log_sink_count >= NAOS_LOG_MAX_SINKS) {
@@ -28,7 +30,7 @@ void naos_log_register(naos_log_sink_t sink) {
   naos_log_sink_count++;
 
   // release mutex
-  NAOS_UNLOCK(naos_log_mutex);
+  naos_unlock(naos_log_mutex);
 }
 
 void naos_log(const char *fmt, ...) {
@@ -40,9 +42,9 @@ void naos_log(const char *fmt, ...) {
   va_end(args);
 
   // dispatch to all sinks
-  NAOS_LOCK(naos_log_mutex);
+  naos_lock(naos_log_mutex);
   size_t count = naos_log_sink_count;
-  NAOS_UNLOCK(naos_log_mutex);
+  naos_unlock(naos_log_mutex);
   for (size_t i = 0; i < count; i++) {
     naos_log_sinks[i](msg);
   }

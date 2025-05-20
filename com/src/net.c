@@ -24,7 +24,7 @@ void naos_net_init() {
 
 void naos_net_register(naos_net_link_t link) {
   // acquire mutex
-  NAOS_LOCK(naos_net_mutex);
+  naos_lock(naos_net_mutex);
 
   // check count
   if (naos_net_link_count >= NAOS_NET_MAX_LINKS) {
@@ -36,12 +36,12 @@ void naos_net_register(naos_net_link_t link) {
   naos_net_link_count++;
 
   // release mutex
-  NAOS_UNLOCK(naos_net_mutex);
+  naos_unlock(naos_net_mutex);
 }
 
 bool naos_net_connected(uint32_t *generation) {
   // acquire mutex
-  NAOS_LOCK(naos_net_mutex);
+  naos_lock(naos_net_mutex);
 
   // get status
   bool connected = false;
@@ -56,7 +56,7 @@ bool naos_net_connected(uint32_t *generation) {
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_net_mutex);
+  naos_unlock(naos_net_mutex);
 
   return connected;
 }

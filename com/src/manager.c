@@ -3,6 +3,7 @@
 #include <naos/cpu.h>
 #include <naos/wifi.h>
 
+#include <esp_log.h>
 #include <esp_ota_ops.h>
 #include <string.h>
 
@@ -72,7 +73,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
   }
 
   // acquire mutex
-  NAOS_LOCK(naos_manager_mutex);
+  naos_lock(naos_manager_mutex);
 
   // handle collect
   if (scope == NAOS_GLOBAL && strcmp(topic, "naos/collect") == 0) {
@@ -80,7 +81,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     naos_manager_announce();
 
     // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
+    naos_unlock(naos_manager_mutex);
 
     return;
   }
@@ -88,7 +89,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
   // handle ping
   if (scope == NAOS_LOCAL && strcmp(topic, "naos/ping") == 0) {
     // release mutex (conflict with naos_set_s)
-    NAOS_UNLOCK(naos_manager_mutex);
+    naos_unlock(naos_manager_mutex);
 
     // trigger ping
     if (naos_lookup("ping") != NULL) {
@@ -106,7 +107,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     free(list);
 
     // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
+    naos_unlock(naos_manager_mutex);
 
     return;
   }
@@ -114,7 +115,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
   // handle get
   if (scope == NAOS_LOCAL && strncmp(topic, "naos/get/", 9) == 0) {
     // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
+    naos_unlock(naos_manager_mutex);
 
     // get param
     char *param = (char *)topic + 9;
@@ -138,7 +139,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
   // handle set
   if (scope == NAOS_LOCAL && strncmp(topic, "naos/set/", 9) == 0) {
     // release mutex (conflict with naos_set)
-    NAOS_UNLOCK(naos_manager_mutex);
+    naos_unlock(naos_manager_mutex);
 
     // get param
     char *param = (char *)topic + 9;
@@ -165,7 +166,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
   // handle unset
   if (scope == NAOS_LOCAL && strncmp(topic, "naos/unset/", 11) == 0) {
     // release mutex (conflict with naos_clear)
-    NAOS_UNLOCK(naos_manager_mutex);
+    naos_unlock(naos_manager_mutex);
 
     // get param
     char *param = (char *)topic + 11;
@@ -191,7 +192,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     }
 
     // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
+    naos_unlock(naos_manager_mutex);
 
     return;
   }
@@ -202,7 +203,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     uint32_t size = naos_coredump_size();
     if (size == 0) {
       naos_publish_s("naos/coredump", "", 0, false, NAOS_LOCAL);
-      NAOS_UNLOCK(naos_manager_mutex);
+      naos_unlock(naos_manager_mutex);
       return;
     }
 
@@ -237,7 +238,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     }
 
     // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
+    naos_unlock(naos_manager_mutex);
 
     return;
   }
@@ -252,7 +253,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     naos_update_begin(total, naos_manager_update);
 
     // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
+    naos_unlock(naos_manager_mutex);
 
     return;
   }
@@ -267,7 +268,7 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     naos_publish_l("naos/update/request", CONFIG_NAOS_UPDATE_MAX_CHUNK_SIZE, 0, false, NAOS_LOCAL);
 
     // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
+    naos_unlock(naos_manager_mutex);
 
     return;
   }
@@ -278,18 +279,18 @@ static void naos_manager_handler(naos_scope_t scope, const char *topic, const ui
     naos_update_finish();
 
     // release mutex
-    NAOS_UNLOCK(naos_manager_mutex);
+    naos_unlock(naos_manager_mutex);
 
     return;
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_manager_mutex);
+  naos_unlock(naos_manager_mutex);
 }
 
 static void naos_manager_sink(const char *msg) {
   // acquire mutex
-  NAOS_LOCK(naos_manager_mutex);
+  naos_lock(naos_manager_mutex);
 
   // publish message if networked and recording
   if (naos_com_networked(NULL) && naos_manager_recording) {
@@ -297,12 +298,12 @@ static void naos_manager_sink(const char *msg) {
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_manager_mutex);
+  naos_unlock(naos_manager_mutex);
 }
 
 static void naos_manager_signal() {
   // acquire mutex
-  NAOS_LOCK(naos_manager_mutex);
+  naos_lock(naos_manager_mutex);
 
   // send heartbeat if networked
   if (naos_com_networked(NULL)) {
@@ -310,12 +311,12 @@ static void naos_manager_signal() {
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_manager_mutex);
+  naos_unlock(naos_manager_mutex);
 }
 
 static void naos_manager_status(naos_status_t status) {
   // acquire mutex
-  NAOS_LOCK(naos_manager_mutex);
+  naos_lock(naos_manager_mutex);
 
   // handle status
   if (status == NAOS_NETWORKED) {
@@ -342,7 +343,7 @@ static void naos_manager_status(naos_status_t status) {
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_manager_mutex);
+  naos_unlock(naos_manager_mutex);
 }
 
 void naos_manager_init() {

@@ -1,7 +1,8 @@
 #include <naos/sys.h>
 
-#include <string.h>
+#include <esp_log.h>
 #include <esp_mqtt.h>
+#include <string.h>
 
 #include "com.h"
 #include "utils.h"
@@ -14,7 +15,7 @@ static uint32_t naos_mqtt_generation = false;
 
 static void naos_mqtt_status_handler(esp_mqtt_status_t status) {
   // acquire mutex
-  NAOS_LOCK(naos_mqtt_mutex);
+  naos_lock(naos_mqtt_mutex);
 
   // set status
   naos_mqtt_networked = status == ESP_MQTT_STATUS_CONNECTED;
@@ -23,7 +24,7 @@ static void naos_mqtt_status_handler(esp_mqtt_status_t status) {
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_mqtt_mutex);
+  naos_unlock(naos_mqtt_mutex);
 }
 
 static void naos_mqtt_message_handler(const char *topic, const uint8_t *payload, size_t len, int qos, bool retained) {
@@ -33,12 +34,12 @@ static void naos_mqtt_message_handler(const char *topic, const uint8_t *payload,
 
 static naos_com_status_t naos_mqtt_status() {
   // get status
-  NAOS_LOCK(naos_mqtt_mutex);
+  naos_lock(naos_mqtt_mutex);
   naos_com_status_t status = {
       .networked = naos_mqtt_networked,
       .generation = naos_mqtt_generation,
   };
-  NAOS_UNLOCK(naos_mqtt_mutex);
+  naos_unlock(naos_mqtt_mutex);
 
   return status;
 }
@@ -72,9 +73,9 @@ static void naos_mqtt_start() {
   }
 
   // set flag
-  NAOS_LOCK(naos_mqtt_mutex);
+  naos_lock(naos_mqtt_mutex);
   naos_mqtt_started = true;
-  NAOS_UNLOCK(naos_mqtt_mutex);
+  naos_unlock(naos_mqtt_mutex);
 
   // start the MQTT client
   esp_mqtt_start(host, port, client_id, username, password);
@@ -85,10 +86,10 @@ static void naos_mqtt_stop() {
   esp_mqtt_stop();
 
   // set flags
-  NAOS_LOCK(naos_mqtt_mutex);
+  naos_lock(naos_mqtt_mutex);
   naos_mqtt_started = false;
   naos_mqtt_networked = false;
-  NAOS_UNLOCK(naos_mqtt_mutex);
+  naos_unlock(naos_mqtt_mutex);
 }
 
 static void naos_mqtt_configure() {
@@ -96,9 +97,9 @@ static void naos_mqtt_configure() {
   ESP_LOGI(NAOS_LOG_TAG, "naos_mqtt_configure");
 
   // get started
-  NAOS_LOCK(naos_mqtt_mutex);
+  naos_lock(naos_mqtt_mutex);
   bool started = naos_mqtt_started;
-  NAOS_UNLOCK(naos_mqtt_mutex);
+  naos_unlock(naos_mqtt_mutex);
 
   // restart MQTT if started
   if (started) {
@@ -112,9 +113,9 @@ static void naos_mqtt_manage(naos_status_t status) {
   bool connected = status >= NAOS_CONNECTED;
 
   // get started
-  NAOS_LOCK(naos_mqtt_mutex);
+  naos_lock(naos_mqtt_mutex);
   bool started = naos_mqtt_started;
-  NAOS_UNLOCK(naos_mqtt_mutex);
+  naos_unlock(naos_mqtt_mutex);
 
   // handle status
   if (connected && !started) {

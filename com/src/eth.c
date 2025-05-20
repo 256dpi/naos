@@ -2,6 +2,7 @@
 #include <naos/sys.h>
 #include <naos/eth.h>
 
+#include <esp_log.h>
 #include <driver/spi_master.h>
 #include <esp_eth.h>
 #include <esp_mac.h>
@@ -24,7 +25,7 @@ static void naos_eth_configure() {
   ESP_LOGI(NAOS_LOG_TAG, "naos_eth_configure");
 
   // acquire mutex
-  NAOS_LOCK(naos_eth_mutex);
+  naos_lock(naos_eth_mutex);
 
   // stop driver if already started
   if (naos_eth_started) {
@@ -44,12 +45,12 @@ static void naos_eth_configure() {
   naos_eth_started = true;
 
   // release mutex
-  NAOS_UNLOCK(naos_eth_mutex);
+  naos_unlock(naos_eth_mutex);
 }
 
 static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void *data) {
   // acquire mutex
-  NAOS_LOCK(naos_eth_mutex);
+  naos_lock(naos_eth_mutex);
 
   // handle ethernet events
   if (base == ETH_EVENT) {
@@ -94,17 +95,17 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_eth_mutex);
+  naos_unlock(naos_eth_mutex);
 }
 
 static naos_net_status_t naos_eth_status() {
   // read status
-  NAOS_LOCK(naos_eth_mutex);
+  naos_lock(naos_eth_mutex);
   naos_net_status_t status = {
       .connected = naos_eth_connected,
       .generation = naos_eth_generation,
   };
-  NAOS_UNLOCK(naos_eth_mutex);
+  naos_unlock(naos_eth_mutex);
 
   return status;
 }

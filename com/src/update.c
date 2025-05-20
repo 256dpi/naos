@@ -2,8 +2,9 @@
 #include <naos/sys.h>
 #include <naos/msg.h>
 
-#include <string.h>
+#include <esp_log.h>
 #include <esp_ota_ops.h>
+#include <string.h>
 
 #include "update.h"
 #include "utils.h"
@@ -27,7 +28,7 @@ static bool naos_update_block = false;
 
 static void naos_update_begin_task() {
   // acquire mutex
-  NAOS_LOCK(naos_update_mutex);
+  naos_lock(naos_update_mutex);
 
   // log message
   ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin_task: preparing update...");
@@ -36,7 +37,7 @@ static void naos_update_begin_task() {
   ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, OTA_WITH_SEQUENTIAL_WRITES, &naos_update_handle));
 
   // release mutex
-  NAOS_UNLOCK(naos_update_mutex);
+  naos_unlock(naos_update_mutex);
 
   // call callback if available
   if (naos_update_callback != NULL) {
@@ -57,7 +58,7 @@ static void naos_update_begin_task() {
 
 static void naos_update_finish_task() {
   // acquire mutex
-  NAOS_LOCK(naos_update_mutex);
+  naos_lock(naos_update_mutex);
 
   // end update
   ESP_ERROR_CHECK(esp_ota_end(naos_update_handle));
@@ -72,7 +73,7 @@ static void naos_update_finish_task() {
   naos_update_block = true;
 
   // release mutex
-  NAOS_UNLOCK(naos_update_mutex);
+  naos_unlock(naos_update_mutex);
 
   // call callback if available
   if (naos_update_callback != NULL) {
@@ -223,12 +224,12 @@ void naos_update_init() {
 
 void naos_update_begin(size_t size, naos_update_callback_t cb) {
   // acquire mutex
-  NAOS_LOCK(naos_update_mutex);
+  naos_lock(naos_update_mutex);
 
   // check block
   if (naos_update_block) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_begin: blocked");
-    NAOS_UNLOCK(naos_update_mutex);
+    naos_unlock(naos_update_mutex);
     return;
   }
 
@@ -248,7 +249,7 @@ void naos_update_begin(size_t size, naos_update_callback_t cb) {
   naos_update_partition = esp_ota_get_next_update_partition(NULL);
   if (naos_update_partition == NULL) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_begin: no partition available");
-    NAOS_UNLOCK(naos_update_mutex);
+    naos_unlock(naos_update_mutex);
     return;
   }
 
@@ -256,7 +257,7 @@ void naos_update_begin(size_t size, naos_update_callback_t cb) {
   naos_update_size = size;
 
   // release mutex
-  NAOS_UNLOCK(naos_update_mutex);
+  naos_unlock(naos_update_mutex);
 
   // begin update async or sync
   if (naos_update_callback != NULL) {
@@ -268,19 +269,19 @@ void naos_update_begin(size_t size, naos_update_callback_t cb) {
 
 void naos_update_write(const uint8_t *chunk, size_t len) {
   // acquire mutex
-  NAOS_LOCK(naos_update_mutex);
+  naos_lock(naos_update_mutex);
 
   // check block
   if (naos_update_block) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_write: blocked");
-    NAOS_UNLOCK(naos_update_mutex);
+    naos_unlock(naos_update_mutex);
     return;
   }
 
   // check handle
   if (naos_update_handle == 0) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_write: missing handle");
-    NAOS_UNLOCK(naos_update_mutex);
+    naos_unlock(naos_update_mutex);
     return;
   }
 
@@ -288,17 +289,17 @@ void naos_update_write(const uint8_t *chunk, size_t len) {
   ESP_ERROR_CHECK(esp_ota_write(naos_update_handle, (const void *)chunk, len));
 
   // release mutex
-  NAOS_UNLOCK(naos_update_mutex);
+  naos_unlock(naos_update_mutex);
 }
 
 void naos_update_abort() {
   // acquire mutex
-  NAOS_LOCK(naos_update_mutex);
+  naos_lock(naos_update_mutex);
 
   // check block
   if (naos_update_block) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_abort: blocked");
-    NAOS_UNLOCK(naos_update_mutex);
+    naos_unlock(naos_update_mutex);
     return;
   }
 
@@ -316,24 +317,24 @@ void naos_update_abort() {
   naos_update_session = 0;
 
   // release mutex
-  NAOS_UNLOCK(naos_update_mutex);
+  naos_unlock(naos_update_mutex);
 }
 
 void naos_update_finish() {
   // acquire mutex
-  NAOS_LOCK(naos_update_mutex);
+  naos_lock(naos_update_mutex);
 
   // check block
   if (naos_update_block) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_finish: blocked");
-    NAOS_UNLOCK(naos_update_mutex);
+    naos_unlock(naos_update_mutex);
     return;
   }
 
   // check handle
   if (naos_update_handle == 0) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_finish: missing handle");
-    NAOS_UNLOCK(naos_update_mutex);
+    naos_unlock(naos_update_mutex);
     return;
   }
 
@@ -341,7 +342,7 @@ void naos_update_finish() {
   ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin: finishing update...");
 
   // release mutex
-  NAOS_UNLOCK(naos_update_mutex);
+  naos_unlock(naos_update_mutex);
 
   // finish update async or sync
   if (naos_update_callback != NULL) {

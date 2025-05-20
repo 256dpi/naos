@@ -1,26 +1,10 @@
 #ifndef NAOS_SYS_H
 #define NAOS_SYS_H
 
-#include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 #include <freertos/event_groups.h>
-
-/**
- * Locks a mutex with logs.
- */
-#define NAOS_LOCK(mutex)                     \
-  ESP_LOGV("NAOS", "LOCKING: %s", __func__); \
-  naos_lock(mutex);                          \
-  ESP_LOGV("NAOS", "LOCKED: %s", __func__)
-
-/**
- * Unlocks a mutex with logs.
- */
-#define NAOS_UNLOCK(mutex)                    \
-  ESP_LOGV("NAOS", "UNLOCKED: %s", __func__); \
-  naos_unlock(mutex)
 
 /**
  * Returns the elapsed milliseconds or microseconds since boot.

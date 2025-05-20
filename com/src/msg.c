@@ -2,6 +2,7 @@
 #include <naos/sys.h>
 #include <naos/msg.h>
 
+#include <esp_log.h>
 #include <string.h>
 
 #include "utils.h"
@@ -60,7 +61,7 @@ static void naos_msg_worker() {
     naos_pop(naos_msg_queue, &msg, -1);
 
     // acquire mutex
-    NAOS_LOCK(naos_msg_mutex);
+    naos_lock(naos_msg_mutex);
 
     // find endpoint
     naos_msg_endpoint_t* endpoint = NULL;
@@ -72,7 +73,7 @@ static void naos_msg_worker() {
     }
 
     // release mutex
-    NAOS_UNLOCK(naos_msg_mutex);
+    naos_unlock(naos_msg_mutex);
 
     // skip if endpoint not found
     if (endpoint == NULL) {
@@ -103,7 +104,7 @@ static void naos_msg_worker() {
 
 static void naos_msg_cleaner() {
   // acquire mutex
-  NAOS_LOCK(naos_msg_mutex);
+  naos_lock(naos_msg_mutex);
 
   // get current time
   int64_t now = naos_millis();
@@ -137,7 +138,7 @@ static void naos_msg_cleaner() {
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_msg_mutex);
+  naos_unlock(naos_msg_mutex);
 }
 
 static naos_msg_reply_t naos_msg_process_system(naos_msg_t msg) {
@@ -194,10 +195,10 @@ static naos_msg_reply_t naos_msg_process_system(naos_msg_t msg) {
 
       // unlock session if correct
       if (ok) {
-        NAOS_LOCK(naos_msg_mutex);
+        naos_lock(naos_msg_mutex);
         naos_msg_session_t* session = naos_msg_find(msg.session);
         session->locked = false;
-        NAOS_UNLOCK(naos_msg_mutex);
+        naos_unlock(naos_msg_mutex);
       }
 
       // send result
@@ -260,7 +261,7 @@ void naos_msg_init() {
 
 uint8_t naos_msg_register(naos_msg_channel_t channel) {
   // acquire mutex
-  NAOS_LOCK(naos_msg_mutex);
+  naos_lock(naos_msg_mutex);
 
   // check count
   if (naos_msg_channel_count >= NAOS_MSG_MAX_CHANNELS) {
@@ -275,14 +276,14 @@ uint8_t naos_msg_register(naos_msg_channel_t channel) {
   naos_msg_channel_count++;
 
   // release mutex
-  NAOS_UNLOCK(naos_msg_mutex);
+  naos_unlock(naos_msg_mutex);
 
   return num;
 }
 
 void naos_msg_install(naos_msg_endpoint_t endpoint) {
   // acquire mutex
-  NAOS_LOCK(naos_msg_mutex);
+  naos_lock(naos_msg_mutex);
 
   // check count
   if (naos_msg_endpoint_count >= NAOS_MSG_MAX_ENDPOINTS) {
@@ -294,7 +295,7 @@ void naos_msg_install(naos_msg_endpoint_t endpoint) {
   naos_msg_endpoint_count++;
 
   // release mutex
-  NAOS_UNLOCK(naos_msg_mutex);
+  naos_unlock(naos_msg_mutex);
 }
 
 bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
@@ -327,13 +328,13 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
   uint8_t eid = data[3];
 
   // acquire mutex
-  NAOS_LOCK(naos_msg_mutex);
+  naos_lock(naos_msg_mutex);
 
   // handle "begin" command
   if (eid == 0) {
     // check sid
     if (sid != 0) {
-      NAOS_UNLOCK(naos_msg_mutex);
+      naos_unlock(naos_msg_mutex);
       ESP_LOGE("MSG", "naos_msg_dispatch: unexpected session ID (%s)", name);
       return false;
     }
@@ -347,7 +348,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
       }
     }
     if (session == NULL) {
-      NAOS_UNLOCK(naos_msg_mutex);
+      naos_unlock(naos_msg_mutex);
       ESP_LOGE("MSG", "naos_msg_dispatch: no free session (%s)", name);
       return false;
     }
@@ -378,7 +379,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     memcpy(data + 1, &session->id, 2);
 
     // release mutex
-    NAOS_UNLOCK(naos_msg_mutex);
+    naos_unlock(naos_msg_mutex);
 
 #if NAOS_MSG_DEBUG
     ESP_LOGI("MSG", "outgoing message:");
@@ -397,21 +398,21 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
   // find session
   naos_msg_session_t* session = naos_msg_find(sid);
   if (session == NULL) {
-    NAOS_UNLOCK(naos_msg_mutex);
+    naos_unlock(naos_msg_mutex);
     ESP_LOGE("MSG", "naos_msg_dispatch: session not found (%s)", name);
     return false;
   }
 
   // verify session
   if (session->channel != channel) {
-    NAOS_UNLOCK(naos_msg_mutex);
+    naos_unlock(naos_msg_mutex);
     ESP_LOGE("MSG", "naos_msg_dispatch: session channel mismatch (%s)", name);
     return false;
   }
 
   // check session validity
   if (session->broken) {
-    NAOS_UNLOCK(naos_msg_mutex);
+    naos_unlock(naos_msg_mutex);
     ESP_LOGE("MSG", "naos_msg_dispatch: session is broken (%s)", name);
     return false;
   }
@@ -422,7 +423,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     session->last_msg = naos_millis();
 
     // release mutex
-    NAOS_UNLOCK(naos_msg_mutex);
+    naos_unlock(naos_msg_mutex);
 
     // prepare reply
     uint8_t reply[] = {1, 0, 0, 0xFE, NAOS_MSG_ACK};
@@ -459,7 +460,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     *session = (naos_msg_session_t){0};
 
     // release mutex
-    NAOS_UNLOCK(naos_msg_mutex);
+    naos_unlock(naos_msg_mutex);
 
 #if NAOS_MSG_DEBUG
     // log message
@@ -490,7 +491,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     }
 
     // release mutex
-    NAOS_UNLOCK(naos_msg_mutex);
+    naos_unlock(naos_msg_mutex);
 
     // prepare reply
     uint8_t reply[] = {1, 0, 0, 0xFE, found ? NAOS_MSG_ACK : NAOS_MSG_UNKNOWN};
@@ -531,7 +532,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
   session->last_msg = naos_millis();
 
   // release mutex
-  NAOS_UNLOCK(naos_msg_mutex);
+  naos_unlock(naos_msg_mutex);
 
   // queue message
   naos_push(naos_msg_queue, &msg, -1);
@@ -541,19 +542,19 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 
 bool naos_msg_send(naos_msg_t msg) {
   // acquire mutex
-  NAOS_LOCK(naos_msg_mutex);
+  naos_lock(naos_msg_mutex);
 
   // find session
   naos_msg_session_t* session = naos_msg_find(msg.session);
   if (session == NULL) {
-    NAOS_UNLOCK(naos_msg_mutex);
+    naos_unlock(naos_msg_mutex);
     ESP_LOGE("MSG", "naos_msg_send: session not found");
     return false;
   }
 
   // check session validity
   if (session->broken) {
-    NAOS_UNLOCK(naos_msg_mutex);
+    naos_unlock(naos_msg_mutex);
     ESP_LOGE("MSG", "naos_msg_send: session is broken");
     return false;
   }
@@ -562,7 +563,7 @@ bool naos_msg_send(naos_msg_t msg) {
   naos_msg_channel_t channel = naos_msg_channels[session->channel];
 
   // release mutex
-  NAOS_UNLOCK(naos_msg_mutex);
+  naos_unlock(naos_msg_mutex);
 
   // check channel MTU
   if (4 + msg.len > session->mtu) {
@@ -593,25 +594,25 @@ bool naos_msg_send(naos_msg_t msg) {
   free(frame);
 
   // update session status
-  NAOS_LOCK(naos_msg_mutex);
+  naos_lock(naos_msg_mutex);
   if (ok) {
     session->last_msg = naos_millis();
   } else {
     session->broken = true;
   }
-  NAOS_UNLOCK(naos_msg_mutex);
+  naos_unlock(naos_msg_mutex);
 
   return ok;
 }
 
 uint16_t naos_msg_get_mtu(uint16_t id) {
   // acquire mutex
-  NAOS_LOCK(naos_msg_mutex);
+  naos_lock(naos_msg_mutex);
 
   // find session
   naos_msg_session_t* session = naos_msg_find(id);
   if (session == NULL) {
-    NAOS_UNLOCK(naos_msg_mutex);
+    naos_unlock(naos_msg_mutex);
     ESP_LOGE("MSG", "naos_msg_get_mtu: session not found");
     return 0;
   }
@@ -620,19 +621,19 @@ uint16_t naos_msg_get_mtu(uint16_t id) {
   uint16_t mtu = session->mtu;
 
   // release mutex
-  NAOS_UNLOCK(naos_msg_mutex);
+  naos_unlock(naos_msg_mutex);
 
   return mtu;
 }
 
 bool naos_msg_is_locked(uint16_t id) {
   // acquire mutex
-  NAOS_LOCK(naos_msg_mutex);
+  naos_lock(naos_msg_mutex);
 
   // find session
   naos_msg_session_t* session = naos_msg_find(id);
   if (session == NULL) {
-    NAOS_UNLOCK(naos_msg_mutex);
+    naos_unlock(naos_msg_mutex);
     ESP_LOGE("MSG", "naos_msg_is_locked: session not found");
     return 0;
   }
@@ -641,7 +642,7 @@ bool naos_msg_is_locked(uint16_t id) {
   bool locked = session->locked;
 
   // release mutex
-  NAOS_UNLOCK(naos_msg_mutex);
+  naos_unlock(naos_msg_mutex);
 
   return locked;
 }

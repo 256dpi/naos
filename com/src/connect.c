@@ -2,6 +2,7 @@
 #include <naos/msg.h>
 #include <naos/sys.h>
 
+#include <esp_log.h>
 #include <esp_websocket_client.h>
 
 #include "system.h"
@@ -36,9 +37,9 @@ static void naos_connect_start() {
   }
 
   // set flag
-  NAOS_LOCK(naos_connect_mutex);
+  naos_lock(naos_connect_mutex);
   naos_connect_started = true;
-  NAOS_UNLOCK(naos_connect_mutex);
+  naos_unlock(naos_connect_mutex);
 
   // prepare headers
   char headers[256];
@@ -57,10 +58,10 @@ static void naos_connect_stop() {
   ESP_ERROR_CHECK(esp_websocket_client_stop(naos_connect_client));
 
   // set flags
-  NAOS_LOCK(naos_connect_mutex);
+  naos_lock(naos_connect_mutex);
   naos_connect_started = false;
   naos_connect_connected = false;
-  NAOS_UNLOCK(naos_connect_mutex);
+  naos_unlock(naos_connect_mutex);
 }
 
 static void naos_connect_configure() {
@@ -68,9 +69,9 @@ static void naos_connect_configure() {
   ESP_LOGI(NAOS_LOG_TAG, "naos_connect_configure");
 
   // get started
-  NAOS_LOCK(naos_connect_mutex);
+  naos_lock(naos_connect_mutex);
   bool started = naos_connect_started;
-  NAOS_UNLOCK(naos_connect_mutex);
+  naos_unlock(naos_connect_mutex);
 
   // restart if started
   if (started) {
@@ -84,9 +85,9 @@ static void naos_connect_manage(naos_status_t status) {
   bool connected = status >= NAOS_CONNECTED;
 
   // get started
-  NAOS_LOCK(naos_connect_mutex);
+  naos_lock(naos_connect_mutex);
   bool started = naos_connect_started;
-  NAOS_UNLOCK(naos_connect_mutex);
+  naos_unlock(naos_connect_mutex);
 
   // handle status
   if (connected && !started) {
@@ -107,9 +108,9 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
       ESP_LOGI(NAOS_LOG_TAG, "naos_connect_handler: connected");
 
       // set flag
-      NAOS_LOCK(naos_connect_mutex);
+      naos_lock(naos_connect_mutex);
       naos_connect_connected = true;
-      NAOS_UNLOCK(naos_connect_mutex);
+      naos_unlock(naos_connect_mutex);
 
       // set status
       naos_set_s("connect-status", "connected");
@@ -121,9 +122,9 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
       ESP_LOGI(NAOS_LOG_TAG, "naos_connect_handler: disconnected");
 
       // set flag
-      NAOS_LOCK(naos_connect_mutex);
+      naos_lock(naos_connect_mutex);
       naos_connect_connected = false;
-      NAOS_UNLOCK(naos_connect_mutex);
+      naos_unlock(naos_connect_mutex);
 
       // set status
       naos_set_s("connect-status", "disconnected");
@@ -171,9 +172,9 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
 
 static bool naos_connect_send(const uint8_t *data, size_t len, void *ctx) {
   // get status
-  NAOS_LOCK(naos_connect_mutex);
+  naos_lock(naos_connect_mutex);
   bool connected = naos_connect_connected;
-  NAOS_UNLOCK(naos_connect_mutex);
+  naos_unlock(naos_connect_mutex);
 
   // return if not connected
   if (!connected) {

@@ -1,6 +1,8 @@
 #include <naos/osc.h>
 #include <naos/sys.h>
 
+#include <esp_log.h>
+
 #include "com.h"
 #include "utils.h"
 #include "net.h"
@@ -60,7 +62,7 @@ static void naos_osc_configure() {
   ESP_LOGI(NAOS_LOG_TAG, "naos_osc_configure");
 
   // acquire mutex
-  NAOS_LOCK(naos_osc_mutex);
+  naos_lock(naos_osc_mutex);
 
   // get port
   int32_t port = naos_get_l("osc-port");
@@ -84,7 +86,7 @@ static void naos_osc_configure() {
   esp_osc_init(&naos_osc_client, CONFIG_NAOS_OSC_BUFFER_SIZE, port);
 
   // release mutex
-  NAOS_UNLOCK(naos_osc_mutex);
+  naos_unlock(naos_osc_mutex);
 }
 
 static naos_param_t naos_osc_params[] = {
@@ -119,18 +121,18 @@ void naos_osc_init(int core) {
 
 void naos_osc_filter(esp_osc_callback_t filter) {
   // acquire mutex
-  NAOS_LOCK(naos_osc_mutex);
+  naos_lock(naos_osc_mutex);
 
   // set filter
   naos_osc_filter_callback = filter;
 
   // release mutex
-  NAOS_UNLOCK(naos_osc_mutex);
+  naos_unlock(naos_osc_mutex);
 }
 
 bool naos_osc_send(const char *topic, const char *format, ...) {
   // acquire mutex
-  NAOS_LOCK(naos_osc_mutex);
+  naos_lock(naos_osc_mutex);
 
   // send message
   va_list args;
@@ -144,7 +146,7 @@ bool naos_osc_send(const char *topic, const char *format, ...) {
   va_end(args);
 
   // release mutex
-  NAOS_UNLOCK(naos_osc_mutex);
+  naos_unlock(naos_osc_mutex);
 
   return ok;
 }

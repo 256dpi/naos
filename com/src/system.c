@@ -1,6 +1,7 @@
 #include <naos/sys.h>
 #include <naos/metrics.h>
 
+#include <esp_log.h>
 #include <esp_ota_ops.h>
 #include <esp_random.h>
 #include <esp_mac.h>
@@ -53,9 +54,9 @@ static void naos_system_set_status(naos_status_t status) {
   const char *name = naos_status_str(status);
 
   // change state
-  NAOS_LOCK(naos_system_mutex);
+  naos_lock(naos_system_mutex);
   naos_system_status = status;
-  NAOS_UNLOCK(naos_system_mutex);
+  naos_unlock(naos_system_mutex);
 
   // set status
   naos_set_s("connection-status", name);
@@ -76,9 +77,9 @@ static void naos_system_task() {
     naos_delay(100);
 
     // get old status
-    NAOS_LOCK(naos_system_mutex);
+    naos_lock(naos_system_mutex);
     naos_status_t old_status = naos_system_status;
-    NAOS_UNLOCK(naos_system_mutex);
+    naos_unlock(naos_system_mutex);
 
     // determine new status
     uint32_t new_generation = 0;
@@ -97,9 +98,9 @@ static void naos_system_task() {
       naos_system_set_status(new_status);
 
       // dispatch status
-      NAOS_LOCK(naos_system_mutex);
+      naos_lock(naos_system_mutex);
       size_t count = naos_system_handler_count;
-      NAOS_UNLOCK(naos_system_mutex);
+      naos_unlock(naos_system_mutex);
       for (size_t i = 0; i < count; i++) {
         naos_system_handlers[i](new_status);
       }
@@ -187,7 +188,7 @@ void naos_system_init() {
 
 void naos_system_subscribe(naos_system_handler_t handler) {
   // acquire mutex
-  NAOS_LOCK(naos_system_mutex);
+  naos_lock(naos_system_mutex);
 
   // check count
   if (naos_system_handler_count >= NAOS_SYSTEM_MAX_HANDLERS) {
@@ -199,14 +200,14 @@ void naos_system_subscribe(naos_system_handler_t handler) {
   naos_system_handler_count++;
 
   // release mutex
-  NAOS_UNLOCK(naos_system_mutex);
+  naos_unlock(naos_system_mutex);
 }
 
 naos_status_t naos_status() {
   // get status
-  NAOS_LOCK(naos_system_mutex);
+  naos_lock(naos_system_mutex);
   naos_status_t status = naos_system_status;
-  NAOS_UNLOCK(naos_system_mutex);
+  naos_unlock(naos_system_mutex);
 
   return status;
 }

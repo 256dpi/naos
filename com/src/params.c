@@ -471,7 +471,7 @@ void naos_register(naos_param_t *param) {
   }
 
   // acquire mutex
-  NAOS_LOCK(naos_params_mutex);
+  naos_lock(naos_params_mutex);
 
   // check size
   if (naos_params_count >= CONFIG_NAOS_PARAM_REGISTRY_SIZE) {
@@ -498,7 +498,7 @@ void naos_register(naos_param_t *param) {
         .buf = (uint8_t *)strdup(""),
         .len = 0,
     };
-    NAOS_UNLOCK(naos_params_mutex);
+    naos_unlock(naos_params_mutex);
     return;
   }
 
@@ -527,7 +527,7 @@ void naos_register(naos_param_t *param) {
   naos_params_update(param, true);
 
   // release mutex
-  NAOS_UNLOCK(naos_params_mutex);
+  naos_unlock(naos_params_mutex);
 }
 
 naos_param_t *naos_lookup(const char *name) {
@@ -537,7 +537,7 @@ naos_param_t *naos_lookup(const char *name) {
   }
 
   // acquire mutex
-  NAOS_LOCK(naos_params_mutex);
+  naos_lock(naos_params_mutex);
 
   // find parameter
   naos_param_t *result = NULL;
@@ -550,14 +550,14 @@ naos_param_t *naos_lookup(const char *name) {
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_params_mutex);
+  naos_unlock(naos_params_mutex);
 
   return result;
 }
 
 char *naos_params_list(naos_mode_t mode) {
   // acquire mutex
-  NAOS_LOCK(naos_params_mutex);
+  naos_lock(naos_params_mutex);
 
   // determine list length
   size_t length = 0;
@@ -584,7 +584,7 @@ char *naos_params_list(naos_mode_t mode) {
 
   // return empty string if there are no params
   if (count == 0) {
-    NAOS_UNLOCK(naos_params_mutex);
+    naos_unlock(naos_params_mutex);
     return strdup("");
   }
 
@@ -667,14 +667,14 @@ char *naos_params_list(naos_mode_t mode) {
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_params_mutex);
+  naos_unlock(naos_params_mutex);
 
   return buf;
 }
 
 void naos_params_subscribe(naos_params_handler_t handler) {
   // acquire mutex
-  NAOS_LOCK(naos_params_mutex);
+  naos_lock(naos_params_mutex);
 
   // check count
   if (naos_params_handler_count >= NAOS_PARAMS_MAX_HANDLERS) {
@@ -686,12 +686,12 @@ void naos_params_subscribe(naos_params_handler_t handler) {
   naos_params_handler_count++;
 
   // release mutex
-  NAOS_UNLOCK(naos_params_mutex);
+  naos_unlock(naos_params_mutex);
 }
 
 void naos_params_dispatch() {
   // acquire mutex
-  NAOS_LOCK(naos_params_mutex);
+  naos_lock(naos_params_mutex);
 
   // iterate parameters
   for (size_t i = 0; i < naos_params_count; i++) {
@@ -708,14 +708,14 @@ void naos_params_dispatch() {
 
     // dispatch change
     for (size_t j = 0; j < naos_params_handler_count; j++) {
-      NAOS_UNLOCK(naos_params_mutex);
+      naos_unlock(naos_params_mutex);
       naos_params_handlers[j](param);
-      NAOS_LOCK(naos_params_mutex);
+      naos_lock(naos_params_mutex);
     }
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_params_mutex);
+  naos_unlock(naos_params_mutex);
 }
 
 naos_value_t naos_get(const char *name) {
@@ -761,7 +761,7 @@ void naos_set(const char *name, uint8_t *value, size_t length) {
   }
 
   // acquire mutex
-  NAOS_LOCK(naos_params_mutex);
+  naos_lock(naos_params_mutex);
 
   // store value if not volatile
   if (!(param->mode & NAOS_VOLATILE)) {
@@ -792,7 +792,7 @@ void naos_set(const char *name, uint8_t *value, size_t length) {
   param->age = naos_millis();
 
   // release mutex
-  NAOS_UNLOCK(naos_params_mutex);
+  naos_unlock(naos_params_mutex);
 
   // update parameter
   naos_params_update(param, false);
@@ -829,7 +829,7 @@ void naos_clear(const char *name) {
   }
 
   // acquire mutex
-  NAOS_LOCK(naos_params_mutex);
+  naos_lock(naos_params_mutex);
 
   // erase value if not volatile
   if (!(param->mode & NAOS_VOLATILE)) {
@@ -852,7 +852,7 @@ void naos_clear(const char *name) {
   param->age = naos_millis();
 
   // release mutex
-  NAOS_UNLOCK(naos_params_mutex);
+  naos_unlock(naos_params_mutex);
 
   // update parameter
   naos_params_update(param, false);

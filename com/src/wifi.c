@@ -1,11 +1,12 @@
 #include <naos.h>
+#include <naos/wifi.h>
 #include <naos/sys.h>
 #include <naos/metrics.h>
 
-#include <string.h>
+#include <esp_log.h>
 #include <esp_event.h>
 #include <esp_wifi.h>
-#include <naos/wifi.h>
+#include <string.h>
 
 #include "utils.h"
 #include "net.h"
@@ -24,7 +25,7 @@ static void naos_wifi_configure() {
   ESP_LOGI(NAOS_LOG_TAG, "naos_wifi_configure");
 
   // acquire mutex
-  NAOS_LOCK(naos_wifi_mutex);
+  naos_lock(naos_wifi_mutex);
 
   // stop station if already started
   if (naos_wifi_started) {
@@ -39,7 +40,7 @@ static void naos_wifi_configure() {
 
   // return if SSID is missing
   if (strlen(ssid) == 0) {
-    NAOS_UNLOCK(naos_wifi_mutex);
+    naos_unlock(naos_wifi_mutex);
     return;
   }
 
@@ -57,12 +58,12 @@ static void naos_wifi_configure() {
   naos_wifi_started = true;
 
   // release mutex
-  NAOS_UNLOCK(naos_wifi_mutex);
+  naos_unlock(naos_wifi_mutex);
 }
 
 static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void *data) {
   // acquire mutex
-  NAOS_LOCK(naos_wifi_mutex);
+  naos_lock(naos_wifi_mutex);
 
   // handle WiFi events
   if (base == WIFI_EVENT) {
@@ -119,17 +120,17 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_wifi_mutex);
+  naos_unlock(naos_wifi_mutex);
 }
 
 static naos_net_status_t naos_wifi_status() {
   // read status
-  NAOS_LOCK(naos_wifi_mutex);
+  naos_lock(naos_wifi_mutex);
   naos_net_status_t status = {
       .connected = naos_wifi_connected,
       .generation = naos_wifi_generation,
   };
-  NAOS_UNLOCK(naos_wifi_mutex);
+  naos_unlock(naos_wifi_mutex);
 
   return status;
 }

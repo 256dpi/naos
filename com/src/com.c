@@ -1,5 +1,6 @@
 #include <naos/sys.h>
 
+#include <esp_log.h>
 #include <string.h>
 
 #include "com.h"
@@ -49,7 +50,7 @@ void naos_com_init() {
 
 void naos_com_register(naos_com_transport_t transport) {
   // acquire mutex
-  NAOS_LOCK(naos_com_mutex);
+  naos_lock(naos_com_mutex);
 
   // check count
   if (naos_com_transport_count >= NAOS_COM_MAX_TRANSPORTS) {
@@ -61,12 +62,12 @@ void naos_com_register(naos_com_transport_t transport) {
   naos_com_transport_count++;
 
   // release mutex
-  NAOS_UNLOCK(naos_com_mutex);
+  naos_unlock(naos_com_mutex);
 }
 
 void naos_com_subscribe(naos_com_handler_t handler) {
   // acquire mutex
-  NAOS_LOCK(naos_com_mutex);
+  naos_lock(naos_com_mutex);
 
   // check count
   if (naos_com_handler_count >= NAOS_COM_MAX_HANDLERS) {
@@ -78,7 +79,7 @@ void naos_com_subscribe(naos_com_handler_t handler) {
   naos_com_handler_count++;
 
   // release mutex
-  NAOS_UNLOCK(naos_com_mutex);
+  naos_unlock(naos_com_mutex);
 }
 
 void naos_com_dispatch(const char *topic, const uint8_t *payload, size_t len, int qos, bool retained) {
@@ -87,9 +88,9 @@ void naos_com_dispatch(const char *topic, const uint8_t *payload, size_t len, in
   const char *scoped_topic = naos_com_without_base_topic(topic);
 
   // dispatch to all handlers
-  NAOS_LOCK(naos_com_mutex);
+  naos_lock(naos_com_mutex);
   size_t count = naos_com_handler_count;
-  NAOS_UNLOCK(naos_com_mutex);
+  naos_unlock(naos_com_mutex);
   for (size_t i = 0; i < count; i++) {
     naos_com_handlers[i](scope, scoped_topic, payload, len, qos, retained);
   }
@@ -97,7 +98,7 @@ void naos_com_dispatch(const char *topic, const uint8_t *payload, size_t len, in
 
 bool naos_com_networked(uint32_t *generation) {
   // acquire mutex
-  NAOS_LOCK(naos_com_mutex);
+  naos_lock(naos_com_mutex);
 
   // get status
   bool networked = false;
@@ -112,7 +113,7 @@ bool naos_com_networked(uint32_t *generation) {
   }
 
   // release mutex
-  NAOS_UNLOCK(naos_com_mutex);
+  naos_unlock(naos_com_mutex);
 
   return networked;
 }

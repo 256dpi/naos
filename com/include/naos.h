@@ -1,7 +1,6 @@
 #ifndef NAOS_H
 #define NAOS_H
 
-#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

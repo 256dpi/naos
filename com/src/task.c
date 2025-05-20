@@ -1,5 +1,7 @@
 #include <naos/sys.h>
 
+#include <esp_log.h>
+
 #include "utils.h"
 #include "system.h"
 #include "params.h"
@@ -12,9 +14,9 @@ static bool naos_task_started = false;
 static void naos_task_process() {
   for (;;) {
     // call loop callback
-    NAOS_LOCK(naos_task_mutex);
+    naos_lock(naos_task_mutex);
     naos_config()->loop_callback();
-    NAOS_UNLOCK(naos_task_mutex);
+    naos_unlock(naos_task_mutex);
 
     // yield to other processes
     naos_delay(naos_config()->loop_interval);
@@ -23,7 +25,7 @@ static void naos_task_process() {
 
 static void naos_task_status(naos_status_t status) {
   // acquire lock
-  NAOS_LOCK(naos_task_mutex);
+  naos_lock(naos_task_mutex);
 
   // stop task if started
   if (naos_task_started) {
@@ -65,7 +67,7 @@ static void naos_task_status(naos_status_t status) {
   }
 
   // release lock
-  NAOS_UNLOCK(naos_task_mutex);
+  naos_unlock(naos_task_mutex);
 }
 
 static void naos_task_update(naos_param_t *param) {
@@ -75,39 +77,39 @@ static void naos_task_update(naos_param_t *param) {
   }
 
   // yield update
-  NAOS_LOCK(naos_task_mutex);
+  naos_lock(naos_task_mutex);
   naos_config()->update_callback(param);
-  NAOS_UNLOCK(naos_task_mutex);
+  naos_unlock(naos_task_mutex);
 }
 
 static void naos_task_message(naos_scope_t scope, const char *topic, const uint8_t *payload, size_t len, int qos,
                               bool retained) {
   // yield message
-  NAOS_LOCK(naos_task_mutex);
+  naos_lock(naos_task_mutex);
   naos_config()->message_callback(topic, payload, len, scope);
-  NAOS_UNLOCK(naos_task_mutex);
+  naos_unlock(naos_task_mutex);
 }
 
 static void naos_task_setup() {
   // run callback
-  NAOS_LOCK(naos_task_mutex);
+  naos_lock(naos_task_mutex);
   naos_config()->setup_callback();
-  NAOS_UNLOCK(naos_task_mutex);
+  naos_unlock(naos_task_mutex);
 }
 
 static void naos_task_battery() {
   // update battery
-  NAOS_LOCK(naos_task_mutex);
+  naos_lock(naos_task_mutex);
   float level = naos_config()->battery_callback();
-  NAOS_UNLOCK(naos_task_mutex);
+  naos_unlock(naos_task_mutex);
   naos_set_d("battery", level);
 }
 
 static void naos_task_ping() {
   // perform ping
-  NAOS_LOCK(naos_task_mutex);
+  naos_lock(naos_task_mutex);
   naos_config()->ping_callback();
-  NAOS_UNLOCK(naos_task_mutex);
+  naos_unlock(naos_task_mutex);
 }
 
 static naos_param_t naos_task_param_battery = {
@@ -159,10 +161,10 @@ void naos_start() {
 
 void naos_acquire() {
   // acquire mutex
-  NAOS_LOCK(naos_task_mutex);
+  naos_lock(naos_task_mutex);
 }
 
 void naos_release() {
   // release mutex
-  NAOS_UNLOCK(naos_task_mutex);
+  naos_unlock(naos_task_mutex);
 }
