@@ -251,7 +251,7 @@ void app_main() {
   naos_osc_filter(osc_filter);
   naos_manager_init();
   naos_serial_init_stdio();
-  if (NAOS_SERIAL_USB_AVAILABLE) {
+  if (CONFIG_SOC_USB_OTG_SUPPORTED) {
     naos_serial_init_usb();
   }
   naos_mdns_init((naos_mdns_config_t){

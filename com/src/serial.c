@@ -146,7 +146,7 @@ void naos_serial_init_stdio() {
 
 /* USB Interface */
 
-#if NAOS_SERIAL_USB_AVAILABLE
+#if CONFIG_SOC_USB_OTG_SUPPORTED
 
 #include <tinyusb.h>
 #include <tusb_cdc_acm.h>
@@ -215,4 +215,4 @@ void naos_serial_init_usb() {
   naos_run("naos-serial-u", 4096, 1, naos_serial_usb_task);
 }
 
-#endif  // NAOS_SERIAL_USB_AVAILABLE
+#endif  // CONFIG_SOC_USB_OTG_SUPPORTED
