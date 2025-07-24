@@ -41,6 +41,16 @@ beta,     app,  ota_1,    ,        BETA_BYTES
 storage,  data, fat,      ,        STORAGE_BYTES
 coredump, data, coredump, ,        64K
 `
+	if p.Beta == 0 {
+		partitions = `# Name,   Type, SubType,  Offset,  Size
+nvs,      data, nvs,      0x9000,  0x4000
+otadata,  data, ota,      0xd000,  0x2000
+phy_init, data, phy,      0xf000,  0x1000
+alpha,    app,  factory,    0x10000, ALPHA_BYTES
+storage,  data, fat,      ,        STORAGE_BYTES
+coredump, data, coredump, ,        64K
+`
+	}
 
 	// calculate available bytes
 	total := int64(p.Total)*1024*1024 - 3<<16
