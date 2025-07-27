@@ -48,6 +48,8 @@ func main() {
 		config(cmd, getProject())
 	} else if cmd.cFormat {
 		format(cmd, getProject())
+	} else if cmd.cBundle {
+		bundle(cmd, getProject())
 	} else if cmd.cList {
 		list(cmd, getProject())
 	} else if cmd.cCollect {
@@ -159,6 +161,11 @@ func config(cmd *command, p *naos.Project) {
 func format(_ *command, p *naos.Project) {
 	// format project
 	exitIfSet(p.Format(os.Stdout))
+}
+
+func bundle(cmd *command, p *naos.Project) {
+	// bundle project
+	exitIfSet(p.Bundle(cmd.aFile, os.Stdout))
 }
 
 func list(_ *command, p *naos.Project) {

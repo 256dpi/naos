@@ -362,7 +362,7 @@ func (p *Project) Config(file, device, baudRate string, useBLE bool, out io.Writ
 			baudRate = "921600"
 		}
 	}
-	
+
 	// load file
 	data, err := os.ReadFile(file)
 	if err != nil {
@@ -393,6 +393,11 @@ func (p *Project) Config(file, device, baudRate string, useBLE bool, out io.Writ
 // available.
 func (p *Project) Format(out io.Writer) error {
 	return tree.Format(p.Tree(), out)
+}
+
+// Bundle will create a bundle of the project.
+func (p *Project) Bundle(file string, out io.Writer) error {
+	return tree.Bundle(p.Tree(), file, out)
 }
 
 // Debug will request coredumps from the devices that match the supplied glob

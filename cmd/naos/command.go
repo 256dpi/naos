@@ -23,6 +23,7 @@ Project Management:
   exec     Run a command in the tree. 
   config   Write parameters to an attached device or to devices over BLE.
   format   Format all source files in the 'src' subdirectory.
+  bundle   Generate a bundle of the project.
 
 Fleet Management:
   list     List all devices listed in the inventory.
@@ -55,6 +56,7 @@ Usage:
   naos exec <command>
   naos config <file> [<device>] [--baud=<rate> --ble]
   naos format
+  naos bundle [<file>]
   naos list
   naos collect [--clear --duration=<time>]
   naos ping [<pattern>] [--timeout=<time>]
@@ -102,6 +104,7 @@ type command struct {
 	cExec     bool
 	cConfig   bool
 	cFormat   bool
+	cBundle   bool
 	cList     bool
 	cCollect  bool
 	cPing     bool
@@ -164,6 +167,7 @@ func parseCommand() *command {
 		cExec:     getBool(a["exec"]),
 		cConfig:   getBool(a["config"]),
 		cFormat:   getBool(a["format"]),
+		cBundle:   getBool(a["bundle"]),
 		cList:     getBool(a["list"]),
 		cCollect:  getBool(a["collect"]),
 		cPing:     getBool(a["ping"]),
