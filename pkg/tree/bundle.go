@@ -13,13 +13,14 @@ import (
 
 type bundleManifest struct {
 	Target    string         `json:"target"`
-	FlashMode string         `json:"flash_mode"`
-	FlashSize string         `json:"flash_size"`
-	FlashFreq string         `json:"flash_freq"`
+	FlashMode string         `json:"flashMode"`
+	FlashSize string         `json:"flashSize"`
+	FlashFreq string         `json:"flashFreq"`
 	Regions   []bundleRegion `json:"regions"`
 }
 
 type bundleRegion struct {
+	Name   string `json:"name"`
 	Offset int64  `json:"offset"`
 	Size   int64  `json:"size"`
 	File   string `json:"file,omitempty"`
@@ -90,9 +91,24 @@ func Bundle(naosPath string, file string, out io.Writer) error {
 		FlashSize: args.FlashSettings.FlashSize,
 		FlashFreq: args.FlashSettings.FlashFreq,
 		Regions: []bundleRegion{
-			{Offset: mustParseHex(args.Bootloader.Offset), Size: bootLoaderStat.Size(), File: filepath.Base(bootLoaderBinary)},
-			{Offset: mustParseHex(args.PartitionTable.Offset), Size: partitionsStat.Size(), File: filepath.Base(partitionsBinary)},
-			{Offset: mustParseHex(args.App.Offset), Size: projectStat.Size(), File: filepath.Base(projectBinary)},
+			{
+				Name:   "bootloader",
+				Offset: mustParseHex(args.Bootloader.Offset),
+				Size:   bootLoaderStat.Size(),
+				File:   filepath.Base(bootLoaderBinary),
+			},
+			{
+				Name:   "partition-table",
+				Offset: mustParseHex(args.PartitionTable.Offset),
+				Size:   partitionsStat.Size(),
+				File:   filepath.Base(partitionsBinary),
+			},
+			{
+				Name:   "application",
+				Offset: mustParseHex(args.App.Offset),
+				Size:   projectStat.Size(),
+				File:   filepath.Base(projectBinary),
+			},
 		},
 	}
 
@@ -103,6 +119,7 @@ func Bundle(naosPath string, file string, out io.Writer) error {
 			return fmt.Errorf("failed to stat OTA data binary: %w", err)
 		}
 		manifest.Regions = append(manifest.Regions, bundleRegion{
+			Name:   "ota-data",
 			Offset: mustParseHex(args.OtaData.Offset),
 			Size:   stat.Size(),
 			Fill:   0xFF,
