@@ -23,6 +23,7 @@ typedef struct {
 } naos_ble_conn_t;
 
 #define NAOS_BLE_SIGNAL_INIT 1
+#define NAOS_BLE_SIGNAL_CONN 2
 
 static naos_signal_t naos_ble_signal;
 
@@ -82,7 +83,9 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
   switch (e) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT: {
       // begin advertising
-      ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+      if (!naos_ble_config.on_demand) {
+        ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+      }
 
       break;
     }
@@ -267,8 +270,13 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       conn_params.timeout = 500;  // 5s
       ESP_ERROR_CHECK(esp_ble_gap_update_conn_params(&conn_params));
 
+      // trigger signal
+      naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_CONN, false);
+
       // restart advertisement
-      ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+      if (!naos_ble_config.on_demand) {
+        ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+      }
 
       break;
     }
@@ -427,7 +435,9 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       naos_ble_conns[p->disconnect.conn_id] = (naos_ble_conn_t){0};
 
       // restart advertisement
-      ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+      if (!naos_ble_config.on_demand) {
+        ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+      }
 
       break;
     }
@@ -576,4 +586,22 @@ void naos_ble_init(naos_ble_config_t cfg) {
       .mtu = naos_ble_msg_mtu,
       .send = naos_ble_msg_send,
   });
+}
+
+void naos_ble_start_advertisement() {
+  // start advertising
+  ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+}
+
+bool naos_ble_await_connection(int32_t timeout_ms) {
+  // clear signal
+  naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_CONN, true);
+
+  // await connection
+  return naos_await(naos_ble_signal, NAOS_BLE_SIGNAL_CONN, true, timeout_ms);
+}
+
+void naos_ble_stop_advertisement() {
+  // stop advertising
+  ESP_ERROR_CHECK(esp_ble_gap_stop_advertising());
 }
