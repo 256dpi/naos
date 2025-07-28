@@ -39,7 +39,7 @@ export function random(length: number): string {
   return result;
 }
 
-export function securerRandom(length: number): Uint8Array {
+export function secureRandom(length: number): Uint8Array {
   return window.crypto.getRandomValues(new Uint8Array(length));
 }
 
