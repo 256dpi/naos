@@ -18,6 +18,7 @@
 #include <naos/mdns.h>
 #include <naos/metrics.h>
 #include <naos/connect.h>
+#include <naos/auth.h>
 #include <naos/sys.h>
 
 #define ETHERNET false
@@ -165,6 +166,78 @@ static bool device_to_host(uint8_t *data, size_t len) {
   return true;
 }
 
+static void auth_test() {
+  // check status
+  bool provisioned = naos_auth_status();
+  naos_log("auth_test: status: %s", provisioned ? "provisioned" : "not provisioned");
+
+  // test provisioning
+  if (!provisioned) {
+    // provision key and data
+    const char *key = "0123456789abcdef0123456789abcdef";
+    naos_auth_data_t data = {
+        .version = 1,
+        .uuid = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf, 0x10},
+        .product = 0x1,
+        .revision = 0x2,
+        .batch = 0x3,
+        .date = 0x4,
+    };
+    naos_auth_err_t err = naos_auth_provision((uint8_t *)key, &data);
+    if (err != NAOS_AUTH_ERR_OK) {
+      naos_log("auth_test: provisioning failed: %d", err);
+      return;
+    }
+
+    // check status again
+    provisioned = naos_auth_status();
+    naos_log("auth_test: status: %s", provisioned ? "provisioned" : "not provisioned");
+  }
+
+  // describe device
+  naos_auth_data_t data2;
+  naos_auth_err_t err = naos_auth_describe(&data2);
+  if (err != NAOS_AUTH_ERR_OK) {
+    naos_log("auth_test: description failed: %d", err);
+    return;
+  }
+
+  // print description
+  naos_log("auth_test: description: version=%d", data2.version);
+  printf("  uuid=");
+  for (int i = 0; i < 16; i++) {
+    printf("%02x", data2.uuid[i]);
+  }
+  printf("\n  product=%d\n", data2.product);
+  printf("  revision=%d\n", data2.revision);
+  printf("  batch=%d\n", data2.batch);
+  printf("  date=%lu\n", data2.date);
+
+  // test attestation
+  const char *input = "challenge";
+  uint8_t output[32] = {0};
+  err = naos_auth_attest(input, strlen(input), output);
+  if (err != NAOS_AUTH_ERR_OK) {
+    naos_log("auth_test: verification failed: %d", err);
+    return;
+  }
+
+  // check output
+  uint8_t expected[32] = {0xee, 0x3b, 0x6e, 0x31, 0x50, 0xb5, 0xb7, 0x00, 0x70, 0x47, 0x27,
+                          0x80, 0xc1, 0x98, 0x8f, 0xe5, 0x69, 0xee, 0xcc, 0x24, 0x93, 0x24,
+                          0x7c, 0x7a, 0x1a, 0xb5, 0x1e, 0xfd, 0x26, 0x3d, 0x5b, 0x77};
+  if (memcmp(output, expected, sizeof(expected)) != 0) {
+    naos_log("auth_test: verification failed: output does not match expected");
+    return;
+  }
+
+  // print output
+  for (int i = 0; i < 32; i++) {
+    printf("%02x", output[i]);
+  }
+  printf("\n");
+}
+
 static naos_param_t params[] = {
     {.name = "var_s", .type = NAOS_STRING, .default_s = "", .sync_s = &var_s},
     {.name = "var_l", .type = NAOS_LONG, .default_l = 0, .sync_l = &var_l},
@@ -305,4 +378,7 @@ void app_main() {
 
   // start
   // naos_start();
+
+  // test authentication
+  // auth_test();
 }

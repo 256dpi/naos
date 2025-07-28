@@ -4,7 +4,7 @@ IF(DEFINED ENV{IDF_PATH})
     idf_component_register(SRCS ${srcs}
         INCLUDE_DIRS "include"
         # Note: Managed components are added automatically
-        REQUIRES nvs_flash bt esp_eth esp_http_server esp-mqtt esp-osc app_update fatfs
+        REQUIRES nvs_flash efuse bt esp_eth esp_http_server esp-mqtt esp-osc app_update fatfs
     )
 ELSE()
     # CLion compatible development setup

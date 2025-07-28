@@ -7,3 +7,6 @@ CONFIG_ETH_SPI_ETHERNET_W5500=y
 
 # increase default flash size
 CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+
+# enable virtual fuses
+CONFIG_EFUSE_VIRTUAL=y
