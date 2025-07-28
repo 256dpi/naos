@@ -50,15 +50,15 @@ void naos_log(const char *fmt, ...) {
     naos_log_sinks[i](msg);
   }
 
-  // get device type
-  const char *device_type = "unknown";
+  // get app name
+  const char *app_name = "unknown";
   if (naos_config() != NULL) {
-    device_type = naos_config()->device_type;
+    app_name = naos_config()->app_name;
   }
 
   // get log timestamp to synchronize with native logs
   uint32_t millis = esp_log_timestamp();
 
   // print message
-  printf("N (%lu) %s: %s\n", millis, device_type, msg);
+  printf("N (%lu) %s: %s\n", millis, app_name, msg);
 }

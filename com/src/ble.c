@@ -440,9 +440,9 @@ static void naos_ble_set_name() {
   // prepare name
   const char *name = naos_get_s("device-name");
 
-  // use device type if absent
+  // use app name if absent
   if (strlen(name) == 0) {
-    name = naos_config()->device_type;
+    name = naos_config()->app_name;
   }
 
   // cap name to not exceed adv packet

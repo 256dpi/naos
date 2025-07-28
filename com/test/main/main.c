@@ -178,8 +178,8 @@ static naos_param_t params[] = {
 };
 
 static naos_config_t config = {
-    .device_type = "naos-test",
-    .device_version = "0.0.1",
+    .app_name = "naos-test",
+    .app_version = "0.0.1",
     .default_password = "",
     .parameters = params,
     .num_parameters = sizeof(params) / sizeof(params[0]),

@@ -29,14 +29,14 @@ static int32_t naos_system_memory[3] = {0};
 
 static naos_param_t naos_system_params[] = {
     {.name = "device-id", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
-    {.name = "device-type", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
-    {.name = "device-version", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "base-topic", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = esp_restart},
     {.name = "device-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "connection-status", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
-    {.name = "running-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
+    {.name = "app-name", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
+    {.name = "app-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
+    {.name = "app-version", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "uptime", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
 };
 
@@ -161,9 +161,9 @@ void naos_system_init() {
 
   // initialize system parameters
   naos_set_s("device-id", id);
-  naos_set_s("device-type", naos_config()->device_type);
-  naos_set_s("device-version", naos_config()->device_version);
-  naos_set_s("running-partition", esp_ota_get_running_partition()->label);
+  naos_set_s("app-name", naos_config()->app_name);
+  naos_set_s("app-version", naos_config()->app_version);
+  naos_set_s("app-partition", esp_ota_get_running_partition()->label);
 
   // ensure default password
   if (naos_config()->default_password != NULL && strlen(naos_get_s("device-password")) == 0) {

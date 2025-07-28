@@ -155,8 +155,8 @@ typedef struct {
   /**
    * The device type and version.
    */
-  const char *device_type;
-  const char *device_version;
+  const char *app_name;
+  const char *app_version;
 
   /**
    * A default password to be set.

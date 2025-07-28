@@ -61,8 +61,8 @@ func loop() {
 			giu.TableColumn("ID"),
 			giu.TableColumn("Active"),
 			giu.TableColumn("Name"),
-			giu.TableColumn("Type"),
-			giu.TableColumn("Firmware Version"),
+			giu.TableColumn("App Name"),
+			giu.TableColumn("App Version"),
 			giu.TableColumn("Actions"),
 		).Rows(
 			lo.Map(devices, func(device *managedDevice, _ int) *giu.TableRowWidget {
@@ -83,8 +83,8 @@ func loop() {
 						}
 					}),
 					giu.Label(device.GetString("device-name")),
-					giu.Label(device.GetString("device-type")),
-					giu.Label(device.GetString("device-version")),
+					giu.Label(device.GetString("app-name")),
+					giu.Label(device.GetString("app-version")),
 					giu.Button("Refresh").Disabled(!device.Device.Active()).OnClick(func() {
 						err := device.Refresh()
 						if err != nil {
