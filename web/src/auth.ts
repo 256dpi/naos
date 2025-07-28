@@ -1,5 +1,5 @@
 import { Session } from "./session";
-import { compare, pack } from "./utils";
+import { compare, hmac256, pack } from "./utils";
 
 const authEndpoint = 0x6;
 
@@ -118,23 +118,4 @@ export async function authAttest(
   }
 
   return reply;
-}
-
-export async function hmac256(
-  key: Uint8Array,
-  challenge: Uint8Array
-): Promise<Uint8Array> {
-  // import HMAC key
-  const cryptoKey = await window.crypto.subtle.importKey(
-    "raw",
-    key,
-    { name: "HMAC", hash: { name: "SHA-256" } },
-    false,
-    ["sign"]
-  );
-
-  // generate the HMAC
-  const res = await window.crypto.subtle.sign("HMAC", cryptoKey, challenge);
-
-  return new Uint8Array(res);
 }

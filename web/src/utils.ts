@@ -39,6 +39,25 @@ export function random(length: number): string {
   return result;
 }
 
+export async function hmac256(
+  key: Uint8Array,
+  challenge: Uint8Array
+): Promise<Uint8Array> {
+  // import HMAC key
+  const cryptoKey = await window.crypto.subtle.importKey(
+    "raw",
+    key,
+    { name: "HMAC", hash: { name: "SHA-256" } },
+    false,
+    ["sign"]
+  );
+
+  // generate the HMAC
+  const res = await window.crypto.subtle.sign("HMAC", cryptoKey, challenge);
+
+  return new Uint8Array(res);
+}
+
 export function requestFile(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
