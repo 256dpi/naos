@@ -30,13 +30,13 @@ static int32_t naos_system_memory[3] = {0};
 static naos_param_t naos_system_params[] = {
     {.name = "device-id", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "base-topic", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = esp_restart},
     {.name = "device-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "connection-status", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
+    {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = esp_restart},
     {.name = "app-name", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
-    {.name = "app-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "app-version", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
+    {.name = "app-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
+    {.name = "base-topic", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "connection-status", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "uptime", .type = NAOS_LONG, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
 };
 
