@@ -39,6 +39,10 @@ export function random(length: number): string {
   return result;
 }
 
+export function securerRandom(length: number): Uint8Array {
+  return window.crypto.getRandomValues(new Uint8Array(length));
+}
+
 export async function hmac256(
   key: Uint8Array,
   challenge: Uint8Array
