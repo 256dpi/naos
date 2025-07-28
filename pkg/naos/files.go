@@ -3,8 +3,8 @@ package naos
 const mainSourceFile = `#include <naos.h>
 
 static naos_config_t config = {
-  .device_type = "my-device",
-  .device_version = "0.1.0",
+  .app_name = "my-device",
+  .app_version = "0.1.0",
 };
 
 void app_main() {
