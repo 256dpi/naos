@@ -28,8 +28,6 @@ public struct NAOSParameter: Hashable {
 	public static let connectionStatus = NAOSParameter(name: "connection-status")
 	public static let battery = NAOSParameter(name: "battery")
 	public static let uptime = NAOSParameter(name: "uptime")
-	public static let freeHeap = NAOSParameter(name: "free-heap")
-	public static let freeHeapInt = NAOSParameter(name: "free-heap-int")
 
 	public func format(value: String) -> String {
 		let num = Double(value) ?? 0
@@ -43,9 +41,6 @@ public struct NAOSParameter: Hashable {
 			formatter.allowedUnits = [.hour, .minute, .second]
 			formatter.unitsStyle = .abbreviated
 			return formatter.string(from: num / 1000) ?? ""
-		case .freeHeap, .freeHeapInt:
-			return ByteCountFormatter.string(
-				from: Measurement(value: num, unit: .bytes), countStyle: .memory)
 		default:
 			return value
 		}
