@@ -8,7 +8,7 @@
 #include "params.h"
 #include "utils.h"
 
-#define NAOS_PARAMS_ENDPOINT 0x01
+#define NAOS_PARAMS_ENDPOINT 0x1
 #define NAOS_PARAMS_MAX_HANDLERS 8
 
 typedef enum {

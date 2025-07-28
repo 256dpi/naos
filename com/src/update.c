@@ -10,7 +10,7 @@
 #include "update.h"
 #include "utils.h"
 
-#define NAOS_UPDATE_ENDPOINT 0x02
+#define NAOS_UPDATE_ENDPOINT 0x2
 
 typedef enum {
   NAOS_UPDATE_BEGIN,

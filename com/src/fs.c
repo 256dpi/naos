@@ -15,7 +15,7 @@
 #include <esp_vfs_fat.h>
 #include <mbedtls/sha256.h>
 
-#define NAOS_FS_ENDPOINT 0x03
+#define NAOS_FS_ENDPOINT 0x3
 #define NAOS_FS_MAX_FILES 4
 
 typedef enum {
