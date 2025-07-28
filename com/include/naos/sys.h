@@ -134,8 +134,9 @@ void naos_trigger_isr(naos_signal_t signal, uint16_t bits, bool clear);
  * @param signal The signal.
  * @param bits  The bits.
  * @param clear Whether the bits should be cleared.
+ * @param timeout_ms The timeout in milliseconds or -1 for none.
  */
-void naos_await(naos_signal_t signal, uint16_t bits, bool clear);
+bool naos_await(naos_signal_t signal, uint16_t bits, bool clear, int32_t timeout_ms);
 
 /**
  * Deletes the specified signal.

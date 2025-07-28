@@ -4,6 +4,9 @@
 #include <esp_timer.h>
 #include <esp_debug_helpers.h>
 #include <esp_private/freertos_debug.h>
+#include <freertos/semphr.h>
+#include <freertos/timers.h>
+#include <freertos/event_groups.h>
 
 static void naos_backtrace_print(TaskHandle_t task, int depth) {
   // handle current task
@@ -187,15 +190,20 @@ void naos_trigger_isr(naos_signal_t signal, uint16_t bits, bool clear) {
   }
 }
 
-void naos_await(naos_signal_t signal, uint16_t bits, bool clear) {
+bool naos_await(naos_signal_t signal, uint16_t bits, bool clear, int32_t timeout_ms) {
   // check bits
   if (bits == 0) {
-    return;
+    return true;
   }
 
   // await bits
+  if (timeout_ms >= 0) {
+    return xEventGroupWaitBits(signal, bits, clear, pdTRUE, timeout_ms / portTICK_PERIOD_MS) == pdPASS;
+  }
   while (xEventGroupWaitBits(signal, bits, clear, pdTRUE, portMAX_DELAY) == 0) {
   }
+
+  return true;
 }
 
 void naos_signal_delete(naos_signal_t signal) {

@@ -22,6 +22,8 @@ typedef struct {
   bool connected;
 } naos_ble_conn_t;
 
+#define NAOS_BLE_SIGNAL_INIT 1
+
 static naos_signal_t naos_ble_signal;
 
 static esp_ble_adv_params_t naos_ble_adv_params = {
@@ -226,7 +228,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
         // set initialization bit if this is the last characteristic
         if (j + 1 == NAOS_BLE_NUM_CHARS) {
-          naos_trigger(naos_ble_signal, 1, false);
+          naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_INIT, false);
         }
 
         // exit loop
@@ -560,7 +562,7 @@ void naos_ble_init(naos_ble_config_t cfg) {
 
   // register application
   ESP_ERROR_CHECK(esp_ble_gatts_app_register(0x55));
-  naos_await(naos_ble_signal, 1, false);
+  naos_await(naos_ble_signal, NAOS_BLE_SIGNAL_INIT, true, -1);
 
   // set device name
   naos_ble_set_name();
