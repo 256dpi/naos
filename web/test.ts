@@ -25,6 +25,12 @@ import {
   readLongMetrics,
   RelayDevice,
   scanRelay,
+  authStatus,
+  authProvision,
+  authDescribe,
+  authAttest,
+  hmac256,
+  compare,
 } from "./src";
 
 let device: ManagedDevice | null = null;
@@ -238,6 +244,56 @@ async function relay() {
   console.log("Done!");
 }
 
+async function auth() {
+  console.log("Testing Auth...");
+
+  await device.activate();
+
+  await device.useSession(async (session) => {
+    let provisioned = await authStatus(session);
+    if (provisioned) {
+      console.log("Device already provisioned");
+      return;
+    }
+
+    const key = toBuffer("0123456789abcdef0123456789abcdef");
+    await authProvision(session, key, {
+      uuid: toBuffer("ABCDEF0123456789"),
+      product: 1,
+      revision: 2,
+      batch: 3,
+      date: Date.now() / 1000,
+    });
+
+    provisioned = await authStatus(session);
+    if (!provisioned) {
+      console.log("Failed to provision device");
+      return;
+    }
+
+    const data = await authDescribe(session, key);
+    if (
+      toString(data.uuid) !== "ABCDEF0123456789" ||
+      data.product !== 1 ||
+      data.revision !== 2 ||
+      data.batch !== 3
+    ) {
+      console.log("Failed to describe device");
+      return;
+    }
+
+    const challenge = toBuffer(random(24));
+    const result = await authAttest(session, challenge);
+    const expected = await hmac256(key, challenge);
+    if (result.length !== 32 || !compare(result, expected)) {
+      console.log("Failed to attest device");
+      return;
+    }
+
+    console.log("Authentication successful!");
+  });
+}
+
 window["_ble"] = ble;
 window["_serial"] = serial;
 window["_http"] = http;
@@ -246,6 +302,7 @@ window["_flash"] = flash;
 window["_fs"] = fs;
 window["_metrics"] = metrics;
 window["_relay"] = relay;
+window["_auth"] = auth;
 
 // redirect to localhost from '0.0.0.0'
 if (location.hostname === "0.0.0.0") {

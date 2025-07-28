@@ -1,3 +1,4 @@
+export * from "./auth";
 export * from "./ble";
 export * from "./device";
 export * from "./fs";

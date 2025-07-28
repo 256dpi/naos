@@ -370,6 +370,9 @@ void app_main() {
   // initialize connect
   naos_connect_init();
 
+  // initialize auth
+  naos_auth_install();
+
   // initialize counter
   counter = naos_get_l("counter");
 

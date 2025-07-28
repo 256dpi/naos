@@ -168,3 +168,22 @@ export function unpack(fmt: string, buffer: Uint8Array): any[] {
 
   return result;
 }
+
+export function compare(buf1: Uint8Array, buf2: Uint8Array): boolean {
+  // check lengths
+  if (buf1.byteLength !== buf2.byteLength) {
+    return false;
+  }
+
+  // compare bytes
+  const view1 = new DataView(buf1.buffer);
+  const view2 = new DataView(buf2.buffer);
+  let i = buf1.byteLength;
+  while (i--) {
+    if (view1.getUint8(i) !== view2.getUint8(i)) {
+      return false;
+    }
+  }
+
+  return true;
+}
