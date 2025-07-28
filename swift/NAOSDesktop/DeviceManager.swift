@@ -47,7 +47,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 
 				// update window titles
 				for (d, c) in controllers {
-					c.window!.title = d.title()
+					c.window?.title = d.title()
 				}
 			}
 		}
