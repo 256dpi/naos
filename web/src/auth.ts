@@ -86,10 +86,12 @@ export async function authDescribe(
     reply[23] | (reply[24] << 8) | (reply[25] << 16) | (reply[26] << 24);
   const signature = reply.slice(27, 32);
 
-  // verify signature
-  const expectedSignature = await hmac256(key, reply.slice(0, 27));
-  if (compare(expectedSignature, signature)) {
-    throw new Error("invalid signature");
+  // verify signature if a key is provided
+  if (key) {
+    const expectedSignature = await hmac256(key, reply.slice(0, 27));
+    if (compare(expectedSignature, signature)) {
+      throw new Error("invalid signature");
+    }
   }
 
   return {
