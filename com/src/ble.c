@@ -22,6 +22,8 @@
 #define NAOS_BLE_ALLOWLIST_KEY "allowlist"
 #define NAOS_BLE_NUM_CHARS 1
 #define NAOS_BLE_MAX_CONNECTIONS 8
+#define NAOS_BLE_ADDR_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
+#define NAOS_BLE_ADDR_ARGS(a) a[0], a[1], a[2], a[3], a[4], a[5]
 
 typedef struct {
   uint16_t id;
@@ -76,7 +78,10 @@ static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
 };
 
 static struct {
-  esp_bd_addr_t addrs[NAOS_BLE_ALLOWLIST_SIZE];
+  struct {
+    esp_bd_addr_t addr;
+    esp_ble_addr_type_t type;
+  } entries[NAOS_BLE_ALLOWLIST_SIZE];
   size_t next;
 } naos_ble_allowlist = {0};
 
@@ -280,28 +285,27 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
       if (naos_ble_config.pseudo_pairing) {
         // log info
-        ESP_LOGI(NAOS_LOG_TAG, "adding device to allowlist: %02x:%02x:%02x:%02x:%02x:%02x", p->connect.remote_bda[0],
-                 p->connect.remote_bda[1], p->connect.remote_bda[2], p->connect.remote_bda[3], p->connect.remote_bda[4],
-                 p->connect.remote_bda[5]);
+        ESP_LOGI(NAOS_LOG_TAG,
+                 "naos_ble_gatts_handler: adding address to allowlist (type=%d addr=" NAOS_BLE_ADDR_FMT ")",
+                 p->connect.ble_addr_type, NAOS_BLE_ADDR_ARGS(p->connect.remote_bda));
 
         // add device to controller allowlist
-        ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, p->connect.remote_bda, BLE_ADDR_TYPE_PUBLIC));
+        ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, p->connect.remote_bda, p->connect.ble_addr_type));
 
         // check if address is already in persistent allowlist
         bool found = false;
         for (size_t j = 0; j < NAOS_BLE_ALLOWLIST_SIZE; j++) {
-          if (memcmp(naos_ble_allowlist.addrs[j], p->connect.remote_bda, sizeof(esp_bd_addr_t)) == 0) {
+          if (memcmp(naos_ble_allowlist.entries[j].addr, p->connect.remote_bda, sizeof(esp_bd_addr_t)) == 0) {
             found = true;
             break;
           }
         }
 
-        // log info
-        ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gatts_handler: device found in allowlist: %s", found ? "yes" : "no");
-
         // if not found, add to allowlist
         if (!found) {
-          memcpy(naos_ble_allowlist.addrs[naos_ble_allowlist.next], p->connect.remote_bda, sizeof(esp_bd_addr_t));
+          memcpy(naos_ble_allowlist.entries[naos_ble_allowlist.next].addr, p->connect.remote_bda,
+                 sizeof(esp_bd_addr_t));
+          naos_ble_allowlist.entries[naos_ble_allowlist.next].type = p->connect.ble_addr_type;
           naos_ble_allowlist.next = (naos_ble_allowlist.next + 1) % NAOS_BLE_ALLOWLIST_SIZE;
           ESP_ERROR_CHECK(
               nvs_set_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, &naos_ble_allowlist, sizeof(naos_ble_allowlist)));
@@ -628,11 +632,11 @@ void naos_ble_init(naos_ble_config_t cfg) {
       ESP_ERROR_CHECK(nvs_get_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, &naos_ble_allowlist, &size));
       for (size_t i = 0; i < NAOS_BLE_ALLOWLIST_SIZE; i++) {
         esp_bd_addr_t zero = {0};
-        if (memcmp(naos_ble_allowlist.addrs[i], zero, sizeof(esp_bd_addr_t)) != 0) {
-          ESP_LOGI(NAOS_LOG_TAG, "naos_ble_init: restoring allowlist entry %02x:%02x:%02x:%02x:%02x:%02x",
-                   naos_ble_allowlist.addrs[i][0], naos_ble_allowlist.addrs[i][1], naos_ble_allowlist.addrs[i][2],
-                   naos_ble_allowlist.addrs[i][3], naos_ble_allowlist.addrs[i][4], naos_ble_allowlist.addrs[i][5]);
-          ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, naos_ble_allowlist.addrs[i], BLE_ADDR_TYPE_PUBLIC));
+        if (memcmp(naos_ble_allowlist.entries[i].addr, zero, sizeof(esp_bd_addr_t)) != 0) {
+          ESP_LOGI(NAOS_LOG_TAG, "naos_ble_init: restoring allowlist entry (type=%d addr=" NAOS_BLE_ADDR_FMT ")",
+                   naos_ble_allowlist.entries[i].type, NAOS_BLE_ADDR_ARGS(naos_ble_allowlist.entries[i].addr));
+          ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, naos_ble_allowlist.entries[i].addr,
+                                                       naos_ble_allowlist.entries[i].type));
         }
       }
     }
@@ -698,7 +702,7 @@ int naos_ble_allowlist_length() {
   int count = 0;
   for (size_t i = 0; i < NAOS_BLE_ALLOWLIST_SIZE; i++) {
     esp_bd_addr_t zero = {0};
-    if (memcmp(naos_ble_allowlist.addrs[i], zero, sizeof(esp_bd_addr_t)) != 0) {
+    if (memcmp(naos_ble_allowlist.entries[i].addr, zero, sizeof(esp_bd_addr_t)) != 0) {
       count++;
     }
   }
@@ -707,9 +711,13 @@ int naos_ble_allowlist_length() {
 }
 
 void naos_ble_allowlist_clear() {
+  // stop if empty
+  if (naos_ble_allowlist_length() == 0) {
+    return;
+  }
+
   // clear allowlist
-  memset(naos_ble_allowlist.addrs, 0, sizeof(naos_ble_allowlist.addrs));
-  naos_ble_allowlist.next = 0;
+  memset(&naos_ble_allowlist, 0, sizeof(naos_ble_allowlist));
   ESP_ERROR_CHECK(
       nvs_set_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, &naos_ble_allowlist, sizeof(naos_ble_allowlist)));
   ESP_ERROR_CHECK(nvs_commit(naos_ble_handle));
