@@ -238,6 +238,29 @@ static void auth_test() {
   printf("\n");
 }
 
+void ble_pairing_test() {
+  // clear allowlist
+  naos_log("clearing allowlist: %d", naos_ble_allowlist_length());
+  naos_ble_allowlist_clear();
+
+  for (;;) {
+    // enable pairing
+    naos_ble_enable_pairing();
+    naos_log("enabled pairing");
+
+    // wait for connection
+    naos_log("awaiting connection...");
+    if (naos_ble_await(10000)) {
+      naos_log("got connection!");
+    }
+
+    // disable pairing
+    naos_ble_disable_pairing();
+    naos_log("disabled pairing");
+    naos_delay(20000);
+  }
+}
+
 static naos_param_t params[] = {
     {.name = "var_s", .type = NAOS_STRING, .default_s = "", .sync_s = &var_s},
     {.name = "var_l", .type = NAOS_LONG, .default_l = 0, .sync_l = &var_l},
@@ -314,7 +337,9 @@ void app_main() {
   // initialize naos
   naos_init(&config);
   naos_cpu_init();
-  naos_ble_init((naos_ble_config_t){});
+  naos_ble_init((naos_ble_config_t){
+      .pseudo_pairing = false,
+  });
   naos_wifi_init();
   naos_http_init(1);
   naos_http_serve_str("/", "text/html", "<h1>Hello world!</h1>");
@@ -384,4 +409,7 @@ void app_main() {
 
   // test authentication
   // auth_test();
+
+  // test BLE pairing
+  // ble_pairing_test();
 }
