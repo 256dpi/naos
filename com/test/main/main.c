@@ -239,6 +239,10 @@ static void auth_test() {
 }
 
 void ble_pairing_test() {
+  // clear bonding list
+  naos_log("clearing bonding list");
+  naos_ble_bonding_clear();
+
   // clear allowlist
   naos_log("clearing allowlist: %d", naos_ble_allowlist_length());
   naos_ble_allowlist_clear();
@@ -339,6 +343,7 @@ void app_main() {
   naos_cpu_init();
   naos_ble_init((naos_ble_config_t){
       .pseudo_pairing = false,
+      .bonding = false,
   });
   naos_wifi_init();
   naos_http_init(1);

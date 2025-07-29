@@ -15,6 +15,12 @@ typedef struct {
   bool pseudo_pairing;
 
   /**
+   * Whether to use the device bonding feature to establish a long-term secure
+   * connection with a device, allowing it to reconnect without re-pairing.
+   */
+  bool bonding;
+
+  /**
    * Whether to skip bluetooth initialization.
    */
   bool skip_bt_init;
@@ -60,5 +66,10 @@ int naos_ble_allowlist_length();
  * Removes all entries from the allowlist.
  */
 void naos_ble_allowlist_clear();
+
+/**
+ * Clears the bonding list.
+ */
+void naos_ble_bonding_clear();
 
 #endif  // NAOS_BLE_H

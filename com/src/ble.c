@@ -126,6 +126,35 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
                p->update_conn_params.conn_int, p->update_conn_params.timeout);
     }
 
+    case ESP_GAP_BLE_SEC_REQ_EVT: {
+      // auto accept security requests
+      ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gap_handler: security request from peer, accepting...");
+      ESP_ERROR_CHECK(esp_ble_gap_security_rsp(p->ble_security.ble_req.bd_addr, true));
+
+      break;
+    }
+
+    case ESP_GAP_BLE_PASSKEY_REQ_EVT: {
+      // auto accept passkey requests
+      ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gap_handler: passkey request (Just Works) - auto accepting");
+
+      break;
+    }
+
+    case ESP_GAP_BLE_KEY_EVT: {
+      // log key events
+      ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gap_handler: key event (type=%d)", p->ble_security.ble_key.key_type);
+    }
+
+    case ESP_GAP_BLE_AUTH_CMPL_EVT: {
+      // log authentication completion
+      if (p->ble_security.auth_cmpl.success && p->ble_security.auth_cmpl.auth_mode == ESP_LE_AUTH_BOND) {
+        ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gap_handler: authentication complete");
+      }
+
+      break;
+    }
+
     default: {
       // ESP_LOGI(NAOS_LOG_TAG, "unhandled GAP event: %d", e);
     }
@@ -315,6 +344,11 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
       // restart advertisement
       ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+
+      // start encryption immediately if bonding is enabled
+      if (naos_ble_config.bonding) {
+        ESP_ERROR_CHECK(esp_ble_set_encryption(p->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_NO_MITM));
+      }
 
       break;
     }
@@ -611,6 +645,20 @@ void naos_ble_init(naos_ble_config_t cfg) {
   naos_ble_gatts_profile.service_id.id.uuid.len = ESP_UUID_LEN_128;
   memcpy(naos_ble_gatts_profile.service_id.id.uuid.uuid.uuid128, naos_ble_gatts_profile.uuid, ESP_UUID_LEN_128);
 
+  // setup encryption if bonding is enabled
+  if (cfg.bonding) {
+    esp_ble_auth_req_t auth_req = ESP_LE_AUTH_BOND;
+    esp_ble_io_cap_t io_cap = ESP_IO_CAP_NONE;
+    uint8_t key_size = 16;
+    uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
+    uint8_t resp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(auth_req)));
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &io_cap, sizeof(io_cap)));
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(key_size)));
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(init_key)));
+    ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &resp_key, sizeof(resp_key)));
+  }
+
   // register application
   ESP_ERROR_CHECK(esp_ble_gatts_app_register(0x55));
   naos_await(naos_ble_signal, NAOS_BLE_SIGNAL_INIT, true, -1);
@@ -722,4 +770,32 @@ void naos_ble_allowlist_clear() {
       nvs_set_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, &naos_ble_allowlist, sizeof(naos_ble_allowlist)));
   ESP_ERROR_CHECK(nvs_commit(naos_ble_handle));
   ESP_ERROR_CHECK(esp_ble_gap_clear_whitelist());
+}
+
+void naos_ble_bonding_clear() {
+  // enumerate bonded devices
+  int num = esp_ble_get_bond_device_num();
+  if (num == 0) {
+    return;
+  }
+
+  // allocate device list
+  esp_ble_bond_dev_t *list = malloc(num * sizeof(esp_ble_bond_dev_t));
+  if (!list) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+    return;
+  }
+
+  // fill device list
+  ESP_ERROR_CHECK(esp_ble_get_bond_device_list(&num, list));
+
+  // remove devices
+  for (int i = 0; i < num; i++) {
+    ESP_ERROR_CHECK(esp_ble_remove_bond_device(list[i].bd_addr));
+    ESP_LOGI("naos_ble", "naos_ble_bonding_clear: removed bonded device (addr=" NAOS_BLE_ADDR_FMT ")",
+             NAOS_BLE_ADDR_ARGS(list[i].bd_addr));
+  }
+
+  // free list
+  free(list);
 }
