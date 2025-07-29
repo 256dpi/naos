@@ -17,6 +17,10 @@ typedef struct {
   /**
    * Whether to use the device bonding feature to establish a long-term secure
    * connection with a device, allowing it to reconnect without re-pairing.
+   *
+   * Note: If either side "forgets" a peer, the connection might fail. Remove
+   * the obsolete device from the bonding list on the client, and clear the
+   * bonding list on the device.
    */
   bool bonding;
 
@@ -66,6 +70,13 @@ int naos_ble_allowlist_length();
  * Removes all entries from the allowlist.
  */
 void naos_ble_allowlist_clear();
+
+/**
+ * Counts the number of bonded devices.
+ *
+ * @return The number of bonded devices.
+ */
+int naos_ble_bonding_length();
 
 /**
  * Clears the bonding list.

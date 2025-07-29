@@ -773,6 +773,11 @@ void naos_ble_allowlist_clear() {
   ESP_ERROR_CHECK(esp_ble_gap_clear_whitelist());
 }
 
+int naos_ble_bonding_length() {
+  // return the number of bonded devices
+  return esp_ble_get_bond_device_num();
+}
+
 void naos_ble_bonding_clear() {
   // enumerate bonded devices
   int num = esp_ble_get_bond_device_num();
