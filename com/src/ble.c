@@ -692,3 +692,26 @@ int naos_ble_num_connections() {
 
   return count;
 }
+
+int naos_ble_allowlist_length() {
+  // count allowlist entries
+  int count = 0;
+  for (size_t i = 0; i < NAOS_BLE_ALLOWLIST_SIZE; i++) {
+    esp_bd_addr_t zero = {0};
+    if (memcmp(naos_ble_allowlist.addrs[i], zero, sizeof(esp_bd_addr_t)) != 0) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+void naos_ble_allowlist_clear() {
+  // clear allowlist
+  memset(naos_ble_allowlist.addrs, 0, sizeof(naos_ble_allowlist.addrs));
+  naos_ble_allowlist.next = 0;
+  ESP_ERROR_CHECK(
+      nvs_set_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, &naos_ble_allowlist, sizeof(naos_ble_allowlist)));
+  ESP_ERROR_CHECK(nvs_commit(naos_ble_handle));
+  ESP_ERROR_CHECK(esp_ble_gap_clear_whitelist());
+}
