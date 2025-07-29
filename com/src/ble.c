@@ -16,17 +16,19 @@
 #include "params.h"
 #include "utils.h"
 
+#define NAOS_BLE_SIGNAL_INIT 1
+#define NAOS_BLE_SIGNAL_CONN 2
+#define NAOS_BLE_ALLOWLIST_SIZE 5
+#define NAOS_BLE_ALLOWLIST_KEY "allowlist"
+#define NAOS_BLE_NUM_CHARS 1
+#define NAOS_BLE_MAX_CONNECTIONS 8
+
 typedef struct {
   uint16_t id;
   uint16_t mtu;
   bool congested;
   bool connected;
 } naos_ble_conn_t;
-
-#define NAOS_BLE_SIGNAL_INIT 1
-#define NAOS_BLE_SIGNAL_CONN 2
-
-static naos_signal_t naos_ble_signal;
 
 static esp_ble_adv_params_t naos_ble_adv_params = {
     .adv_int_min = 0x20,  // 20 ms
@@ -69,22 +71,17 @@ static naos_ble_gatts_char_t naos_ble_char_msg = {
     .max_write_len = 512,
 };
 
-#define NAOS_BLE_WL_SIZE 5
-#define NAOS_BLE_WL_KEY "whitelist"
-
-static struct {
-  esp_bd_addr_t addrs[NAOS_BLE_WL_SIZE];
-  size_t next;
-} naos_ble_whitelist = {0};
-
-#define NAOS_BLE_NUM_CHARS 1
-#define NAOS_BLE_MAX_CONNECTIONS 8
-
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
     &naos_ble_char_msg,
 };
 
+static struct {
+  esp_bd_addr_t addrs[NAOS_BLE_ALLOWLIST_SIZE];
+  size_t next;
+} naos_ble_allowlist = {0};
+
 static naos_ble_config_t naos_ble_config = {0};
+static naos_signal_t naos_ble_signal;
 static nvs_handle_t naos_ble_handle = 0;
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
 static uint8_t naos_ble_msg_channel_id = 0;
@@ -283,32 +280,31 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
       if (naos_ble_config.pseudo_pairing) {
         // log info
-        ESP_LOGI(NAOS_LOG_TAG, "adding device to whitelist: %02x:%02x:%02x:%02x:%02x:%02x", p->connect.remote_bda[0],
+        ESP_LOGI(NAOS_LOG_TAG, "adding device to allowlist: %02x:%02x:%02x:%02x:%02x:%02x", p->connect.remote_bda[0],
                  p->connect.remote_bda[1], p->connect.remote_bda[2], p->connect.remote_bda[3], p->connect.remote_bda[4],
                  p->connect.remote_bda[5]);
 
-        // add device to controller whitelist
+        // add device to controller allowlist
         ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, p->connect.remote_bda, BLE_ADDR_TYPE_PUBLIC));
 
-        // check if address is already in persistent whitelist
+        // check if address is already in persistent allowlist
         bool found = false;
-        for (size_t j = 0; j < NAOS_BLE_WL_SIZE; j++) {
-          if (memcmp(naos_ble_whitelist.addrs[j], p->connect.remote_bda, sizeof(esp_bd_addr_t)) == 0) {
+        for (size_t j = 0; j < NAOS_BLE_ALLOWLIST_SIZE; j++) {
+          if (memcmp(naos_ble_allowlist.addrs[j], p->connect.remote_bda, sizeof(esp_bd_addr_t)) == 0) {
             found = true;
             break;
           }
         }
 
         // log info
-        ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gatts_handler: device found in persistent whitelist: %s",
-                 found ? "yes" : "no");
+        ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gatts_handler: device found in allowlist: %s", found ? "yes" : "no");
 
-        // if not found, add to persistent whitelist
+        // if not found, add to allowlist
         if (!found) {
-          memcpy(naos_ble_whitelist.addrs[naos_ble_whitelist.next], p->connect.remote_bda, sizeof(esp_bd_addr_t));
-          naos_ble_whitelist.next = (naos_ble_whitelist.next + 1) % NAOS_BLE_WL_SIZE;
+          memcpy(naos_ble_allowlist.addrs[naos_ble_allowlist.next], p->connect.remote_bda, sizeof(esp_bd_addr_t));
+          naos_ble_allowlist.next = (naos_ble_allowlist.next + 1) % NAOS_BLE_ALLOWLIST_SIZE;
           ESP_ERROR_CHECK(
-              nvs_set_blob(naos_ble_handle, NAOS_BLE_WL_KEY, &naos_ble_whitelist, sizeof(naos_ble_whitelist)));
+              nvs_set_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, &naos_ble_allowlist, sizeof(naos_ble_allowlist)));
           ESP_ERROR_CHECK(nvs_commit(naos_ble_handle));
         }
       }
@@ -621,22 +617,22 @@ void naos_ble_init(naos_ble_config_t cfg) {
   // open nvs namespace
   ESP_ERROR_CHECK(nvs_open("naos-ble", NVS_READWRITE, &naos_ble_handle));
 
-  // restore whitelist if pseudo pairing is enabled
+  // restore allowlist if pseudo pairing is enabled
   if (naos_ble_config.pseudo_pairing) {
     size_t size = 0;
-    esp_err_t err = nvs_get_blob(naos_ble_handle, NAOS_BLE_WL_KEY, NULL, &size);
+    esp_err_t err = nvs_get_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, NULL, &size);
     if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
       ESP_ERROR_CHECK(err);
     }
-    if (size == sizeof(naos_ble_whitelist)) {
-      ESP_ERROR_CHECK(nvs_get_blob(naos_ble_handle, NAOS_BLE_WL_KEY, &naos_ble_whitelist, &size));
-      for (size_t i = 0; i < NAOS_BLE_WL_SIZE; i++) {
+    if (size == sizeof(naos_ble_allowlist)) {
+      ESP_ERROR_CHECK(nvs_get_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, &naos_ble_allowlist, &size));
+      for (size_t i = 0; i < NAOS_BLE_ALLOWLIST_SIZE; i++) {
         esp_bd_addr_t zero = {0};
-        if (memcmp(naos_ble_whitelist.addrs[i], zero, sizeof(esp_bd_addr_t)) != 0) {
-          ESP_LOGI(NAOS_LOG_TAG, "naos_ble_init: restoring whitelist address %02x:%02x:%02x:%02x:%02x:%02x",
-                   naos_ble_whitelist.addrs[i][0], naos_ble_whitelist.addrs[i][1], naos_ble_whitelist.addrs[i][2],
-                   naos_ble_whitelist.addrs[i][3], naos_ble_whitelist.addrs[i][4], naos_ble_whitelist.addrs[i][5]);
-          ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, naos_ble_whitelist.addrs[i], BLE_ADDR_TYPE_PUBLIC));
+        if (memcmp(naos_ble_allowlist.addrs[i], zero, sizeof(esp_bd_addr_t)) != 0) {
+          ESP_LOGI(NAOS_LOG_TAG, "naos_ble_init: restoring allowlist entry %02x:%02x:%02x:%02x:%02x:%02x",
+                   naos_ble_allowlist.addrs[i][0], naos_ble_allowlist.addrs[i][1], naos_ble_allowlist.addrs[i][2],
+                   naos_ble_allowlist.addrs[i][3], naos_ble_allowlist.addrs[i][4], naos_ble_allowlist.addrs[i][5]);
+          ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, naos_ble_allowlist.addrs[i], BLE_ADDR_TYPE_PUBLIC));
         }
       }
     }

@@ -6,7 +6,7 @@
 
 typedef struct {
   /**
-   * Whether to use the whitelist feature to remember connected devices and
+   * Whether to use the allowlist feature to remember connected devices and
    * allow them to reconnect while denying scan/connect requests from others.
    *
    * @see naos_ble_start_pairing()
