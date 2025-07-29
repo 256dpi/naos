@@ -15,8 +15,8 @@ typedef struct {
   bool pairing;
 
   /**
-   * Whether to use the device bonding feature to establish a long-term secure
-   * connection with a device, allowing it to reconnect without re-pairing.
+   * Whether to use the peerlist feature to establish a long-term secure
+   * connection with a device, allowing it to reconnect without pairing.
    *
    * Note: If either side "forgets" a peer, the connection might fail. Remove
    * the obsolete device from the bonding list on the client, and clear the
@@ -60,27 +60,27 @@ void naos_ble_enable_pairing();
 void naos_ble_disable_pairing();
 
 /**
- * Counts the number of entries in the allowlist.
+ * Counts the number of entries in the allowlist (pairings).
  *
  * @return The number of entries in the allowlist.
  */
 int naos_ble_allowlist_length();
 
 /**
- * Removes all entries from the allowlist.
+ * Removes all entries from the allowlist (pairings).
  */
 void naos_ble_allowlist_clear();
 
 /**
- * Counts the number of bonded devices.
+ * Counts the number of entries in the peerlist (bonds).
  *
- * @return The number of bonded devices.
+ * @return The number of entries in the peerlist.
  */
-int naos_ble_bonding_length();
+int naos_ble_peerlist_length();
 
 /**
- * Clears the bonding list.
+ * Remove all entries from the peerlist (bonds).
  */
-void naos_ble_bonding_clear();
+void naos_ble_peerlist_clear();
 
 #endif  // NAOS_BLE_H
