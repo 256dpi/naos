@@ -42,4 +42,11 @@ void naos_ble_disable_pairing();
  */
 bool naos_ble_await_connection(int32_t timeout_ms);
 
+/**
+ * Counts the number of active BLE connections.
+ *
+ * @return The number of active BLE connections.
+ */
+int naos_ble_num_connections();
+
 #endif  // NAOS_BLE_H
