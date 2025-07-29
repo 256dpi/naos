@@ -649,6 +649,26 @@ void naos_ble_init(naos_ble_config_t cfg) {
   });
 }
 
+bool naos_ble_await(int32_t timeout_ms) {
+  // clear signal
+  naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_CONN, true);
+
+  // await connection
+  return naos_await(naos_ble_signal, NAOS_BLE_SIGNAL_CONN, true, timeout_ms);
+}
+
+int naos_ble_connections() {
+  // count connections
+  int count = 0;
+  for (int i = 0; i < NAOS_BLE_MAX_CONNECTIONS; i++) {
+    if (naos_ble_conns[i].connected) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
 void naos_ble_enable_pairing() {
   // check flag
   if (!naos_ble_config.pseudo_pairing) {
@@ -671,26 +691,6 @@ void naos_ble_disable_pairing() {
   // set closed advertisement filter policy
   naos_ble_adv_params.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST;
   ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
-}
-
-bool naos_ble_await_connection(int32_t timeout_ms) {
-  // clear signal
-  naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_CONN, true);
-
-  // await connection
-  return naos_await(naos_ble_signal, NAOS_BLE_SIGNAL_CONN, true, timeout_ms);
-}
-
-int naos_ble_num_connections() {
-  // count connections
-  int count = 0;
-  for (int i = 0; i < NAOS_BLE_MAX_CONNECTIONS; i++) {
-    if (naos_ble_conns[i].connected) {
-      count++;
-    }
-  }
-
-  return count;
 }
 
 int naos_ble_allowlist_length() {

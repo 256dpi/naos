@@ -26,6 +26,20 @@ typedef struct {
 void naos_ble_init(naos_ble_config_t cfg);
 
 /**
+ * Wait for a new connection (all modes).
+ *
+ * @return Whether a connection was established or not.
+ */
+bool naos_ble_await(int32_t timeout_ms);
+
+/**
+ * Counts the number of active connections.
+ *
+ * @return The number of active connections.
+ */
+int naos_ble_connections();
+
+/**
  * Enable pairing in pseudo-pairing mode.
  */
 void naos_ble_enable_pairing();
@@ -34,20 +48,6 @@ void naos_ble_enable_pairing();
  * Disable pairing in pseudo-pairing mode.
  */
 void naos_ble_disable_pairing();
-
-/**
- * Wait for a new connection (all modes).
- *
- * @return Whether a connection was established or not.
- */
-bool naos_ble_await_connection(int32_t timeout_ms);
-
-/**
- * Counts the number of active connections.
- *
- * @return The number of active connections.
- */
-int naos_ble_num_connections();
 
 /**
  * Counts the number of entries in the allowlist.
