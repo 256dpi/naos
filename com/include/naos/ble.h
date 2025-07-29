@@ -6,9 +6,13 @@
 
 typedef struct {
   /**
-   * Whether to use manual (on-demand) advertisement.
+   * Whether to use the whitelist feature to remember connected devices and
+   * allow them to reconnect while denying scan/connect requests from others.
+   *
+   * @see naos_ble_start_pairing()
+   * @see naos_ble_stop_pairing()
    */
-  bool on_demand;
+  bool pseudo_pairing;
 
   /**
    * Whether to skip bluetooth initialization.
@@ -22,14 +26,14 @@ typedef struct {
 void naos_ble_init(naos_ble_config_t cfg);
 
 /**
- * Start manual advertisement (on-demand mode).
+ * Enable pairing in pseudo-pairing mode.
  */
-void naos_ble_start_advertisement();
+void naos_ble_enable_pairing();
 
 /**
- * Stop manual advertisement (on-demand mode).
+ * Disable pairing in pseudo-pairing mode.
  */
-void naos_ble_stop_advertisement();
+void naos_ble_disable_pairing();
 
 /**
  * Wait for a new connection (all modes).

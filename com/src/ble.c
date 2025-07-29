@@ -10,6 +10,7 @@
 #include <esp_gatt_defs.h>
 #include <esp_gatts_api.h>
 #include <esp_gatt_common_api.h>
+#include <nvs.h>
 #include <string.h>
 
 #include "params.h"
@@ -68,6 +69,14 @@ static naos_ble_gatts_char_t naos_ble_char_msg = {
     .max_write_len = 512,
 };
 
+#define NAOS_BLE_WL_SIZE 5
+#define NAOS_BLE_WL_KEY "whitelist"
+
+static struct {
+  esp_bd_addr_t addrs[NAOS_BLE_WL_SIZE];
+  size_t next;
+} naos_ble_whitelist = {0};
+
 #define NAOS_BLE_NUM_CHARS 1
 #define NAOS_BLE_MAX_CONNECTIONS 8
 
@@ -76,6 +85,7 @@ static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
 };
 
 static naos_ble_config_t naos_ble_config = {0};
+static nvs_handle_t naos_ble_handle = 0;
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
 static uint8_t naos_ble_msg_channel_id = 0;
 
@@ -83,9 +93,7 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
   switch (e) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT: {
       // begin advertising
-      if (!naos_ble_config.on_demand) {
-        ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
-      }
+      ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
 
       break;
     }
@@ -273,10 +281,40 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       // trigger signal
       naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_CONN, false);
 
-      // restart advertisement
-      if (!naos_ble_config.on_demand) {
-        ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+      if (naos_ble_config.pseudo_pairing) {
+        // log info
+        ESP_LOGI(NAOS_LOG_TAG, "adding device to whitelist: %02x:%02x:%02x:%02x:%02x:%02x", p->connect.remote_bda[0],
+                 p->connect.remote_bda[1], p->connect.remote_bda[2], p->connect.remote_bda[3], p->connect.remote_bda[4],
+                 p->connect.remote_bda[5]);
+
+        // add device to controller whitelist
+        ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, p->connect.remote_bda, BLE_ADDR_TYPE_PUBLIC));
+
+        // check if address is already in persistent whitelist
+        bool found = false;
+        for (size_t j = 0; j < NAOS_BLE_WL_SIZE; j++) {
+          if (memcmp(naos_ble_whitelist.addrs[j], p->connect.remote_bda, sizeof(esp_bd_addr_t)) == 0) {
+            found = true;
+            break;
+          }
+        }
+
+        // log info
+        ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gatts_handler: device found in persistent whitelist: %s",
+                 found ? "yes" : "no");
+
+        // if not found, add to persistent whitelist
+        if (!found) {
+          memcpy(naos_ble_whitelist.addrs[naos_ble_whitelist.next], p->connect.remote_bda, sizeof(esp_bd_addr_t));
+          naos_ble_whitelist.next = (naos_ble_whitelist.next + 1) % NAOS_BLE_WL_SIZE;
+          ESP_ERROR_CHECK(
+              nvs_set_blob(naos_ble_handle, NAOS_BLE_WL_KEY, &naos_ble_whitelist, sizeof(naos_ble_whitelist)));
+          ESP_ERROR_CHECK(nvs_commit(naos_ble_handle));
+        }
       }
+
+      // restart advertisement
+      ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
 
       break;
     }
@@ -435,9 +473,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       naos_ble_conns[p->disconnect.conn_id] = (naos_ble_conn_t){0};
 
       // restart advertisement
-      if (!naos_ble_config.on_demand) {
-        ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
-      }
+      ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
 
       break;
     }
@@ -557,6 +593,11 @@ void naos_ble_init(naos_ble_config_t cfg) {
   naos_ble_adv_data.service_uuid_len = ESP_UUID_LEN_128;
   naos_ble_adv_data.p_service_uuid = naos_ble_gatts_profile.service_id.id.uuid.uuid.uuid128;
 
+  // adjust the advertisement filter policy
+  if (cfg.pseudo_pairing) {
+    naos_ble_adv_params.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST;
+  }
+
   // register GATTS handler
   ESP_ERROR_CHECK(esp_ble_gatts_register_callback(naos_ble_gatts_handler));
 
@@ -577,6 +618,30 @@ void naos_ble_init(naos_ble_config_t cfg) {
   // set device name
   naos_ble_set_name();
 
+  // open nvs namespace
+  ESP_ERROR_CHECK(nvs_open("naos-ble", NVS_READWRITE, &naos_ble_handle));
+
+  // restore whitelist if pseudo pairing is enabled
+  if (naos_ble_config.pseudo_pairing) {
+    size_t size = 0;
+    esp_err_t err = nvs_get_blob(naos_ble_handle, NAOS_BLE_WL_KEY, NULL, &size);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+      ESP_ERROR_CHECK(err);
+    }
+    if (size == sizeof(naos_ble_whitelist)) {
+      ESP_ERROR_CHECK(nvs_get_blob(naos_ble_handle, NAOS_BLE_WL_KEY, &naos_ble_whitelist, &size));
+      for (size_t i = 0; i < NAOS_BLE_WL_SIZE; i++) {
+        esp_bd_addr_t zero = {0};
+        if (memcmp(naos_ble_whitelist.addrs[i], zero, sizeof(esp_bd_addr_t)) != 0) {
+          ESP_LOGI(NAOS_LOG_TAG, "naos_ble_init: restoring whitelist address %02x:%02x:%02x:%02x:%02x:%02x",
+                   naos_ble_whitelist.addrs[i][0], naos_ble_whitelist.addrs[i][1], naos_ble_whitelist.addrs[i][2],
+                   naos_ble_whitelist.addrs[i][3], naos_ble_whitelist.addrs[i][4], naos_ble_whitelist.addrs[i][5]);
+          ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, naos_ble_whitelist.addrs[i], BLE_ADDR_TYPE_PUBLIC));
+        }
+      }
+    }
+  }
+
   // handle parameters
   naos_params_subscribe(naos_ble_param_handler);
 
@@ -588,8 +653,15 @@ void naos_ble_init(naos_ble_config_t cfg) {
   });
 }
 
-void naos_ble_start_advertisement() {
-  // start advertising
+void naos_ble_enable_pairing() {
+  // check flag
+  if (!naos_ble_config.pseudo_pairing) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+    return;
+  }
+
+  // set open advertisement filter policy
+  naos_ble_adv_params.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY;
   ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
 }
 
@@ -601,7 +673,14 @@ bool naos_ble_await_connection(int32_t timeout_ms) {
   return naos_await(naos_ble_signal, NAOS_BLE_SIGNAL_CONN, true, timeout_ms);
 }
 
-void naos_ble_stop_advertisement() {
-  // stop advertising
-  ESP_ERROR_CHECK(esp_ble_gap_stop_advertising());
+void naos_ble_disable_pairing() {
+  // check flag
+  if (!naos_ble_config.pseudo_pairing) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+    return;
+  }
+
+  // set closed advertisement filter policy
+  naos_ble_adv_params.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST;
+  ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
 }
