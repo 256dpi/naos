@@ -12,7 +12,7 @@ typedef struct {
    * @see naos_ble_start_pairing()
    * @see naos_ble_stop_pairing()
    */
-  bool pseudo_pairing;
+  bool pairing;
 
   /**
    * Whether to use the device bonding feature to establish a long-term secure
@@ -46,12 +46,12 @@ bool naos_ble_await(int32_t timeout_ms);
 int naos_ble_connections();
 
 /**
- * Enable pairing in pseudo-pairing mode.
+ * Enable pairing in pairing mode.
  */
 void naos_ble_enable_pairing();
 
 /**
- * Disable pairing in pseudo-pairing mode.
+ * Disable pairing in pairing mode.
  */
 void naos_ble_disable_pairing();
 

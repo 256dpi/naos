@@ -342,7 +342,7 @@ void app_main() {
   naos_init(&config);
   naos_cpu_init();
   naos_ble_init((naos_ble_config_t){
-      .pseudo_pairing = false,
+      .pairing = false,
       .bonding = false,
   });
   naos_wifi_init();

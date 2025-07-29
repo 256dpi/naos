@@ -312,7 +312,8 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       // trigger signal
       naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_CONN, false);
 
-      if (naos_ble_config.pseudo_pairing) {
+      // add device to allowlist if pairing is enabled
+      if (naos_ble_config.pairing) {
         // log info
         ESP_LOGI(NAOS_LOG_TAG,
                  "naos_ble_gatts_handler: adding address to allowlist (type=%d addr=" NAOS_BLE_ADDR_FMT ")",
@@ -628,7 +629,7 @@ void naos_ble_init(naos_ble_config_t cfg) {
   naos_ble_adv_data.p_service_uuid = naos_ble_gatts_profile.service_id.id.uuid.uuid.uuid128;
 
   // adjust the advertisement filter policy
-  if (cfg.pseudo_pairing) {
+  if (cfg.pairing) {
     naos_ble_adv_params.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST;
   }
 
@@ -669,8 +670,8 @@ void naos_ble_init(naos_ble_config_t cfg) {
   // open nvs namespace
   ESP_ERROR_CHECK(nvs_open("naos-ble", NVS_READWRITE, &naos_ble_handle));
 
-  // restore allowlist if pseudo pairing is enabled
-  if (naos_ble_config.pseudo_pairing) {
+  // restore allowlist if pairing is enabled
+  if (naos_ble_config.pairing) {
     size_t size = 0;
     esp_err_t err = nvs_get_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, NULL, &size);
     if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
@@ -722,8 +723,8 @@ int naos_ble_connections() {
 }
 
 void naos_ble_enable_pairing() {
-  // check flag
-  if (!naos_ble_config.pseudo_pairing) {
+  // check if pairing is enabled
+  if (!naos_ble_config.pairing) {
     ESP_ERROR_CHECK(ESP_FAIL);
     return;
   }
@@ -734,8 +735,8 @@ void naos_ble_enable_pairing() {
 }
 
 void naos_ble_disable_pairing() {
-  // check flag
-  if (!naos_ble_config.pseudo_pairing) {
+  // check if pairing is enabled
+  if (!naos_ble_config.pairing) {
     ESP_ERROR_CHECK(ESP_FAIL);
     return;
   }
