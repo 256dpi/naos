@@ -124,6 +124,8 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
                "timeout=%d)",
                p->update_conn_params.min_int, p->update_conn_params.max_int, p->update_conn_params.latency,
                p->update_conn_params.conn_int, p->update_conn_params.timeout);
+
+      break;
     }
 
     case ESP_GAP_BLE_SEC_REQ_EVT: {
@@ -144,12 +146,17 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
     case ESP_GAP_BLE_KEY_EVT: {
       // log key events
       ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gap_handler: key event (type=%d)", p->ble_security.ble_key.key_type);
+
+      break;
     }
 
     case ESP_GAP_BLE_AUTH_CMPL_EVT: {
       // log authentication completion
-      if (p->ble_security.auth_cmpl.success && p->ble_security.auth_cmpl.auth_mode == ESP_LE_AUTH_BOND) {
-        ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gap_handler: authentication complete");
+      if (p->ble_security.auth_cmpl.success) {
+        ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gap_handler: authentication complete (mode=%d)",
+                 p->ble_security.auth_cmpl.auth_mode);
+      } else {
+        ESP_LOGW(NAOS_LOG_TAG, "naos_ble_gap_handler: authentication failed");
       }
 
       break;
