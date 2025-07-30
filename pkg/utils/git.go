@@ -3,6 +3,7 @@ package utils
 import (
 	"io"
 	"os/exec"
+	"strings"
 )
 
 // Clone will check out the provided repository set it to the specified version
@@ -108,4 +109,20 @@ func Apply(repo, patch string, out io.Writer) error {
 	}
 
 	return nil
+}
+
+// Describe will return the git version description of the provided repository.
+func Describe(repo string) (string, error) {
+	// get git description
+	cmd := exec.Command("git", "describe", "--tags", "--long", "--dirty")
+	cmd.Dir = repo
+	buf, err := cmd.Output()
+	if err != nil {
+		if strings.Contains(string(buf), "fatal: not a git repository") {
+			return "", nil
+		}
+		return "", err
+	}
+
+	return string(buf), nil
 }

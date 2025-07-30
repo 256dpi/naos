@@ -89,6 +89,17 @@ func Build(naosPath, appName, target string, overrides map[string]string, files 
 		return fmt.Errorf("failed to update project name: %w", err)
 	}
 
+	// update project version
+	appVersion, err := utils.Describe(filepath.Join(Directory(naosPath), "main", "src"))
+	if err != nil {
+		return fmt.Errorf("failed to describe app version: %w", err)
+	}
+	if appVersion != "" {
+		err = utils.Update(filepath.Join(Directory(naosPath), "version.txt"), appVersion)
+	} else {
+		err = os.Remove(filepath.Join(Directory(naosPath), "version.txt"))
+	}
+
 	// prepare files contents
 	var filesContent = "COMPONENT_EMBED_FILES :="
 	var filesContent2 string
