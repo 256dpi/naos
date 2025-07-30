@@ -130,5 +130,15 @@ func Describe(repo, tagPrefix string) (string, error) {
 		return "", err
 	}
 
-	return string(buf), nil
+	// get version
+	version := strings.TrimSpace(string(buf))
+
+	// strip prefix if it exists
+	if tagPrefix != "" {
+		if strings.HasPrefix(version, tagPrefix) {
+			version = strings.TrimPrefix(version, tagPrefix)
+		}
+	}
+
+	return version, nil
 }
