@@ -1,6 +1,6 @@
 {
   "version": "origin/master",
-  "target": "esp32",
+  "target": "esp32s3",
   "embeds": [
     "foo.txt"
   ],

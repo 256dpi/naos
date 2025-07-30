@@ -13,8 +13,8 @@ static naos_param_t params[] = {
 };
 
 static naos_config_t config = {
-    .device_type = "foo",
-    .device_version = "0.1.0",
+    .app_name = "foo",
+    .app_version = "0.1.0",
     .parameters = params,
     .num_parameters = 2,
 };
