@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.7)
 
 # you can set your own project name
-project(naos-project)
+project(test-project)
 
 # this should not be changed
 set(CMAKE_C_STANDARD 99)

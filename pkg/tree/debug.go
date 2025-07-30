@@ -8,7 +8,7 @@ import (
 
 // ParseCoredump will parse the provided raw coredump data and return a
 // human-readable representation.
-func ParseCoredump(naosPath string, coredump []byte) ([]byte, error) {
+func ParseCoredump(naosPath, appName string, coredump []byte) ([]byte, error) {
 	// get paths
 	espCoredump := filepath.Join(IDFDirectory(naosPath), "components", "espcoredump", "espcoredump.py")
 
@@ -37,7 +37,7 @@ func ParseCoredump(naosPath string, coredump []byte) ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	// parse coredump
-	err = Exec(naosPath, buf, nil, false, false, espCoredump, "info_corefile", "-t", "raw", "-c", file.Name(), AppELF(naosPath))
+	err = Exec(naosPath, buf, nil, false, false, espCoredump, "info_corefile", "-t", "raw", "-c", file.Name(), AppELF(naosPath, appName))
 	if err != nil {
 		return nil, err
 	}

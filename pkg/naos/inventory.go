@@ -23,6 +23,7 @@ type Frameworks struct {
 
 // An Inventory represents the contents of the inventory file.
 type Inventory struct {
+	Name       string                `json:"name"`
 	Version    string                `json:"version"`
 	Target     string                `json:"target"`
 	BaudRate   string                `json:"baud_rate,omitempty"`
@@ -37,6 +38,7 @@ type Inventory struct {
 func NewInventory() *Inventory {
 	return &Inventory{
 		Version:    "master",
+		Name:       "my-device",
 		Target:     "esp32",
 		Embeds:     make([]string, 0),
 		Overrides:  make(map[string]string),

@@ -72,10 +72,21 @@ coredump, data, coredump, ,        64K
 }
 
 // Build will build the project.
-func Build(naosPath, target string, overrides map[string]string, files []string, partitions *Partitions, clean, reconfigure, appOnly bool, out io.Writer) error {
+func Build(naosPath, appName, target string, overrides map[string]string, files []string, partitions *Partitions, clean, reconfigure, appOnly bool, out io.Writer) error {
 	// ensure target
 	if target == "" {
 		target = "esp32"
+	}
+
+	// update project name
+	var err error
+	if appName != "" {
+		err = utils.Update(filepath.Join(Directory(naosPath), "project-name.txt"), appName)
+	} else {
+		err = os.Remove(filepath.Join(Directory(naosPath), "project-name.txt"))
+	}
+	if err != nil {
+		return fmt.Errorf("failed to update project name: %w", err)
 	}
 
 	// prepare files contents
@@ -89,7 +100,7 @@ func Build(naosPath, target string, overrides map[string]string, files []string,
 
 	// update files
 	utils.Log(out, "Updating files...")
-	err := os.WriteFile(filepath.Join(Directory(naosPath), "main", "files.list"), []byte(filesContent2), 0644)
+	err = os.WriteFile(filepath.Join(Directory(naosPath), "main", "files.list"), []byte(filesContent2), 0644)
 	if err != nil {
 		return err
 	}
@@ -242,13 +253,22 @@ func Build(naosPath, target string, overrides map[string]string, files []string,
 }
 
 // AppBinary will return the path to the built app binary.
-func AppBinary(naosPath string) string {
-	return filepath.Join(Directory(naosPath), "build", "naos-project.bin")
+func AppBinary(naosPath, appName string) string {
+	// ensure app name
+	if appName == "" {
+		appName = "naos-project"
+	}
+	return filepath.Join(Directory(naosPath), "build", appName+".bin")
 }
 
 // AppELF will return the path to the built app ELF file.
-func AppELF(naosPath string) string {
-	return filepath.Join(Directory(naosPath), "build", "naos-project.elf")
+func AppELF(naosPath, appName string) string {
+	// ensure app name
+	if appName == "" {
+		appName = "naos-project"
+	}
+
+	return filepath.Join(Directory(naosPath), "build", appName+".elf")
 }
 
 func hasOverrides(sdkconfig string, overrides map[string]string) bool {

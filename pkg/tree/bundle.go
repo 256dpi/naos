@@ -47,7 +47,7 @@ type flasherArgsItem struct {
 	File   string `json:"file"`
 }
 
-func Bundle(naosPath string, file string, out io.Writer) error {
+func Bundle(naosPath, appName, file string, out io.Writer) error {
 	// ensure file name
 	if file == "" {
 		file = "bundle.zip"
@@ -68,7 +68,7 @@ func Bundle(naosPath string, file string, out io.Writer) error {
 	bootLoaderBinary := filepath.Join(Directory(naosPath), "build", "bootloader", "bootloader.bin")
 	partitionsBinary := filepath.Join(Directory(naosPath), "build", "partition_table", "partition-table.bin")
 	otaDataBinary := filepath.Join(Directory(naosPath), "build", "ota_data_initial.bin")
-	projectBinary := AppBinary(naosPath)
+	projectBinary := AppBinary(naosPath, appName)
 
 	// get binary sizes
 	bootLoaderStat, err := os.Stat(bootLoaderBinary)

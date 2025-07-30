@@ -9,7 +9,7 @@ import (
 )
 
 // Flash will flash the project using the specified serial port.
-func Flash(naosPath, target, port, baudRate string, erase, appOnly, alt bool, out io.Writer) error {
+func Flash(naosPath, appName, target, port, baudRate string, erase, appOnly, alt bool, out io.Writer) error {
 	// ensure target
 	if target == "" {
 		target = "esp32"
@@ -25,7 +25,7 @@ func Flash(naosPath, target, port, baudRate string, erase, appOnly, alt bool, ou
 		}
 	}
 	bootLoaderBinary := filepath.Join(Directory(naosPath), "build", "bootloader", "bootloader.bin")
-	projectBinary := AppBinary(naosPath)
+	projectBinary := AppBinary(naosPath, appName)
 	partitionsBinary := filepath.Join(Directory(naosPath), "build", "partition_table", "partition-table.bin")
 
 	// prepare erase flash command

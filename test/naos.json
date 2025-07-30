@@ -1,5 +1,6 @@
 {
   "version": "origin/master",
+  "name": "test-project",
   "target": "esp32s3",
   "embeds": [
     "foo.txt"

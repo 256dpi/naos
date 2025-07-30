@@ -220,7 +220,7 @@ func (p *Project) Build(overrides map[string]string, clean, reconfigure, appOnly
 		or[k] = v
 	}
 
-	return tree.Build(p.Tree(), p.Inventory.Target, or, p.Inventory.Embeds, p.Inventory.Partitions, clean, reconfigure, appOnly, out)
+	return tree.Build(p.Tree(), p.Inventory.Name, p.Inventory.Target, or, p.Inventory.Embeds, p.Inventory.Partitions, clean, reconfigure, appOnly, out)
 }
 
 // BuildTrace will build the project with tracing enabled.
@@ -316,7 +316,7 @@ func (p *Project) BuildTrace(cpuCore, baudRate string, clean, reconfigure, appOn
 		or[k] = v
 	}
 
-	return tree.Build(p.Tree(), p.Inventory.Target, or, p.Inventory.Embeds, p.Inventory.Partitions, clean, reconfigure, appOnly, out)
+	return tree.Build(p.Tree(), p.Inventory.Name, p.Inventory.Target, or, p.Inventory.Embeds, p.Inventory.Partitions, clean, reconfigure, appOnly, out)
 }
 
 // Flash will flash the project to the attached device.
@@ -334,7 +334,7 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly, alt bool, 
 		device = utils.FindPort(out)
 	}
 
-	return tree.Flash(p.Tree(), p.Inventory.Target, device, baudRate, erase, appOnly, alt, out)
+	return tree.Flash(p.Tree(), p.Inventory.Name, p.Inventory.Target, device, baudRate, erase, appOnly, alt, out)
 }
 
 // Attach will attach to the attached device.
@@ -397,7 +397,7 @@ func (p *Project) Format(out io.Writer) error {
 
 // Bundle will create a bundle of the project.
 func (p *Project) Bundle(file string, out io.Writer) error {
-	return tree.Bundle(p.Tree(), file, out)
+	return tree.Bundle(p.Tree(), p.Inventory.Name, file, out)
 }
 
 // Debug will request coredumps from the devices that match the supplied glob
@@ -421,7 +421,7 @@ func (p *Project) Debug(pattern string, delete bool, duration time.Duration, out
 	// go through all coredumps
 	for device, coredump := range coredumps {
 		// parse coredump
-		data, err := tree.ParseCoredump(p.Tree(), coredump)
+		data, err := tree.ParseCoredump(p.Tree(), p.Inventory.Name, coredump)
 		if err != nil {
 			return err
 		}
@@ -445,7 +445,7 @@ func (p *Project) Debug(pattern string, delete bool, duration time.Duration, out
 // state or progress.
 func (p *Project) Update(version, pattern string, jobs int, timeout time.Duration, callback func(*Device, *fleet.UpdateStatus)) error {
 	// get binary
-	bytes, err := os.ReadFile(tree.AppBinary(p.Tree()))
+	bytes, err := os.ReadFile(tree.AppBinary(p.Tree(), p.Inventory.Name))
 	if err != nil {
 		return err
 	}
