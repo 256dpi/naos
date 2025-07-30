@@ -1,6 +1,6 @@
 {
   "version": "origin/master",
-  "name": "test-project",
+  "name": "naos-test",
   "target": "esp32s3",
   "embeds": [
     "foo.txt"
