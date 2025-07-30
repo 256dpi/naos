@@ -397,7 +397,7 @@ func (p *Project) Format(out io.Writer) error {
 
 // Bundle will create a bundle of the project.
 func (p *Project) Bundle(file string, out io.Writer) error {
-	return tree.Bundle(p.Tree(), p.Inventory.Name, file, out)
+	return tree.Bundle(p.Tree(), file, out)
 }
 
 // Debug will request coredumps from the devices that match the supplied glob

@@ -12,6 +12,8 @@ import (
 )
 
 type bundleManifest struct {
+	Name      string         `json:"name"`
+	Version   string         `json:"version"`
 	Target    string         `json:"target"`
 	FlashMode string         `json:"flashMode"`
 	FlashSize string         `json:"flashSize"`
@@ -27,19 +29,22 @@ type bundleRegion struct {
 	Fill   uint8  `json:"fill,omitempty"`
 }
 
+type projectDescription struct {
+	Name    string `json:"project_name"`
+	Version string `json:"project_version"`
+	Target  string `json:"target"`
+}
+
 type flasherArgs struct {
-	FlashSettings struct {
-		FlashMode string `json:"flash_mode"`
-		FlashSize string `json:"flash_size"`
-		FlashFreq string `json:"flash_freq"`
+	Flash struct {
+		Mode string `json:"flash_mode"`
+		Size string `json:"flash_size"`
+		Freq string `json:"flash_freq"`
 	} `json:"flash_settings"`
-	Bootloader       flasherArgsItem `json:"bootloader"`
-	App              flasherArgsItem `json:"app"`
-	PartitionTable   flasherArgsItem `json:"partition-table"`
-	OtaData          flasherArgsItem `json:"otadata"`
-	ExtraEsptoolArgs struct {
-		Chip string `json:"chip"`
-	} `json:"extra_esptool_args"`
+	Bootloader     flasherArgsItem `json:"bootloader"`
+	Application    flasherArgsItem `json:"app"`
+	PartitionTable flasherArgsItem `json:"partition-table"`
+	OTAData        flasherArgsItem `json:"otadata"`
 }
 
 type flasherArgsItem struct {
@@ -47,14 +52,26 @@ type flasherArgsItem struct {
 	File   string `json:"file"`
 }
 
-func Bundle(naosPath, appName, file string, out io.Writer) error {
+func Bundle(naosPath, file string, out io.Writer) error {
 	// ensure file name
 	if file == "" {
 		file = "bundle.zip"
 	}
 
+	// read project description
+	descFile := filepath.Join(Directory(naosPath), "build", "project_description.json")
+	data, err := os.ReadFile(descFile)
+	if err != nil {
+		return fmt.Errorf("failed to read project description: %w", err)
+	}
+	var desc projectDescription
+	err = json.Unmarshal(data, &desc)
+	if err != nil {
+		return fmt.Errorf("failed to decode project description: %w", err)
+	}
+
 	// read flasher arguments
-	data, err := os.ReadFile(filepath.Join(Directory(naosPath), "build", "flasher_args.json"))
+	data, err = os.ReadFile(filepath.Join(Directory(naosPath), "build", "flasher_args.json"))
 	if err != nil {
 		return fmt.Errorf("failed to read flasher arguments: %w", err)
 	}
@@ -68,7 +85,7 @@ func Bundle(naosPath, appName, file string, out io.Writer) error {
 	bootLoaderBinary := filepath.Join(Directory(naosPath), "build", "bootloader", "bootloader.bin")
 	partitionsBinary := filepath.Join(Directory(naosPath), "build", "partition_table", "partition-table.bin")
 	otaDataBinary := filepath.Join(Directory(naosPath), "build", "ota_data_initial.bin")
-	projectBinary := AppBinary(naosPath, appName)
+	projectBinary := AppBinary(naosPath, desc.Name)
 
 	// get binary sizes
 	bootLoaderStat, err := os.Stat(bootLoaderBinary)
@@ -86,10 +103,12 @@ func Bundle(naosPath, appName, file string, out io.Writer) error {
 
 	// prepare manifest
 	manifest := bundleManifest{
-		Target:    args.ExtraEsptoolArgs.Chip,
-		FlashMode: args.FlashSettings.FlashMode,
-		FlashSize: args.FlashSettings.FlashSize,
-		FlashFreq: args.FlashSettings.FlashFreq,
+		Name:      desc.Name,
+		Version:   desc.Version,
+		Target:    desc.Target,
+		FlashMode: args.Flash.Mode,
+		FlashSize: args.Flash.Size,
+		FlashFreq: args.Flash.Freq,
 		Regions: []bundleRegion{
 			{
 				Name:   "bootloader",
@@ -105,7 +124,7 @@ func Bundle(naosPath, appName, file string, out io.Writer) error {
 			},
 			{
 				Name:   "application",
-				Offset: mustParseHex(args.App.Offset),
+				Offset: mustParseHex(args.Application.Offset),
 				Size:   projectStat.Size(),
 				File:   filepath.Base(projectBinary),
 			},
@@ -113,14 +132,14 @@ func Bundle(naosPath, appName, file string, out io.Writer) error {
 	}
 
 	// add OTA region if available
-	if args.OtaData.Offset != "" {
+	if args.OTAData.Offset != "" {
 		stat, err := os.Stat(otaDataBinary)
 		if err != nil {
 			return fmt.Errorf("failed to stat OTA data binary: %w", err)
 		}
 		manifest.Regions = append(manifest.Regions, bundleRegion{
 			Name:   "ota-data",
-			Offset: mustParseHex(args.OtaData.Offset),
+			Offset: mustParseHex(args.OTAData.Offset),
 			Size:   stat.Size(),
 			Fill:   0xFF,
 		})
@@ -144,7 +163,6 @@ func Bundle(naosPath, appName, file string, out io.Writer) error {
 		partitionsBinary,
 		projectBinary,
 	} {
-		utils.Log(out, fmt.Sprintf("Writing %s...", filepath.Base(binary)))
 		data, err := os.ReadFile(binary)
 		if err != nil {
 			return err
@@ -160,7 +178,6 @@ func Bundle(naosPath, appName, file string, out io.Writer) error {
 	}
 
 	// write manifest
-	utils.Log(out, "Writing manifest.json...")
 	manifestData, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
 		return err
@@ -173,6 +190,9 @@ func Bundle(naosPath, appName, file string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
+
+	// print manifest
+	_, _ = fmt.Fprintln(out, string(manifestData))
 
 	return nil
 }
