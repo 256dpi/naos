@@ -114,7 +114,7 @@ func Apply(repo, patch string, out io.Writer) error {
 // Describe will return the git version description of the provided repository.
 func Describe(repo, tagPrefix string) (string, error) {
 	// prepare arguments
-	args := []string{"describe", "--tags", "--long", "--dirty"}
+	args := []string{"describe", "--tags", "--long", "--dirty", "--always"}
 	if tagPrefix != "" {
 		args = append(args, "--match", tagPrefix+"*")
 	}
