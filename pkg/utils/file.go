@@ -163,6 +163,25 @@ func Update(path, content string) error {
 	return nil
 }
 
+// Remove will remove the specified path.
+func Remove(path string) error {
+	// check existence
+	exists, err := Exists(path)
+	if err != nil {
+		return err
+	} else if !exists {
+		return nil
+	}
+
+	// remove if exists
+	err = os.Remove(path)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Link will ensure a link with the specified target at the provided path.
 func Link(path, target string) error {
 	// check path

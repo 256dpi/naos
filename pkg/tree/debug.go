@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+
+	"github.com/256dpi/naos/pkg/utils"
 )
 
 // ParseCoredump will parse the provided raw coredump data and return a
@@ -43,7 +45,7 @@ func ParseCoredump(naosPath, appName string, coredump []byte) ([]byte, error) {
 	}
 
 	// delete file
-	err = os.Remove(file.Name())
+	err = utils.Remove(file.Name())
 	if err != nil {
 		return nil, err
 	}

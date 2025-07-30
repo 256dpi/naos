@@ -83,7 +83,7 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 	if appName != "" {
 		err = utils.Update(filepath.Join(Directory(naosPath), "project-name.txt"), appName)
 	} else {
-		err = os.Remove(filepath.Join(Directory(naosPath), "project-name.txt"))
+		err = utils.Remove(filepath.Join(Directory(naosPath), "project-name.txt"))
 	}
 	if err != nil {
 		return fmt.Errorf("failed to update project name: %w", err)
@@ -97,7 +97,7 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 	if appVersion != "" {
 		err = utils.Update(filepath.Join(Directory(naosPath), "version.txt"), appVersion)
 	} else {
-		err = os.Remove(filepath.Join(Directory(naosPath), "version.txt"))
+		err = utils.Remove(filepath.Join(Directory(naosPath), "version.txt"))
 	}
 
 	// prepare files contents
@@ -232,8 +232,8 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 	// reconfigure if requested
 	if reconfigure {
 		utils.Log(out, "Reconfiguring project...")
-		err = os.Remove(configPath)
-		if err != nil && !os.IsNotExist(err) {
+		err = utils.Remove(configPath)
+		if err != nil {
 			return err
 		}
 		err = Exec(naosPath, out, nil, false, false, "idf.py", "-DIDF_TARGET="+target, "reconfigure")
