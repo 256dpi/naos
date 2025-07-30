@@ -112,9 +112,15 @@ func Apply(repo, patch string, out io.Writer) error {
 }
 
 // Describe will return the git version description of the provided repository.
-func Describe(repo string) (string, error) {
+func Describe(repo, tagPrefix string) (string, error) {
+	// prepare arguments
+	args := []string{"describe", "--tags", "--long", "--dirty"}
+	if tagPrefix != "" {
+		args = append(args, "--match", tagPrefix+"*")
+	}
+
 	// get git description
-	cmd := exec.Command("git", "describe", "--tags", "--long", "--dirty")
+	cmd := exec.Command("git", args...)
 	cmd.Dir = repo
 	buf, err := cmd.Output()
 	if err != nil {

@@ -27,6 +27,7 @@ type Inventory struct {
 	Version    string                `json:"version"`
 	Target     string                `json:"target"`
 	BaudRate   string                `json:"baud_rate,omitempty"`
+	TagPrefix  string                `json:"tag_prefix,omitempty"`
 	Embeds     []string              `json:"embeds"`
 	Overrides  map[string]string     `json:"overrides"`
 	Partitions *tree.Partitions      `json:"partitions"`

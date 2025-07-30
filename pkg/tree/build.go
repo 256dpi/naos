@@ -72,7 +72,7 @@ coredump, data, coredump, ,        64K
 }
 
 // Build will build the project.
-func Build(naosPath, appName, target string, overrides map[string]string, files []string, partitions *Partitions, clean, reconfigure, appOnly bool, out io.Writer) error {
+func Build(naosPath, appName, tagPrefix, target string, overrides map[string]string, files []string, partitions *Partitions, clean, reconfigure, appOnly bool, out io.Writer) error {
 	// ensure target
 	if target == "" {
 		target = "esp32"
@@ -90,7 +90,7 @@ func Build(naosPath, appName, target string, overrides map[string]string, files 
 	}
 
 	// update project version
-	appVersion, err := utils.Describe(filepath.Join(Directory(naosPath), "main", "src"))
+	appVersion, err := utils.Describe(filepath.Join(Directory(naosPath), "main", "src"), tagPrefix)
 	if err != nil {
 		return fmt.Errorf("failed to describe app version: %w", err)
 	}
