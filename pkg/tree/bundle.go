@@ -68,7 +68,7 @@ func Bundle(naosPath string, file string, out io.Writer) error {
 	bootLoaderBinary := filepath.Join(Directory(naosPath), "build", "bootloader", "bootloader.bin")
 	partitionsBinary := filepath.Join(Directory(naosPath), "build", "partition_table", "partition-table.bin")
 	otaDataBinary := filepath.Join(Directory(naosPath), "build", "ota_data_initial.bin")
-	projectBinary := filepath.Join(Directory(naosPath), "build", "naos-project.bin")
+	projectBinary := AppBinary(naosPath)
 
 	// get binary sizes
 	bootLoaderStat, err := os.Stat(bootLoaderBinary)

@@ -445,7 +445,7 @@ func (p *Project) Debug(pattern string, delete bool, duration time.Duration, out
 // state or progress.
 func (p *Project) Update(version, pattern string, jobs int, timeout time.Duration, callback func(*Device, *fleet.UpdateStatus)) error {
 	// get binary
-	bytes, err := tree.AppBinary(p.Tree())
+	bytes, err := os.ReadFile(tree.AppBinary(p.Tree()))
 	if err != nil {
 		return err
 	}

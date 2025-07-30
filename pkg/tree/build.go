@@ -241,9 +241,14 @@ func Build(naosPath, target string, overrides map[string]string, files []string,
 	return nil
 }
 
-// AppBinary will return the bytes of the built app binary.
-func AppBinary(naosPath string) ([]byte, error) {
-	return os.ReadFile(filepath.Join(Directory(naosPath), "build", "naos-project.bin"))
+// AppBinary will return the path to the built app binary.
+func AppBinary(naosPath string) string {
+	return filepath.Join(Directory(naosPath), "build", "naos-project.bin")
+}
+
+// AppELF will return the path to the built app ELF file.
+func AppELF(naosPath string) string {
+	return filepath.Join(Directory(naosPath), "build", "naos-project.elf")
 }
 
 func hasOverrides(sdkconfig string, overrides map[string]string) bool {

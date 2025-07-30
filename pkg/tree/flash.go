@@ -25,7 +25,7 @@ func Flash(naosPath, target, port, baudRate string, erase, appOnly, alt bool, ou
 		}
 	}
 	bootLoaderBinary := filepath.Join(Directory(naosPath), "build", "bootloader", "bootloader.bin")
-	projectBinary := filepath.Join(Directory(naosPath), "build", "naos-project.bin")
+	projectBinary := AppBinary(naosPath)
 	partitionsBinary := filepath.Join(Directory(naosPath), "build", "partition_table", "partition-table.bin")
 
 	// prepare erase flash command
