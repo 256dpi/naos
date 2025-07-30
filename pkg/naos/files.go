@@ -2,10 +2,7 @@ package naos
 
 const mainSourceFile = `#include <naos.h>
 
-static naos_config_t config = {
-  .app_name = "my-device",
-  .app_version = "0.1.0",
-};
+static naos_config_t config = {0};
 
 void app_main() {
   // run naos
