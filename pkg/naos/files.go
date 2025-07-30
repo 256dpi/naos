@@ -18,7 +18,7 @@ const projectCMakeListsFile = `# minimal required cmake version
 cmake_minimum_required(VERSION 3.7)
 
 # you can set your own project name
-project(naos-project)
+project(my-device)
 
 # this should not be changed
 set(CMAKE_C_STANDARD 17)
