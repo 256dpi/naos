@@ -154,6 +154,8 @@ typedef struct {
 typedef struct {
   /**
    * The device type and version.
+   *
+   * Note: These are set automatically when unsset by the build system.
    */
   const char *app_name;
   const char *app_version;

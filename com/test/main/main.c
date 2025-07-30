@@ -278,8 +278,6 @@ static naos_param_t params[] = {
 };
 
 static naos_config_t config = {
-    .app_name = "naos-test",
-    .app_version = "0.0.1",
     .default_password = "",
     .parameters = params,
     .num_parameters = sizeof(params) / sizeof(params[0]),
@@ -367,6 +365,10 @@ void app_main() {
     // naos_eth_w5500((naos_eth_w5500_t){});
     naos_eth_init();
   }
+
+  // print app name and version
+  naos_log("app name: %s", config.app_name);
+  naos_log("app version: %s", config.app_version);
 
   // install bridge channel
   naos_bridge_install();

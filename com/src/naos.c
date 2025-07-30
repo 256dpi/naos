@@ -1,4 +1,5 @@
 #include <naos.h>
+#include <esp_app_desc.h>
 
 #include "system.h"
 
@@ -7,6 +8,15 @@ static naos_config_t *naos_config_ref;
 void naos_init(naos_config_t *config) {
   // set config reference
   naos_config_ref = config;
+
+  // ensure app name and version
+  const esp_app_desc_t *desc = esp_app_get_description();
+  if (config->app_name == NULL) {
+    config->app_name = desc->project_name;
+  }
+  if (config->app_version == NULL) {
+    config->app_version = desc->version;
+  }
 
   // initialize system
   naos_system_init();
