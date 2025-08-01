@@ -303,6 +303,11 @@ void naos_set_d(const char *param, double value);
 void naos_clear(const char *name);
 
 /**
+ * Will set all parameters to their default values. Synchronized parameters are automatically updated.
+ */
+void naos_reset();
+
+/**
  * Will lookup the specified parameter.
  *
  * @param name The parameter.

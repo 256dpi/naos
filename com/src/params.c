@@ -723,6 +723,7 @@ naos_value_t naos_get(const char *name) {
   naos_param_t *param = naos_lookup(name);
   if (param == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
+    return (naos_value_t){0};
   }
 
   return param->current;
@@ -753,11 +754,13 @@ void naos_set(const char *name, uint8_t *value, size_t length) {
   naos_param_t *param = naos_lookup(name);
   if (param == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
+    return;
   }
 
   // check value
   if (length > 0 && value == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
+    return;
   }
 
   // acquire mutex
@@ -766,6 +769,7 @@ void naos_set(const char *name, uint8_t *value, size_t length) {
   // store value if not volatile
   if (!(param->mode & NAOS_VOLATILE)) {
     ESP_ERROR_CHECK(nvs_set_blob(naos_params_handle, param->name, value, length));
+    return;
   }
 
   // free last value
@@ -826,6 +830,7 @@ void naos_clear(const char *name) {
   naos_param_t *param = naos_lookup(name);
   if (param == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
+    return;
   }
 
   // acquire mutex
@@ -833,7 +838,10 @@ void naos_clear(const char *name) {
 
   // erase value if not volatile
   if (!(param->mode & NAOS_VOLATILE)) {
-    ESP_ERROR_CHECK(nvs_erase_key(naos_params_handle, param->name));
+    esp_err_t err = nvs_erase_key(naos_params_handle, param->name);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+      ESP_ERROR_CHECK(err);
+    }
   }
 
   // free last value
@@ -856,4 +864,19 @@ void naos_clear(const char *name) {
 
   // update parameter
   naos_params_update(param, false);
+}
+
+void naos_reset() {
+  // clear all parameters
+  for (size_t i = 0; i < naos_params_count; i++) {
+    naos_param_t *param = naos_params[i];
+
+    // skip actions
+    if (param->type == NAOS_ACTION) {
+      continue;
+    }
+
+    // clear parameter
+    naos_clear(param->name);
+  }
 }

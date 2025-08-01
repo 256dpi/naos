@@ -271,10 +271,11 @@ static naos_param_t params[] = {
     {.name = "var_d", .type = NAOS_DOUBLE, .default_d = 0, .sync_d = &var_d},
     {.name = "var_b", .type = NAOS_BOOL, .default_b = true, .sync_b = &var_b},
     {.name = "fun_s", .type = NAOS_STRING, .default_s = "", .func_s = fun_s},
-    {.name = "fun_l", .type = NAOS_LONG, .default_l = 0, .func_l = &fun_l},
-    {.name = "fun_d", .type = NAOS_DOUBLE, .default_d = 0, .func_d = &fun_d, .skip_func_init = true},
-    {.name = "fun_b", .type = NAOS_BOOL, .default_b = true, .func_b = &fun_b, .skip_func_init = true},
-    {.name = "fun_a", .type = NAOS_ACTION, .func_a = &fun_a},
+    {.name = "fun_l", .type = NAOS_LONG, .default_l = 0, .func_l = fun_l},
+    {.name = "fun_d", .type = NAOS_DOUBLE, .default_d = 0, .func_d = fun_d, .skip_func_init = true},
+    {.name = "fun_b", .type = NAOS_BOOL, .default_b = true, .func_b = fun_b, .skip_func_init = true},
+    {.name = "fun_a", .type = NAOS_ACTION, .func_a = fun_a},
+    {.name = "reset", .type = NAOS_ACTION, .func_a = naos_reset},
 };
 
 static naos_config_t config = {
