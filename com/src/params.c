@@ -770,7 +770,6 @@ void naos_set(const char *name, uint8_t *value, size_t length) {
   if (!(param->mode & NAOS_VOLATILE)) {
     ESP_ERROR_CHECK(nvs_set_blob(naos_params_handle, param->name, value, length));
     ESP_ERROR_CHECK(nvs_commit(naos_params_handle));
-    return;
   }
 
   // free last value
