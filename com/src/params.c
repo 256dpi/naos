@@ -769,6 +769,7 @@ void naos_set(const char *name, uint8_t *value, size_t length) {
   // store value if not volatile
   if (!(param->mode & NAOS_VOLATILE)) {
     ESP_ERROR_CHECK(nvs_set_blob(naos_params_handle, param->name, value, length));
+    ESP_ERROR_CHECK(nvs_commit(naos_params_handle));
     return;
   }
 
@@ -842,6 +843,7 @@ void naos_clear(const char *name) {
     if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
       ESP_ERROR_CHECK(err);
     }
+    ESP_ERROR_CHECK(nvs_commit(naos_params_handle));
   }
 
   // free last value
