@@ -38,7 +38,7 @@ type Inventory struct {
 // NewInventory creates a new Inventory.
 func NewInventory() *Inventory {
 	return &Inventory{
-		Version:    "master",
+		Version:    "main",
 		Name:       "my-device",
 		Target:     "esp32",
 		Embeds:     make([]string, 0),

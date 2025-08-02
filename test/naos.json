@@ -1,5 +1,5 @@
 {
-  "version": "origin/master",
+  "version": "origin/main",
   "name": "naos-test",
   "target": "esp32s3",
   "embeds": [
