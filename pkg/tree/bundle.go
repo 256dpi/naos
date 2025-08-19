@@ -53,11 +53,6 @@ type flasherArgsItem struct {
 }
 
 func Bundle(naosPath, file string, out io.Writer) error {
-	// ensure file name
-	if file == "" {
-		file = "bundle.zip"
-	}
-
 	// read project description
 	descFile := filepath.Join(Directory(naosPath), "build", "project_description.json")
 	data, err := os.ReadFile(descFile)
@@ -143,6 +138,11 @@ func Bundle(naosPath, file string, out io.Writer) error {
 			Size:   stat.Size(),
 			Fill:   0xFF,
 		})
+	}
+
+	// ensure file name
+	if file == "" {
+		file = manifest.Name + "-" + manifest.Version + ".zip"
 	}
 
 	// create archive
