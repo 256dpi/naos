@@ -23,6 +23,8 @@ type idfComponentFile struct {
 
 type idfComponentItem struct {
 	Version string             `yaml:"version"`
+	Git     string             `yaml:"git,omitempty"`
+	Path    string             `yaml:"path,omitempty"`
 	Rules   []idfComponentRule `yaml:"rules"`
 }
 
@@ -32,8 +34,10 @@ type idfComponentRule struct {
 
 // IDFComponent represents a component in the idf-components.yml file.
 type IDFComponent struct {
-	Name    string
-	Version string
+	Name       string
+	Version    string
+	Repository string
+	Path       string
 }
 
 // Install will install the NAOS repo to the specified path and link the source
@@ -225,6 +229,8 @@ func InstallRegistryComponents(projectPath, naosPath string, components []IDFCom
 	for _, c := range components {
 		file.Dependencies[c.Name] = idfComponentItem{
 			Version: c.Version,
+			Git:     c.Repository,
+			Path:    c.Path,
 		}
 	}
 

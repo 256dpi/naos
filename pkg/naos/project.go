@@ -182,8 +182,10 @@ func (p *Project) Install(force bool, out io.Writer) error {
 	for _, com := range p.Inventory.Components {
 		if com.Registry != "" {
 			registryComponents = append(registryComponents, tree.IDFComponent{
-				Name:    com.Registry,
-				Version: com.Version,
+				Name:       com.Registry,
+				Version:    com.Version,
+				Repository: com.Repository,
+				Path:       com.Path,
 			})
 		}
 	}
