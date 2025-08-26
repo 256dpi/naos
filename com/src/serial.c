@@ -150,6 +150,7 @@ void naos_serial_init_stdio() {
 
 #include <tinyusb.h>
 #include <tusb_cdc_acm.h>
+#include <tinyusb_default_config.h>
 
 static uint8_t naos_serial_usb_channel = 0;
 static uint8_t naos_serial_usb_input[NAOS_SERIAL_BUFFER_SIZE];
@@ -196,10 +197,9 @@ static void naos_serial_usb_task() {
 
 void naos_serial_init_usb() {
   // prepare USB
-  const tinyusb_config_t usb_cfg = {};
+  const tinyusb_config_t usb_cfg = TINYUSB_DEFAULT_CONFIG();
   ESP_ERROR_CHECK(tinyusb_driver_install(&usb_cfg));
   const tinyusb_config_cdcacm_t acm_cfg = {
-      .usb_dev = TINYUSB_USBDEV_0,
       .cdc_port = TINYUSB_CDC_ACM_0,
   };
   ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
