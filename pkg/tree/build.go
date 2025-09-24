@@ -209,15 +209,15 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 		if err != nil {
 			return err
 		}
-	}
-
-	// sync partitions
-	utils.Log(out, "Sync partitions...")
-	partSrc := filepath.Join(Directory(naosPath), "main", "data", "partitions.csv")
-	partDst := filepath.Join(Directory(naosPath), "partitions.csv")
-	err = utils.Sync(partSrc, partDst)
-	if err != nil {
-		return err
+	} else {
+		// sync partitions
+		utils.Log(out, "Sync partitions...")
+		partSrc := filepath.Join(naosPath, "..", "partitions.csv")
+		partDst := filepath.Join(Directory(naosPath), "partitions.csv")
+		err = utils.Sync(partSrc, partDst)
+		if err != nil {
+			return err
+		}
 	}
 
 	// clean project if requested
