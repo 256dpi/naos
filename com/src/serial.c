@@ -16,6 +16,16 @@ typedef struct {
   uint8_t channel;
 } naos_serial_decoder_t;
 
+static naos_mutex_t naos_serial_mutex = NULL;
+static uint8_t naos_serial_output[NAOS_SERIAL_BUFFER_SIZE];
+
+static void naos_serial_init() {
+  // ensure mutex
+  if (naos_serial_mutex == NULL) {
+    naos_serial_mutex = naos_mutex();
+  }
+}
+
 static bool naos_serial_encode(const uint8_t* data, size_t len, uint8_t* out_data, size_t* out_len) {
   // add magic
   memcpy(out_data, "\nNAOS!", 6);
@@ -96,22 +106,32 @@ static bool naos_serial_decode(naos_serial_decoder_t decoder) {
 
 static uint8_t naos_serial_stdio_channel = 0;
 static uint8_t naos_serial_stdio_input[NAOS_SERIAL_BUFFER_SIZE];
-static uint8_t naos_serial_stdio_output[NAOS_SERIAL_BUFFER_SIZE];
 
-static uint16_t naos_serial_mtu() { return 2560; }
+static uint16_t naos_serial_mtu() {
+  // max base64 encoding size
+  return 2560;
+}
 
 static bool naos_serial_stdio_send(const uint8_t* data, size_t len, void* _) {
+  // acquire mutex
+  naos_lock(naos_serial_mutex);
+
   // encode message
   size_t enc_len;
-  if (!naos_serial_encode(data, len, naos_serial_stdio_output, &enc_len)) {
+  if (!naos_serial_encode(data, len, naos_serial_output, &enc_len)) {
+    naos_unlock(naos_serial_mutex);
     return false;
   }
 
   // write message
-  size_t ret = fwrite(naos_serial_stdio_output, 1, enc_len, stdout);
+  size_t ret = fwrite(naos_serial_output, 1, enc_len, stdout);
   if (ret != enc_len) {
+    naos_unlock(naos_serial_mutex);
     return false;
   }
+
+  // release mutex
+  naos_unlock(naos_serial_mutex);
 
   return true;
 }
@@ -133,6 +153,9 @@ static void naos_serial_stdio_task() {
 }
 
 void naos_serial_init_stdio() {
+  // init serial
+  naos_serial_init();
+
   // register channel
   naos_serial_stdio_channel = naos_msg_register((naos_msg_channel_t){
       .name = "serial-stdio",
@@ -152,20 +175,27 @@ void naos_serial_init_stdio() {
 
 static uint8_t naos_serial_usb_channel = 0;
 static uint8_t naos_serial_usb_input[NAOS_SERIAL_BUFFER_SIZE];
-static uint8_t naos_serial_usb_output[NAOS_SERIAL_BUFFER_SIZE];
 
 static bool naos_serial_usb_send(const uint8_t* data, size_t len, void* ctx) {
+  // acquire mutex
+  naos_lock(naos_serial_mutex);
+
   // encode message
   size_t enc_len = 0;
-  if (!naos_serial_encode(data, len, naos_serial_usb_output, &enc_len)) {
+  if (!naos_serial_encode(data, len, naos_serial_output, &enc_len)) {
+    naos_unlock(naos_serial_mutex);
     return false;
   }
 
   // write message
-  int ret = usb_serial_jtag_write_bytes(naos_serial_usb_output, enc_len, portMAX_DELAY);
+  int ret = usb_serial_jtag_write_bytes(naos_serial_output, enc_len, portMAX_DELAY);
   if (ret != enc_len) {
+    naos_unlock(naos_serial_mutex);
     return false;
   }
+
+  // release mutex
+  naos_unlock(naos_serial_mutex);
 
   return true;
 }
@@ -187,6 +217,9 @@ static void naos_serial_usb_task() {
 }
 
 void naos_serial_init_usb() {
+  // init serial
+  naos_serial_init();
+
   // configure USB serial/JTAG driver
   usb_serial_jtag_driver_config_t config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&config));
@@ -202,4 +235,4 @@ void naos_serial_init_usb() {
   naos_run("naos-serial-u", 4096, 1, naos_serial_usb_task);
 }
 
-#endif  // CONFIG_SOC_USB_OTG_SUPPORTED
+#endif  // CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED
