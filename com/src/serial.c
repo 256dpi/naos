@@ -4,9 +4,10 @@
 #include <string.h>
 
 #include <esp_err.h>
+#include <esp_heap_caps.h>
 #include <mbedtls/base64.h>
 
-#define NAOS_SERIAL_BUFFER_SIZE 4096
+#define NAOS_SERIAL_BUFFER_SIZE CONFIG_NAOS_SERIAL_BUFFER_SIZE
 
 typedef size_t (*naos_serial_read_t)(uint8_t* data, size_t len);
 
@@ -17,13 +18,29 @@ typedef struct {
 } naos_serial_decoder_t;
 
 static naos_mutex_t naos_serial_mutex = NULL;
-static uint8_t naos_serial_output[NAOS_SERIAL_BUFFER_SIZE];
+static void* naos_serial_output = NULL;
+
+static void* naos_serial_alloc() {
+#ifdef CONFIG_SPIRAM
+  void* buf = heap_caps_malloc_prefer(NAOS_SERIAL_BUFFER_SIZE, 2, MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT);
+#else
+  void* buf = malloc(NAOS_SERIAL_BUFFER_SIZE);
+#endif
+  if (buf == NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  return buf;
+}
 
 static void naos_serial_init() {
   // ensure mutex
   if (naos_serial_mutex == NULL) {
     naos_serial_mutex = naos_mutex();
   }
+
+  // allocate shared output buffer
+  naos_serial_output = naos_serial_alloc();
 }
 
 static bool naos_serial_encode(const uint8_t* data, size_t len, uint8_t* out_data, size_t* out_len) {
@@ -105,11 +122,11 @@ static bool naos_serial_decode(naos_serial_decoder_t decoder) {
 /* STDIO Interface */
 
 static uint8_t naos_serial_stdio_channel = 0;
-static uint8_t naos_serial_stdio_input[NAOS_SERIAL_BUFFER_SIZE];
+static void* naos_serial_stdio_input = NULL;
 
 static uint16_t naos_serial_mtu() {
   // max base64 encoding size
-  return 2560;
+  return NAOS_SERIAL_BUFFER_SIZE / 5 * 3;
 }
 
 static bool naos_serial_stdio_send(const uint8_t* data, size_t len, void* _) {
@@ -156,6 +173,9 @@ void naos_serial_init_stdio() {
   // init serial
   naos_serial_init();
 
+  // allocate input buffer
+  naos_serial_stdio_input = naos_serial_alloc();
+
   // register channel
   naos_serial_stdio_channel = naos_msg_register((naos_msg_channel_t){
       .name = "serial-stdio",
@@ -174,7 +194,7 @@ void naos_serial_init_stdio() {
 #include <driver/usb_serial_jtag.h>
 
 static uint8_t naos_serial_usb_channel = 0;
-static uint8_t naos_serial_usb_input[NAOS_SERIAL_BUFFER_SIZE];
+static void* naos_serial_usb_input = NULL;
 
 static bool naos_serial_usb_send(const uint8_t* data, size_t len, void* ctx) {
   // acquire mutex
@@ -219,6 +239,9 @@ static void naos_serial_usb_task() {
 void naos_serial_init_usb() {
   // init serial
   naos_serial_init();
+
+  // allocate input buffer
+  naos_serial_usb_input = naos_serial_alloc();
 
   // configure USB serial/JTAG driver
   usb_serial_jtag_driver_config_t config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();

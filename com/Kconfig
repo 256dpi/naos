@@ -32,4 +32,8 @@ config NAOS_MSG_DEBUG
     bool "Enable debug messages"
     default n
 
+config NAOS_SERIAL_BUFFER_SIZE
+    int "The serial buffer sizes"
+    default 4096
+
 endmenu
