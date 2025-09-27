@@ -25,7 +25,7 @@ type idfComponentItem struct {
 	Version string             `yaml:"version"`
 	Git     string             `yaml:"git,omitempty"`
 	Path    string             `yaml:"path,omitempty"`
-	Rules   []idfComponentRule `yaml:"rules"`
+	Rules   []idfComponentRule `yaml:"rules,omitempty"`
 }
 
 type idfComponentRule struct {
