@@ -146,10 +146,9 @@ void naos_serial_init_stdio() {
 
 /* USB Interface */
 
-#if CONFIG_SOC_USB_OTG_SUPPORTED
+#if CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED
 
-#include <tinyusb.h>
-#include <tusb_cdc_acm.h>
+#include <driver/usb_serial_jtag.h>
 
 static uint8_t naos_serial_usb_channel = 0;
 static uint8_t naos_serial_usb_input[NAOS_SERIAL_BUFFER_SIZE];
@@ -157,20 +156,14 @@ static uint8_t naos_serial_usb_output[NAOS_SERIAL_BUFFER_SIZE];
 
 static bool naos_serial_usb_send(const uint8_t* data, size_t len, void* ctx) {
   // encode message
-  size_t enc_len;
+  size_t enc_len = 0;
   if (!naos_serial_encode(data, len, naos_serial_usb_output, &enc_len)) {
     return false;
   }
 
   // write message
-  size_t ret = tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_0, naos_serial_usb_output, enc_len);
+  int ret = usb_serial_jtag_write_bytes(naos_serial_usb_output, enc_len, portMAX_DELAY);
   if (ret != enc_len) {
-    return false;
-  }
-
-  // flush interface
-  esp_err_t err = tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_0, 10);
-  if (err != ESP_OK) {
     return false;
   }
 
@@ -179,10 +172,9 @@ static bool naos_serial_usb_send(const uint8_t* data, size_t len, void* ctx) {
 
 static size_t naos_serial_usb_read(uint8_t* data, size_t len) {
   // read interface
-  size_t ret;
-  ESP_ERROR_CHECK(tinyusb_cdcacm_read(TINYUSB_CDC_ACM_0, data, len, &ret));
+  int ret = usb_serial_jtag_read_bytes(data, len, portMAX_DELAY);
 
-  return ret;
+  return (size_t)ret;
 }
 
 static void naos_serial_usb_task() {
@@ -195,14 +187,9 @@ static void naos_serial_usb_task() {
 }
 
 void naos_serial_init_usb() {
-  // prepare USB
-  const tinyusb_config_t usb_cfg = {};
-  ESP_ERROR_CHECK(tinyusb_driver_install(&usb_cfg));
-  const tinyusb_config_cdcacm_t acm_cfg = {
-      .usb_dev = TINYUSB_USBDEV_0,
-      .cdc_port = TINYUSB_CDC_ACM_0,
-  };
-  ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
+  // configure USB serial/JTAG driver
+  usb_serial_jtag_driver_config_t config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
+  ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&config));
 
   // register USB channel
   naos_serial_usb_channel = naos_msg_register((naos_msg_channel_t){

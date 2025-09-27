@@ -1,12 +1,4 @@
 dependencies:
-  espressif/tinyusb:
-    version: "^0.17.0"
-    rules:
-      - if: "target in [esp32s2, esp32s3, esp32p4]"
-  espressif/esp_tinyusb:
-    version: "^1.4.4"
-    rules:
-      - if: "target in [esp32s2, esp32s3, esp32p4]"
   espressif/mdns:
     version: "^1.4.2"
   espressif/esp_websocket_client:

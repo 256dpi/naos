@@ -171,7 +171,7 @@ static bool naos_relay_device_send(const uint8_t *data, size_t len, void *ctx) {
   // CONTEXT MAY BE INVALID!
 
   // send message upstream
-  return naos_relay_device.send((uint8_t*)data, len);
+  return naos_relay_device.send((uint8_t *)data, len);
 }
 
 static uint16_t naos_relay_device_mtu(void *ctx) {
