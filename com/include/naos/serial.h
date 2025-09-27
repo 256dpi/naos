@@ -6,7 +6,7 @@
  * =====================
  *
  * The serial interface is used to communicate with the device over a serial
- * connection. This can either be a separate USB (CDC) based connection or a
+ * connection. This can either be a separate USB/JTAG based connection or a
  * connection that runs over the standard input/output (UART) of the device
  * and is multiplexed with the system console.
  *

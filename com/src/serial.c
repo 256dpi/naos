@@ -64,9 +64,12 @@ static bool naos_serial_encode(const uint8_t* data, size_t len, uint8_t* out_dat
 }
 
 static bool naos_serial_decode(naos_serial_decoder_t decoder) {
-  // prepare position
+  // prepare state
   size_t len = 0;
   size_t discard = 0;
+
+  // clear buffer
+  decoder.buffer[0] = 0;
 
   for (;;) {
     // discard buffer
@@ -77,9 +80,18 @@ static bool naos_serial_decode(naos_serial_decoder_t decoder) {
       discard = 0;
     }
 
-    // fill buffer
-    while (strchr((char*)decoder.buffer, '\n') == NULL) {
-      size_t ret = decoder.read(decoder.buffer + len, NAOS_SERIAL_BUFFER_SIZE - len);
+    // fill buffer with next line
+    while (memchr(decoder.buffer, '\n', len) == NULL) {
+      // clear buffer on overflow
+      size_t space = NAOS_SERIAL_BUFFER_SIZE - 1 - len;
+      if (space == 0) {
+        len = 0;
+        decoder.buffer[0] = 0;
+        continue;
+      }
+
+      // read into buffer
+      size_t ret = decoder.read(decoder.buffer + len, space);
       len += ret;
       decoder.buffer[len] = 0;
       naos_delay(5);
@@ -88,15 +100,15 @@ static bool naos_serial_decode(naos_serial_decoder_t decoder) {
     /* got new line */
 
     // determine end
-    uint8_t* end = (uint8_t*)strchr((char*)decoder.buffer, '\n');
+    uint8_t* end = memchr(decoder.buffer, '\n', len);
     if (end == NULL) {
       ESP_ERROR_CHECK(ESP_FAIL);
       continue;
     }
 
     // check magic
-    if (memcmp(decoder.buffer, "NAOS!", 5) != 0) {
-      discard = end - decoder.buffer + 1;
+    if (len < 6 || memcmp(decoder.buffer, "NAOS!", 5) != 0) {
+      discard = (size_t)(end - decoder.buffer) + 1;
       continue;
     }
 
@@ -105,17 +117,17 @@ static bool naos_serial_decode(naos_serial_decoder_t decoder) {
     // decode message
     size_t n = 0;
     int r = mbedtls_base64_decode(decoder.buffer, NAOS_SERIAL_BUFFER_SIZE, &n, decoder.buffer + 5,
-                                  end - decoder.buffer - 5);
+                                  (size_t)(end - decoder.buffer) - 5);
     if (r != 0) {
-      discard = end - decoder.buffer + 1;
+      discard = (size_t)(end - decoder.buffer) + 1;
       continue;
     }
 
     // dispatch message
     naos_msg_dispatch(decoder.channel, decoder.buffer, n, NULL);
 
-    // discard message
-    discard = end - decoder.buffer + 1;
+    // discard processed line
+    discard = (size_t)(end - decoder.buffer) + 1;
   }
 }
 
@@ -196,7 +208,7 @@ void naos_serial_init_stdio() {
 static uint8_t naos_serial_usb_channel = 0;
 static void* naos_serial_usb_input = NULL;
 
-static bool naos_serial_usb_send(const uint8_t* data, size_t len, void* ctx) {
+static bool naos_serial_usb_send(const uint8_t* data, size_t len, void* _) {
   // acquire mutex
   naos_lock(naos_serial_mutex);
 
