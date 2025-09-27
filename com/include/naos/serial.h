@@ -26,7 +26,7 @@ void naos_serial_init_stdio();
 /**
  * Initialize the USB based serial configuration.
  *
- * Note: The function will not link if USB OTG support is not available.
+ * Note: The function will not link if USB/JTAG support is unavailable.
  */
 void naos_serial_init_usb();
 
