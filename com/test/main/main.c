@@ -354,7 +354,7 @@ void app_main() {
   naos_manager_init();
   naos_serial_init_stdio();
   if (CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED) {
-    naos_serial_init_usb();
+    naos_serial_init_secio();
   }
   naos_mdns_init((naos_mdns_config_t){
       .main = true,

@@ -19,9 +19,22 @@
  */
 
 /**
- * Initialize the STDIO based serial configuration.
+ * Initialize the primary IO based serial configuration.
+ *
+ * This will use the standard input/output file streams for communication.
+ *
+ * Notes: Requires that `CONFIG_ESP_CONSOLE` is configured accordingly.
  */
 void naos_serial_init_stdio();
+
+/**
+ * Initialize the secondary IO based serial configuration.
+ *
+ * This will open the `/dev/secondary` file stream and use it for communication.
+ *
+ * Note: Requires that `CONFIG_ESP_CONSOLE_SECONDARY` is configured accordingly.
+ */
+void naos_serial_init_secio();
 
 /**
  * Initialize the USB based serial configuration.
