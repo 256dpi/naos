@@ -1,10 +1,12 @@
 # Channels
 
-| Name   | Securable | Locked |
-|--------|-----------|--------|
-| BLE    | Yes (TLS) | Yes    |
-| HTTP   | Yes (TLS) | Yes    |
-| Bridge | Depends   | Yes    |
+| Name    | Securable  | Locked |
+|---------|------------|--------|
+| BLE     | Yes (TLS)  | Yes    |
+| HTTP    | Yes (TLS)  | Yes    |
+| Bridge  | Depends    | Yes    |
+| Serial  | No (Wired) | Yes?   |
+| Connect | Yes (TLS   | Yes?   |
 
 # Transports
 
@@ -38,3 +40,4 @@
 - Align Swift Managed Device
 - Make channels reference counted?
 - Remove "256dpi/AsyncBluetooth" repo
+- Finish "Channel Width" concept
