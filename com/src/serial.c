@@ -6,6 +6,10 @@
 #include <esp_err.h>
 #include <esp_heap_caps.h>
 #include <mbedtls/base64.h>
+#include <driver/uart.h>
+#include <driver/uart_vfs.h>
+#include <driver/usb_serial_jtag.h>
+#include <driver/usb_serial_jtag_vfs.h>
 
 #define NAOS_SERIAL_BS CONFIG_NAOS_SERIAL_BUFFER_SIZE
 
@@ -247,6 +251,41 @@ void naos_serial_init_stdio() {
   naos_run("naos-srl-stdio", 4096, 1, naos_serial_stdio_task);
 }
 
+void naos_serial_init_stdio_uart() {
+  // drain outputs
+  fflush(stdout);
+  fflush(stderr);
+
+  // disable buffering
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
+  setvbuf(stdin, NULL, _IONBF, 0);
+
+  // configure UART parameters
+  ESP_ERROR_CHECK(uart_vfs_dev_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF));
+  ESP_ERROR_CHECK(uart_vfs_dev_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_LF));
+
+  // prepare UART config
+  const uart_config_t uart_config = {
+      .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
+      .data_bits = UART_DATA_8_BITS,
+      .parity = UART_PARITY_DISABLE,
+      .stop_bits = UART_STOP_BITS_1,
+      .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+      .source_clk = UART_SCLK_DEFAULT,
+  };
+
+  // install UART driver
+  ESP_ERROR_CHECK(uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM, 256, 256, 0, NULL, 0));
+  ESP_ERROR_CHECK(uart_param_config(CONFIG_ESP_CONSOLE_UART_NUM, &uart_config));
+
+  // enable VFS driver
+  uart_vfs_dev_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
+
+  // initialize stdio IO
+  naos_serial_init_stdio();
+}
+
 /* Secondary Interface */
 
 static naos_serial_vfs_t naos_serial_secio_vfs;
@@ -291,16 +330,31 @@ void naos_serial_init_secio() {
   naos_run("naos-srl-secio", 4096, 1, naos_serial_secio_task);
 }
 
+void naos_serial_init_secio_usj() {
+  // configure parameters
+  usb_serial_jtag_vfs_set_rx_line_endings(ESP_LINE_ENDINGS_CRLF);
+  usb_serial_jtag_vfs_set_tx_line_endings(ESP_LINE_ENDINGS_LF);
+
+  // configure driver
+  usb_serial_jtag_driver_config_t config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
+  ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&config));
+
+  // upgrade VFS driver
+  ESP_ERROR_CHECK(usb_serial_jtag_vfs_register());
+  usb_serial_jtag_vfs_use_driver();
+
+  // initialize secondary IO
+  naos_serial_init_secio();
+}
+
 /* USB Interface */
 
 #if CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED
 
-#include <driver/usb_serial_jtag.h>
+static uint8_t naos_serial_usj_channel = 0;
+static void* naos_serial_usj_input = NULL;
 
-static uint8_t naos_serial_usb_channel = 0;
-static void* naos_serial_usb_input = NULL;
-
-static bool naos_serial_usb_send(const uint8_t* data, size_t len, void* _) {
+static bool naos_serial_usj_send(const uint8_t* data, size_t len, void* _) {
   // acquire mutex
   naos_lock(naos_serial_mutex);
 
@@ -324,42 +378,42 @@ static bool naos_serial_usb_send(const uint8_t* data, size_t len, void* _) {
   return true;
 }
 
-static size_t naos_serial_usb_read(uint8_t* data, size_t len, void* _) {
+static size_t naos_serial_usj_read(uint8_t* data, size_t len, void* _) {
   // read interface
   int ret = usb_serial_jtag_read_bytes(data, len, portMAX_DELAY);
 
   return (size_t)ret;
 }
 
-static void naos_serial_usb_task() {
+static void naos_serial_usj_task() {
   // run decoder
   naos_serial_decode((naos_serial_decoder_t){
-      .buffer = naos_serial_usb_input,
-      .read = naos_serial_usb_read,
-      .channel = naos_serial_usb_channel,
+      .buffer = naos_serial_usj_input,
+      .read = naos_serial_usj_read,
+      .channel = naos_serial_usj_channel,
   });
 }
 
-void naos_serial_init_usb() {
+void naos_serial_init_usj() {
   // init serial
   naos_serial_init();
 
   // allocate input buffer
-  naos_serial_usb_input = naos_serial_alloc();
+  naos_serial_usj_input = naos_serial_alloc();
 
   // configure USB serial/JTAG driver
   usb_serial_jtag_driver_config_t config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&config));
 
   // register USB channel
-  naos_serial_usb_channel = naos_msg_register((naos_msg_channel_t){
+  naos_serial_usj_channel = naos_msg_register((naos_msg_channel_t){
       .name = "serial-usb",
       .mtu = naos_serial_mtu,
-      .send = naos_serial_usb_send,
+      .send = naos_serial_usj_send,
   });
 
   // run task
-  naos_run("naos-srl-usb", 4096, 1, naos_serial_usb_task);
+  naos_run("naos-srl-usb", 4096, 1, naos_serial_usj_task);
 }
 
 #endif  // CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED
