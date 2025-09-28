@@ -67,6 +67,10 @@ type httpChannel struct {
 	subs   sync.Map
 }
 
+func (c *httpChannel) Width() int {
+	return 10
+}
+
 func (c *httpChannel) Device() Device {
 	return c.dev
 }

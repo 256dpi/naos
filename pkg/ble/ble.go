@@ -201,6 +201,10 @@ type channel struct {
 	mutex sync.Mutex
 }
 
+func (c *channel) Width() int {
+	return 10
+}
+
 func (c *channel) Device() msg.Device {
 	return c.dev
 }

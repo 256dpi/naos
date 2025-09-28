@@ -93,6 +93,11 @@ func (s *Session) ID() uint16 {
 	return s.id
 }
 
+// Channel returns the channel used by the session.
+func (s *Session) Channel() Channel {
+	return s.ch
+}
+
 // Ping verifies and keeps the session alive.
 func (s *Session) Ping(timeout time.Duration) error {
 	// acquire mutex
