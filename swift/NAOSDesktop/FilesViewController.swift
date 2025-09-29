@@ -12,9 +12,35 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 	@IBOutlet var listTable: NSTableView!
 
 	var files: [NAOSFSInfo] = []
+	
+	override func viewDidLoad() {
+		super.viewDidLoad()
+
+		// register double click handler
+		listTable.doubleAction = #selector(self.descend(_:))
+	}
 
 	private func root() -> String {
 		return pathField.stringValue
+	}
+	
+	@objc public func descend(_: AnyObject) {
+		// check selected row
+		if listTable.selectedRow < 0 {
+			return
+		}
+
+		// get file
+		let file = files[listTable.selectedRow]
+		if !file.isDir {
+			return
+		}
+		
+		// update path
+		pathField.stringValue += file.name + "/"
+		
+		// trigger list
+		list(_: self)
 	}
 
 	@IBAction public func list(_: AnyObject) {
