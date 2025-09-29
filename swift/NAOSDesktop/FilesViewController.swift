@@ -184,6 +184,24 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 			}
 		}
 	}
+	
+	@IBAction public func make(_: AnyObject) {
+		Task {
+			// request new name
+			guard let name = await prompt(message: "Path:", defaultValue: self.root())
+			else {
+				return
+			}
+
+			// make path
+			await run(title: "Making...") { session in
+				try await NAOSFS.make(session: session, path: name)
+			}
+
+			// re-list
+			self.list(self)
+		}
+	}
 
 	@IBAction public func close(_: AnyObject) {
 		// dismiss sheet
