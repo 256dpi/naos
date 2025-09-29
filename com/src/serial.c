@@ -143,7 +143,7 @@ static void* naos_serial_output = NULL;
 
 static void* naos_serial_alloc() {
 #ifdef CONFIG_SPIRAM
-  void* buf = heap_caps_malloc_prefer(NAOS_SERIAL_BUFFER_SIZE, 2, MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT);
+  void* buf = heap_caps_malloc_prefer(NAOS_SERIAL_BS, 2, MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT);
 #else
   void* buf = malloc(NAOS_SERIAL_BS);
 #endif
