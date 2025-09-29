@@ -12,9 +12,46 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 	@IBOutlet var listTable: NSTableView!
 
 	var files: [NAOSFSInfo] = []
+	
+	override func viewDidLoad() {
+		super.viewDidLoad()
+
+		// register double click handler
+		listTable.doubleAction = #selector(self.descend(_:))
+	}
 
 	private func root() -> String {
 		return pathField.stringValue
+	}
+	
+	@IBAction public func ascend(_: AnyObject) {
+		// make new path
+		let path = self.root().split(separator: "/").dropLast().joined(separator: "/")
+		
+		// update path
+		pathField.stringValue = "/" + path
+		
+		// trigger list
+		list(_: self)
+	}
+	
+	@objc public func descend(_: AnyObject) {
+		// check selected row
+		if listTable.selectedRow < 0 {
+			return
+		}
+
+		// get file
+		let file = files[listTable.selectedRow]
+		if !file.isDir {
+			return
+		}
+		
+		// update path
+		pathField.stringValue += file.name + "/"
+		
+		// trigger list
+		list(_: self)
 	}
 
 	@IBAction public func list(_: AnyObject) {
@@ -182,6 +219,24 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 			} else {
 				showError(error: CustomError(title: "Files are not equal."))
 			}
+		}
+	}
+	
+	@IBAction public func make(_: AnyObject) {
+		Task {
+			// request new name
+			guard let name = await prompt(message: "Path:", defaultValue: self.root())
+			else {
+				return
+			}
+
+			// make path
+			await run(title: "Making...") { session in
+				try await NAOSFS.make(session: session, path: name)
+			}
+
+			// re-list
+			self.list(self)
 		}
 	}
 

@@ -28,6 +28,7 @@ typedef enum {
   NAOS_FS_CMD_RENAME,
   NAOS_FS_CMD_REMOVE,
   NAOS_FS_CMD_SHA256,
+  NAOS_FS_CMD_MAKE,
 } naos_fs_cmd_t;
 
 typedef enum {
@@ -62,7 +63,7 @@ static naos_fs_file_t naos_fs_files[NAOS_FS_MAX_FILES] = {0};
 static naos_fs_config_t naos_fs_config = {0};
 static char naos_fs_path[256] = {0};
 
-static const char *naos_fs_concat_path(const char *path) {
+static const char *naos_fs_concat(const char *path) {
   // check root
   if (naos_fs_config.root == NULL) {
     return path;
@@ -74,6 +75,36 @@ static const char *naos_fs_concat_path(const char *path) {
   strcat(naos_fs_path, path);
 
   return naos_fs_path;
+}
+
+static int naos_fs_mkdir(const char *path, mode_t mode) {
+  // copy path
+  char tmp[256] = {0};
+  strncpy(tmp, path, sizeof(tmp) - 1);
+
+  // remove trailing slash
+  size_t len = strlen(tmp);
+  if (tmp[len - 1] == '/') {
+    tmp[len - 1] = '\0';
+  }
+
+  // create intermediary directories
+  for (char * p = tmp + 1; *p; p++) {
+    if (*p == '/') {
+      *p = '\0';
+      if (mkdir(tmp, mode) != 0 && errno != EEXIST) {
+        return -1;
+      }
+      *p = '/';
+    }
+  }
+
+  // create final directory
+  if (mkdir(tmp, mode) != 0 && errno != EEXIST) {
+    return -1;
+  }
+
+  return 0;
 }
 
 static naos_msg_reply_t naos_fs_send_error(uint16_t session, int error) {
@@ -104,7 +135,7 @@ static naos_msg_reply_t naos_fs_handle_stat(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat_path((const char *)msg.data);
+  const char *path = naos_fs_concat((const char *)msg.data);
 
   // stat path
   struct stat info;
@@ -145,7 +176,7 @@ static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {
   }
 
   // get root
-  const char *root = naos_fs_concat_path((const char *)msg.data);
+  const char *root = naos_fs_concat((const char *)msg.data);
 
   // open directory
   DIR *dir = opendir(root);
@@ -258,7 +289,7 @@ static naos_msg_reply_t naos_fs_handle_open(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat_path((const char *)(msg.data + 1));
+  const char *path = naos_fs_concat((const char *)(msg.data + 1));
 
   // create file
   int fd = open(path, open_flags, 0644);
@@ -484,8 +515,8 @@ static naos_msg_reply_t naos_fs_handle_rename(naos_msg_t msg) {
   }
 
   // get paths
-  char *from = strdup(naos_fs_concat_path((const char *)msg.data));
-  const char *to = naos_fs_concat_path((const char *)&msg.data[from_len + 1]);
+  char *from = strdup(naos_fs_concat((const char *)msg.data));
+  const char *to = naos_fs_concat((const char *)&msg.data[from_len + 1]);
 
   // remove existing file, if any
   remove(to);
@@ -513,7 +544,7 @@ static naos_msg_reply_t naos_fs_handle_remove(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat_path((const char *)msg.data);
+  const char *path = naos_fs_concat((const char *)msg.data);
 
   // remove file
   int ret = remove(path);
@@ -534,7 +565,7 @@ static naos_msg_reply_t naos_fs_handle_sha256(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat_path((const char *)msg.data);
+  const char *path = naos_fs_concat((const char *)msg.data);
 
   // open file
   int fd = open(path, O_RDONLY, 0);
@@ -614,6 +645,27 @@ static naos_msg_reply_t naos_fs_handle_sha256(naos_msg_t msg) {
   return NAOS_MSG_OK;
 }
 
+static naos_msg_reply_t naos_fs_handle_make(naos_msg_t msg) {
+  // command structure:
+  // PATH (*)
+
+  // check path
+  if (msg.len == 0 || msg.data[0] != '/') {
+    return NAOS_MSG_INVALID;
+  }
+
+  // get path
+  const char *path = naos_fs_concat((const char *)msg.data);
+
+  // prepare directory
+  int ret = naos_fs_mkdir((char*)path, 0755);
+  if (ret != 0) {
+    return naos_fs_send_error(msg.session, errno);
+  }
+
+  return NAOS_MSG_ACK;
+}
+
 static naos_msg_reply_t naos_fs_handle(naos_msg_t msg) {
   // message structure:
   // CMD (1) | *
@@ -667,6 +719,9 @@ static naos_msg_reply_t naos_fs_handle(naos_msg_t msg) {
       break;
     case NAOS_FS_CMD_SHA256:
       reply = naos_fs_handle_sha256(msg);
+      break;
+    case NAOS_FS_CMD_MAKE:
+      reply = naos_fs_handle_make(msg);
       break;
     default:
       reply = NAOS_MSG_UNKNOWN;

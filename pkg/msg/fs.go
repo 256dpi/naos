@@ -192,6 +192,9 @@ func WriteFile(s *Session, file string, data []byte, report func(uint32), timeou
 		return err
 	}
 
+	// get width
+	width := s.Channel().Width()
+
 	// get MTU
 	mtu, err := s.GetMTU(time.Second)
 	if err != nil {
@@ -210,7 +213,7 @@ func WriteFile(s *Session, file string, data []byte, report func(uint32), timeou
 		chunkData := data[offset : offset+chunkSize]
 
 		// determine mode
-		acked := num%10 == 0
+		acked := num%width == 0
 
 		// prepare "write" command (acked or silent & sequential)
 		cmd := pack("ooib", uint8(4), b2v(acked, uint8(0), uint8(1<<0|1<<1)), uint32(offset), chunkData)
@@ -297,6 +300,18 @@ func SHA256File(s *Session, file string, timeout time.Duration) ([]byte, error) 
 
 	// return hash
 	return reply[1:], nil
+}
+
+// MakePath creates a directory path.
+func MakePath(s *Session, path string, timeout time.Duration) error {
+	// send command
+	cmd := pack("os", uint8(9), path)
+	err := fsSend(s, cmd, true, timeout)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /* Helpers */

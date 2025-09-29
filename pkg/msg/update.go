@@ -27,11 +27,15 @@ func Update(s *Session, image []byte, report func(int), timeout time.Duration) e
 		return fmt.Errorf("invalid message")
 	}
 
+	// get width
+	width := s.Channel().Width()
+
 	// get MTU
 	mtu, err := s.GetMTU(time.Second)
 	if err != nil {
 		return err
 	}
+
 	// subtract overhead
 	mtu -= 6
 
@@ -44,7 +48,7 @@ func Update(s *Session, image []byte, report func(int), timeout time.Duration) e
 		chunkData := image[offset : offset+chunkSize]
 
 		// determine acked
-		acked := num%10 == 0
+		acked := num%width == 0
 
 		// send "write" command
 		cmd = pack("oob", uint8(1), b2u(acked), chunkData)

@@ -20,6 +20,7 @@ type Queue chan []byte
 
 // Channel provides the mechanism to exchange messages between a device and a client.
 type Channel interface {
+	Width() int
 	Device() Device
 	Subscribe(Queue)
 	Unsubscribe(Queue)

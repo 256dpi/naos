@@ -13,7 +13,7 @@ import (
 	"github.com/256dpi/naos/pkg/fleet"
 	"github.com/256dpi/naos/pkg/naos"
 	"github.com/256dpi/naos/pkg/sdk"
-	"github.com/256dpi/naos/pkg/utils"
+	"github.com/256dpi/naos/pkg/serial"
 )
 
 func main() {
@@ -104,7 +104,7 @@ func build(cmd *command, p *naos.Project) {
 
 func detect(cmd *command, p *naos.Project) {
 	// detect devices
-	list, err := utils.ListPorts()
+	list, err := serial.ListPorts()
 	exitIfSet(err)
 
 	// prepare table
@@ -112,7 +112,7 @@ func detect(cmd *command, p *naos.Project) {
 
 	// add rows
 	for _, d := range list {
-		tbl.add(d.Path)
+		tbl.add(d)
 	}
 
 	// show table

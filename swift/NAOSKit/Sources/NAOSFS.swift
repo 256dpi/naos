@@ -236,6 +236,13 @@ public class NAOSFS {
 
 		return sum
 	}
+	
+	/// Make a directory path..
+	public static func make(session: NAOSSession, path: String, timeout: TimeInterval = 5) async throws {
+		// send command
+		let cmd = pack(fmt: "os", args: [UInt8(9), path])
+		try await send(session: session, cmd: cmd, ack: true, timeout: timeout)
+	}
 
 	// - Helpers
 

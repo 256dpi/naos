@@ -13,6 +13,7 @@ import (
 
 	"github.com/256dpi/naos/pkg/ble"
 	"github.com/256dpi/naos/pkg/fleet"
+	"github.com/256dpi/naos/pkg/serial"
 	"github.com/256dpi/naos/pkg/tree"
 	"github.com/256dpi/naos/pkg/utils"
 )
@@ -333,7 +334,7 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly, alt bool, 
 
 	// set missing device
 	if device == "" {
-		device = utils.FindPort(out)
+		device = serial.FindPort()
 	}
 
 	return tree.Flash(p.Tree(), p.Inventory.Name, p.Inventory.Target, device, baudRate, erase, appOnly, alt, out)
@@ -343,7 +344,7 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly, alt bool, 
 func (p *Project) Attach(device string, out io.Writer, in io.Reader) error {
 	// set missing device
 	if device == "" {
-		device = utils.FindPort(out)
+		device = serial.FindPort()
 	}
 
 	return tree.Attach(p.Tree(), device, out, in)
@@ -380,7 +381,7 @@ func (p *Project) Config(file, device, baudRate string, useBLE bool, out io.Writ
 
 	// set missing device
 	if device == "" {
-		device = utils.FindPort(out)
+		device = serial.FindPort()
 	}
 
 	// use BLE if requested
