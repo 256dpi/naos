@@ -62,7 +62,7 @@ static naos_fs_file_t naos_fs_files[NAOS_FS_MAX_FILES] = {0};
 static naos_fs_config_t naos_fs_config = {0};
 static char naos_fs_path[256] = {0};
 
-static const char *naos_fs_concat_path(const char *path) {
+static const char *naos_fs_concat(const char *path) {
   // check root
   if (naos_fs_config.root == NULL) {
     return path;
@@ -104,7 +104,7 @@ static naos_msg_reply_t naos_fs_handle_stat(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat_path((const char *)msg.data);
+  const char *path = naos_fs_concat((const char *)msg.data);
 
   // stat path
   struct stat info;
@@ -145,7 +145,7 @@ static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {
   }
 
   // get root
-  const char *root = naos_fs_concat_path((const char *)msg.data);
+  const char *root = naos_fs_concat((const char *)msg.data);
 
   // open directory
   DIR *dir = opendir(root);
@@ -258,7 +258,7 @@ static naos_msg_reply_t naos_fs_handle_open(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat_path((const char *)(msg.data + 1));
+  const char *path = naos_fs_concat((const char *)(msg.data + 1));
 
   // create file
   int fd = open(path, open_flags, 0644);
@@ -484,8 +484,8 @@ static naos_msg_reply_t naos_fs_handle_rename(naos_msg_t msg) {
   }
 
   // get paths
-  char *from = strdup(naos_fs_concat_path((const char *)msg.data));
-  const char *to = naos_fs_concat_path((const char *)&msg.data[from_len + 1]);
+  char *from = strdup(naos_fs_concat((const char *)msg.data));
+  const char *to = naos_fs_concat((const char *)&msg.data[from_len + 1]);
 
   // remove existing file, if any
   remove(to);
@@ -513,7 +513,7 @@ static naos_msg_reply_t naos_fs_handle_remove(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat_path((const char *)msg.data);
+  const char *path = naos_fs_concat((const char *)msg.data);
 
   // remove file
   int ret = remove(path);
@@ -534,7 +534,7 @@ static naos_msg_reply_t naos_fs_handle_sha256(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat_path((const char *)msg.data);
+  const char *path = naos_fs_concat((const char *)msg.data);
 
   // open file
   int fd = open(path, O_RDONLY, 0);
