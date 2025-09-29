@@ -302,6 +302,18 @@ func SHA256File(s *Session, file string, timeout time.Duration) ([]byte, error) 
 	return reply[1:], nil
 }
 
+// MakePath creates a directory path.
+func MakePath(s *Session, path string, timeout time.Duration) error {
+	// send command
+	cmd := pack("os", uint8(9), path)
+	err := fsSend(s, cmd, true, timeout)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 /* Helpers */
 
 func fsReceive(s *Session, expectAck bool, timeout time.Duration) ([]byte, error) {
