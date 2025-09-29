@@ -24,6 +24,17 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 		return pathField.stringValue
 	}
 	
+	@IBAction public func ascend(_: AnyObject) {
+		// make new path
+		let path = self.root().split(separator: "/").dropLast().joined(separator: "/")
+		
+		// update path
+		pathField.stringValue = "/" + path
+		
+		// trigger list
+		list(_: self)
+	}
+	
 	@objc public func descend(_: AnyObject) {
 		// check selected row
 		if listTable.selectedRow < 0 {
