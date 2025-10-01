@@ -92,9 +92,7 @@ static int naos_fs_mkdir(const char *path, mode_t mode) {
   for (char * p = tmp + 1; *p; p++) {
     if (*p == '/') {
       *p = '\0';
-      if (mkdir(tmp, mode) != 0 && errno != EEXIST) {
-        return -1;
-      }
+      mkdir(tmp, mode);
       *p = '/';
     }
   }
