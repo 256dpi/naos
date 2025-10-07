@@ -118,26 +118,11 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 	configPath := filepath.Join(Directory(naosPath), "sdkconfig")
 	overridesPath := filepath.Join(Directory(naosPath), "sdkconfig.overrides")
 
-	// apply overrides
-	if len(overrides) > 0 {
-		utils.Log(out, "Overriding sdkconfig...")
-
-		// update overrides file
-		err = utils.Update(overridesPath, joinOverrides(overrides))
-		if err != nil {
-			return err
-		}
-	}
-
-	// otherwise, ensure default sdkconfig
-	if len(overrides) == 0 {
-		utils.Log(out, "Ensure sdkconfig...")
-
-		// update overrides file
-		err = utils.Update(overridesPath, "")
-		if err != nil {
-			return err
-		}
+	// sync overrides
+	utils.Log(out, "Syncing overrides...")
+	err = utils.Update(overridesPath, joinOverrides(overrides))
+	if err != nil {
+		return err
 	}
 
 	// check partitions
@@ -228,11 +213,13 @@ func AppELF(naosPath, appName string) string {
 }
 
 func joinOverrides(overrides map[string]string) string {
-	sdkconfig := ""
+	// compile config
+	config := ""
 	for key, value := range overrides {
 		if value != "" {
-			sdkconfig += key + "=" + value + "\n"
+			config += key + "=" + value + "\n"
 		}
 	}
-	return sdkconfig
+
+	return config
 }
