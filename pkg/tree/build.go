@@ -12,7 +12,6 @@ import (
 )
 
 // TODO: Changing embeds in a v4 projects requires a clean.
-// TODO: Updating sdkconfig.overrides requires a reconfigure.
 // TODO: Changing target needs a reconfigure and clean.
 
 // Partitions defines a percentage based partitioning scheme.
@@ -79,7 +78,7 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 	// update project name
 	var err error
 	if appName != "" {
-		err = utils.Update(filepath.Join(Directory(naosPath), "project-name.txt"), appName)
+		_, err = utils.Update(filepath.Join(Directory(naosPath), "project-name.txt"), appName)
 	} else {
 		err = utils.Remove(filepath.Join(Directory(naosPath), "project-name.txt"))
 	}
@@ -93,7 +92,7 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 		return fmt.Errorf("failed to describe app version: %w", err)
 	}
 	if appVersion != "" {
-		err = utils.Update(filepath.Join(Directory(naosPath), "version.txt"), appVersion)
+		_, err = utils.Update(filepath.Join(Directory(naosPath), "version.txt"), appVersion)
 	} else {
 		err = utils.Remove(filepath.Join(Directory(naosPath), "version.txt"))
 	}
@@ -120,9 +119,11 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 
 	// sync overrides
 	utils.Log(out, "Syncing overrides...")
-	err = utils.Update(overridesPath, joinOverrides(overrides))
+	changedOverrides, err := utils.Update(overridesPath, joinOverrides(overrides))
 	if err != nil {
 		return err
+	} else if changedOverrides {
+		reconfigure = true
 	}
 
 	// check partitions
@@ -135,9 +136,11 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 
 		// update partitions
 		utils.Log(out, "Generating partitions...")
-		err = utils.Update(filepath.Join(Directory(naosPath), "partitions.csv"), table)
+		changedPartitions, err := utils.Update(filepath.Join(Directory(naosPath), "partitions.csv"), table)
 		if err != nil {
 			return err
+		} else if changedPartitions {
+			reconfigure = true
 		}
 	} else {
 		// sync partitions

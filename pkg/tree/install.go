@@ -241,7 +241,7 @@ func InstallRegistryComponents(projectPath, naosPath string, components []IDFCom
 	}
 
 	// update file
-	err = utils.Update(filepath.Join(Directory(naosPath), "main", "idf_component.yml"), string(updated))
+	_, err = utils.Update(filepath.Join(Directory(naosPath), "main", "idf_component.yml"), string(updated))
 	if err != nil {
 		return err
 	}

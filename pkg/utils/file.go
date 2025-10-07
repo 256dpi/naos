@@ -142,25 +142,25 @@ func Sync(src, dst string) error {
 }
 
 // Update will write a file if the contents have changed.
-func Update(path, content string) error {
+func Update(path, content string) (bool, error) {
 	// read file
 	data, err := os.ReadFile(path)
 	if err != nil && !os.IsNotExist(err) {
-		return err
+		return false, err
 	}
 
 	// check if content has changed
 	if data != nil && strings.TrimSpace(string(data)) == strings.TrimSpace(content) {
-		return nil
+		return false, nil
 	}
 
 	// write file
 	err = os.WriteFile(path, []byte(content), 0644)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
 
 // Remove will remove the specified path.
