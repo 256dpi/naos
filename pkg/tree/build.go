@@ -1,12 +1,10 @@
 package tree
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -120,44 +118,14 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 	configPath := filepath.Join(Directory(naosPath), "sdkconfig")
 	overridesPath := filepath.Join(Directory(naosPath), "sdkconfig.overrides")
 
-	// check if sdkconfig is layered
-	isLayered, err := utils.Exists(filepath.Join(Directory(naosPath), "sdkconfig.defaults"))
-
 	// apply overrides
 	if len(overrides) > 0 {
 		utils.Log(out, "Overriding sdkconfig...")
 
-		// check if layered
-		if isLayered {
-			// update overrides file
-			err = utils.Update(overridesPath, joinOverrides(overrides))
-			if err != nil {
-				return err
-			}
-		} else {
-			// read config
-			data, err := os.ReadFile(configPath)
-			if err != nil {
-				return err
-			}
-
-			// get config
-			sdkconfig := string(data)
-
-			// recreate if no match
-			if !hasOverrides(sdkconfig, overrides) {
-				// apply overrides
-				sdkconfig, err = applyOverrides(naosPath, overrides)
-				if err != nil {
-					return err
-				}
-
-				// write config
-				err = utils.Update(configPath, sdkconfig)
-				if err != nil {
-					return err
-				}
-			}
+		// update overrides file
+		err = utils.Update(overridesPath, joinOverrides(overrides))
+		if err != nil {
+			return err
 		}
 	}
 
@@ -165,33 +133,10 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 	if len(overrides) == 0 {
 		utils.Log(out, "Ensure sdkconfig...")
 
-		// check if layered
-		if isLayered {
-			// update overrides file
-			err = utils.Update(overridesPath, "")
-			if err != nil {
-				return err
-			}
-		} else {
-			// get original
-			original, err := utils.Original(naosPath, filepath.Join("tree", "sdkconfig"))
-			if err != nil {
-				return err
-			}
-
-			// get existing
-			existing, err := os.ReadFile(configPath)
-			if err != nil {
-				return err
-			}
-
-			// overwrite if changed
-			if string(existing) != original {
-				err = os.WriteFile(configPath, []byte(original), 0644)
-				if err != nil {
-					return err
-				}
-			}
+		// update overrides file
+		err = utils.Update(overridesPath, "")
+		if err != nil {
+			return err
 		}
 	}
 
@@ -280,81 +225,6 @@ func AppELF(naosPath, appName string) string {
 	}
 
 	return filepath.Join(Directory(naosPath), "build", appName+".elf")
-}
-
-func hasOverrides(sdkconfig string, overrides map[string]string) bool {
-	// prepare scanner
-	scanner := bufio.NewScanner(strings.NewReader(sdkconfig))
-
-	// check lines
-	for scanner.Scan() {
-		// get line
-		line := strings.TrimSpace(scanner.Text())
-
-		// skip empty lines
-		if line == "" {
-			continue
-		}
-
-		// verify unset constants
-		if strings.HasSuffix(line, "is not set") {
-			name := line[2 : len(line)-11]
-			if overrides[name] != "" {
-				return false
-			}
-			continue
-		}
-
-		// ignore comments
-		if strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		// verify set constants
-		seg := strings.Split(line, "=")
-		if _, ok := overrides[seg[0]]; !ok {
-			continue
-		}
-		if seg[1] != overrides[seg[0]] {
-			return false
-		}
-	}
-
-	return true
-}
-
-func applyOverrides(naosPath string, overrides map[string]string) (string, error) {
-	// read original config
-	sdkconfig, err := utils.Original(naosPath, filepath.Join("tree", "sdkconfig"))
-	if err != nil {
-		return "", err
-	}
-
-	// check overrides
-	if len(overrides) == 0 {
-		return sdkconfig, nil
-	}
-
-	// append comments
-	sdkconfig += "\n#\n# OVERRIDES\n#\n"
-
-	// replace lines
-	for key, value := range overrides {
-		re := regexp.MustCompile("(?m)^(" + regexp.QuoteMeta(key) + ")=(.*)$")
-		if re.MatchString(sdkconfig) {
-			if value != "" {
-				sdkconfig = re.ReplaceAllString(sdkconfig, key+"="+value)
-			} else {
-				sdkconfig = re.ReplaceAllString(sdkconfig, "# "+key+" is not set")
-			}
-		} else {
-			if value != "" {
-				sdkconfig += key + "=" + value + "\n"
-			}
-		}
-	}
-
-	return sdkconfig, nil
 }
 
 func joinOverrides(overrides map[string]string) string {
