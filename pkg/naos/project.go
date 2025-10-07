@@ -213,17 +213,9 @@ func (p *Project) Install(force bool, out io.Writer) error {
 }
 
 // Build will build the project.
-func (p *Project) Build(overrides map[string]string, clean, reconfigure, appOnly bool, out io.Writer) error {
-	// merge overrides with inventory overrides
-	or := map[string]string{}
-	for k, v := range p.Inventory.Overrides {
-		or[k] = v
-	}
-	for k, v := range overrides {
-		or[k] = v
-	}
-
-	return tree.Build(p.Tree(), p.Inventory.Name, p.Inventory.TagPrefix, p.Inventory.Target, or, p.Inventory.Embeds, p.Inventory.Partitions, clean, reconfigure, appOnly, out)
+func (p *Project) Build(clean, reconfigure, appOnly bool, out io.Writer) error {
+	// execute command
+	return tree.Build(p.Tree(), p.Inventory.Name, p.Inventory.TagPrefix, p.Inventory.Target, p.Inventory.Overrides, p.Inventory.Embeds, p.Inventory.Partitions, clean, reconfigure, appOnly, out)
 }
 
 // BuildTrace will build the project with tracing enabled.
