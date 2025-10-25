@@ -36,7 +36,8 @@ export class SerialDevice implements Device {
   }
 
   id() {
-    return "serial/" + this.port.getInfo().usbProductId;
+    const info = this.port.getInfo();
+    return `serial/${info.usbProductId ?? "unknown"}`;
   }
 
   async open(): Promise<Channel> {
