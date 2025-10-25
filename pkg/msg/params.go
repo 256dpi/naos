@@ -61,7 +61,7 @@ type ParamUpdate struct {
 // GetParam returns the value of the named parameter.
 func GetParam(s *Session, name string, timeout time.Duration) ([]byte, error) {
 	// send command
-	cmd := pack("os", uint8(0), name)
+	cmd := Pack("os", uint8(0), name)
 	err := s.Send(paramsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func GetParam(s *Session, name string, timeout time.Duration) ([]byte, error) {
 // SetParam sets the value of the named parameter.
 func SetParam(s *Session, name string, value []byte, timeout time.Duration) error {
 	// send command
-	cmd := pack("osob", uint8(1), name, uint8(0), value)
+	cmd := Pack("osob", uint8(1), name, uint8(0), value)
 	err := s.Send(paramsEndpoint, cmd, timeout)
 	if err != nil {
 		return err
@@ -158,7 +158,7 @@ func ReadParam(s *Session, ref uint8, timeout time.Duration) ([]byte, error) {
 // WriteParam sets the value of the referenced parameter.
 func WriteParam(s *Session, ref uint8, value []byte, timeout time.Duration) error {
 	// send command
-	cmd := pack("oob", uint8(4), ref, value)
+	cmd := Pack("oob", uint8(4), ref, value)
 	err := s.Send(paramsEndpoint, cmd, timeout)
 	if err != nil {
 		return err
@@ -179,7 +179,7 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 	}
 
 	// send command
-	cmd := pack("oqq", uint8(5), mp, since)
+	cmd := Pack("oqq", uint8(5), mp, since)
 	err := s.Send(paramsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
@@ -203,7 +203,7 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 		}
 
 		// unpack reply
-		args := unpack("oqb", reply)
+		args := Unpack("oqb", reply)
 
 		// append info
 		list = append(list, ParamUpdate{

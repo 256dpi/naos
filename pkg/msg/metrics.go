@@ -46,7 +46,7 @@ type MetricLayout struct {
 // ListMetrics lists all metrics.
 func ListMetrics(s *Session, timeout time.Duration) ([]MetricInfo, error) {
 	// send command
-	cmd := pack("o", uint8(0))
+	cmd := Pack("o", uint8(0))
 	err := s.Send(metricsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func ListMetrics(s *Session, timeout time.Duration) ([]MetricInfo, error) {
 		}
 
 		// unpack reply
-		args := unpack("oooos", reply)
+		args := Unpack("oooos", reply)
 
 		// append info
 		list = append(list, MetricInfo{
@@ -86,7 +86,7 @@ func ListMetrics(s *Session, timeout time.Duration) ([]MetricInfo, error) {
 // DescribeMetric describes a metric.
 func DescribeMetric(s *Session, ref uint8, timeout time.Duration) (*MetricLayout, error) {
 	// send command
-	cmd := pack("oo", uint8(1), ref)
+	cmd := Pack("oo", uint8(1), ref)
 	err := s.Send(metricsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func DescribeMetric(s *Session, ref uint8, timeout time.Duration) (*MetricLayout
 			}
 
 			// parse reply
-			args := unpack("os", reply[1:])
+			args := Unpack("os", reply[1:])
 			// num := args[0].(uint8)
 			key := args[1].(string)
 
@@ -137,7 +137,7 @@ func DescribeMetric(s *Session, ref uint8, timeout time.Duration) (*MetricLayout
 			}
 
 			// parse reply
-			args := unpack("oos", reply[1:])
+			args := Unpack("oos", reply[1:])
 			numKey := args[0].(uint8)
 			// numValue := args[1].(uint8)
 			value := args[2].(string)
@@ -158,7 +158,7 @@ func DescribeMetric(s *Session, ref uint8, timeout time.Duration) (*MetricLayout
 // ReadMetrics reads metrics.
 func ReadMetrics(s *Session, ref uint8, timeout time.Duration) ([]byte, error) {
 	// send command
-	cmd := pack("oo", uint8(2), ref)
+	cmd := Pack("oo", uint8(2), ref)
 	err := s.Send(metricsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err

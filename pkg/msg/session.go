@@ -231,7 +231,7 @@ func (s *Session) Status(timeout time.Duration) (Status, error) {
 	// taking the mutex would deadlock
 
 	// write command
-	cmd := pack("o", uint8(0))
+	cmd := Pack("o", uint8(0))
 	err := s.Send(0xfd, cmd, 0)
 	if err != nil {
 		return 0, err
@@ -256,7 +256,7 @@ func (s *Session) Unlock(password string, timeout time.Duration) (bool, error) {
 	// taking the mutex would deadlock
 
 	// write command
-	cmd := pack("os", uint8(1), password)
+	cmd := Pack("os", uint8(1), password)
 	err := s.Send(SystemEndpoint, cmd, timeout)
 	if err != nil {
 		return false, err
@@ -285,7 +285,7 @@ func (s *Session) GetMTU(timeout time.Duration) (uint16, error) {
 	}
 
 	// write command
-	cmd := pack("o", uint8(2))
+	cmd := Pack("o", uint8(2))
 	err := s.Send(SystemEndpoint, cmd, 0)
 	if err != nil {
 		return 0, err
@@ -303,7 +303,7 @@ func (s *Session) GetMTU(timeout time.Duration) (uint16, error) {
 	}
 
 	// cache value
-	s.mtu = unpack("h", msg)[0].(uint16)
+	s.mtu = Unpack("h", msg)[0].(uint16)
 
 	return s.mtu, nil
 }

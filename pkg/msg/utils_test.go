@@ -11,7 +11,7 @@ func TestRandom(t *testing.T) {
 }
 
 func TestPacking(t *testing.T) {
-	buf := pack("ohiqsob", byte(1), uint16(2), uint32(3), uint64(4), "hello", byte(0), []byte("world"))
+	buf := Pack("ohiqsob", byte(1), uint16(2), uint32(3), uint64(4), "hello", byte(0), []byte("world"))
 	assert.Equal(t, []byte{
 		1,
 		2, 0,
@@ -21,7 +21,7 @@ func TestPacking(t *testing.T) {
 		'w', 'o', 'r', 'l', 'd',
 	}, buf)
 
-	args := unpack("ohiqsob", buf)
+	args := Unpack("ohiqsob", buf)
 	assert.Equal(t, byte(1), args[0].(byte))
 	assert.Equal(t, uint16(2), args[1].(uint16))
 	assert.Equal(t, uint32(3), args[2].(uint32))

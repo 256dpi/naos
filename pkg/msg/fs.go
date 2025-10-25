@@ -18,7 +18,7 @@ type FSInfo struct {
 // StatPath retrieves information about a file system entry.
 func StatPath(s *Session, path string, timeout time.Duration) (*FSInfo, error) {
 	// send command
-	cmd := pack("os", uint8(0), path)
+	cmd := Pack("os", uint8(0), path)
 	err := fsSend(s, cmd, false, timeout)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func StatPath(s *Session, path string, timeout time.Duration) (*FSInfo, error) {
 	}
 
 	// unpack "info" reply
-	args := unpack("oi", reply[1:])
+	args := Unpack("oi", reply[1:])
 
 	return &FSInfo{
 		IsDir: args[0].(uint8) == 1,
@@ -47,7 +47,7 @@ func StatPath(s *Session, path string, timeout time.Duration) (*FSInfo, error) {
 // ListDir retrieves a list of file system entries in a directory.
 func ListDir(s *Session, dir string, timeout time.Duration) ([]FSInfo, error) {
 	// send command
-	cmd := pack("os", uint8(1), dir)
+	cmd := Pack("os", uint8(1), dir)
 	err := fsSend(s, cmd, false, timeout)
 	if err != nil {
 		return nil, nil
@@ -71,7 +71,7 @@ func ListDir(s *Session, dir string, timeout time.Duration) ([]FSInfo, error) {
 		}
 
 		// unpack "info" reply
-		args := unpack("ois", reply[1:])
+		args := Unpack("ois", reply[1:])
 
 		// add info
 		infos = append(infos, FSInfo{
@@ -120,14 +120,14 @@ func ReadFile(s *Session, file string, report func(uint32), timeout time.Duratio
 // ReadFileRange reads a range of bytes from a file.
 func ReadFileRange(s *Session, file string, offset, length uint32, report func(uint32), timeout time.Duration) ([]byte, error) {
 	// send "open" command
-	cmd := pack("oos", uint8(2), uint8(0), file)
+	cmd := Pack("oos", uint8(2), uint8(0), file)
 	err := fsSend(s, cmd, true, timeout)
 	if err != nil {
 		return nil, err
 	}
 
 	// send "read" command
-	cmd = pack("oii", uint8(3), offset, length)
+	cmd = Pack("oii", uint8(3), offset, length)
 	err = fsSend(s, cmd, false, timeout)
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func ReadFileRange(s *Session, file string, offset, length uint32, report func(u
 		}
 
 		// unpack offset
-		replyOffset := unpack("i", reply[1:])[0].(uint32)
+		replyOffset := Unpack("i", reply[1:])[0].(uint32)
 
 		// verify offset
 		if replyOffset != offset+count {
@@ -174,7 +174,7 @@ func ReadFileRange(s *Session, file string, offset, length uint32, report func(u
 	}
 
 	// send "close" command
-	cmd = pack("o", uint8(5))
+	cmd = Pack("o", uint8(5))
 	err = fsSend(s, cmd, true, timeout)
 	if err != nil {
 		return nil, err
@@ -186,7 +186,7 @@ func ReadFileRange(s *Session, file string, offset, length uint32, report func(u
 // WriteFile writes data to a file.
 func WriteFile(s *Session, file string, data []byte, report func(uint32), timeout time.Duration) error {
 	// send "create" command
-	cmd := pack("oos", uint8(2), uint8((1<<0)|(1<<2)), file)
+	cmd := Pack("oos", uint8(2), uint8((1<<0)|(1<<2)), file)
 	err := fsSend(s, cmd, true, timeout)
 	if err != nil {
 		return err
@@ -216,7 +216,7 @@ func WriteFile(s *Session, file string, data []byte, report func(uint32), timeou
 		acked := num%width == 0
 
 		// prepare "write" command (acked or silent & sequential)
-		cmd := pack("ooib", uint8(4), b2v(acked, uint8(0), uint8(1<<0|1<<1)), uint32(offset), chunkData)
+		cmd := Pack("ooib", uint8(4), b2v(acked, uint8(0), uint8(1<<0|1<<1)), uint32(offset), chunkData)
 
 		// send "write" command
 		err = fsSend(s, cmd, false, 0)
@@ -245,7 +245,7 @@ func WriteFile(s *Session, file string, data []byte, report func(uint32), timeou
 	}
 
 	// send "close" command
-	cmd = pack("o", uint8(5))
+	cmd = Pack("o", uint8(5))
 	err = fsSend(s, cmd, true, timeout)
 	if err != nil {
 		return err
@@ -257,7 +257,7 @@ func WriteFile(s *Session, file string, data []byte, report func(uint32), timeou
 // RenamePath renames a file system entry.
 func RenamePath(s *Session, from, to string, timeout time.Duration) error {
 	// send command
-	cmd := pack("osos", uint8(6), from, uint8(0), to)
+	cmd := Pack("osos", uint8(6), from, uint8(0), to)
 	err := fsSend(s, cmd, true, timeout)
 	if err != nil {
 		return err
@@ -269,7 +269,7 @@ func RenamePath(s *Session, from, to string, timeout time.Duration) error {
 // RemovePath removes a file system entry.
 func RemovePath(s *Session, path string, timeout time.Duration) error {
 	// send command
-	cmd := pack("os", uint8(7), path)
+	cmd := Pack("os", uint8(7), path)
 	err := fsSend(s, cmd, true, timeout)
 	if err != nil {
 		return err
@@ -281,7 +281,7 @@ func RemovePath(s *Session, path string, timeout time.Duration) error {
 // SHA256File retrieves the SHA-256 hash of a file.
 func SHA256File(s *Session, file string, timeout time.Duration) ([]byte, error) {
 	// send command
-	cmd := pack("os", uint8(8), file)
+	cmd := Pack("os", uint8(8), file)
 	err := fsSend(s, cmd, false, timeout)
 	if err != nil {
 		return nil, err
@@ -305,7 +305,7 @@ func SHA256File(s *Session, file string, timeout time.Duration) ([]byte, error) 
 // MakePath creates a directory path.
 func MakePath(s *Session, path string, timeout time.Duration) error {
 	// send command
-	cmd := pack("os", uint8(9), path)
+	cmd := Pack("os", uint8(9), path)
 	err := fsSend(s, cmd, true, timeout)
 	if err != nil {
 		return err

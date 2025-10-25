@@ -27,7 +27,8 @@ func random(n int) []byte {
 	return handle
 }
 
-func pack(fmt string, args ...any) []byte {
+// Pack a byte buffer as specified by the format.
+func Pack(fmt string, args ...any) []byte {
 	// calculate size
 	size := 0
 	for i, code := range fmt {
@@ -82,7 +83,8 @@ func pack(fmt string, args ...any) []byte {
 	return buffer
 }
 
-func unpack(fmt string, buffer []byte) []any {
+// Unpack a byte buffer as specified by the format.
+func Unpack(fmt string, buffer []byte) []any {
 	// prepare result
 	result := make([]any, 0, len(fmt))
 
