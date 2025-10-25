@@ -124,8 +124,8 @@ export class RelayDevice implements Device {
       write: async (data: Uint8Array) => {
         await sendRelay(session, this.device, data);
       },
-      close: () => {
-        session.end(0);
+      close: async () => {
+        await session.end(0);
         this.ch = null;
       },
     };

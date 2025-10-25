@@ -146,7 +146,7 @@ export class ManagedDevice {
     }
 
     // close channel
-    channel.close();
+    await channel.close();
   }
 
   async stop() {

@@ -56,7 +56,7 @@ export class HTTPDevice implements Device {
       write: async (data: Uint8Array) => {
         socket.send(data);
       },
-      close: () => {
+      close: async () => {
         socket.close();
         this.ch = null;
       },

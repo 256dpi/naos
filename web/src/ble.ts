@@ -94,7 +94,7 @@ export class BLEDevice implements Device {
       write: async (data: Uint8Array) => {
         await this.char.writeValueWithoutResponse(data);
       },
-      close: () => {
+      close: async () => {
         this.char.removeEventListener("characteristicvaluechanged", handler);
         this.ch = null;
         closed = true;

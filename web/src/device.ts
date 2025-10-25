@@ -65,7 +65,7 @@ export interface Channel {
   subscribe(queue: Queue): void;
   unsubscribe(queue: Queue): void;
   write(data: Uint8Array): Promise<void>;
-  close(): void;
+  close(): Promise<void>;
 }
 
 /**
