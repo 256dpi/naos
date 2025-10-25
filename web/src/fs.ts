@@ -256,9 +256,9 @@ export async function sha256File(session: Session, file: string) {
 }
 
 export async function makePath(session: Session, path: string) {
-    // send command
-    let cmd = pack("os", 9, path);
-    await send(session, cmd, true);
+  // send command
+  let cmd = pack("os", 9, path);
+  await send(session, cmd, true);
 }
 
 /* Helpers */
