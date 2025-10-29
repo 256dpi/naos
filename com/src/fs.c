@@ -89,7 +89,7 @@ static int naos_fs_mkdir(const char *path, mode_t mode) {
   }
 
   // create intermediary directories
-  for (char * p = tmp + 1; *p; p++) {
+  for (char *p = tmp + 1; *p; p++) {
     if (*p == '/') {
       *p = '\0';
       mkdir(tmp, mode);
@@ -656,7 +656,7 @@ static naos_msg_reply_t naos_fs_handle_make(naos_msg_t msg) {
   const char *path = naos_fs_concat((const char *)msg.data);
 
   // prepare directory
-  int ret = naos_fs_mkdir((char*)path, 0755);
+  int ret = naos_fs_mkdir((char *)path, 0755);
   if (ret != 0) {
     return naos_fs_send_error(msg.session, errno);
   }
