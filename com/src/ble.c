@@ -30,6 +30,8 @@ typedef struct {
   uint16_t mtu;
   bool congested;
   bool connected;
+  uint8_t buf[ESP_GATT_MAX_MTU_SIZE];
+  size_t len;
 } naos_ble_conn_t;
 
 static esp_ble_adv_params_t naos_ble_adv_params = {
@@ -61,7 +63,6 @@ static struct {
 typedef struct {
   uint8_t uuid[16];
   esp_gatt_char_prop_t prop;
-  uint16_t max_write_len;
   // ---
   uint16_t handle;
   esp_bt_uuid_t _uuid;
@@ -70,7 +71,6 @@ typedef struct {
 static naos_ble_gatts_char_t naos_ble_char_msg = {
     .uuid = {0xf3, 0x30, 0x41, 0x63, 0xf3, 0x37, 0x45, 0xc9, 0xad, 0x00, 0x1b, 0xa6, 0x4b, 0x74, 0x60, 0x03},
     .prop = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_INDICATE,
-    .max_write_len = 512,
 };
 
 static naos_ble_gatts_char_t *naos_ble_gatts_chars[NAOS_BLE_NUM_CHARS] = {
@@ -103,7 +103,7 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT: {
       // check status
       if (p->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-        ESP_LOGE(NAOS_LOG_TAG, "naos_ble_gap_handler: failed to start advertisement (%d)", p->adv_data_raw_cmpl.status);
+        ESP_LOGE(NAOS_LOG_TAG, "naos_ble_gap_handler: failed to start advertisement (%d)", p->adv_start_cmpl.status);
         break;
       }
 
@@ -114,7 +114,7 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
       // check status
       if (p->update_conn_params.status != ESP_BT_STATUS_SUCCESS) {
         ESP_LOGE(NAOS_LOG_TAG, "naos_ble_gap_handler: failed to update connection parameters (%d)",
-                 p->adv_data_raw_cmpl.status);
+                 p->update_conn_params.status);
         break;
       }
 
@@ -473,7 +473,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
         }
 
         // check attribute length and return if it exceeds
-        if (p->write.len > c->max_write_len) {
+        if (p->write.offset + p->write.len > ESP_GATT_MAX_MTU_SIZE) {
           // send error response
           ESP_ERROR_CHECK(
               esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, ESP_GATT_INVALID_ATTR_LEN, NULL));
@@ -482,6 +482,26 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
         // prepare status
         esp_gatt_status_t status = ESP_GATT_OK;
+
+        // handle write prepare
+        if (p->write.is_prep) {
+          // store write
+          memcpy(conn->buf + p->write.offset, p->write.value, p->write.len);
+          conn->len = p->write.offset + p->write.len;
+
+          // send response if requested
+          if (p->write.need_rsp) {
+            esp_gatt_rsp_t rsp = {0};
+            rsp.attr_value.handle = c->handle;
+            rsp.attr_value.offset = p->write.offset;
+            rsp.attr_value.len = p->write.len;
+            memcpy(rsp.attr_value.value, p->write.value, p->write.len);
+            ESP_ERROR_CHECK(esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, status, &rsp));
+          }
+
+          // exit loop
+          break;
+        }
 
         // handle characteristic
         if (c == &naos_ble_char_msg) {
@@ -501,6 +521,30 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
         // exit loop
         break;
       }
+
+      break;
+    }
+
+    // handle execute write event
+    case ESP_GATTS_EXEC_WRITE_EVT: {
+      // get connection
+      naos_ble_conn_t *conn = &naos_ble_conns[p->exec_write.conn_id];
+
+      // execute write if requested
+      if (p->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC) {
+        if (conn->len > 0) {
+          bool ok = naos_msg_dispatch(naos_ble_msg_channel_id, conn->buf, conn->len, conn);
+          if (!ok) {
+            ESP_LOGW(NAOS_LOG_TAG, "naos_ble_gatts_handler: prepared write dispatch failed");
+          }
+        }
+      }
+
+      // clear buffer
+      conn->len = 0;
+
+      // send response
+      ESP_ERROR_CHECK(esp_ble_gatts_send_response(i, p->exec_write.conn_id, p->exec_write.trans_id, ESP_GATT_OK, NULL));
 
       break;
     }
