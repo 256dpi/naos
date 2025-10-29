@@ -558,8 +558,15 @@ static uint16_t naos_ble_msg_mtu(void *ctx) {
   // get conn
   naos_ble_conn_t *conn = ctx;
 
-  // return MTU
-  return conn->mtu - 5;  // 5 bytes are reserved for the BLE stack
+  /* we cap the MTU here to 500 bytes to prevent slow "long writes" */
+
+  // calculate MTU
+  uint16_t mtu = conn->mtu - 5;  // 5 bytes are reserved for the BLE stack;
+  if (mtu > 500) {
+    mtu = 500;
+  }
+
+  return mtu;
 }
 
 static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
