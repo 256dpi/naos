@@ -30,8 +30,6 @@ typedef struct {
   uint16_t mtu;
   bool congested;
   bool connected;
-  uint8_t buf[ESP_GATT_MAX_MTU_SIZE];
-  size_t len;
 } naos_ble_conn_t;
 
 static esp_ble_adv_params_t naos_ble_adv_params = {
@@ -474,7 +472,6 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
         // check attribute length and return if it exceeds
         if (p->write.offset + p->write.len > ESP_GATT_MAX_MTU_SIZE) {
-          // send error response
           ESP_ERROR_CHECK(
               esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, ESP_GATT_INVALID_ATTR_LEN, NULL));
           return;
@@ -485,22 +482,18 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
         // handle write prepare
         if (p->write.is_prep) {
-          // store write
-          memcpy(conn->buf + p->write.offset, p->write.value, p->write.len);
-          conn->len = p->write.offset + p->write.len;
+          // Note: Supported in #8ba40f0, but removed again due to memory overhead.
+          // Instead, make sure that message is below MTU and sent as a normal write.
 
-          // send response if requested
-          if (p->write.need_rsp) {
-            esp_gatt_rsp_t rsp = {0};
-            rsp.attr_value.handle = c->handle;
-            rsp.attr_value.offset = p->write.offset;
-            rsp.attr_value.len = p->write.len;
-            memcpy(rsp.attr_value.value, p->write.value, p->write.len);
-            ESP_ERROR_CHECK(esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, status, &rsp));
-          }
+          // log error
+          ESP_LOGE(NAOS_LOG_TAG, "naos_ble_gatts_handler: unsupported long write (id=%d, len=%d)", p->write.conn_id,
+                   p->write.len);
 
-          // exit loop
-          break;
+          // send response
+          ESP_ERROR_CHECK(
+              esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, ESP_GATT_REQ_NOT_SUPPORTED, NULL));
+
+          return;
         }
 
         // handle characteristic
@@ -527,24 +520,8 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
     // handle execute write event
     case ESP_GATTS_EXEC_WRITE_EVT: {
-      // get connection
-      naos_ble_conn_t *conn = &naos_ble_conns[p->exec_write.conn_id];
-
-      // execute write if requested
-      if (p->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC) {
-        if (conn->len > 0) {
-          bool ok = naos_msg_dispatch(naos_ble_msg_channel_id, conn->buf, conn->len, conn);
-          if (!ok) {
-            ESP_LOGW(NAOS_LOG_TAG, "naos_ble_gatts_handler: prepared write dispatch failed");
-          }
-        }
-      }
-
-      // clear buffer
-      conn->len = 0;
-
-      // send response
-      ESP_ERROR_CHECK(esp_ble_gatts_send_response(i, p->exec_write.conn_id, p->exec_write.trans_id, ESP_GATT_OK, NULL));
+      ESP_ERROR_CHECK(
+          esp_ble_gatts_send_response(i, p->write.conn_id, p->write.trans_id, ESP_GATT_REQ_NOT_SUPPORTED, NULL));
 
       break;
     }
@@ -602,13 +579,8 @@ static uint16_t naos_ble_msg_mtu(void *ctx) {
   // get conn
   naos_ble_conn_t *conn = ctx;
 
-  /* we cap the MTU here to 500 bytes to prevent slow "long writes" */
-
   // calculate MTU
   uint16_t mtu = conn->mtu - 5;  // 5 bytes are reserved for the BLE stack;
-  if (mtu > 500) {
-    mtu = 500;
-  }
 
   return mtu;
 }
