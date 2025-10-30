@@ -619,7 +619,7 @@ uint16_t naos_msg_get_mtu(uint16_t id) {
   }
 
   // get MTU
-  uint16_t mtu = session->mtu;
+  uint16_t mtu = session->mtu - 4;  // subtract frame overhead
 
   // release mutex
   naos_unlock(naos_msg_mutex);

@@ -84,8 +84,10 @@ typedef struct {
  * the `naos_msg_dispatch` function during session creation. The result of the
  * `mtu` function is cached for the session during creation.
  *
+ * Note: The channel MTU reflects the underlying maximum message length.
+ *
  * @param name The channel name.
- * @param mtu The function to determine the MTU.
+ * @param mtu The function to determine the channel MTU.
  * @param send The function to send messages.
  */
 typedef struct {
@@ -160,10 +162,12 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t *data, size_t len, void *ctx);
 bool naos_msg_send(naos_msg_t msg);
 
 /**
- * Called by endpoints to determine a sessions channel MTU.
+ * Called by endpoints to determine a sessions MTU.
+ *
+ * Note: The message framing overhead is already been subtracted from the value.
  *
  * @param id The session ID.
- * @return The channel MTU in bytes.
+ * @return The session MTU in bytes.
  */
 uint16_t naos_msg_get_mtu(uint16_t id);
 
