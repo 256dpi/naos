@@ -16,7 +16,9 @@ jobs:
           go-version: "1.23"
 
       - name: Prepare (Linux)
-        run: sudo apt-get install bluez -y
+        run: |
+          sudo apt-get update
+          sudo apt-get install bluez -y
         if: startsWith(matrix.os, 'ubuntu-latest')
 
       - name: Test CLI
