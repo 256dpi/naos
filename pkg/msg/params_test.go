@@ -10,6 +10,10 @@ import (
 // TODO: Resolve dependency on real device.
 
 func TestParamsEndpoint(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	dev := NewHTTPDevice("10.0.1.7")
 
 	ch, err := dev.Open()

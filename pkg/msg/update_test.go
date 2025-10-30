@@ -12,6 +12,10 @@ import (
 const binPath = "/Users/256dpi/Development/GitHub/256dpi/naos/com/test/build/naos.bin"
 
 func TestUpdate(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	// read binary
 	data, err := os.ReadFile(binPath)
 	assert.NoError(t, err)

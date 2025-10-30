@@ -8,6 +8,10 @@ import (
 )
 
 func TestManagedDevice(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	dev := NewHTTPDevice("10.0.1.7")
 
 	device := NewManagedDevice(dev)
