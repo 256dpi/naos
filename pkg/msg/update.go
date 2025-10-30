@@ -37,7 +37,7 @@ func Update(s *Session, image []byte, report func(int), timeout time.Duration) e
 	}
 
 	// subtract overhead
-	mtu -= 6
+	mtu -= 2
 
 	// write data in chunks
 	num := 0

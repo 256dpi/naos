@@ -28,7 +28,7 @@ public class NAOSUpdate {
 		var mtu = Int(try await session.getMTU())
 		
 		// subtract overhead
-		mtu -= 6
+		mtu -= 2
 
 		// write data in chunks
 		var num = 0
