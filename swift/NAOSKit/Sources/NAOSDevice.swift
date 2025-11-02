@@ -9,6 +9,7 @@ import Foundation
 
 /// A generic message device.
 public protocol NAOSDevice {
+	func type() -> String
 	func id() -> String
 	func name() -> String
 	func open() async throws -> NAOSChannel

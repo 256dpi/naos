@@ -44,6 +44,10 @@ class NAOSHTTPDevice: NAOSDevice {
 	init(host: String) {
 		self.host = host
 	}
+	
+	public func type() -> String {
+		return "HTTP"
+	}
 
 	public func id() -> String {
 		return "http/" + host

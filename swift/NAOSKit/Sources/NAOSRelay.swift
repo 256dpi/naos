@@ -69,6 +69,10 @@ public class NAOSRelayDevice: NAOSDevice {
 		self.device = device
 	}
 	
+	public func type() -> String {
+		return "Relay"
+	}
+	
 	public func id() -> String {
 		return "\(host.device.id())/\(device)"
 	}

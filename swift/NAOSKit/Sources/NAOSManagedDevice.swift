@@ -221,7 +221,7 @@ public class NAOSManagedDevice: NSObject {
 		// TODO: Precompute during refresh and updates?
 		
 		// format title
-		return (parameters[.deviceName] ?? "") + " (" + (parameters[.appType] ?? "") + ")"
+		return device.type() + ": " + (parameters[.deviceName] ?? "") + " (" + (parameters[.appType] ?? "") + ")"
 	}
 
 	/// Unlock will attempt to unlock the device and returns its success.

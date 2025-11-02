@@ -37,6 +37,10 @@ class NAOSBLEDevice: NAOSDevice {
 		self.peripheral = peripheral
 	}
 	
+	public func type() -> String {
+		return "BLE"
+	}
+	
 	public func id() -> String {
 		return "ble/" + peripheral.identifier.uuidString
 	}

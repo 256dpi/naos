@@ -54,6 +54,10 @@ public class NAOSSerialDevice: NAOSDevice {
 		self.displayName = name
 		self.baudRate = baudRate
 	}
+	
+	public func type() -> String {
+		return "Serial"
+	}
 
 	public func id() -> String {
 		return "serial/" + URL(fileURLWithPath: path).lastPathComponent
