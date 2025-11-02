@@ -8,15 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v3
       - name: Sync
-        run: ./.github/workflows/sync-subtree.sh
+        run: ./.github/workflows/swift.sh
         shell: bash
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SYNC_PREFIX: swift/NAOSKit
-          SYNC_REMOTE_REPO: 256dpi/NAOSKit
-          SYNC_BRANCH: main
