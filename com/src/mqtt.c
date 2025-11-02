@@ -63,6 +63,7 @@ static void naos_mqtt_start() {
   // get settings
   const char *host = naos_get_s("mqtt-host");
   const char *port = naos_get_s("mqtt-port");
+  const bool tls = naos_get_b("mqtt-tls");
   const char *client_id = naos_get_s("mqtt-client-id");
   const char *username = naos_get_s("mqtt-username");
   const char *password = naos_get_s("mqtt-password");
@@ -78,6 +79,7 @@ static void naos_mqtt_start() {
   naos_unlock(naos_mqtt_mutex);
 
   // start the MQTT client
+  esp_mqtt_tls(tls, true, NULL, 0);
   esp_mqtt_start(host, port, client_id, username, password);
 }
 
@@ -128,6 +130,7 @@ static void naos_mqtt_manage(naos_status_t status) {
 static naos_param_t naos_mqtt_params[] = {
     {.name = "mqtt-host", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "mqtt-port", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+    {.name = "mqtt-tls", .type = NAOS_BOOL, .mode = NAOS_SYSTEM},
     {.name = "mqtt-client-id", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "mqtt-username", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "mqtt-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
