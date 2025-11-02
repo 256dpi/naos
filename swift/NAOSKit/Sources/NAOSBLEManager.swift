@@ -10,10 +10,10 @@ import CoreBluetooth
 /// The delegate protocol to be implemented to handle NAOSManager events.
 public protocol NAOSBLEManagerDelegate {
 	/// The manager discovered a new device.
-	func naosManagerDidDiscoverDevice(manager: NAOSBLEManager, device: NAOSManagedDevice)
+	func naosBLEManagerDidDiscoverDevice(manager: NAOSBLEManager, device: NAOSManagedDevice)
 
 	/// The manager did reset either because of a Bluetooth availability change or a manual reset().
-	func naosManagerDidReset(manager: NAOSBLEManager)
+	func naosBLEManagerDidReset(manager: NAOSBLEManager)
 }
 
 /// The main class that handles NAOS device discovery and handling.
@@ -98,7 +98,7 @@ public class NAOSBLEManager: NSObject {
 		// call callback if present
 		if let d = delegate {
 			DispatchQueue.main.async {
-				d.naosManagerDidReset(manager: self)
+				d.naosBLEManagerDidReset(manager: self)
 			}
 		}
 	}
@@ -134,8 +134,7 @@ public class NAOSBLEManager: NSObject {
 			// call callback if present
 			if let d = delegate {
 				DispatchQueue.main.async {
-					d.naosManagerDidDiscoverDevice(
-						manager: self, device: device)
+					d.naosBLEManagerDidDiscoverDevice(manager: self, device: device)
 				}
 			}
 		}

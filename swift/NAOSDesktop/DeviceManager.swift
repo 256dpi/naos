@@ -11,10 +11,11 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 	@IBOutlet private var devicesMenuItem: NSMenuItem!
 	@IBOutlet private var devicesMenu: NSMenu!
 
-	private var manager: NAOSBLEManager!
+	private var bleManager: NAOSBLEManager!
 	private var httpDiscover: Cancellable!
 	private var serialTask: Task<Void, Never>?
 	private var serialDevices: [String: NAOSManagedDevice] = [:]
+	
 	private var devices: [NAOSManagedDevice: NSMenuItem] = [:]
 	private var controllers: [NAOSManagedDevice: SettingsWindowController] = [:]
 
@@ -28,7 +29,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 		NSApp.setActivationPolicy(.accessory)
 
 		// create BLE manager
-		manager = NAOSBLEManager(delegate: self)
+		bleManager = NAOSBLEManager(delegate: self)
 		
 		// run HTTP discovery
 		httpDiscover = NAOSHTTPDiscover{ device in
@@ -40,6 +41,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 
 		// run serial discovery
 		serialTask = Task {
+			// prepare state
 			var known = Set<String>()
 
 			while !Task.isCancelled {
@@ -63,8 +65,10 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 					}
 				}
 
+				// update known ports
 				known = ports
 
+				// wait two seconds
 				try? await Task.sleep(for: .seconds(2))
 			}
 		}
@@ -201,17 +205,17 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 
 	@IBAction func reset(_: AnyObject) {
 		// reset manager
-		manager.reset()
+		bleManager.reset()
 	}
 
-	// NAOSManagerDelegate
+	// NAOSBLEManagerDelegate
 
-	func naosManagerDidDiscoverDevice(manager _: NAOSBLEManager, device: NAOSManagedDevice) {
+	func naosBLEManagerDidDiscoverDevice(manager _: NAOSBLEManager, device: NAOSManagedDevice) {
 		// add device
 		addDevice(device: device)
 	}
 
-	func naosManagerDidReset(manager _: NAOSBLEManager) {
+	func naosBLEManagerDidReset(manager _: NAOSBLEManager) {
 		// close all devices
 		for (device, _) in controllers {
 			closeDevice(device: device)

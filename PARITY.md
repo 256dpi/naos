@@ -21,7 +21,7 @@
 |-------|-----------|-----------|---------|-----|------|--------|
 | Go    | Done?     | Done      | Done?   | Yes | Yes  | Yes    |
 | TS    | Done?     | Done      | Done?   | Yes | Yes  | Yes    |
-| Swift | Done?     | Done      | Done?   | Yes | Yes  |        |
+| Swift | Done?     | Done      | Done?   | Yes | Yes  | Yes    |
 
 # Endpoints
 
