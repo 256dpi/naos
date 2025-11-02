@@ -2,11 +2,11 @@
 
 | Name    | Securable  | Locked |
 |---------|------------|--------|
-| BLE     | Yes (TLS)  | Yes    |
+| BLE     | Yes        | Yes    |
 | HTTP    | Yes (TLS)  | Yes    |
-| Bridge  | Depends    | Yes    |
 | Serial  | No (Wired) | Yes?   |
-| Connect | Yes (TLS   | Yes?   |
+| Bridge  | Depends    | Yes    |
+| Connect | Yes (TLS)  | Yes?   |
 
 # Transports
 
@@ -17,11 +17,11 @@
 
 # Drivers
 
-| Name  | Messaging | Endpoints | Managed | BLE | HTTP | OSC |
-|-------|-----------|-----------|---------|-----|------|-----|
-| Go    | Done?     | Done      | Done?   |     |      |     |
-| TS    | Done?     | Done      | Done?   |     |      |     |
-| Swift | Done?     | Done      | Done?   |     |      |     |
+| Name  | Messaging | Endpoints | Managed | BLE | HTTP | Serial |
+|-------|-----------|-----------|---------|-----|------|--------|
+| Go    | Done?     | Done      | Done?   | Yes | Yes  | Yes    |
+| TS    | Done?     | Done      | Done?   | Yes | Yes  | Yes    |
+| Swift | Done?     | Done      | Done?   | Yes | Yes  |        |
 
 # Endpoints
 
@@ -39,5 +39,4 @@
 - Decouple Swift Messaging
 - Align Swift Managed Device
 - Make channels reference counted?
-- Remove "256dpi/AsyncBluetooth" repo
-- Finish "Channel Width" concept
+- Swift: Add "Channel Width" concept
