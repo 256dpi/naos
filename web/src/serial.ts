@@ -110,7 +110,7 @@ export class SerialDevice implements Device {
         return true;
       },
       width() {
-        return 10;
+        return 1;
       },
       subscribe: (q: Queue) => {
         subscribers.add(q);
