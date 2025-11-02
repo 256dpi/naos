@@ -13,6 +13,8 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 
 	private var manager: NAOSBLEManager!
 	private var httpDiscover: Cancellable!
+	private var serialTask: Task<Void, Never>?
+	private var serialDevices: [String: NAOSManagedDevice] = [:]
 	private var devices: [NAOSManagedDevice: NSMenuItem] = [:]
 	private var controllers: [NAOSManagedDevice: SettingsWindowController] = [:]
 
@@ -31,7 +33,40 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 		// run HTTP discovery
 		httpDiscover = NAOSHTTPDiscover{ device in
 			// add device
-			self.addDevice(device: NAOSManagedDevice(device: device))
+			Task { @MainActor in
+				self.addDevice(device: NAOSManagedDevice(device: device))
+			}
+		}
+
+		// run serial discovery
+		serialTask = Task {
+			var known = Set<String>()
+
+			while !Task.isCancelled {
+				let ports = Set(NAOSSerialListPorts())
+
+				// handle added ports
+				for path in ports.subtracting(known) {
+					let device = NAOSManagedDevice(device: NAOSSerialDevice(path: path))
+					self.serialDevices[path] = device
+					await MainActor.run {
+						self.addDevice(device: device)
+					}
+				}
+
+				// handle removed ports
+				for path in known.subtracting(ports) {
+					if let device = self.serialDevices.removeValue(forKey: path) {
+						await MainActor.run {
+							self.removeDevice(device: device)
+						}
+					}
+				}
+
+				known = ports
+
+				try? await Task.sleep(for: .seconds(2))
+			}
 		}
 
 		// run updater
@@ -55,6 +90,10 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 		// set shared instance
 		DeviceManager.shared = self
 	}
+
+	deinit {
+		serialTask?.cancel()
+	}
 	
 	func addDevice(device: NAOSManagedDevice) {
 		// add menu item for new device
@@ -74,6 +113,23 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 		} else {
 			devicesMenuItem.title = String(format: "%d Devices", devices.count)
 		}
+	}
+
+	func removeDevice(device: NAOSManagedDevice) {
+		// drop menu item
+		if let item = devices.removeValue(forKey: device) {
+			devicesMenu.removeItem(item)
+		}
+
+		// update menu item title
+		if devices.count == 1 {
+			devicesMenuItem.title = "1 Device"
+		} else {
+			devicesMenuItem.title = String(format: "%d Devices", devices.count)
+		}
+
+		// close controller if needed
+		closeDevice(device: device)
 	}
 
 	func openDevice(device: NAOSManagedDevice) {
