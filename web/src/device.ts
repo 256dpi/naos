@@ -62,6 +62,7 @@ export class QueueList {
 export interface Channel {
   name(): string;
   valid(): boolean;
+  width(): number;
   subscribe(queue: Queue): void;
   unsubscribe(queue: Queue): void;
   write(data: Uint8Array): Promise<void>;

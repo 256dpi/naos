@@ -115,6 +115,9 @@ export class RelayDevice implements Device {
       valid() {
         return true;
       },
+      width() {
+        return 10;
+      },
       subscribe: (q: Queue) => {
         subscribers.add(q);
       },

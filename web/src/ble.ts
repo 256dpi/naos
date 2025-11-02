@@ -85,6 +85,9 @@ export class BLEDevice implements Device {
       valid: () => {
         return this.dev.gatt.connected && !closed;
       },
+      width() {
+        return 10;
+      },
       subscribe: (q: Queue) => {
         subscribers.add(q);
       },

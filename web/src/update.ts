@@ -21,6 +21,9 @@ export async function update(
     throw new Error("invalid message");
   }
 
+  // get width
+  const width = session.channel().width();
+
   // get MTU
   let mtu = await session.getMTU();
 
@@ -36,7 +39,7 @@ export async function update(
     let chunkData = data.slice(offset, offset + chunkSize);
 
     // determine acked
-    let acked = num % 10 == 0;
+    let acked = num % width === 0;
 
     // send "write" command
     cmd = pack("oob", 1, acked ? 1 : 0, chunkData);

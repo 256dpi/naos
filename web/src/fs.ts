@@ -178,6 +178,9 @@ export async function writeFile(
   let cmd = pack("oos", 2, (1 << 0) | (1 << 2), file);
   await send(session, cmd, true);
 
+  // get width
+  const width = session.channel().width();
+
   // get MTU
   let mtu = await session.getMTU();
 
@@ -193,7 +196,7 @@ export async function writeFile(
     let chunkData = data.slice(offset, offset + chunkSize);
 
     // determine mode
-    let acked = num % 10 === 0;
+    let acked = num % width === 0;
 
     // prepare "write" command (acked or silent & sequential)
     cmd = pack("ooib", 4, acked ? 0 : (1 << 0) | (1 << 1), offset, chunkData);

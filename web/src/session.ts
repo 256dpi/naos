@@ -43,6 +43,10 @@ export class Session {
     this.qu = qu;
   }
 
+  channel(): Channel {
+    return this.ch;
+  }
+
   async ping(timeout: number = 5000) {
     // write command
     await write(this.ch, new Message(this.id, 0xfe, null));
