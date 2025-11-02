@@ -70,6 +70,10 @@ class httpChannel: NAOSChannel {
 	private var task: URLSessionWebSocketTask
 	private var queues: [NAOSQueue] = []
 
+	public func width() -> Int {
+		return 10
+	}
+
 	static func create(task: URLSessionWebSocketTask) async -> httpChannel {
 		// resume task
 		task.resume()

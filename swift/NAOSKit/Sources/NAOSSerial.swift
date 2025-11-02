@@ -134,6 +134,10 @@ private final class serialChannel: NAOSChannel {
 		readSource.resume()
 	}
 
+	public func width() -> Int {
+		return 1
+	}
+
 	public func subscribe(queue: NAOSQueue) {
 		stateLock.lock()
 		defer { stateLock.unlock() }

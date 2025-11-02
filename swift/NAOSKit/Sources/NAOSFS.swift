@@ -163,6 +163,9 @@ public class NAOSFS {
 		
 		// subtract overhead
 		mtu -= 6
+		
+		// determine channel width
+		let width = max(1, session.channel.width())
 
 		// write data in chunks
 		var num = 0
@@ -173,7 +176,7 @@ public class NAOSFS {
 			let chunkData = data.subdata(in: offset ..< offset + chunkSize)
 
 			// determine mode
-			let acked = num % 10 == 0
+			let acked = num % width == 0
 
 			// prepare "write" command (acked or silent & sequential)
 			cmd = pack(fmt: "ooib", args: [UInt8(4), UInt8(acked ? 0 : 1 << 0 | 1 << 1), UInt32(offset), chunkData])

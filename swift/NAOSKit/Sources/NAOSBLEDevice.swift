@@ -142,6 +142,10 @@ class bleChannel: NAOSChannel {
 	private var subscription: AnyCancellable
 	private var queues: [NAOSQueue] = []
 
+	public func width() -> Int {
+		return 10
+	}
+
 	static func create(peripheral: NAOSBLEDevice) async -> bleChannel {
 		// open stream
 		let (stream, subscription) = await peripheral.stream()

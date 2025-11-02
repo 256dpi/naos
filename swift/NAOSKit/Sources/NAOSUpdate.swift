@@ -29,6 +29,9 @@ public class NAOSUpdate {
 		
 		// subtract overhead
 		mtu -= 2
+		
+		// determine channel width
+		let width = max(1, session.channel.width())
 
 		// write data in chunks
 		var num = 0
@@ -39,7 +42,7 @@ public class NAOSUpdate {
 			let chunkData = image.subdata(in: offset ..< offset + chunkSize)
 
 			// determine acked
-			let acked = num % 10 == 0
+			let acked = num % width == 0
 
 			// send "write" command
 			cmd = pack(fmt: "oob", args: [UInt8(1), UInt8(acked ? 1 : 0), chunkData])

@@ -39,4 +39,3 @@
 - Decouple Swift Messaging
 - Align Swift Managed Device
 - Make channels reference counted?
-- Swift: Add "Channel Width" concept

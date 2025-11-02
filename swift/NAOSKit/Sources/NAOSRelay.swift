@@ -91,6 +91,10 @@ public class NAOSRelayChannel: NAOSChannel {
 	private var device: UInt8
 	private var queues: [NAOSQueue] = []
 	
+	public func width() -> Int {
+		return session.channel.width()
+	}
+	
 	public static func open(host: NAOSManagedDevice, device: UInt8) async throws -> NAOSRelayChannel {
 		// open session
 		let session = try await host.newSession()
