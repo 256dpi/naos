@@ -3,12 +3,14 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		5211B723299D7AC5007F6EAA /* NAOSKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5211B722299D7AC5007F6EAA /* NAOSKit */; };
 		5224D3C72A8BF554003D5484 /* SessionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5224D3C62A8BF554003D5484 /* SessionViewController.swift */; };
+		5250D4772EC5190000EF7C35 /* NAOSKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5250D4762EC5190000EF7C35 /* NAOSKit */; };
+		5250D4792EC5190A00EF7C35 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5250D4782EC5190A00EF7C35 /* CoreBluetooth.framework */; };
 		52AC78542D2AA8B0007853C9 /* MetricsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52AC78532D2AA8B0007853C9 /* MetricsView.swift */; };
 		52BD19B92561EA93006D3507 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BD19B82561EA93006D3507 /* AppDelegate.swift */; };
 		52BD19BD2561EA95006D3507 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 52BD19BC2561EA95006D3507 /* Assets.xcassets */; };
@@ -27,6 +29,8 @@
 /* Begin PBXFileReference section */
 		5211B721299D7A7B007F6EAA /* NAOSKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NAOSKit; sourceTree = "<group>"; };
 		5224D3C62A8BF554003D5484 /* SessionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionViewController.swift; sourceTree = "<group>"; };
+		5250D46B2EC518CB00EF7C35 /* NAOS-Mobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NAOS-Mobile.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5250D4782EC5190A00EF7C35 /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/System/Library/Frameworks/CoreBluetooth.framework; sourceTree = DEVELOPER_DIR; };
 		52AC78532D2AA8B0007853C9 /* MetricsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricsView.swift; sourceTree = "<group>"; };
 		52BD19B52561EA93006D3507 /* NAOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NAOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		52BD19B82561EA93006D3507 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -45,7 +49,20 @@
 		52F8D09D2909D89700F8A59C /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		5250D46C2EC518CB00EF7C35 /* NAOS-Mobile */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "NAOS-Mobile"; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
+		5250D4682EC518CB00EF7C35 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5250D4792EC5190A00EF7C35 /* CoreBluetooth.framework in Frameworks */,
+				5250D4772EC5190000EF7C35 /* NAOSKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		52BD19B22561EA93006D3507 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -63,6 +80,7 @@
 			children = (
 				5211B721299D7A7B007F6EAA /* NAOSKit */,
 				52BD19B72561EA93006D3507 /* NAOSDesktop */,
+				5250D46C2EC518CB00EF7C35 /* NAOS-Mobile */,
 				52BD19B62561EA93006D3507 /* Products */,
 				52BD19E02561EB48006D3507 /* Frameworks */,
 			);
@@ -72,6 +90,7 @@
 			isa = PBXGroup;
 			children = (
 				52BD19B52561EA93006D3507 /* NAOS.app */,
+				5250D46B2EC518CB00EF7C35 /* NAOS-Mobile.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -101,6 +120,7 @@
 		52BD19E02561EB48006D3507 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				5250D4782EC5190A00EF7C35 /* CoreBluetooth.framework */,
 				52BD19E12561EB48006D3507 /* CoreBluetooth.framework */,
 			);
 			name = Frameworks;
@@ -109,6 +129,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		5250D46A2EC518CB00EF7C35 /* NAOS-Mobile */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5250D4752EC518CC00EF7C35 /* Build configuration list for PBXNativeTarget "NAOS-Mobile" */;
+			buildPhases = (
+				5250D4672EC518CB00EF7C35 /* Sources */,
+				5250D4682EC518CB00EF7C35 /* Frameworks */,
+				5250D4692EC518CB00EF7C35 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				5250D46C2EC518CB00EF7C35 /* NAOS-Mobile */,
+			);
+			name = "NAOS-Mobile";
+			packageProductDependencies = (
+				5250D4762EC5190000EF7C35 /* NAOSKit */,
+			);
+			productName = "NAOS-Mobile";
+			productReference = 5250D46B2EC518CB00EF7C35 /* NAOS-Mobile.app */;
+			productType = "com.apple.product-type.application";
+		};
 		52BD19B42561EA93006D3507 /* NAOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 52BD19C52561EA95006D3507 /* Build configuration list for PBXNativeTarget "NAOS" */;
@@ -136,10 +179,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastSwiftUpdateCheck = 1150;
+				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 1430;
 				ORGANIZATIONNAME = "Joël Gähwiler";
 				TargetAttributes = {
+					5250D46A2EC518CB00EF7C35 = {
+						CreatedOnToolsVersion = 26.1;
+					};
 					52BD19B42561EA93006D3507 = {
 						CreatedOnToolsVersion = 11.5;
 					};
@@ -161,11 +207,19 @@
 			projectRoot = "";
 			targets = (
 				52BD19B42561EA93006D3507 /* NAOS */,
+				5250D46A2EC518CB00EF7C35 /* NAOS-Mobile */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		5250D4692EC518CB00EF7C35 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		52BD19B32561EA93006D3507 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -178,6 +232,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		5250D4672EC518CB00EF7C35 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		52BD19B12561EA93006D3507 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -210,6 +271,84 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		5250D4732EC518CC00EF7C35 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.256dpi.NAOS-Mobile";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		5250D4742EC518CC00EF7C35 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.256dpi.NAOS-Mobile";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		52BD19C32561EA95006D3507 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -400,6 +539,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		5250D4752EC518CC00EF7C35 /* Build configuration list for PBXNativeTarget "NAOS-Mobile" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5250D4732EC518CC00EF7C35 /* Debug */,
+				5250D4742EC518CC00EF7C35 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		52BD19B02561EA93006D3507 /* Build configuration list for PBXProject "NAOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -422,6 +570,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		5211B722299D7AC5007F6EAA /* NAOSKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NAOSKit;
+		};
+		5250D4762EC5190000EF7C35 /* NAOSKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NAOSKit;
 		};
