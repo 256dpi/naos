@@ -41,13 +41,9 @@ static void naos_connect_start() {
   naos_connect_started = true;
   naos_unlock(naos_connect_mutex);
 
-  // prepare headers
-  char headers[256];
-  snprintf(headers, sizeof(headers), "Authorization: %s\r\n", token);
-
   // configure the client
   ESP_ERROR_CHECK(esp_websocket_client_set_uri(naos_connect_client, url));
-  // ESP_ERROR_CHECK(esp_websocket_client_set_headers(naos_connect_client, headers));
+  ESP_ERROR_CHECK(esp_websocket_client_append_header(naos_connect_client, "Authorization", token));
 
   // start the MQTT client
   ESP_ERROR_CHECK(esp_websocket_client_start(naos_connect_client));
