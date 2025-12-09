@@ -4,6 +4,7 @@
 
 #include <esp_log.h>
 #include <esp_websocket_client.h>
+#include <esp_crt_bundle.h>
 
 #include "system.h"
 #include "utils.h"
@@ -215,6 +216,7 @@ void naos_connect_init() {
       .subprotocol = "naos",
       .reconnect_timeout_ms = 5000,
       .network_timeout_ms = 5000,
+      .crt_bundle_attach = esp_crt_bundle_attach,
   };
   naos_connect_client = esp_websocket_client_init(&config);
   if (naos_connect_client == NULL) {
