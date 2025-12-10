@@ -16,7 +16,7 @@ func exitIfSet(errs ...error) {
 }
 
 func exitWithError(str string) {
-	fmt.Fprintf(os.Stderr, "Error: %s\n", str)
+	_, _ = fmt.Fprintf(os.Stderr, "Error: %s\n", str)
 	os.Exit(1)
 }
 
