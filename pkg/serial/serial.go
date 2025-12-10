@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"time"
 
 	"go.bug.st/serial"
 
@@ -126,12 +125,7 @@ func (d *device) Open() (msg.Channel, error) {
 				select {
 				case queue <- data:
 				default:
-					select {
-					case queue <- data:
-					case <-time.After(time.Second):
-						close(queue)
-						ch.subs.Delete(queue)
-					}
+					// drop message if queue is full
 				}
 			}
 			ch.mutex.Unlock()

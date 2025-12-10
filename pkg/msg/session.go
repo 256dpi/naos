@@ -43,7 +43,7 @@ var Ack = errors.New("acknowledgement")
 // OpenSession opens a new session using the specified channel.
 func OpenSession(channel Channel) (*Session, error) {
 	// prepare queue
-	queue := make(Queue, 16)
+	queue := make(Queue, 64)
 
 	// subscribe to channel
 	channel.Subscribe(queue)

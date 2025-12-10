@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/coder/websocket"
 )
@@ -119,17 +118,7 @@ func (c *httpChannel) reader() {
 			select {
 			case queue <- data:
 			default:
-				select {
-				case queue <- data:
-				case <-c.ctx.Done():
-					// TODO: Handle error.
-					fmt.Println("httpChannel.reader: context done")
-					return
-				case <-time.After(time.Second):
-					// TODO: Handle error.
-					fmt.Println("httpChannel.reader: queue full")
-					return
-				}
+				// drop message if queue is full
 			}
 		}
 	}

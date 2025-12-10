@@ -177,12 +177,7 @@ func (d *device) Open() (msg.Channel, error) {
 			select {
 			case queue <- data:
 			default:
-				select {
-				case queue <- data:
-				case <-time.After(time.Second):
-					// TODO: Handle error.
-					fmt.Println("ble: dropped message")
-				}
+				// drop message if queue is full
 			}
 		}
 	})
