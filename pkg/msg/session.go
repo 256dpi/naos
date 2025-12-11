@@ -118,7 +118,7 @@ func (s *Session) Ping(timeout time.Duration) error {
 
 	// verify reply
 	if msg.Endpoint != 0xFE || msg.Size() != 1 {
-		return fmt.Errorf("invalid message")
+		return fmt.Errorf("invalid message: ping reply")
 	} else if msg.Data[0] != 1 {
 		return fmt.Errorf("session error: %d", msg.Data[0])
 	}
@@ -146,7 +146,7 @@ func (s *Session) Query(endpoint uint8, timeout time.Duration) (bool, error) {
 
 	// verify message
 	if msg.Endpoint != 0xFE || msg.Size() != 1 {
-		return false, fmt.Errorf("invalid message")
+		return false, fmt.Errorf("invalid message: query reply")
 	}
 
 	return msg.Data[0] == 1, nil
@@ -218,7 +218,7 @@ func (s *Session) Send(endpoint uint8, data []byte, ackTimeout time.Duration) er
 
 	// check reply
 	if msg.Size() != 1 || msg.Endpoint != 0xFE {
-		return fmt.Errorf("invalid message")
+		return fmt.Errorf("invalid message: ack reply")
 	} else if msg.Data[0] != 1 {
 		return parseError(msg.Data[0])
 	}
@@ -245,7 +245,7 @@ func (s *Session) Status(timeout time.Duration) (Status, error) {
 
 	// verify reply
 	if len(msg) != 1 {
-		return 0, fmt.Errorf("invalid message")
+		return 0, fmt.Errorf("invalid message: status reply")
 	}
 
 	return Status(msg[0]), nil
@@ -270,7 +270,7 @@ func (s *Session) Unlock(password string, timeout time.Duration) (bool, error) {
 
 	// verify reply
 	if len(msg) != 1 {
-		return false, fmt.Errorf("invalid message")
+		return false, fmt.Errorf("invalid message: unlock reply")
 	}
 
 	return msg[0] == 1, nil
@@ -299,7 +299,7 @@ func (s *Session) GetMTU(timeout time.Duration) (uint16, error) {
 
 	// verify reply
 	if len(msg) != 2 {
-		return 0, fmt.Errorf("invalid message")
+		return 0, fmt.Errorf("invalid message: MTU reply")
 	}
 
 	// cache value
@@ -328,7 +328,7 @@ func (s *Session) End(timeout time.Duration) error {
 
 	// verify reply
 	if msg.Endpoint != 0xFF || msg.Size() > 0 {
-		return fmt.Errorf("invalid message")
+		return fmt.Errorf("invalid message: end reply")
 	}
 
 	// unsubscribe from channel

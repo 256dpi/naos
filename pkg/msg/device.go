@@ -52,7 +52,7 @@ func Read(q Queue, timeout time.Duration) (Message, error) {
 
 	// check length and version
 	if len(data) < 4 || data[0] != 1 {
-		return Message{}, errors.New("invalid message")
+		return Message{}, errors.New("invalid message: length or version")
 	}
 
 	// unpack message

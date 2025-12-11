@@ -24,7 +24,7 @@ func Update(s *Session, image []byte, report func(int), timeout time.Duration) e
 
 	// verify reply
 	if len(reply) != 1 || reply[0] != 0 {
-		return fmt.Errorf("invalid message")
+		return fmt.Errorf("invalid message: start update reply")
 	}
 
 	// get width
@@ -84,7 +84,7 @@ func Update(s *Session, image []byte, report func(int), timeout time.Duration) e
 
 	// verify reply
 	if len(reply) != 1 || reply[0] != 1 {
-		return fmt.Errorf("invalid message")
+		return fmt.Errorf("invalid message: finish update reply")
 	}
 
 	return nil

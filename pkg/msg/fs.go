@@ -32,7 +32,7 @@ func StatPath(s *Session, path string, timeout time.Duration) (*FSInfo, error) {
 
 	// verify "info" reply
 	if len(reply) == 6 && reply[0] != 1 {
-		return nil, fmt.Errorf("invalid message")
+		return nil, fmt.Errorf("invalid message: stat reply")
 	}
 
 	// unpack "info" reply
@@ -67,7 +67,7 @@ func ListDir(s *Session, dir string, timeout time.Duration) ([]FSInfo, error) {
 
 		// verify "info" reply
 		if len(reply) < 7 && reply[0] != 1 {
-			return nil, fmt.Errorf("invalid message")
+			return nil, fmt.Errorf("invalid message: list reply")
 		}
 
 		// unpack "info" reply
@@ -150,7 +150,7 @@ func ReadFileRange(s *Session, file string, offset, length uint32, report func(u
 
 		// verify "chunk" reply
 		if len(reply) < 5 && reply[0] != 2 {
-			return nil, fmt.Errorf("invalid message")
+			return nil, fmt.Errorf("invalid message: read reply")
 		}
 
 		// unpack offset
@@ -295,7 +295,7 @@ func SHA256File(s *Session, file string, timeout time.Duration) ([]byte, error) 
 
 	// verify "hash" reply
 	if len(reply) != 33 && reply[0] != 3 {
-		return nil, fmt.Errorf("invalid message")
+		return nil, fmt.Errorf("invalid message: hash reply")
 	}
 
 	// return hash
