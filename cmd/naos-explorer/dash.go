@@ -424,6 +424,13 @@ func (d *dashboard) editParam(row int) {
 	})
 	form.SetBorder(true).
 		SetTitle(fmt.Sprintf("Set %s (%s)", info.Name, paramTypeString(info.Type)))
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			d.pages.RemovePage("param-editor")
+			return nil
+		}
+		return event
+	})
 
 	// show form
 	d.pages.AddPage("param-editor", centered(60, 10, form), true, true)
