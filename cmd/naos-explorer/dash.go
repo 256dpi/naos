@@ -268,7 +268,11 @@ func (d *dashboard) refreshParams() {
 	// prepare rows
 	var rows []paramRow
 	for info, update := range ps.All() {
-		rows = append(rows, paramRow{info: info, update: update, value: formatParamValue(info, update)})
+		rows = append(rows, paramRow{
+			info:   info,
+			update: update,
+			value:  formatParamValue(info, update),
+		})
 	}
 
 	// set rows
@@ -307,7 +311,12 @@ func (d *dashboard) refreshMetrics() {
 		var err error
 		values, err = ms.Read(info.Name)
 		formatted := formatMetricValues(values)
-		rows = append(rows, metricRow{info: info, layout: layout, value: formatted, err: err})
+		rows = append(rows, metricRow{
+			info:   info,
+			layout: layout,
+			value:  formatted,
+			err:    err,
+		})
 		if err != nil {
 			d.log("[red]Metric %s read failed[-]: %v", info.Name, err)
 		}
@@ -370,15 +379,40 @@ func (d *dashboard) renderMetricRows(rows []metricRow) {
 }
 
 func (d *dashboard) editParam(row int) {
+	// check selection
 	if row < 0 || row >= len(d.paramRows) {
 		return
 	}
 
+	// capture param info
 	info := d.paramRows[row].info
 	current := d.paramRows[row].value
 
+	// ignore locked params
+	if (info.Mode & msg.ParamModeLocked) != 0 {
+		return
+	}
+
+	// trigger actions right away
+	if info.Type == msg.ParamTypeAction {
+		go d.writeParam(info, "")
+		return
+	}
+
+	// toggle booleans right away
+	if info.Type == msg.ParamTypeBool {
+		newValue := "0"
+		if current == "<False>" {
+			newValue = "1"
+		}
+		go d.writeParam(info, newValue)
+		return
+	}
+
+	// create form
 	form := tview.NewForm()
-	input := tview.NewInputField().SetText(current)
+	input := tview.NewInputField().
+		SetText(current)
 	form.AddFormItem(input)
 	form.AddButton("Save", func() {
 		text := input.GetText()
@@ -388,7 +422,10 @@ func (d *dashboard) editParam(row int) {
 	form.AddButton("Cancel", func() {
 		d.pages.RemovePage("param-editor")
 	})
-	form.SetBorder(true).SetTitle(fmt.Sprintf("Set %s (%s)", info.Name, paramTypeString(info.Type)))
+	form.SetBorder(true).
+		SetTitle(fmt.Sprintf("Set %s (%s)", info.Name, paramTypeString(info.Type)))
+
+	// show form
 	d.pages.AddPage("param-editor", centered(60, 10, form), true, true)
 	d.app.SetFocus(form)
 }
@@ -397,15 +434,8 @@ func (d *dashboard) writeParam(info msg.ParamInfo, text string) {
 	// get param service
 	ps := d.device.ParamsService()
 
-	// encode value
-	data, err := encodeParamValue(info, text)
-	if err != nil {
-		d.log("[red]Invalid value for %s[-]: %v", info.Name, err)
-		return
-	}
-
 	// write value
-	err = ps.Set(info.Name, data)
+	err := ps.Set(info.Name, []byte(text))
 	if err != nil {
 		d.log("[red]Write %s failed[-]: %v", info.Name, err)
 		return

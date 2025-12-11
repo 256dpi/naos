@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"math"
 	"path"
 	"strconv"
 	"strings"
@@ -54,68 +52,37 @@ func paramModeShort(m msg.ParamMode) string {
 }
 
 func formatParamValue(info msg.ParamInfo, update msg.ParamUpdate) string {
-	if len(update.Value) == 0 {
-		return "<None>"
+	// handle actions
+	if info.Type == msg.ParamTypeAction {
+		return "<Action>"
 	}
-	switch info.Type {
-	case msg.ParamTypeString:
-		if utf8.Valid(update.Value) {
-			return fmt.Sprintf("%q", string(update.Value))
-		}
-		return fmt.Sprintf("0x%s", hex.EncodeToString(update.Value))
-	case msg.ParamTypeBool:
+
+	// handle numbers
+	if info.Type == msg.ParamTypeLong || info.Type == msg.ParamTypeDouble {
+		return string(update.Value)
+	}
+
+	// handle booleans
+	if info.Type == msg.ParamTypeBool {
 		if string(update.Value) == "1" {
 			return "<True>"
 		}
 		return "<False>"
-	case msg.ParamTypeLong, msg.ParamTypeDouble:
-		return string(update.Value)
-	case msg.ParamTypeAction:
-		return "<Action>"
-	default:
 	}
-	return fmt.Sprintf("0x%s", hex.EncodeToString(update.Value))
-}
 
-func encodeParamValue(info msg.ParamInfo, text string) ([]byte, error) {
-	switch info.Type {
-	case msg.ParamTypeString:
-		return []byte(text), nil
-	case msg.ParamTypeBool:
-		lower := strings.ToLower(strings.TrimSpace(text))
-		if lower == "true" || lower == "1" || lower == "on" {
-			return []byte{1}, nil
-		}
-		if lower == "false" || lower == "0" || lower == "off" {
-			return []byte{0}, nil
-		}
-		return nil, fmt.Errorf("expected bool")
-	case msg.ParamTypeLong:
-		v, err := strconv.ParseInt(strings.TrimSpace(text), 10, 32)
-		if err != nil {
-			return nil, err
-		}
-		buf := make([]byte, 4)
-		binary.LittleEndian.PutUint32(buf, uint32(int32(v)))
-		return buf, nil
-	case msg.ParamTypeDouble:
-		v, err := strconv.ParseFloat(strings.TrimSpace(text), 64)
-		if err != nil {
-			return nil, err
-		}
-		buf := make([]byte, 8)
-		binary.LittleEndian.PutUint64(buf, math.Float64bits(v))
-		return buf, nil
-	case msg.ParamTypeRaw:
-		cleaned := strings.ReplaceAll(strings.TrimPrefix(strings.TrimSpace(text), "0x"), " ", "")
-		if len(cleaned)%2 == 1 {
-			cleaned = "0" + cleaned
-		}
-		return hex.DecodeString(cleaned)
-	case msg.ParamTypeAction:
-		return nil, nil
+	/* handle strings */
+
+	// check length
+	if len(update.Value) == 0 {
+		return "<None>"
 	}
-	return []byte(text), nil
+
+	// print valid utf8 strings
+	if info.Type == msg.ParamTypeString && utf8.Valid(update.Value) {
+		return string(update.Value)
+	}
+
+	return "<Binary>"
 }
 
 func metricKindString(k msg.MetricKind) string {

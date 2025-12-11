@@ -46,8 +46,6 @@ func showProgressModal(app *tview.Application, pages *tview.Pages, text string) 
 	// create modal
 	modal := tview.NewModal().SetText(text)
 
-	// TODO: Add a spinner or progress bar.
-
 	// show modal
 	pages.AddPage(id, modal, true, true)
 	app.SetFocus(modal)
