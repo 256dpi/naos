@@ -183,7 +183,7 @@ func ReadLongMetrics(s *Session, ref uint8, timeout time.Duration) ([]int32, err
 
 	// parse metrics
 	var metrics []int32
-	for i := 0; i < len(data); i += 8 {
+	for i := 0; i < len(data); i += 4 {
 		metrics = append(metrics, int32(binary.LittleEndian.Uint32(data[i:])))
 	}
 
@@ -200,7 +200,7 @@ func ReadFloatMetrics(s *Session, ref uint8, timeout time.Duration) ([]float32, 
 
 	// parse metrics
 	var metrics []float32
-	for i := 0; i < len(data); i += 8 {
+	for i := 0; i < len(data); i += 4 {
 		metrics = append(metrics, math.Float32frombits(binary.LittleEndian.Uint32(data[i:])))
 	}
 
