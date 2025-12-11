@@ -1,6 +1,6 @@
 module github.com/256dpi/naos
 
-go 1.23
+go 1.24.7
 
 require (
 	code.cloudfoundry.org/bytefmt v0.0.0-20210524144015-27119551aaea
