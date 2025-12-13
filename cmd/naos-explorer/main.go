@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"sort"
 	"strings"
@@ -12,11 +13,17 @@ import (
 
 	"github.com/256dpi/naos/pkg/ble"
 	"github.com/256dpi/naos/pkg/mdns"
+	"github.com/256dpi/naos/pkg/mqtt"
 	"github.com/256dpi/naos/pkg/msg"
 	"github.com/256dpi/naos/pkg/serial"
 )
 
+var mqttURI = flag.String("mqtt", "", "The MQTT broker URI.")
+
 func main() {
+	// parse flags
+	flag.Parse()
+
 	// prepare state
 	state := newState()
 
@@ -67,6 +74,21 @@ func main() {
 			time.Sleep(5 * time.Second)
 		}
 	}()
+
+	// start MQTT discovery
+	if *mqttURI != "" {
+		go func() {
+			for {
+				err := mqtt.Discover(context.Background(), *mqttURI, 0, func(d mqtt.Description) {
+					state.register(mqtt.NewDevice(*mqttURI+"/"+d.BaseTopic, 0))
+				})
+				if err != nil {
+					state.log("[red]MQTT discover error[-]: %v", err)
+				}
+				time.Sleep(5 * time.Second)
+			}
+		}()
+	}
 
 	// run UI
 	runUI(state)
