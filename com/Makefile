@@ -8,6 +8,8 @@ ESP_OSC_VERSION := $(shell cat ../tree/esp-osc.version)
 
 export IDF_COMPONENT_OVERWRITE_MANAGED_COMPONENTS=1
 
+default: run
+
 prepare:
 	rm -rf test/build test/esp-idf test/tools
 	git clone --recursive  https://github.com/espressif/esp-idf.git test/esp-idf
