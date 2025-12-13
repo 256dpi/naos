@@ -1,5 +1,7 @@
 #include <naos/msg.h>
+#include <naos/sys.h>
 
+#include <stdio.h>
 #include <string.h>
 
 #include "system.h"
@@ -13,19 +15,37 @@ static void naos_bridge_status(naos_status_t status) {
     return;
   }
 
-  // subscribe topic
+  // subscribe topics
+  naos_subscribe("naos/discover", 0, NAOS_GLOBAL);
   naos_subscribe("naos/inbox", 0, NAOS_LOCAL);
+}
+
+static void naos_bridge_discover() {
+  // get info
+  const char *app_name = naos_config()->app_name;
+  const char *app_version = naos_config()->app_version;
+  const char *device_name = naos_get_s("device-name");
+  const char *base_topic = naos_get_s("base-topic");
+
+  // construct description
+  char loc[96];
+  snprintf(loc, sizeof(loc), "0|%s|%s|%s|%s", app_name, app_version, device_name, base_topic);
+
+  // publish description
+  naos_publish_s("naos/describe", loc, 0, false, NAOS_GLOBAL);
 }
 
 static void naos_bridge_handler(naos_scope_t scope, const char *topic, const uint8_t *payload, size_t len, int qos,
                                 bool retained) {
-  // check scope and topics
-  if (scope != NAOS_LOCAL || strcmp(topic, "naos/inbox") != 0) {
-    return;
+  // handle discover messages
+  if (scope == NAOS_GLOBAL && strcmp(topic, "naos/discover") == 0) {
+    naos_defer("bridge", 0, naos_bridge_discover);
   }
 
-  // dispatch message
-  naos_msg_dispatch(naos_bridge_channel, (uint8_t *)payload, len, NULL);
+  // dispatch incoming messages
+  if (scope == NAOS_LOCAL && strcmp(topic, "naos/inbox") == 0) {
+    naos_msg_dispatch(naos_bridge_channel, (uint8_t *)payload, len, NULL);
+  }
 }
 
 static uint16_t naos_bridge_mtu() { return 4096; }
