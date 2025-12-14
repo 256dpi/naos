@@ -79,8 +79,14 @@ func main() {
 	if *mqttURI != "" {
 		go func() {
 			for {
-				err := mqtt.Discover(context.Background(), *mqttURI, 0, func(d mqtt.Description) {
-					state.register(mqtt.NewDevice(*mqttURI+"/"+d.BaseTopic, 0))
+				router, err := mqtt.Connect(*mqttURI, "naos-explorer", 0)
+				if err != nil {
+					state.log("[red]MQTT connect error[-]: %v", err)
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				err = mqtt.Discover(context.Background(), router, func(d mqtt.Description) {
+					state.register(mqtt.NewDevice(router, d.BaseTopic))
 				})
 				if err != nil {
 					state.log("[red]MQTT discover error[-]: %v", err)

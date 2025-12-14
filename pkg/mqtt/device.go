@@ -2,72 +2,46 @@ package mqtt
 
 import (
 	"sync"
-	"time"
 
-	"github.com/256dpi/gomqtt/client"
 	"github.com/256dpi/gomqtt/packet"
 
 	"github.com/256dpi/naos/pkg/msg"
 )
 
-// TODO: Support multiple devices per MQTT client?
-
 type device struct {
-	url string
-	qos packet.QOS
+	router    *Router
+	baseTopic string
 }
 
-// NewDevice creates a new MQTT device for the given broker URL and QOS level.
-// The path part of the URL will be used as the device base topic to construct
-// inbox and outbox topics.
-func NewDevice(url string, qos int) msg.Device {
-	// check QOS
-	pktQOS := packet.QOS(qos)
-	if !pktQOS.Successful() {
-		panic("invalid QOS")
-	}
-
+// NewDevice creates a new MQTT device using the given router and base topic.
+func NewDevice(r *Router, baseTopic string) msg.Device {
 	return &device{
-		url: url,
-		qos: pktQOS,
+		router:    r,
+		baseTopic: baseTopic,
 	}
 }
 
 func (d *device) ID() string {
-	return "mqtt/" + d.url
+	return "mqtt/" + d.baseTopic
 }
 
 func (d *device) Open() (msg.Channel, error) {
 	// prepare topics
-	baseTopic := urlPath(d.url)
-	inbox := baseTopic + "/naos/inbox"
-	outbox := baseTopic + "/naos/outbox"
-
-	// create client
-	cl := client.New()
-
-	// connect client
-	cf, err := cl.Connect(client.NewConfig(d.url))
-	if err != nil {
-		return nil, err
-	}
-	err = cf.Wait(5 * time.Second)
-	if err != nil {
-		return nil, err
-	}
+	inbox := d.baseTopic + "/naos/inbox"
+	outbox := d.baseTopic + "/naos/outbox"
 
 	// prepare channel
 	ch := &channel{
 		device: d,
-		client: cl,
+		router: d.router,
 		inbox:  inbox,
-		qos:    d.qos,
+		outbox: outbox,
 	}
 
 	// set callback
-	cl.Callback = func(m *packet.Message, err error) error {
+	callback := func(m *packet.Message, err error) {
 		if err != nil {
-			return err
+			return
 		}
 		for sub := range ch.subs.Range {
 			queue := sub.(msg.Queue)
@@ -77,18 +51,16 @@ func (d *device) Open() (msg.Channel, error) {
 				// drop message if queue is full
 			}
 		}
-		return nil
 	}
 
 	// subscribe
-	sf, err := cl.Subscribe(outbox, d.qos)
+	id, err := d.router.Subscribe(outbox, callback)
 	if err != nil {
 		return nil, err
 	}
-	err = sf.Wait(5 * time.Second)
-	if err != nil {
-		return nil, err
-	}
+
+	// set handle
+	ch.handle = id
 
 	return ch, nil
 }
@@ -96,9 +68,10 @@ func (d *device) Open() (msg.Channel, error) {
 type channel struct {
 	device *device
 	subs   sync.Map
-	client *client.Client
+	router *Router
 	inbox  string
-	qos    packet.QOS
+	outbox string
+	handle uint64
 }
 
 func (c *channel) Width() int {
@@ -121,13 +94,7 @@ func (c *channel) Unsubscribe(queue msg.Queue) {
 
 func (c *channel) Write(bytes []byte) error {
 	// send message
-	future, err := c.client.Publish(c.inbox, bytes, c.qos, false)
-	if err != nil {
-		return err
-	}
-
-	// await future
-	err = future.Wait(5 * time.Second)
+	err := c.router.Publish(c.inbox, bytes)
 	if err != nil {
 		return err
 	}
@@ -136,6 +103,6 @@ func (c *channel) Write(bytes []byte) error {
 }
 
 func (c *channel) Close() {
-	// disconnect
-	_ = c.client.Disconnect()
+	// unsubscribe
+	_ = c.router.Unsubscribe(c.outbox, c.handle)
 }
