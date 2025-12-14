@@ -32,7 +32,18 @@ func Config(params map[string]string, timeout time.Duration, out io.Writer) erro
 	// log info
 	utils.Log(out, "Scanning for devices... (press Ctrl+C to stop)")
 
+	// prepare registry
+	registry := map[string]bool{}
+
 	return Discover(ctx, func(device msg.Device) {
+		// check registry
+		if registry[device.ID()] {
+			return
+		}
+
+		// mark device
+		registry[device.ID()] = true
+
 		// get channel
 		ch, err := device.Open()
 		if err != nil {
@@ -72,9 +83,6 @@ func Discover(ctx context.Context, cb func(device msg.Device)) error {
 		return err
 	}
 
-	// prepare map
-	devices := map[string]bool{}
-
 	// handle cancel
 	go func() {
 		<-ctx.Done()
@@ -87,14 +95,6 @@ func Discover(ctx context.Context, cb func(device msg.Device)) error {
 		if !result.HasServiceUUID(serviceUUID) {
 			return
 		}
-
-		// check map
-		if devices[result.Address.String()] {
-			return
-		}
-
-		// mark device
-		devices[result.Address.String()] = true
 
 		// yield device
 		go cb(&device{addr: result.Address})
