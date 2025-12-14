@@ -86,7 +86,7 @@ func main() {
 					continue
 				}
 				err = mqtt.Discover(context.Background(), router, func(d mqtt.Description) {
-					state.register(mqtt.NewDevice(router, d.BaseTopic))
+					state.registerWithMeta(mqtt.NewDevice(router, d.BaseTopic), d.DeviceName, d.AppName, d.AppVersion)
 				})
 				if err != nil {
 					state.log("[red]MQTT discover error[-]: %v", err)
@@ -109,10 +109,10 @@ func runUI(state *state) {
 	pages := tview.NewPages()
 	app.SetRoot(pages, true)
 
-	// prepare list view
-	list := tview.NewList().
-		ShowSecondaryText(true)
-	list.SetBorder(true).
+	// prepare table view
+	table := tview.NewTable().
+		SetSelectable(true, false)
+	table.SetBorder(true).
 		SetTitle("Devices")
 
 	// prepare log view
@@ -125,7 +125,7 @@ func runUI(state *state) {
 
 	// prepare container
 	container := tview.NewFlex().SetDirection(tview.FlexRow)
-	container.AddItem(list, 0, 3, true)
+	container.AddItem(table, 0, 3, true)
 	container.AddItem(log, 0, 1, false)
 
 	// add main page
@@ -150,52 +150,78 @@ func runUI(state *state) {
 	// prepare local devices
 	var devices []*device
 
-	// prepare list view updater
-	updateListView := func() {
-		// capture selection and clear list
-		current := list.GetCurrentItem()
-		list.Clear()
+	// prepare table view updater
+	updateTableView := func() {
+		// capture selection and clear table
+		currentRow, _ := table.GetSelection()
+		table.Clear()
+
+		// set headers
+		headers := []string{"ID", "Device Name", "App Name", "App Version", "Age"}
+		for col, h := range headers {
+			cell := tview.NewTableCell(fmt.Sprintf("[yellow]%s", h)).SetSelectable(false)
+			table.SetCell(0, col, cell)
+		}
 
 		// update devices
 		devices = state.snapshot()
 
 		// add devices
-		for _, device := range devices {
-			var status []string
-			if device.Active() {
-				status = append(status, "active")
-			} else {
-				status = append(status, "idle")
+		for i, device := range devices {
+			row := i + 1 // offset for header
+
+			// device name (use ID as fallback)
+			deviceName := device.DeviceName()
+			if deviceName == "" {
+				deviceName = "-"
 			}
-			seenAgo := time.Since(device.LastSeen())
-			status = append(status, fmt.Sprintf("seen %s ago", humanDuration(seenAgo)))
-			list.AddItem(fmt.Sprintf("%s", device.ID()), strings.Join(status, " • "), 0, nil)
+
+			// app name
+			appName := device.AppName()
+			if appName == "" {
+				appName = "-"
+			}
+
+			// app version
+			appVersion := device.AppVersion()
+			if appVersion == "" {
+				appVersion = "-"
+			}
+
+			table.SetCell(row, 0, tview.NewTableCell(device.ID()))
+			table.SetCell(row, 1, tview.NewTableCell(deviceName))
+			table.SetCell(row, 2, tview.NewTableCell(appName))
+			table.SetCell(row, 3, tview.NewTableCell(appVersion))
+			table.SetCell(row, 4, tview.NewTableCell(humanDuration(time.Since(device.LastSeen()))))
 		}
 
 		// restore selection
 		if len(devices) > 0 {
-			if current < 0 {
-				current = 0
+			if currentRow < 1 {
+				currentRow = 1
 			}
-			if current >= len(devices) {
-				current = len(devices) - 1
+			if currentRow > len(devices) {
+				currentRow = len(devices)
 			}
-			list.SetCurrentItem(current)
+			table.Select(currentRow, 0)
 		}
 	}
 
-	// update list immediately and every second
-	updateListView()
+	// update table immediately and every second
+	updateTableView()
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 	go func() {
 		for range ticker.C {
-			app.QueueUpdateDraw(updateListView)
+			app.QueueUpdateDraw(updateTableView)
 		}
 	}()
 
 	// set selection handler
-	list.SetSelectedFunc(func(index int, mainText, secondary string, r rune) {
+	table.SetSelectedFunc(func(row, col int) {
+		// adjust for header row
+		index := row - 1
+
 		// check index
 		if index < 0 || index >= len(devices) {
 			return
@@ -224,7 +250,7 @@ func runUI(state *state) {
 				if err != nil {
 					state.log("[red]Activate failed for %s[-]: %v", device.ID(), err)
 					showErrorModal(app, pages, fmt.Sprintf("Activate failed: %v", err))
-					app.SetFocus(list)
+					app.SetFocus(table)
 					return
 				}
 
@@ -241,7 +267,7 @@ func runUI(state *state) {
 					app.QueueUpdateDraw(func() {
 						pages.RemovePage(pageName)
 						pages.SwitchToPage("main")
-						app.SetFocus(list)
+						app.SetFocus(table)
 					})
 				})
 
@@ -253,7 +279,7 @@ func runUI(state *state) {
 	})
 
 	// handle focus switching
-	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyRune {
 			switch event.Rune() {
 			case 'l', 'L':
@@ -266,13 +292,13 @@ func runUI(state *state) {
 	log.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
-			app.SetFocus(list)
+			app.SetFocus(table)
 			return nil
 		}
 		if event.Key() == tcell.KeyRune {
 			switch event.Rune() {
 			case 'l', 'L':
-				app.SetFocus(list)
+				app.SetFocus(table)
 				return nil
 			}
 		}
@@ -280,7 +306,7 @@ func runUI(state *state) {
 	})
 
 	// handle app done
-	list.SetDoneFunc(func() {
+	table.SetDoneFunc(func(key tcell.Key) {
 		app.Stop()
 	})
 

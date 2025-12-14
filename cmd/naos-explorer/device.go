@@ -16,13 +16,38 @@ type device struct {
 	pss *msg.Session
 	mss *msg.Session
 	mut sync.Mutex
+
+	deviceName string
+	appName    string
+	appVersion string
 }
 
-func newDevice(dev msg.Device) *device {
+func newDevice(dev msg.Device, deviceName, appName, appVersion string) *device {
 	return &device{
-		md:  msg.NewManagedDevice(dev),
-		age: time.Now(),
+		md:         msg.NewManagedDevice(dev),
+		age:        time.Now(),
+		deviceName: deviceName,
+		appName:    appName,
+		appVersion: appVersion,
 	}
+}
+
+func (d *device) DeviceName() string {
+	d.mut.Lock()
+	defer d.mut.Unlock()
+	return d.deviceName
+}
+
+func (d *device) AppName() string {
+	d.mut.Lock()
+	defer d.mut.Unlock()
+	return d.appName
+}
+
+func (d *device) AppVersion() string {
+	d.mut.Lock()
+	defer d.mut.Unlock()
+	return d.appVersion
 }
 
 func (d *device) ID() string {

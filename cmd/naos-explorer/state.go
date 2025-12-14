@@ -21,6 +21,10 @@ func newState() *state {
 }
 
 func (s *state) register(dev msg.Device) *device {
+	return s.registerWithMeta(dev, "", "", "")
+}
+
+func (s *state) registerWithMeta(dev msg.Device, deviceName, appName, appVersion string) *device {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -35,7 +39,7 @@ func (s *state) register(dev msg.Device) *device {
 		return existing
 	}
 
-	ed := newDevice(dev)
+	ed := newDevice(dev, deviceName, appName, appVersion)
 	s.devices[key] = ed
 	s.order = append(s.order, key)
 
