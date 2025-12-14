@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/256dpi/gomqtt/packet"
 )
@@ -68,16 +69,21 @@ func Discover(ctx context.Context, r *Router, handle func(Description)) error {
 		_ = r.Unsubscribe(describeTopic, id)
 	}()
 
-	// trigger discovery
-	err = r.Publish(discoverTopic, []byte{})
-	if err != nil {
-		return err
+	for {
+		// publish discover message
+		err = r.Publish(discoverTopic, []byte{})
+		if err != nil {
+			return err
+		}
+
+		// wait for context cancellation
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(5 * time.Second):
+			// continue
+		}
 	}
-
-	// wait for context cancellation
-	<-ctx.Done()
-
-	return ctx.Err()
 }
 
 // Collect uses the provided Router to collect connected MQTT devices.
