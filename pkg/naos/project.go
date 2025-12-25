@@ -11,7 +11,6 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/256dpi/naos/pkg/ble"
 	"github.com/256dpi/naos/pkg/fleet"
 	"github.com/256dpi/naos/pkg/serial"
 	"github.com/256dpi/naos/pkg/tree"
@@ -349,7 +348,7 @@ func (p *Project) Exec(cmd string, out io.Writer, in io.Reader) error {
 }
 
 // Config will write settings and parameters to an attached device.
-func (p *Project) Config(file, device, baudRate string, useBLE bool, out io.Writer) error {
+func (p *Project) Config(file, device, baudRate string, out io.Writer) error {
 	// ensure baud rate
 	if baudRate == "" {
 		baudRate = p.Manifest.BaudRate
@@ -374,11 +373,6 @@ func (p *Project) Config(file, device, baudRate string, useBLE bool, out io.Writ
 	// set missing device
 	if device == "" {
 		device = serial.FindPort()
-	}
-
-	// use BLE if requested
-	if useBLE {
-		return ble.Config(values, 0, out)
 	}
 
 	return tree.Config(p.Tree(), values, device, baudRate, out)

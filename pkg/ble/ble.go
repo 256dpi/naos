@@ -3,76 +3,18 @@ package ble
 import (
 	"context"
 	"fmt"
-	"io"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/samber/lo"
 	"tinygo.org/x/bluetooth"
 
 	"github.com/256dpi/naos/pkg/msg"
-	"github.com/256dpi/naos/pkg/utils"
 )
 
 var adapter = bluetooth.DefaultAdapter
 var serviceUUID = lo.Must(bluetooth.ParseUUID("632FBA1B-4861-4E4F-8103-FFEE9D5033B5"))
 var msgUUID = lo.Must(bluetooth.ParseUUID("0360744B-A61B-00AD-C945-37F3634130F3"))
-
-// Config configures all reachable BLE device with the given parameters.
-func Config(params map[string]string, timeout time.Duration, out io.Writer) error {
-	// prepare context
-	ctx := context.Background()
-	if timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, timeout)
-		defer cancel()
-	}
-
-	// log info
-	utils.Log(out, "Scanning for devices... (press Ctrl+C to stop)")
-
-	// prepare registry
-	registry := map[string]bool{}
-
-	return Discover(ctx, func(device msg.Device) {
-		// check registry
-		if registry[device.ID()] {
-			return
-		}
-
-		// mark device
-		registry[device.ID()] = true
-
-		// get channel
-		ch, err := device.Open()
-		if err != nil {
-			utils.Log(out, fmt.Sprintf("Error: %s", err))
-			return
-		}
-		defer ch.Close()
-
-		// open session
-		s, err := msg.OpenSession(ch)
-		if err != nil {
-			utils.Log(out, fmt.Sprintf("Error: %s", err))
-			return
-		}
-		defer s.End(time.Second)
-
-		// write parameters
-		for param, value := range params {
-			err = msg.SetParam(s, param, []byte(value), time.Second)
-			if err != nil {
-				utils.Log(out, fmt.Sprintf("Error: %s", err))
-				return
-			}
-		}
-
-		// log success
-		utils.Log(out, fmt.Sprintf("Configured: %s", device.ID()))
-	})
-}
 
 // Discover scans for BLE devices and calls the provided callback for each
 // discovered device.

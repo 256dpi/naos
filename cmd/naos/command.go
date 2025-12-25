@@ -18,10 +18,10 @@ Project Management:
   detect   Detect all connected devices.
   flash    Flash the previously built binary to an attached device.
   attach   Open a serial communication with an attached device.
-  run      Run 'build', 'flash' and 'attach' sequentially.
+  run      Run 'build', 'flash', and 'attach' sequentially.
   trace    Run 'build' and 'flash' with app tracing enabled over USB.
   exec     Run a command in the tree. 
-  config   Write parameters to an attached device or to devices over BLE.
+  config   Write parameters to an attached device.
   format   Format all source files in the 'src' subdirectory.
   bundle   Generate a bundle of the project.
 
@@ -52,7 +52,7 @@ Usage:
   naos run [<device>] [--clean --reconfigure --app-only --baud=<rate> --erase --alt]
   naos trace [<device>] [--cpu=<core> --clean --reconfigure --app-only --baud=<rate> --erase --alt]
   naos exec <command>
-  naos config <file> [<device>] [--baud=<rate> --ble]
+  naos config <file> [<device>] [--baud=<rate>]
   naos format
   naos bundle [<file>]
   naos list
@@ -77,7 +77,6 @@ Options:
   --erase               Erase completely before flashing new image.
   --app-only            Only build or flash the application.
   --alt                 Use alternative esptool.py found in PATH.
-  --ble                 Use BLE instead of serial to configure devices.
   --clear               Remove not available devices from inventory.
   --delete              Delete loaded coredumps from the devices.
   -b --baud=<rate>      The baud rate.
@@ -136,7 +135,6 @@ type command struct {
 	oAppOnly     bool
 	oAlt         bool
 	oCPUCore     string
-	oBLE         bool
 	oClear       bool
 	oDelete      bool
 	oDuration    time.Duration
@@ -197,7 +195,6 @@ func parseCommand() *command {
 		oAppOnly:     getBool(a["--app-only"]),
 		oAlt:         getBool(a["--alt"]),
 		oCPUCore:     getString(a["--cpu"]),
-		oBLE:         getBool(a["--ble"]),
 		oClear:       getBool(a["--clear"]),
 		oDelete:      getBool(a["--delete"]),
 		oDuration:    getDuration(a["--duration"]),
