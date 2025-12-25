@@ -13,7 +13,7 @@ func TestDiscover(t *testing.T) {
 	if testing.Short() {
 		return
 	}
-	
+
 	locations, err := Discover(time.Second)
 	assert.NoError(t, err)
 	assert.Equal(t, []Location{

@@ -40,8 +40,6 @@ func main() {
 		attach(cmd, getProject())
 	} else if cmd.cRun {
 		run(cmd, getProject())
-	} else if cmd.cTrace {
-		trace(cmd, getProject())
 	} else if cmd.cExec {
 		exec(cmd, getProject())
 	} else if cmd.cConfig {
@@ -134,14 +132,6 @@ func run(cmd *command, p *naos.Project) {
 
 	// attach to device
 	exitIfSet(p.Attach(cmd.aDevice, os.Stdout, os.Stdin))
-}
-
-func trace(cmd *command, p *naos.Project) {
-	// build project
-	exitIfSet(p.BuildTrace(cmd.oCPUCore, cmd.oBaudRate, cmd.oClean, cmd.oReconfigure, cmd.oAppOnly, os.Stdout))
-
-	// flash project
-	exitIfSet(p.Flash(cmd.aDevice, cmd.oBaudRate, cmd.oErase, cmd.oAppOnly, cmd.oAlt, os.Stdout))
 }
 
 func exec(cmd *command, p *naos.Project) {

@@ -13,7 +13,7 @@ func TestMetricsEndpoint(t *testing.T) {
 	if testing.Short() {
 		return
 	}
-	
+
 	dev := NewHTTPDevice("10.0.1.11")
 
 	ch, err := dev.Open()

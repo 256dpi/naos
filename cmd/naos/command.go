@@ -19,7 +19,6 @@ Project Management:
   flash    Flash the previously built binary to an attached device.
   attach   Open a serial communication with an attached device.
   run      Run 'build', 'flash', and 'attach' sequentially.
-  trace    Run 'build' and 'flash' with app tracing enabled over USB.
   exec     Run a command in the tree. 
   config   Write parameters to an attached device.
   format   Format all source files in the 'src' subdirectory.
@@ -50,7 +49,6 @@ Usage:
   naos flash [<device>] [--baud=<rate> --erase --app-only --alt]
   naos attach [<device>]
   naos run [<device>] [--clean --reconfigure --app-only --baud=<rate> --erase --alt]
-  naos trace [<device>] [--cpu=<core> --clean --reconfigure --app-only --baud=<rate> --erase --alt]
   naos exec <command>
   naos config <file> [<device>] [--baud=<rate>]
   naos format
@@ -80,7 +78,6 @@ Options:
   --clear               Remove not available devices from inventory.
   --delete              Delete loaded coredumps from the devices.
   -b --baud=<rate>      The baud rate.
-  -c --cpu=<core>       The CPU core to trace (0: Protocol, 1: Application) [default: 1].
   -d --duration=<time>  Operation duration [default: 5s].
   -t --timeout=<time>   Operation timeout [default: 30s].
   -j --jobs=<count>     Number of simultaneous update jobs [default: 10].
@@ -95,7 +92,6 @@ type command struct {
 	cFlash    bool
 	cAttach   bool
 	cRun      bool
-	cTrace    bool
 	cExec     bool
 	cConfig   bool
 	cFormat   bool
@@ -134,7 +130,6 @@ type command struct {
 	oErase       bool
 	oAppOnly     bool
 	oAlt         bool
-	oCPUCore     string
 	oClear       bool
 	oDelete      bool
 	oDuration    time.Duration
@@ -155,7 +150,6 @@ func parseCommand() *command {
 		cFlash:    getBool(a["flash"]),
 		cAttach:   getBool(a["attach"]),
 		cRun:      getBool(a["run"]),
-		cTrace:    getBool(a["trace"]),
 		cExec:     getBool(a["exec"]),
 		cConfig:   getBool(a["config"]),
 		cFormat:   getBool(a["format"]),
@@ -194,7 +188,6 @@ func parseCommand() *command {
 		oErase:       getBool(a["--erase"]),
 		oAppOnly:     getBool(a["--app-only"]),
 		oAlt:         getBool(a["--alt"]),
-		oCPUCore:     getString(a["--cpu"]),
 		oClear:       getBool(a["--clear"]),
 		oDelete:      getBool(a["--delete"]),
 		oDuration:    getDuration(a["--duration"]),
