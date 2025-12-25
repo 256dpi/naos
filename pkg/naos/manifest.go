@@ -21,8 +21,8 @@ type Frameworks struct {
 	Audio string `json:"audio,omitempty"`
 }
 
-// An Inventory represents the contents of the inventory file.
-type Inventory struct {
+// A Manifest represents the contents of the manifest file.
+type Manifest struct {
 	Name       string                `json:"name"`
 	Version    string                `json:"version"`
 	Target     string                `json:"target"`
@@ -35,9 +35,9 @@ type Inventory struct {
 	Frameworks Frameworks            `json:"frameworks,omitempty"`
 }
 
-// NewInventory creates a new Inventory.
-func NewInventory() *Inventory {
-	return &Inventory{
+// NewManifest creates a new Manifest.
+func NewManifest() *Manifest {
+	return &Manifest{
 		Version:    "main",
 		Name:       "my-device",
 		Target:     "esp32",
@@ -47,10 +47,10 @@ func NewInventory() *Inventory {
 	}
 }
 
-// ReadInventory will attempt to read the inventory file at the specified path.
-func ReadInventory(path string) (*Inventory, error) {
-	// prepare inventory
-	var inv Inventory
+// ReadManifest will attempt to read the manifest file at the specified path.
+func ReadManifest(path string) (*Manifest, error) {
+	// prepare manifest
+	var man Manifest
 
 	// read file
 	data, err := os.ReadFile(path)
@@ -59,28 +59,28 @@ func ReadInventory(path string) (*Inventory, error) {
 	}
 
 	// decode data
-	err = json.Unmarshal(data, &inv)
+	err = json.Unmarshal(data, &man)
 	if err != nil {
 		return nil, err
 	}
 
 	// create map of components if missing
-	if inv.Components == nil {
-		inv.Components = make(map[string]*Component)
+	if man.Components == nil {
+		man.Components = make(map[string]*Component)
 	}
 
 	// check version
-	if inv.Version == "" {
+	if man.Version == "" {
 		return nil, errors.New("missing version field")
 	}
 
-	return &inv, nil
+	return &man, nil
 }
 
-// Save will write the inventory file to the specified path.
-func (i *Inventory) Save(path string) error {
+// Save will write the manifest file to the specified path.
+func (m *Manifest) Save(path string) error {
 	// encode data
-	data, err := json.MarshalIndent(i, "", "  ")
+	data, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
 		return err
 	}

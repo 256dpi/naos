@@ -20,9 +20,9 @@ import (
 
 // A Project is a project available on disk.
 type Project struct {
-	Location  string
-	Inventory *Inventory
-	Fleet     *Fleet
+	Location string
+	Manifest *Manifest
+	Fleet    *Fleet
 }
 
 // CreateProject will initialize a project in the specified directory. If out is
@@ -44,20 +44,20 @@ func CreateProject(path string, force, cmake bool, out io.Writer) (*Project, err
 		return nil, err
 	}
 
-	// create new inventory if not already exists
+	// create new manifest if not already exists
 	if !ok || force {
-		// create empty inventory
-		p.Inventory = NewInventory()
+		// create empty manifest
+		p.Manifest = NewManifest()
 
-		// save inventory
-		utils.Log(out, "Created new empty inventory.")
-		err = p.SaveInventory()
+		// save manifest
+		utils.Log(out, "Created new empty manifest.")
+		err = p.SaveManifest()
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		// open existing project
-		utils.Log(out, "Inventory already exists.")
+		utils.Log(out, "Manifest already exists.")
 		p, err = OpenProject(path)
 		if err != nil {
 			return nil, err
@@ -106,8 +106,8 @@ func CreateProject(path string, force, cmake bool, out io.Writer) (*Project, err
 
 // OpenProject will open the project in the specified path.
 func OpenProject(path string) (*Project, error) {
-	// attempt to read inventory
-	inv, err := ReadInventory(filepath.Join(path, "naos.json"))
+	// attempt to read manifest
+	man, err := ReadManifest(filepath.Join(path, "naos.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -122,18 +122,18 @@ func OpenProject(path string) (*Project, error) {
 
 	// prepare project
 	project := &Project{
-		Location:  path,
-		Inventory: inv,
-		Fleet:     flt,
+		Location: path,
+		Manifest: man,
+		Fleet:    flt,
 	}
 
 	return project, nil
 }
 
-// SaveInventory will save the associated inventory to disk.
-func (p *Project) SaveInventory() error {
-	// save inventory
-	err := p.Inventory.Save(filepath.Join(p.Location, "naos.json"))
+// SaveManifest will save the associated manifest to disk.
+func (p *Project) SaveManifest() error {
+	// save manifest
+	err := p.Manifest.Save(filepath.Join(p.Location, "naos.json"))
 	if err != nil {
 		return err
 	}
@@ -163,13 +163,13 @@ func (p *Project) Tree() string {
 // information about the process.
 func (p *Project) Install(force bool, out io.Writer) error {
 	// install tree
-	err := tree.Install(p.Tree(), filepath.Join(p.Location, "src"), filepath.Join(p.Location, "data"), p.Inventory.Version, force, out)
+	err := tree.Install(p.Tree(), filepath.Join(p.Location, "src"), filepath.Join(p.Location, "data"), p.Manifest.Version, force, out)
 	if err != nil {
 		return err
 	}
 
 	// install non-registry components
-	for name, com := range p.Inventory.Components {
+	for name, com := range p.Manifest.Components {
 		if com.Registry == "" {
 			err = tree.InstallComponent(p.Location, p.Tree(), name, com.Path, com.Repository, com.Version, force, out)
 			if err != nil {
@@ -180,7 +180,7 @@ func (p *Project) Install(force bool, out io.Writer) error {
 
 	// install registry components
 	var registryComponents []tree.IDFComponent
-	for _, com := range p.Inventory.Components {
+	for _, com := range p.Manifest.Components {
 		if com.Registry != "" {
 			registryComponents = append(registryComponents, tree.IDFComponent{
 				Name:       com.Registry,
@@ -196,7 +196,7 @@ func (p *Project) Install(force bool, out io.Writer) error {
 	}
 
 	// install audio framework
-	err = tree.InstallAudioFramework(p.Tree(), p.Inventory.Frameworks.Audio, force, out)
+	err = tree.InstallAudioFramework(p.Tree(), p.Manifest.Frameworks.Audio, force, out)
 	if err != nil {
 		return err
 	}
@@ -215,22 +215,22 @@ func (p *Project) Install(force bool, out io.Writer) error {
 // Build will build the project.
 func (p *Project) Build(clean, reconfigure, appOnly bool, out io.Writer) error {
 	// execute command
-	return tree.Build(p.Tree(), p.Inventory.Name, p.Inventory.TagPrefix, p.Inventory.Target, p.Inventory.Overrides, p.Inventory.Embeds, p.Inventory.Partitions, clean, reconfigure, appOnly, out)
+	return tree.Build(p.Tree(), p.Manifest.Name, p.Manifest.TagPrefix, p.Manifest.Target, p.Manifest.Overrides, p.Manifest.Embeds, p.Manifest.Partitions, clean, reconfigure, appOnly, out)
 }
 
 // BuildTrace will build the project with tracing enabled.
 func (p *Project) BuildTrace(cpuCore, baudRate string, clean, reconfigure, appOnly bool, out io.Writer) error {
 	// ensure baud rate
 	if baudRate == "" {
-		baudRate = p.Inventory.BaudRate
+		baudRate = p.Manifest.BaudRate
 		if baudRate == "" {
 			baudRate = "921600"
 		}
 	}
 
-	// merge overrides with inventory overrides
+	// merge overrides with manifest overrides
 	or := map[string]string{}
-	for k, v := range p.Inventory.Overrides {
+	for k, v := range p.Manifest.Overrides {
 		or[k] = v
 	}
 	for k, v := range map[string]string{
@@ -311,14 +311,14 @@ func (p *Project) BuildTrace(cpuCore, baudRate string, clean, reconfigure, appOn
 		or[k] = v
 	}
 
-	return tree.Build(p.Tree(), p.Inventory.Name, p.Inventory.TagPrefix, p.Inventory.Target, or, p.Inventory.Embeds, p.Inventory.Partitions, clean, reconfigure, appOnly, out)
+	return tree.Build(p.Tree(), p.Manifest.Name, p.Manifest.TagPrefix, p.Manifest.Target, or, p.Manifest.Embeds, p.Manifest.Partitions, clean, reconfigure, appOnly, out)
 }
 
 // Flash will flash the project to the attached device.
 func (p *Project) Flash(device, baudRate string, erase bool, appOnly, alt bool, out io.Writer) error {
 	// ensure baud rate
 	if baudRate == "" {
-		baudRate = p.Inventory.BaudRate
+		baudRate = p.Manifest.BaudRate
 		if baudRate == "" {
 			baudRate = "921600"
 		}
@@ -329,7 +329,7 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly, alt bool, 
 		device = serial.FindPort()
 	}
 
-	return tree.Flash(p.Tree(), p.Inventory.Name, p.Inventory.Target, device, baudRate, erase, appOnly, alt, out)
+	return tree.Flash(p.Tree(), p.Manifest.Name, p.Manifest.Target, device, baudRate, erase, appOnly, alt, out)
 }
 
 // Attach will attach to the attached device.
@@ -352,7 +352,7 @@ func (p *Project) Exec(cmd string, out io.Writer, in io.Reader) error {
 func (p *Project) Config(file, device, baudRate string, useBLE bool, out io.Writer) error {
 	// ensure baud rate
 	if baudRate == "" {
-		baudRate = p.Inventory.BaudRate
+		baudRate = p.Manifest.BaudRate
 		if baudRate == "" {
 			baudRate = "921600"
 		}
@@ -416,7 +416,7 @@ func (p *Project) Debug(pattern string, delete bool, duration time.Duration, out
 	// go through all coredumps
 	for device, coredump := range coredumps {
 		// parse coredump
-		data, err := tree.ParseCoredump(p.Tree(), p.Inventory.Name, coredump)
+		data, err := tree.ParseCoredump(p.Tree(), p.Manifest.Name, coredump)
 		if err != nil {
 			return err
 		}
@@ -440,7 +440,7 @@ func (p *Project) Debug(pattern string, delete bool, duration time.Duration, out
 // state or progress.
 func (p *Project) Update(version, pattern string, jobs int, timeout time.Duration, callback func(*Device, *fleet.UpdateStatus)) error {
 	// get binary
-	bytes, err := os.ReadFile(tree.AppBinary(p.Tree(), p.Inventory.Name))
+	bytes, err := os.ReadFile(tree.AppBinary(p.Tree(), p.Manifest.Name))
 	if err != nil {
 		return err
 	}

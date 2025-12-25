@@ -84,8 +84,8 @@ func create(cmd *command) {
 	p, err := naos.CreateProject(workingDirectory(), cmd.oForce, cmd.oCMake, os.Stdout)
 	exitIfSet(err)
 
-	// save inventory
-	exitIfSet(p.SaveInventory())
+	// save manifest
+	exitIfSet(p.SaveManifest())
 }
 
 func install(cmd *command, p *naos.Project) {
