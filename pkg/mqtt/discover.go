@@ -9,7 +9,7 @@ import (
 	"github.com/256dpi/gomqtt/packet"
 )
 
-// The Description of a MQTT device available.
+// The Description of a MQTT device.
 type Description struct {
 	AppName    string
 	AppVersion string

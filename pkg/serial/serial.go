@@ -14,8 +14,8 @@ import (
 	"github.com/256dpi/naos/pkg/msg"
 )
 
-// OpenBest the first best available serial device.
-func OpenBest() (msg.Device, error) {
+// BestDevice returns the first best available serial device.
+func BestDevice() (msg.Device, error) {
 	// get port list
 	ports, err := ListPorts()
 	if err != nil {
@@ -42,8 +42,8 @@ func OpenBest() (msg.Device, error) {
 	return dev, nil
 }
 
-// Open the specified serial device.
-func Open(path string) (msg.Device, error) {
+// NewDevice creates a new serial device for the given path.
+func NewDevice(path string) (msg.Device, error) {
 	// get port list
 	ports, err := ListPorts()
 	if err != nil {

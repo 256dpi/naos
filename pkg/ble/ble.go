@@ -16,9 +16,16 @@ var adapter = bluetooth.DefaultAdapter
 var serviceUUID = lo.Must(bluetooth.ParseUUID("632FBA1B-4861-4E4F-8103-FFEE9D5033B5"))
 var msgUUID = lo.Must(bluetooth.ParseUUID("0360744B-A61B-00AD-C945-37F3634130F3"))
 
+// The Description of a BLE device.
+type Description struct {
+	Address bluetooth.Address
+	RSSI    int
+	Name    string
+}
+
 // Discover scans for BLE devices and calls the provided callback for each
 // discovered device.
-func Discover(ctx context.Context, cb func(device msg.Device)) error {
+func Discover(ctx context.Context, cb func(device Description)) error {
 	// enable BLE adapter
 	err := adapter.Enable()
 	if err != nil && !strings.Contains(err.Error(), "already calling Enable function") {
@@ -39,7 +46,11 @@ func Discover(ctx context.Context, cb func(device msg.Device)) error {
 		}
 
 		// yield device
-		go cb(&device{addr: result.Address})
+		go cb(Description{
+			Address: result.Address,
+			RSSI:    int(result.RSSI),
+			Name:    result.LocalName(),
+		})
 	})
 
 	return nil
@@ -49,6 +60,13 @@ type device struct {
 	addr    bluetooth.Address
 	channel msg.Channel
 	mutex   sync.Mutex
+}
+
+// NewDevice creates a new BLE device with the given address.
+func NewDevice(addr bluetooth.Address) msg.Device {
+	return &device{
+		addr: addr,
+	}
 }
 
 func (d *device) ID() string {

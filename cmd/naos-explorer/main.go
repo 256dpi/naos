@@ -30,8 +30,8 @@ func main() {
 	// start BLE discovery
 	go func() {
 		for {
-			err := ble.Discover(context.Background(), func(device msg.Device) {
-				state.register(device)
+			err := ble.Discover(context.Background(), func(d ble.Description) {
+				state.register(ble.NewDevice(d.Address))
 			})
 			if err != nil {
 				state.log("[red]BLE discover error[-]: %v", err)
@@ -63,7 +63,7 @@ func main() {
 			} else {
 				sort.Strings(ports)
 				for _, port := range ports {
-					dev, err := serial.Open(port)
+					dev, err := serial.NewDevice(port)
 					if err != nil {
 						state.log("[red]Serial open %s failed[-]: %v", port, err)
 						continue
