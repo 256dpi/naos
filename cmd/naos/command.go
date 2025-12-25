@@ -28,10 +28,8 @@ Project Management:
 Fleet Management:
   list     List all devices listed in the inventory.
   collect  Collect devices and add them to the inventory.
-  ping     Ping devices.
-  send     Send a message to devices.
-  receive  Receive messages from devices.
   discover Discover all parameters of a device.
+  ping     Ping devices.
   get      Read a parameter from devices.
   set      Set a parameter on devices.
   unset    Unset a parameter on devices.
@@ -59,10 +57,8 @@ Usage:
   naos bundle [<file>]
   naos list
   naos collect [--clear --duration=<time>]
-  naos ping [<pattern>] [--timeout=<time>]
-  naos send <topic> [--] <message> [<pattern>] [--timeout=<time>]
-  naos receive <topic> [--] [<pattern>] [--timeout=<time>]
   naos discover [<pattern>] [--timeout=<time>]
+  naos ping [<pattern>] [--timeout=<time>]
   naos get <param> [<pattern>] [--timeout=<time>]
   naos set <param> [--] <value> [<pattern>] [--timeout=<time>]
   naos unset <param> [<pattern>] [--timeout=<time>]
@@ -107,10 +103,8 @@ type command struct {
 	cBundle   bool
 	cList     bool
 	cCollect  bool
-	cPing     bool
-	cSend     bool
-	cReceive  bool
 	cDiscover bool
+	cPing     bool
 	cGet      bool
 	cSet      bool
 	cUnset    bool
@@ -170,10 +164,8 @@ func parseCommand() *command {
 		cBundle:   getBool(a["bundle"]),
 		cList:     getBool(a["list"]),
 		cCollect:  getBool(a["collect"]),
-		cPing:     getBool(a["ping"]),
-		cSend:     getBool(a["send"]),
-		cReceive:  getBool(a["receive"]),
 		cDiscover: getBool(a["discover"]),
+		cPing:     getBool(a["ping"]),
 		cGet:      getBool(a["get"]),
 		cSet:      getBool(a["set"]),
 		cUnset:    getBool(a["unset"]),

@@ -54,14 +54,10 @@ func main() {
 		list(cmd, getProject())
 	} else if cmd.cCollect {
 		collect(cmd, getProject())
-	} else if cmd.cPing {
-		ping(cmd, getProject())
-	} else if cmd.cSend {
-		send(cmd, getProject())
-	} else if cmd.cReceive {
-		receive(cmd, getProject())
 	} else if cmd.cDiscover {
 		discover(cmd, getProject())
+	} else if cmd.cPing {
+		ping(cmd, getProject())
 	} else if cmd.cGet {
 		get(cmd, getProject())
 	} else if cmd.cSet {
@@ -206,36 +202,6 @@ func collect(cmd *command, p *naos.Project) {
 	exitIfSet(p.SaveFleet())
 }
 
-func ping(cmd *command, p *naos.Project) {
-	// send message
-	exitIfSet(p.Fleet.Ping(cmd.aPattern, cmd.oTimeout))
-}
-
-func send(cmd *command, p *naos.Project) {
-	// send message
-	exitIfSet(p.Fleet.Send(cmd.aPattern, cmd.aTopic, cmd.aMessage, cmd.oTimeout))
-}
-
-func receive(cmd *command, p *naos.Project) {
-	// receive messages
-	msgs, err := p.Fleet.Receive(cmd.aPattern, cmd.aTopic, cmd.oTimeout)
-	exitIfSet(err)
-
-	// prepare table
-	tbl := newTable("TOPIC", "PAYLOAD")
-
-	// add rows
-	for topic, payload := range msgs {
-		tbl.add(topic, payload)
-	}
-
-	// show table
-	tbl.show(0)
-
-	// show info
-	fmt.Printf("\nReceived %d messages.\n", len(msgs))
-}
-
 func discover(cmd *command, p *naos.Project) {
 	// discover parameters
 	list, err := p.Fleet.Discover(cmd.aPattern, cmd.oTimeout)
@@ -262,6 +228,11 @@ func discover(cmd *command, p *naos.Project) {
 
 	// save inventory
 	exitIfSet(p.SaveFleet())
+}
+
+func ping(cmd *command, p *naos.Project) {
+	// ping devices
+	exitIfSet(p.Fleet.Ping(cmd.aPattern, cmd.oTimeout))
 }
 
 func get(cmd *command, p *naos.Project) {
