@@ -18,6 +18,7 @@
 #include <naos/metrics.h>
 #include <naos/connect.h>
 #include <naos/auth.h>
+#include <naos/debug.h>
 #include <naos/sys.h>
 
 #define ETHERNET false
@@ -403,6 +404,9 @@ void app_main() {
 
   // initialize auth
   naos_auth_install();
+
+  // initialize debug
+  naos_debug_install();
 
   // initialize counter
   counter = naos_get_l("counter");
