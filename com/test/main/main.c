@@ -10,7 +10,6 @@
 #include <naos/eth.h>
 #include <naos/mqtt.h>
 #include <naos/osc.h>
-#include <naos/manager.h>
 #include <naos/bridge.h>
 #include <naos/fs.h>
 #include <naos/serial.h>
@@ -351,7 +350,6 @@ void app_main() {
   naos_mqtt_init(1);
   naos_osc_init(1);
   naos_osc_filter(osc_filter);
-  naos_manager_init();
   naos_serial_init_stdio();
   if (CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED) {
     naos_serial_init_secio();

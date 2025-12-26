@@ -12,18 +12,6 @@ config NAOS_OSC_BUFFER_SIZE
     int "The OSC read and write buffer size"
     default 6000
 
-config NAOS_HEARTBEAT_INTERVAL
-    int "The heartbeat interval"
-    default 5000
-
-config NAOS_UPDATE_MAX_CHUNK_SIZE
-    int "The max update chunk size"
-    default 5000
-
-config NAOS_DEBUG_MAX_CHUNK_SIZE
-    int "The max debug chunk size"
-    default 5000
-
 config NAOS_PARAM_REGISTRY_SIZE
     int "The size of the parameter registry"
     default 64
