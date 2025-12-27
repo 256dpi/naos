@@ -69,14 +69,6 @@ static void message(const char *topic, const uint8_t *payload, size_t len, naos_
     return;
   }
 
-  // handle fail
-  if (strcmp(topic, "fail") == 0 && scope == NAOS_LOCAL) {
-    // cause error
-    int r = 10 / 0;
-    naos_log("error: %d", r);
-    return;
-  }
-
   // log other incoming message
   naos_log("%s message at %s with payload %s (%ld) received", naos_scope_str(scope), topic, payload, len);
 }
@@ -112,6 +104,14 @@ static float battery() {
 }
 
 static void fun_s(const char *str) {
+  // handle fail
+  if (strcmp(str, "fail") == 0) {
+    // cause error
+    int r = 10 / 0;
+    naos_log("error: %d", r);
+    return;
+  }
+
   // log info
   naos_log("fun_s: %s", str);
 }
@@ -269,8 +269,8 @@ static naos_param_t params[] = {
     {.name = "var_l", .type = NAOS_LONG, .default_l = 0, .sync_l = &var_l},
     {.name = "var_d", .type = NAOS_DOUBLE, .default_d = 0, .sync_d = &var_d},
     {.name = "var_b", .type = NAOS_BOOL, .default_b = true, .sync_b = &var_b},
-    {.name = "fun_s", .type = NAOS_STRING, .default_s = "", .func_s = fun_s},
-    {.name = "fun_l", .type = NAOS_LONG, .default_l = 0, .func_l = fun_l},
+    {.name = "fun_s", .type = NAOS_STRING, .default_s = "", .func_s = fun_s, .skip_func_init = true},
+    {.name = "fun_l", .type = NAOS_LONG, .default_l = 0, .func_l = fun_l, .skip_func_init = true},
     {.name = "fun_d", .type = NAOS_DOUBLE, .default_d = 0, .func_d = fun_d, .skip_func_init = true},
     {.name = "fun_b", .type = NAOS_BOOL, .default_b = true, .func_b = fun_b, .skip_func_init = true},
     {.name = "fun_a", .type = NAOS_ACTION, .func_a = fun_a},
