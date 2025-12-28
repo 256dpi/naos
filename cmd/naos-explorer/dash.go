@@ -31,6 +31,13 @@ type dashboard struct {
 	done        chan struct{}
 	onClose     func()
 	logger      *logger
+
+	// coredump state
+	coredumpSize   uint32
+	coredumpReason string
+
+	// log streaming state
+	logDone chan struct{}
 }
 
 type paramRow struct {
@@ -79,7 +86,7 @@ func (d *dashboard) buildUI() {
 	// create status view
 	d.statusView = tview.NewTextView().
 		SetDynamicColors(true).
-		SetText("(Tab) Switch Panes  (F) Reload Dir  (U) Firmware  (Esc) Close")
+		SetText("(Tab) Switch  (F) Reload Dir  (U) Firmware  (C) Coredump  (D) Del Coredump  (L) Log  (Esc) Close")
 	d.statusView.SetBorder(true).
 		SetTitle("Status")
 
@@ -186,6 +193,7 @@ func (d *dashboard) start() {
 	// run background loops
 	go d.loopParams()
 	go d.loopMetrics()
+	go d.loopCoredump()
 	go d.loadDirectory(d.fsTree.GetRoot(), true)
 }
 
@@ -210,6 +218,15 @@ func (d *dashboard) capture(event *tcell.EventKey) *tcell.EventKey {
 		case 'u':
 			d.promptFirmwareUpdate()
 			return nil
+		case 'c':
+			d.downloadCoredump()
+			return nil
+		case 'd':
+			d.deleteCoredump()
+			return nil
+		case 'l':
+			d.toggleLogStreaming()
+			return nil
 		}
 	default:
 	}
@@ -217,6 +234,9 @@ func (d *dashboard) capture(event *tcell.EventKey) *tcell.EventKey {
 }
 
 func (d *dashboard) close() {
+	// stop log streaming if active
+	d.stopLogStreaming()
+
 	close(d.done)
 	if d.onClose != nil {
 		go d.onClose()
@@ -628,10 +648,221 @@ func (d *dashboard) performFirmwareUpdate(path string) {
 }
 
 func (d *dashboard) updateInfo() {
-	text := fmt.Sprintf("[yellow]ID:[-] %s\n[yellow]Parameters:[-] %d\n[yellow]Metrics:[-] %d", d.device.ID(), len(d.paramRows), len(d.metricRows))
+	// format coredump status
+	coredumpStatus := "None"
+	if d.coredumpSize > 0 {
+		coredumpStatus = fmt.Sprintf("%d bytes", d.coredumpSize)
+		if d.coredumpReason != "" {
+			coredumpStatus += fmt.Sprintf(" (%s)", d.coredumpReason)
+		}
+	}
+
+	// format log status
+	logStatus := "Off"
+	if d.logDone != nil {
+		logStatus = "[green]Streaming[-]"
+	}
+
+	text := fmt.Sprintf("[yellow]ID:[-] %s\n[yellow]Parameters:[-] %d\n[yellow]Metrics:[-] %d\n[yellow]Coredump:[-] %s\n[yellow]Log:[-] %s",
+		d.device.ID(), len(d.paramRows), len(d.metricRows), coredumpStatus, logStatus)
 	d.infoView.SetText(text)
 }
 
 func (d *dashboard) queue(fn func()) {
 	go d.app.QueueUpdateDraw(fn)
+}
+
+func (d *dashboard) loopCoredump() {
+	// check coredump immediately and then periodically
+	d.checkCoredump()
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-d.done:
+			return
+		case <-ticker.C:
+			d.checkCoredump()
+		}
+	}
+}
+
+func (d *dashboard) checkCoredump() {
+	var size uint32
+	var reason string
+	err := d.device.WithSession(func(s *msg.Session) error {
+		var err error
+		size, reason, err = msg.CheckCoredump(s, 5*time.Second)
+		return err
+	})
+	if err != nil {
+		d.log("[red]Check coredump failed[-]: %v", err)
+		return
+	}
+
+	// update state and info
+	d.coredumpSize = size
+	d.coredumpReason = reason
+	d.queue(func() {
+		d.updateInfo()
+	})
+}
+
+func (d *dashboard) downloadCoredump() {
+	// check if coredump is available
+	if d.coredumpSize == 0 {
+		d.log("No coredump available")
+		return
+	}
+
+	// create form for file path
+	form := tview.NewForm()
+	input := tview.NewInputField().SetLabel("Save Path").SetFieldWidth(50).SetText("coredump.bin")
+	form.AddFormItem(input)
+	form.AddButton("Download", func() {
+		d.pages.RemovePage("coredump-download")
+		savePath := strings.TrimSpace(input.GetText())
+		if savePath == "" {
+			d.log("[red]Coredump download aborted[-]: missing path")
+			return
+		}
+		go d.performCoredumpDownload(savePath)
+	})
+	form.AddButton("Cancel", func() {
+		d.pages.RemovePage("coredump-download")
+	})
+	form.SetBorder(true).SetTitle(fmt.Sprintf("Download Coredump (%d bytes)", d.coredumpSize))
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			d.pages.RemovePage("coredump-download")
+			return nil
+		}
+		return event
+	})
+
+	d.pages.AddPage("coredump-download", centered(70, 7, form), true, true)
+	d.app.SetFocus(form)
+}
+
+func (d *dashboard) performCoredumpDownload(path string) {
+	d.log("Downloading coredump to %s...", path)
+
+	var data []byte
+	err := d.device.WithSession(func(s *msg.Session) error {
+		var err error
+		data, err = msg.ReadCoredump(s, 0, 0, 60*time.Second)
+		return err
+	})
+	if err != nil {
+		d.log("[red]Coredump download failed[-]: %v", err)
+		return
+	}
+
+	// write to file
+	err = os.WriteFile(path, data, 0644)
+	if err != nil {
+		d.log("[red]Coredump save failed[-]: %v", err)
+		return
+	}
+
+	d.log("Coredump saved to %s (%d bytes)", path, len(data))
+}
+
+func (d *dashboard) deleteCoredump() {
+	// check if coredump is available
+	if d.coredumpSize == 0 {
+		d.log("No coredump available")
+		return
+	}
+
+	go func() {
+		d.log("Deleting coredump...")
+		err := d.device.WithSession(func(s *msg.Session) error {
+			return msg.DeleteCoredump(s, 5*time.Second)
+		})
+		if err != nil {
+			d.log("[red]Coredump delete failed[-]: %v", err)
+			return
+		}
+
+		d.log("Coredump deleted")
+		d.coredumpSize = 0
+		d.queue(func() {
+			d.updateInfo()
+		})
+	}()
+}
+
+func (d *dashboard) toggleLogStreaming() {
+	if d.logDone != nil {
+		d.stopLogStreaming()
+	} else {
+		d.startLogStreaming()
+	}
+}
+
+func (d *dashboard) startLogStreaming() {
+	// set state
+	d.logDone = make(chan struct{})
+	d.queue(func() {
+		d.updateInfo()
+	})
+
+	// receive logs in background
+	go d.loopLogReceive(d.logDone)
+}
+
+func (d *dashboard) loopLogReceive(logDone chan struct{}) {
+	defer func() {
+		d.logDone = nil
+		d.queue(func() {
+			d.updateInfo()
+		})
+	}()
+
+	// create session
+	session, err := d.device.NewSession()
+	if err != nil {
+		d.log("[red]Log streaming failed[-]: %v", err)
+		return
+	}
+
+	// start log
+	err = msg.StartLog(session, 5*time.Second)
+	if err != nil {
+		d.log("[red]Start log failed[-]: %v", err)
+		_ = session.End(5 * time.Second)
+		return
+	}
+
+	d.log("Log streaming started")
+
+	// receive logs
+	for {
+		select {
+		case <-logDone:
+			_ = msg.StopLog(session, time.Second)
+			_ = session.End(time.Second)
+			d.log("Log streaming stopped")
+			return
+		case <-d.done:
+			_ = msg.StopLog(session, time.Second)
+			_ = session.End(time.Second)
+			return
+		default:
+			// receive log message
+			line, err := msg.ReceiveLog(session, time.Second)
+			if err != nil {
+				// ignore timeout errors
+				continue
+			}
+			d.log("[blue]%s[-]", strings.TrimSpace(line))
+		}
+	}
+}
+
+func (d *dashboard) stopLogStreaming() {
+	if d.logDone != nil {
+		close(d.logDone)
+	}
 }

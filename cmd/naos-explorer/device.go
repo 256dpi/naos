@@ -175,3 +175,17 @@ func (d *device) WithSession(fn func(*msg.Session) error) error {
 
 	return nil
 }
+
+func (d *device) NewSession() (*msg.Session, error) {
+	// acquire mutex
+	d.mut.Lock()
+	defer d.mut.Unlock()
+
+	// create session
+	session, err := d.md.NewSession()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session: %w", err)
+	}
+
+	return session, nil
+}
