@@ -236,7 +236,7 @@ void naos_update_begin(size_t size, naos_update_callback_t cb) {
 
   // abort a previous update and discard its result
   if (naos_update_handle != 0) {
-    esp_ota_abort(naos_update_handle);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ota_abort(naos_update_handle));
     naos_update_handle = 0;
   }
 
