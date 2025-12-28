@@ -1,5 +1,5 @@
-#ifndef NAOS_COM_H
-#define NAOS_COM_H
+#ifndef _NAOS_COM_H
+#define _NAOS_COM_H
 
 #include <naos.h>
 
@@ -29,4 +29,4 @@ bool naos_com_networked(uint32_t *generation);
 // naos_unsubscribe
 // naos_publish{s,b,l,d}
 
-#endif  // NAOS_COM_H
+#endif  // _NAOS_COM_H

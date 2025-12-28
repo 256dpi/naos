@@ -1,6 +1,6 @@
-#ifndef NAOS_METRICS2_H
-#define NAOS_METRICS2_H
+#ifndef _NAOS_METRICS_H
+#define _NAOS_METRICS_H
 
 void naos_metrics_init();
 
-#endif  // NAOS_METRICS2_H
+#endif  // _NAOS_METRICS_H

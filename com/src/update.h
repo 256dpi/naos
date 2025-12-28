@@ -1,6 +1,6 @@
-#ifndef NAOS_UPDATE2_H
-#define NAOS_UPDATE2_H
+#ifndef _NAOS_UPDATE_H
+#define _NAOS_UPDATE_H
 
 void naos_update_init();
 
-#endif  // NAOS_UPDATE2_H
+#endif  // _NAOS_UPDATE_H

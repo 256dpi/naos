@@ -1,5 +1,5 @@
-#ifndef NAOS_UTILS_H
-#define NAOS_UTILS_H
+#ifndef _NAOS_UTILS_H
+#define _NAOS_UTILS_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -13,4 +13,4 @@ uint8_t *naos_copy(uint8_t *buf, size_t len);
 char *naos_concat(const char *str1, const char *str2);
 bool naos_equal(uint8_t *buf, size_t len, const char *str);
 
-#endif  // NAOS_UTILS_H
+#endif  // _NAOS_UTILS_H

@@ -1,5 +1,5 @@
-#ifndef NAOS_PARAMS_H
-#define NAOS_PARAMS_H
+#ifndef _NAOS_PARAMS_H
+#define _NAOS_PARAMS_H
 
 #include <naos.h>
 
@@ -15,4 +15,4 @@ void naos_params_dispatch();
 // naos_get{s,b,l,d}
 // naos_set{s,b,l,d}
 
-#endif  // NAOS_PARAMS_H
+#endif  // _NAOS_PARAMS_H

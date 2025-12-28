@@ -1,5 +1,5 @@
-#ifndef NAOS_SYSTEM_H
-#define NAOS_SYSTEM_H
+#ifndef _NAOS_SYSTEM_H
+#define _NAOS_SYSTEM_H
 
 #include <naos.h>
 
@@ -10,4 +10,4 @@ void naos_system_subscribe(naos_system_handler_t handler);
 
 // naos_status
 
-#endif  // NAOS_SYSTEM_H
+#endif  // _NAOS_SYSTEM_H
