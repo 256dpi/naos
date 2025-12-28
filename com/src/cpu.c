@@ -54,9 +54,8 @@ static naos_metric_t naos_cpu_metrics[] = {{
 
 void naos_cpu_init() {
   // add metrics
-  for (size_t i = 0; i < sizeof(naos_cpu_metrics) / sizeof(naos_metric_t); i++) {
-    naos_metric_t *metric = &naos_cpu_metrics[i];
-    naos_metrics_add(metric);
+  for (size_t i = 0; i < NAOS_COUNT(naos_cpu_metrics); i++) {
+    naos_metrics_add(&naos_cpu_metrics[i]);
   }
 
   // get task handles

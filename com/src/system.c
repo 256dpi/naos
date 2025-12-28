@@ -142,12 +142,12 @@ void naos_system_init() {
   naos_metrics_init();
 
   // register system parameters
-  for (size_t i = 0; i < NAOS_NUM_PARAMS(naos_system_params); i++) {
+  for (size_t i = 0; i < NAOS_COUNT(naos_system_params); i++) {
     naos_register(&naos_system_params[i]);
   }
 
   // add system metrics
-  for (size_t i = 0; i < sizeof(naos_system_metrics) / sizeof(naos_metric_t); i++) {
+  for (size_t i = 0; i < NAOS_COUNT(naos_system_metrics); i++) {
     naos_metrics_add(&naos_system_metrics[i]);
   }
 

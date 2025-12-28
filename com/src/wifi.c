@@ -187,12 +187,12 @@ void naos_wifi_init() {
   naos_net_register(link);
 
   // register parameters
-  for (size_t i = 0; i < NAOS_NUM_PARAMS(naos_wifi_params); i++) {
+  for (size_t i = 0; i < NAOS_COUNT(naos_wifi_params); i++) {
     naos_register(&naos_wifi_params[i]);
   }
 
   // add metrics
-  for (size_t i = 0; i < sizeof(naos_wifi_metrics) / sizeof(naos_metric_t); i++) {
+  for (size_t i = 0; i < NAOS_COUNT(naos_wifi_metrics); i++) {
     naos_metrics_add(&naos_wifi_metrics[i]);
   }
 

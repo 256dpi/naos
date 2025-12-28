@@ -205,7 +205,7 @@ void naos_connect_init() {
   naos_connect_mutex = naos_mutex();
 
   // register parameters
-  for (size_t i = 0; i < NAOS_NUM_PARAMS(naos_connect_params); i++) {
+  for (size_t i = 0; i < NAOS_COUNT(naos_connect_params); i++) {
     naos_register(&naos_connect_params[i]);
   }
 

@@ -100,7 +100,7 @@ void naos_osc_init(int core) {
   naos_osc_mutex = naos_mutex();
 
   // register parameters
-  for (size_t i = 0; i < NAOS_NUM_PARAMS(naos_osc_params); i++) {
+  for (size_t i = 0; i < NAOS_COUNT(naos_osc_params); i++) {
     naos_register(&naos_osc_params[i]);
   }
 
