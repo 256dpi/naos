@@ -161,7 +161,7 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
     }
 
     default: {
-      // ESP_LOGI(NAOS_LOG_TAG, "unhandled GAP event: %d", e);
+      ESP_LOGD(NAOS_LOG_TAG, "naos_ble_gap_handler: unhandled event: %d", e);
     }
   }
 }
@@ -542,7 +542,7 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
     }
 
     default: {
-      // ESP_LOGI(NAOS_LOG_TAG, "unhandled GATTS event: %d", e);
+      ESP_LOGD(NAOS_LOG_TAG, "naos_ble_gatts_handler: unhandled event: %d", e);
     }
   }
 }
@@ -828,7 +828,7 @@ void naos_ble_peerlist_clear() {
   // remove devices
   for (int i = 0; i < num; i++) {
     ESP_ERROR_CHECK(esp_ble_remove_bond_device(list[i].bd_addr));
-    ESP_LOGI("naos_ble", "naos_ble_bonding_clear: removed bonded device (addr=" NAOS_BLE_ADDR_FMT ")",
+    ESP_LOGI(NAOS_LOG_TAG, "naos_ble_peerlist_clear: removed bonded device (addr=" NAOS_BLE_ADDR_FMT ")",
              NAOS_BLE_ADDR_ARGS(list[i].bd_addr));
   }
 

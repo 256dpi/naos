@@ -186,7 +186,7 @@ bool naos_publish(const char *topic, void *payload, size_t len, int qos, bool re
     naos_com_status_t status = transport.status();
     if (status.networked && transport.publish != NULL) {
       if (!transport.publish(topic, payload, len, qos, retained)) {
-        ESP_LOGW(NAOS_LOG_TAG, "naos_publish_s: transport '%s' failed", transport.name);
+        ESP_LOGW(NAOS_LOG_TAG, "naos_publish: transport '%s' failed", transport.name);
         ok = false;
       }
     }

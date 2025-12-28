@@ -63,7 +63,7 @@ static void naos_connect_stop() {
 
 static void naos_connect_configure() {
   // log call
-  ESP_LOGI(NAOS_LOG_TAG, "naos_connect_configure");
+  ESP_LOGI(NAOS_LOG_TAG, "naos_connect_configure: called");
 
   // get started
   naos_lock(naos_connect_mutex);

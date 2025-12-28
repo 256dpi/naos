@@ -68,7 +68,7 @@ static void naos_update_finish_task() {
   ESP_ERROR_CHECK(esp_ota_set_boot_partition(naos_update_partition));
 
   // log message
-  ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish: update finished");
+  ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish_task: update finished");
 
   // set block
   naos_update_block = true;
@@ -93,7 +93,7 @@ static void naos_update_finish_task() {
   }
 
   // log message
-  ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish: rebooting in one second...");
+  ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish_task: rebooting in one second...");
 
   // wait one second
   naos_delay(1000);
@@ -340,7 +340,7 @@ void naos_update_finish() {
   }
 
   // log message
-  ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin: finishing update...");
+  ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish: finishing update...");
 
   // release mutex
   naos_unlock(naos_update_mutex);

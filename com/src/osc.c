@@ -59,7 +59,7 @@ static bool naos_osc_publish(const char *topic, const uint8_t *payload, size_t l
 
 static void naos_osc_configure() {
   // log call
-  ESP_LOGI(NAOS_LOG_TAG, "naos_osc_configure");
+  ESP_LOGI(NAOS_LOG_TAG, "naos_osc_configure: called");
 
   // acquire mutex
   naos_lock(naos_osc_mutex);

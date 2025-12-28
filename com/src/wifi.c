@@ -22,7 +22,7 @@ static int32_t naos_wifi_rssi = 0;
 
 static void naos_wifi_configure() {
   // log call
-  ESP_LOGI(NAOS_LOG_TAG, "naos_wifi_configure");
+  ESP_LOGI(NAOS_LOG_TAG, "naos_wifi_configure: called");
 
   // acquire mutex
   naos_lock(naos_wifi_mutex);
@@ -92,7 +92,7 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
       }
 
       default: {
-        // ESP_LOGI(NAOS_LOG_TAG, "unhandled wifi event: %d", event_id);
+        ESP_LOGD(NAOS_LOG_TAG, "naos_wifi_handler: unhandled wifi event: %ld", id);
       }
     }
   }
@@ -114,7 +114,7 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
       }
 
       default: {
-        // ESP_LOGI(NAOS_LOG_TAG, "unhandled IP event: %d", event_id);
+        ESP_LOGD(NAOS_LOG_TAG, "naos_wifi_handler: unhandled IP event: %ld", id);
       }
     }
   }

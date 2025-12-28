@@ -122,9 +122,9 @@ static void naos_msg_cleaner() {
 
     // log error
     if (session->broken) {
-      ESP_LOGE("MSG", "naos_msg_cleaner: session %d broken", session->id);
+      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_cleaner: session %d broken", session->id);
     } else {
-      ESP_LOGE("MSG", "naos_msg_cleaner: session %d timed out", session->id);
+      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_cleaner: session %d timed out", session->id);
     }
 
     // clean up endpoints
@@ -305,19 +305,19 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 
 #if NAOS_MSG_DEBUG
   // log message
-  ESP_LOGI("MSG", "naos_msg_dispatch: incoming message (%s)", name);
-  ESP_LOG_BUFFER_HEX("MSG", data, len);
+  ESP_LOGI(NAOS_LOG_TAG, "naos_msg_dispatch: incoming message (%s)", name);
+  ESP_LOG_BUFFER_HEX(NAOS_LOG_TAG, data, len);
 #endif
 
   // check length
   if (len < 4) {
-    ESP_LOGE("MSG", "naos_msg_dispatch: message too short (%s)", name);
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: message too short (%s)", name);
     return false;
   }
 
   // check version
   if (data[0] != 1) {
-    ESP_LOGE("MSG", "naos_msg_dispatch: invalid version (%s)", name);
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: invalid version (%s)", name);
     return false;
   }
 
@@ -336,7 +336,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     // check sid
     if (sid != 0) {
       naos_unlock(naos_msg_mutex);
-      ESP_LOGE("MSG", "naos_msg_dispatch: unexpected session ID (%s)", name);
+      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: unexpected session ID (%s)", name);
       return false;
     }
 
@@ -350,7 +350,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     }
     if (session == NULL) {
       naos_unlock(naos_msg_mutex);
-      ESP_LOGE("MSG", "naos_msg_dispatch: no free session (%s)", name);
+      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: no free session (%s)", name);
       return false;
     }
 
@@ -360,6 +360,8 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     // assign id
     session->id = naos_msg_next_session;
     naos_msg_next_session++;
+
+    // TODO: Handle wrap-around of session IDs.
 
     // set channel
     session->channel = channel;
@@ -383,13 +385,13 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     naos_unlock(naos_msg_mutex);
 
 #if NAOS_MSG_DEBUG
-    ESP_LOGI("MSG", "outgoing message:");
-    ESP_LOG_BUFFER_HEX("MSG", data, len);
+    ESP_LOGI(NAOS_LOG_TAG, "naos_msg_dispatch: outgoing message:");
+    ESP_LOG_BUFFER_HEX(NAOS_LOG_TAG, data, len);
 #endif
 
     // send reply
     if (!naos_msg_channels[channel].send(data, len, session->context)) {
-      ESP_LOGE("MSG", "naos_msg_dispatch: failed to send reply (%s)", name);
+      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: failed to send reply (%s)", name);
       // TODO: Mark session as broken?
     }
 
@@ -400,21 +402,21 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
   naos_msg_session_t* session = naos_msg_find(sid);
   if (session == NULL) {
     naos_unlock(naos_msg_mutex);
-    ESP_LOGE("MSG", "naos_msg_dispatch: session not found (%s)", name);
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: session not found (%s)", name);
     return false;
   }
 
   // verify session
   if (session->channel != channel) {
     naos_unlock(naos_msg_mutex);
-    ESP_LOGE("MSG", "naos_msg_dispatch: session channel mismatch (%s)", name);
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: session channel mismatch (%s)", name);
     return false;
   }
 
   // check session validity
   if (session->broken) {
     naos_unlock(naos_msg_mutex);
-    ESP_LOGE("MSG", "naos_msg_dispatch: session is broken (%s)", name);
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: session is broken (%s)", name);
     return false;
   }
 
@@ -432,13 +434,13 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 
 #if NAOS_MSG_DEBUG
     // log message
-    ESP_LOGI("MSG", "naos_msg_dispatch: outgoing message (%s)", name);
-    ESP_LOG_BUFFER_HEX("MSG", reply, 5);
+    ESP_LOGI(NAOS_LOG_TAG, "naos_msg_dispatch: outgoing message (%s)", name);
+    ESP_LOG_BUFFER_HEX(NAOS_LOG_TAG, reply, 5);
 #endif
 
     // send reply
     if (!naos_msg_channels[channel].send(reply, 5, session->context)) {
-      ESP_LOGE("MSG", "naos_msg_dispatch: failed to send reply (%s)", name);
+      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: failed to send reply (%s)", name);
       // TODO: Mark session as broken?
     }
 
@@ -465,13 +467,13 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 
 #if NAOS_MSG_DEBUG
     // log message
-    ESP_LOGI("MSG", "naos_msg_dispatch: outgoing message (%s)", name);
-    ESP_LOG_BUFFER_HEX("MSG", data, 4);
+    ESP_LOGI(NAOS_LOG_TAG, "naos_msg_dispatch: outgoing message (%s)", name);
+    ESP_LOG_BUFFER_HEX(NAOS_LOG_TAG, data, 4);
 #endif
 
     // send reply
     if (!naos_msg_channels[channel].send(data, 4, session_ctx)) {
-      ESP_LOGE("MSG", "naos_msg_dispatch: failed to send reply (%s)", name);
+      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: failed to send reply (%s)", name);
     }
 
     return true;
@@ -500,13 +502,13 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 
 #if NAOS_MSG_DEBUG
     // log message
-    ESP_LOGI("MSG", "naos_msg_dispatch: outgoing message (%s)", name);
-    ESP_LOG_BUFFER_HEX("MSG", reply, 5);
+    ESP_LOGI(NAOS_LOG_TAG, "naos_msg_dispatch: outgoing message (%s)", name);
+    ESP_LOG_BUFFER_HEX(NAOS_LOG_TAG, reply, 5);
 #endif
 
     // send reply
     if (!naos_msg_channels[channel].send(reply, 5, session->context)) {
-      ESP_LOGE("MSG", "naos_msg_dispatch: failed to send reply (%s)", name);
+      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: failed to send reply (%s)", name);
       // TODO: Mark session as broken?
     }
 
@@ -549,14 +551,14 @@ bool naos_msg_send(naos_msg_t msg) {
   naos_msg_session_t* session = naos_msg_find(msg.session);
   if (session == NULL) {
     naos_unlock(naos_msg_mutex);
-    ESP_LOGE("MSG", "naos_msg_send: session not found");
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: session not found");
     return false;
   }
 
   // check session validity
   if (session->broken) {
     naos_unlock(naos_msg_mutex);
-    ESP_LOGE("MSG", "naos_msg_send: session is broken");
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: session is broken");
     return false;
   }
 
@@ -568,7 +570,7 @@ bool naos_msg_send(naos_msg_t msg) {
 
   // check channel MTU
   if (4 + msg.len > session->mtu) {
-    ESP_LOGE("MSG", "naos_msg_send: message too large (%s)", channel.name);
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: message too large (%s)", channel.name);
     return false;
   }
 
@@ -581,14 +583,14 @@ bool naos_msg_send(naos_msg_t msg) {
 
 #if NAOS_MSG_DEBUG
   // log message
-  ESP_LOGI("MSG", "naos_msg_send: outgoing message (%s)", channel.name);
-  ESP_LOG_BUFFER_HEX("MSG", frame, 4 + msg.len);
+  ESP_LOGI(NAOS_LOG_TAG, "naos_msg_send: outgoing message (%s)", channel.name);
+  ESP_LOG_BUFFER_HEX(NAOS_LOG_TAG, frame, 4 + msg.len);
 #endif
 
   // send message via channel
   bool ok = channel.send(frame, 4 + msg.len, session->context);
   if (!ok) {
-    ESP_LOGE("MSG", "naos_msg_send: failed to send message (%s)", channel.name);
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: failed to send message (%s)", channel.name);
   }
 
   // free frame
@@ -614,7 +616,7 @@ uint16_t naos_msg_get_mtu(uint16_t id) {
   naos_msg_session_t* session = naos_msg_find(id);
   if (session == NULL) {
     naos_unlock(naos_msg_mutex);
-    ESP_LOGE("MSG", "naos_msg_get_mtu: session not found");
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_get_mtu: session not found");
     return 0;
   }
 
@@ -635,7 +637,7 @@ bool naos_msg_is_locked(uint16_t id) {
   naos_msg_session_t* session = naos_msg_find(id);
   if (session == NULL) {
     naos_unlock(naos_msg_mutex);
-    ESP_LOGE("MSG", "naos_msg_is_locked: session not found");
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_is_locked: session not found");
     return 0;
   }
 

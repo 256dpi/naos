@@ -67,7 +67,7 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
       }
 
       default: {
-        // ESP_LOGI(NAOS_LOG_TAG, "unhandled ethernet event: %d", event_id);
+        ESP_LOGD(NAOS_LOG_TAG, "naos_eth_handler: unhandled ethernet event: %ld", id);
       }
     }
   }
@@ -89,7 +89,7 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
       }
 
       default: {
-        // ESP_LOGI(NAOS_LOG_TAG, "unhandled IP event: %d", event_id);
+        ESP_LOGD(NAOS_LOG_TAG, "naos_eth_handler: unhandled IP event: %ld", id);
       }
     }
   }

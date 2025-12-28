@@ -8,6 +8,8 @@
 #include <freertos/timers.h>
 #include <freertos/event_groups.h>
 
+#include "utils.h"
+
 static void naos_backtrace_print(TaskHandle_t task, int depth) {
   // handle current task
   if (task == NULL) {
@@ -129,7 +131,7 @@ void naos_lock(naos_mutex_t mutex) {
   // acquire mutex
   while (xSemaphoreTake(mutex, pdMS_TO_TICKS(10000)) != pdPASS) {
     // log error
-    ESP_LOGE("NAOS", "naos_lock: was blocked for 10s");
+    ESP_LOGE(NAOS_LOG_TAG, "naos_lock: was blocked for 10s");
 
     // get mutex holder
     TaskHandle_t holder = xSemaphoreGetMutexHolder(mutex);
@@ -138,11 +140,11 @@ void naos_lock(naos_mutex_t mutex) {
     }
 
     // print locker backtrace
-    ESP_LOGE("NAOS", "======= LOCKER: %s =======", pcTaskGetName(NULL));
+    ESP_LOGE(NAOS_LOG_TAG, "======= LOCKER: %s =======", pcTaskGetName(NULL));
     naos_backtrace_print(NULL, 100);
 
     // print holder backtrace
-    ESP_LOGE("NAOS", "======= HOLDER: %s =======", pcTaskGetName(holder));
+    ESP_LOGE(NAOS_LOG_TAG, "======= HOLDER: %s =======", pcTaskGetName(holder));
     naos_backtrace_print(holder, 100);
   }
 }
