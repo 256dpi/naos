@@ -138,7 +138,7 @@ typedef struct {
   naos_value_t last;
 
   /**
-   * The changes tracker.
+   * Whether the parameter has been changed.
    */
   bool changed;
 
@@ -155,7 +155,7 @@ typedef struct {
   /**
    * The device type and version.
    *
-   * Note: These are set automatically when unsset by the build system.
+   * Note: These are set automatically by the build system, when left unset.
    */
   const char *app_name;
   const char *app_version;
@@ -308,7 +308,7 @@ void naos_clear(const char *name);
 void naos_reset();
 
 /**
- * Will lookup the specified parameter.
+ * Will look up the specified parameter.
  *
  * @param name The parameter.
  * @return A reference or NULL if not found.

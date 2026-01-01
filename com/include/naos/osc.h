@@ -23,7 +23,7 @@ void naos_osc_filter(esp_osc_callback_t filter);
  * @param topic The topic.
  * @param format The format.
  * @param ... The values.
- * @return Whether the send was successful.
+ * @return Whether sending was successful.
  */
 bool naos_osc_send(const char *topic, const char *format, ...);
 

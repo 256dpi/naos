@@ -26,7 +26,7 @@
  *    .data = &temperature,
  *  };
  *
- *  The following is an example of a multi-dimensional metric definition:
+ *  The following is an example of a multidimensional metric definition:
  *
  *  static long transferred_bytes[2][2] = {0};
  *  naos_metric_t metric = {

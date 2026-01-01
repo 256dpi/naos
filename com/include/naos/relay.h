@@ -6,7 +6,7 @@
  * ==================
  *
  * The relay system provides a mechanism to relay messages to downstream devices
- * connected to a upstream host device. This allows standard access to devices
+ * connected to an upstream host device. This allows standard access to devices
  * connected to an internal bus or network using the NAOS tools and libraries.
  *
  * On the host device, the relay system is installed as an endpoint that
@@ -15,8 +15,8 @@
  * that receives messages from the host device.
  *
  * Once a sessions has been linked to a device, it cannot be used for anything
- * else. When done, the session should be ended to break the link. Also a session
- * cannot be linked to multiple devices, but multiple session can be linked to
+ * else. When done, the session should be ended to break the link. A session
+ * cannot be linked to multiple devices, but multiple sessions can be linked to
  * the same device.
  */
 
@@ -79,6 +79,7 @@ void naos_relay_host_process(uint8_t num, uint8_t *data, size_t len);
  *
  * @param data The message data.
  * @param len The message length.
+ * @param meta The relay meta information.
  */
 void naos_relay_device_process(uint8_t *data, size_t len, naos_relay_meta_t meta);
 
