@@ -1,27 +1,19 @@
 # Channels
 
-| Name    | Securable  | Locked |
-|---------|------------|--------|
-| BLE     | Yes        | Yes    |
-| HTTP    | Yes (TLS)  | Yes    |
-| Serial  | No (Wired) | Yes?   |
-| Bridge  | Depends    | Yes    |
-| Connect | Yes (TLS)  | Yes?   |
+| Name    | Securable  | Go  | TS  | Swift | 
+|---------|------------|-----|-----|-------|
+| BLE     | Yes        | Yes | Yes | Yes   |
+| HTTP    | Yes (TLS)  | Yes | Yes | Yes   |
+| Serial  | No (Wired) | Yes | Yes | Yes   |
+| Bridge  | Depends    |     |     |       |
+| Connect | Yes (TLS)  |     |     |       |
 
 # Transports
 
-| Name | Securable |
-|------|-----------|
-| MQTT | Yes (TLS) |
-| OSC  | No        |
-
-# Drivers
-
-| Name  | Messaging | Endpoints | Managed | BLE | HTTP | Serial |
-|-------|-----------|-----------|---------|-----|------|--------|
-| Go    | Done?     | Done      | Done?   | Yes | Yes  | Yes    |
-| TS    | Done?     | Done      | Done?   | Yes | Yes  | Yes    |
-| Swift | Done?     | Done      | Done?   | Yes | Yes  | Yes    |
+| Name | Securable | Go  |
+|------|-----------|-----|
+| MQTT | Yes (TLS) | Yes |
+| OSC  | No        |     |
 
 # Endpoints
 
@@ -33,6 +25,7 @@
 | Relay   |      | Done | Done  |
 | Metrics | Done | Done | Done  |
 | Auth    |      | Done |       |
+| Debug   | Done |      |       |
 
 # TODO
 
