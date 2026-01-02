@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <esp_log.h>
 #include <esp_partition.h>
 #include <esp_core_dump.h>
 
@@ -8,6 +9,7 @@
 #include <naos/sys.h>
 
 #include "log.h"
+#include "utils.h"
 
 #define NAOS_DEBUG_ENDPOINT 0x7
 #define NAOS_DEBUG_LOG_SUBS 8
@@ -310,51 +312,77 @@ void naos_debug_install() {
 }
 
 static const esp_partition_t* naos_coredump_partition() {
-  // track the found partition
+  // find partition if not already done
+  static bool initialized = false;
   static const esp_partition_t* p = NULL;
-
-  // get partition if missing
-  if (p == NULL) {
+  if (!initialized) {
     p = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL);
-    if (p == NULL) {
-      ESP_ERROR_CHECK(ESP_ERR_NOT_FOUND);
-    }
+    initialized = true;
   }
 
   return p;
 }
 
 uint32_t naos_debug_cdp_size() {
-  // get coredump image info
-  size_t addr;
-  size_t size;
-  esp_err_t err = esp_core_dump_image_get(&addr, &size);
-  if (err == ESP_ERR_NOT_FOUND) {
+  // get coredump partition
+  const esp_partition_t* p = naos_coredump_partition();
+  if (p == NULL) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_debug_cdp_size: missing partition");
     return 0;
   }
-  ESP_ERROR_CHECK(err);
+
+  // read size
+  uint32_t size = 0;
+  ESP_ERROR_CHECK(esp_partition_read(p, 0, &size, sizeof(size)));
+  if (size < sizeof(size) || size > p->size) {
+    return 0;
+  }
 
   return size;
 }
 
 bool naos_debug_cdp_reason(char* buf, size_t len) {
-  // get coredump reason
-  esp_err_t err = esp_core_dump_get_panic_reason(buf, len);
-  if (err == ESP_ERR_NOT_FOUND) {
+  // check size
+  if (!naos_debug_cdp_size()) {
     return false;
   }
-  ESP_ERROR_CHECK(err);
+
+  // get coredump reason
+  esp_err_t err = esp_core_dump_get_panic_reason(buf, len);
+  if (err != ESP_OK) {
+    return false;
+  }
 
   return true;
 }
 
 void naos_debug_cdp_read(uint32_t offset, uint32_t length, void* buf) {
+  // get coredump partition
+  const esp_partition_t* p = naos_coredump_partition();
+  if (p == NULL) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_debug_cdp_read: missing partition");
+    return;
+  }
+
+  // check bounds
+  if (offset > p->size || length > (p->size - offset)) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_debug_cdp_read: out of bounds");
+    return;
+  }
+
   // read coredump chunk
-  ESP_ERROR_CHECK(esp_partition_read(naos_coredump_partition(), offset, buf, length));
+  ESP_ERROR_CHECK(esp_partition_read(p, offset, buf, length));
 }
 
 void naos_debug_cdp_delete() {
-  // overwrite the header to "delete" the coredump
-  uint8_t header[8] = {0};
-  ESP_ERROR_CHECK(esp_partition_write(naos_coredump_partition(), 0, header, 8));
+  // get coredump partition
+  const esp_partition_t* p = naos_coredump_partition();
+  if (p == NULL) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_debug_cdp_delete: missing partition");
+    return;
+  }
+
+  // reset size
+  uint32_t size = 0xFFFFFFFF;
+  ESP_ERROR_CHECK(esp_partition_write(p, 0, &size, sizeof(size)));
 }
