@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -31,19 +32,30 @@ func IDFVersion(naosPath string) (string, error) {
 // specified path.
 func IDFMajorVersion(naosPath string) (int, error) {
 	// read version
-	bytes, err := os.ReadFile(filepath.Join(Directory(naosPath), "esp-idf.version"))
+	version, err := IDFVersion(naosPath)
 	if err != nil {
 		return 0, err
 	}
 
-	// parse version
-	if strings.HasPrefix(string(bytes), "v4.") {
-		return 4, nil
-	} else if strings.HasPrefix(string(bytes), "v5.") {
-		return 5, nil
+	// split off major version
+	major, _, ok := strings.Cut(version, ".")
+	if !ok {
+		return 0, fmt.Errorf("malformed version: %q", version)
 	}
 
-	return 0, fmt.Errorf("unknown version: %q", string(bytes))
+	// check prefix
+	if !strings.HasPrefix(major, "v") {
+		return 0, fmt.Errorf("malformed version: %q", version)
+	}
+
+	// parse major version
+	major = major[1:]
+	n, err := strconv.Atoi(major)
+	if err != nil {
+		return 0, fmt.Errorf("malformed version: %q", version)
+	}
+
+	return n, nil
 }
 
 // IncludeDirectories returns a list of directories that will be included in the
