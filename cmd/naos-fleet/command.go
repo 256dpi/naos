@@ -15,15 +15,15 @@ Fleet Management:
   create   Create a new fleet file.
   list     List all devices listed in the fleet.
   collect  Collect devices and add them to the fleet.
-  discover Discover all parameters of a device.
+  discover Discover parameters and metrics of a device.
   ping     Ping devices.
   get      Read a parameter from devices.
   set      Set a parameter on devices.
   unset    Unset a parameter on devices.
-  monitor  Monitor heartbeats from devices.
+  monitor  Monitor system information from devices.
   record   Record log messages from devices.
-  debug    Gather debug information from devices.
-  update   Update devices over the air.
+  debug    Gather coredump from devices.
+  update   Update a firmware to devices.
 
 Utilities:
   help     Show this help message.

@@ -12,7 +12,7 @@ import (
 	"github.com/256dpi/naos/pkg/msg"
 )
 
-// A Heartbeat is emitted by Monitor.
+// A Heartbeat gathered from a device.
 type Heartbeat struct {
 	ReceivedAt     time.Time
 	BaseTopic      string
@@ -27,11 +27,10 @@ type Heartbeat struct {
 	SignalStrength int64     // -50 - -100
 }
 
-// Monitor will connect to the specified MQTT broker and listen on the passed
-// base topics for heartbeats and call the supplied callback until the specified
-// quit channel is closed.
-//
-// Note: Not correctly formatted heartbeats are ignored.
+// Monitor will connect to the specified MQTT broker and periodically collect
+// heartbeat information from all specified base topics until the provided
+// stop channel has been closed. The collected heartbeats are provided via
+// the callback.
 func Monitor(url string, baseTopics []string, stop chan struct{}, cb func(*Heartbeat)) error {
 	// check base topics
 	if len(baseTopics) == 0 {

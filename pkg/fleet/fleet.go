@@ -10,7 +10,7 @@ import (
 	"github.com/ryanuber/go-glob"
 )
 
-// A Device represents a single device in a Fleet.
+// A Device represents a single device in a fleet.
 type Device struct {
 	BaseTopic  string            `json:"base_topic"`
 	DeviceName string            `json:"device_name"`
@@ -20,20 +20,20 @@ type Device struct {
 	Metrics    []string          `json:"metrics,omitempty"`
 }
 
-// A Fleet represents the contents of the fleet file.
+// A Fleet represents a fleet of devices.
 type Fleet struct {
 	Broker  string             `json:"broker,omitempty"`
 	Devices map[string]*Device `json:"devices,omitempty"`
 }
 
-// NewFleet creates a new Fleet.
+// NewFleet creates a new fleet.
 func NewFleet() *Fleet {
 	return &Fleet{
 		Broker: "tcp://localhost:1883",
 	}
 }
 
-// ReadFleet will attempt to read the fleet file at the specified path.
+// ReadFleet will attempt to read the fleet at the specified path.
 func ReadFleet(path string) (*Fleet, error) {
 	// read file
 	data, err := os.ReadFile(path)
@@ -63,7 +63,7 @@ func ReadFleet(path string) (*Fleet, error) {
 	return &f, nil
 }
 
-// Save will write the fleet file to the specified path.
+// Save will write the fleet to the specified path.
 func (f *Fleet) Save(path string) error {
 	// encode data
 	data, err := json.MarshalIndent(f, "", "  ")
@@ -71,7 +71,7 @@ func (f *Fleet) Save(path string) error {
 		return err
 	}
 
-	// write config
+	// write file
 	err = os.WriteFile(path, append(data, '\n'), 0644)
 	if err != nil {
 		return err
@@ -80,15 +80,12 @@ func (f *Fleet) Save(path string) error {
 	return nil
 }
 
-// FilterDevices will return a list of devices that have a name matching the supplied
-// glob pattern.
+// FilterDevices will return a list of devices that have a name matching the
+// supplied glob pattern.
 func (f *Fleet) FilterDevices(pattern string) []*Device {
-	// prepare list
+	// collect matching devices
 	var devices []*Device
-
-	// go over all devices
 	for name, device := range f.Devices {
-		// add name if it matches glob
 		if glob.Glob(pattern, name) {
 			devices = append(devices, device)
 		}
@@ -97,9 +94,9 @@ func (f *Fleet) FilterDevices(pattern string) []*Device {
 	return devices
 }
 
-// DeviceByBaseTopic returns the first device that has the matching base topic.
-func (f *Fleet) DeviceByBaseTopic(baseTopic string) *Device {
-	// iterate through all devices
+// FindDevice returns the first device that has the matching base topic.
+func (f *Fleet) FindDevice(baseTopic string) *Device {
+	// find matching device
 	for _, d := range f.Devices {
 		if d.BaseTopic == baseTopic {
 			return d
@@ -109,9 +106,8 @@ func (f *Fleet) DeviceByBaseTopic(baseTopic string) *Device {
 	return nil
 }
 
-// Collect will collect announcements and update the flet with found devices for
-// the given amount of time. It will return a list of devices that have been
-// added to the fleet.
+// Collect will collect and update the flet with found devices for the given
+// duration. It will return a list of devices that have been added to the fleet.
 func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
 	// collect announcements
 	ann, err := Collect(f.Broker, duration)
@@ -125,7 +121,7 @@ func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
 	}
 
 	// prepare list
-	var newDevices []*Device
+	var collected []*Device
 
 	// handle all announcements
 	for _, a := range ann {
@@ -137,7 +133,7 @@ func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
 				Parameters: make(map[string]string),
 			}
 			f.Devices[a.DeviceName] = d
-			newDevices = append(newDevices, d)
+			collected = append(collected, d)
 		}
 
 		// update fields
@@ -146,12 +142,12 @@ func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
 		d.AppVersion = a.AppVersion
 	}
 
-	return newDevices, nil
+	return collected, nil
 }
 
-// Discover will request all parameters and metrics from all devices matching
-// the supplied glob pattern. The fleet is updated with the reported parameters
-// and metrics, and a list of answering devices is returned.
+// Discover will request all parameters and metrics from all matching devices.
+// The fleet is updated with the reported parameters and metrics, and a list of
+// queried devices is returned.
 func (f *Fleet) Discover(pattern string, jobs int) ([]*Device, error) {
 	// discover parameters and metrics
 	results, err := Discover(f.Broker, BaseTopics(f.FilterDevices(pattern)), jobs)
@@ -159,31 +155,31 @@ func (f *Fleet) Discover(pattern string, jobs int) ([]*Device, error) {
 		return nil, err
 	}
 
-	// prepare list of answering devices
-	var answering []*Device
+	// prepare list
+	var queried []*Device
 
 	// update devices
 	for baseTopic, result := range results {
-		device := f.DeviceByBaseTopic(baseTopic)
+		device := f.FindDevice(baseTopic)
 		if device != nil {
 			device.Parameters = result.Params
 			device.Metrics = result.Metrics
-			answering = append(answering, device)
+			queried = append(queried, device)
 		}
 	}
 
-	return answering, nil
+	return queried, nil
 }
 
-// Ping will send a ping message to all devices matching the supplied glob pattern.
+// Ping will send a ping message to all matching devices.
 func (f *Fleet) Ping(pattern string, jobs int) error {
 	_, err := f.SetParams(pattern, "ping", "", jobs)
 	return err
 }
 
-// GetParams will request specified parameter from all devices matching the supplied
-// glob pattern. The fleet is updated with the reported value and a list of
-// answering devices is returned.
+// GetParams will request specified parameter from all matching devices. The
+// fleet is updated with the reported value and a list of queried devices is
+// returned.
 func (f *Fleet) GetParams(pattern, param string, jobs int) ([]*Device, error) {
 	// set parameter
 	table, err := GetParams(f.Broker, param, BaseTopics(f.FilterDevices(pattern)), jobs)
@@ -191,24 +187,23 @@ func (f *Fleet) GetParams(pattern, param string, jobs int) ([]*Device, error) {
 		return nil, err
 	}
 
-	// prepare list of answering devices
-	var answering []*Device
+	// prepare list
+	var queried []*Device
 
 	// update device
 	for baseTopic, value := range table {
-		device := f.DeviceByBaseTopic(baseTopic)
+		device := f.FindDevice(baseTopic)
 		if device != nil {
 			device.Parameters[param] = value
-			answering = append(answering, device)
+			queried = append(queried, device)
 		}
 	}
 
-	return answering, nil
+	return queried, nil
 }
 
-// SetParams will set the specified parameter on all devices matching the supplied
-// glob pattern. The fleet is updated with the saved value and a list of
-// updated devices is returned.
+// SetParams will set the specified parameter on all matching devices. The fleet
+// is updated with the saved value and a list of updated devices is returned.
 func (f *Fleet) SetParams(pattern, param, value string, jobs int) ([]*Device, error) {
 	// set parameter
 	table, err := SetParams(f.Broker, param, value, BaseTopics(f.FilterDevices(pattern)), jobs)
@@ -221,7 +216,7 @@ func (f *Fleet) SetParams(pattern, param, value string, jobs int) ([]*Device, er
 
 	// update device
 	for baseTopic, value := range table {
-		device := f.DeviceByBaseTopic(baseTopic)
+		device := f.FindDevice(baseTopic)
 		if device != nil {
 			device.Parameters[param] = value
 			updated = append(updated, device)
@@ -231,9 +226,9 @@ func (f *Fleet) SetParams(pattern, param, value string, jobs int) ([]*Device, er
 	return updated, nil
 }
 
-// UnsetParams will unset the specified parameter on all devices matching the
-// supplied glob pattern. The fleet is updated with the removed value and a
-// list of updated devices is returned.
+// UnsetParams will unset the specified parameter on all matching devices. The
+// fleet is updated with the unset value and a list of updated devices is
+// returned.
 func (f *Fleet) UnsetParams(pattern, param string, jobs int) ([]*Device, error) {
 	// set parameter
 	err := UnsetParams(f.Broker, param, BaseTopics(f.FilterDevices(pattern)), jobs)
@@ -241,7 +236,7 @@ func (f *Fleet) UnsetParams(pattern, param string, jobs int) ([]*Device, error) 
 		return nil, err
 	}
 
-	// prepare list of updated devices
+	// prepare list
 	var updated []*Device
 
 	// update device
@@ -253,20 +248,20 @@ func (f *Fleet) UnsetParams(pattern, param string, jobs int) ([]*Device, error) 
 	return updated, nil
 }
 
-// Record will enable log recording mode and yield the received log messages
-// until the provided channel has been closed.
+// Record will enable log recording on all matching devices and yield the
+// received log messages until the provided channel has been closed.
 func (f *Fleet) Record(pattern string, quit chan struct{}, callback func(time.Time, *Device, string)) error {
 	return Record(f.Broker, BaseTopics(f.FilterDevices(pattern)), quit, func(log *LogMessage) {
 		// call user callback
 		if callback != nil {
-			callback(log.Time, f.DeviceByBaseTopic(log.BaseTopic), log.Content)
+			callback(log.Time, f.FindDevice(log.BaseTopic), log.Content)
 		}
 	})
 }
 
-// Monitor will monitor the devices that match the supplied glob pattern and
-// update the fleet accordingly. The specified callback is called for every
-// heartbeat with the update device and the received heartbeat.
+// Monitor will monitor the matching devices and update the fleet accordingly.
+// The specified callback is called for every heartbeat with the updated device
+// and the received heartbeat.
 func (f *Fleet) Monitor(pattern string, quit chan struct{}, callback func(*Device, *Heartbeat)) error {
 	return Monitor(f.Broker, BaseTopics(f.FilterDevices(pattern)), quit, func(heartbeat *Heartbeat) {
 		// get device
@@ -287,8 +282,9 @@ func (f *Fleet) Monitor(pattern string, quit chan struct{}, callback func(*Devic
 	})
 }
 
-// Debug will load the coredump data from the devices that match the supplied
-// glob pattern.
+// Debug will load the latest coredump from all matching devices. If delete is
+// true, the coredumps are deleted from the devices after retrieval. A table of
+// devices and their corresponding coredumps is returned.
 func (f *Fleet) Debug(pattern string, delete bool, jobs int) (map[*Device][]byte, error) {
 	// gather coredumps
 	coredumps, err := Debug(f.Broker, BaseTopics(f.FilterDevices(pattern)), delete, jobs)
@@ -307,15 +303,14 @@ func (f *Fleet) Debug(pattern string, delete bool, jobs int) (map[*Device][]byte
 		}
 
 		// add entry
-		table[f.DeviceByBaseTopic(baseTopic)] = coredump
+		table[f.FindDevice(baseTopic)] = coredump
 	}
 
 	return table, nil
 }
 
-// Update will update the devices that match the supplied glob pattern with the
-// specified image. The specified callback is called for every change in state
-// or progress.
+// Update will update all matching devices with the specified image. The
+// specified callback is called for every change in state or progress.
 func (f *Fleet) Update(version, pattern string, firmware []byte, jobs int, callback func(*Device, UpdateStatus)) error {
 	// get devices
 	list := f.FilterDevices(pattern)
@@ -331,7 +326,7 @@ func (f *Fleet) Update(version, pattern string, firmware []byte, jobs int, callb
 	// update devices
 	_, err := Update(f.Broker, BaseTopics(devices), firmware, jobs, func(baseTopic string, status UpdateStatus) {
 		// get device
-		device := f.DeviceByBaseTopic(baseTopic)
+		device := f.FindDevice(baseTopic)
 		if device == nil {
 			return
 		}

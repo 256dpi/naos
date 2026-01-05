@@ -11,15 +11,14 @@ import (
 	"github.com/256dpi/naos/pkg/msg"
 )
 
-// UpdateStatus is emitted by Update.
+// UpdateStatus represents the status of a firmware update.
 type UpdateStatus struct {
 	Progress float64
 	Error    error
 }
 
-// Update will concurrently perform a firmware update and block until all devices
-// have updated or returned errors. If a callback is provided it will be called
-// with the current status of the update.
+// Update will perform a firmware update on the provided devices. If a callback
+// is provided it will be called with the current status of the update.
 func Update(url string, baseTopics []string, firmware []byte, jobs int, callback func(string, UpdateStatus)) ([]UpdateStatus, error) {
 	// check base topics
 	if len(baseTopics) == 0 {

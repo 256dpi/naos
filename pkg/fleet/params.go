@@ -10,20 +10,17 @@ import (
 	"github.com/256dpi/naos/pkg/msg"
 )
 
-// GetParams will connect to the specified MQTT broker and publish the 'get'
-// command to receive the provided parameter for all specified base topics.
+// GetParams will receive the provided parameter for all specified base topics.
 func GetParams(url, param string, baseTopics []string, jobs int) (map[string]string, error) {
 	return modifyParams(url, param, "", false, baseTopics, jobs)
 }
 
-// SetParams will connect to the specified MQTT broker and publish the 'set'
-// command to receive the provided updated parameter for all specified base topics.
+// SetParams will set the provided parameter on all specified base topics.
 func SetParams(url, param, value string, baseTopics []string, jobs int) (map[string]string, error) {
 	return modifyParams(url, param, value, true, baseTopics, jobs)
 }
 
-// UnsetParams will connect to the specified MQTT broker and publish the 'unset'
-// command to unset the provided parameter for all specified base topics.
+// UnsetParams will unset the provided parameter on all specified base topics.
 func UnsetParams(url, param string, baseTopics []string, jobs int) error {
 	_, err := modifyParams(url, param, "", true, baseTopics, jobs)
 	return err

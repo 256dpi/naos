@@ -11,15 +11,15 @@ import (
 	"github.com/256dpi/naos/pkg/msg"
 )
 
-// LogMessage is emitted by Record.
+// A LogMessage receive from a device.
 type LogMessage struct {
 	Time      time.Time
 	BaseTopic string
 	Content   string
 }
 
-// Record will enable log recording mode and yield the received log messages
-// until the provided channel has been closed.
+// Record will enable log recording mode on all devices and yield the received
+// log messages until the provided channel has been closed.
 func Record(url string, baseTopics []string, stop chan struct{}, cb func(*LogMessage)) error {
 	// check base topics
 	if len(baseTopics) == 0 {
