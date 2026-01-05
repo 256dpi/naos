@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// ErrTimeout is returned when a timeout occurs.
+var ErrTimeout = errors.New("timeout")
+
 // Device represents a device that can be communicated with.
 type Device interface {
 	// ID returns a stable identifier for the device.
@@ -47,7 +50,7 @@ func Read(q Queue, timeout time.Duration) (Message, error) {
 	select {
 	case data = <-q:
 	case <-time.After(timeout):
-		return Message{}, errors.New("timeout")
+		return Message{}, ErrTimeout
 	}
 
 	// check length and version
