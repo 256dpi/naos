@@ -20,7 +20,7 @@ import (
 type Project struct {
 	Location string
 	Manifest *Manifest
-	Fleet    *Fleet
+	Fleet    *fleet.Fleet
 }
 
 // CreateProject will initialize a project in the specified directory. If out is
@@ -111,11 +111,11 @@ func OpenProject(path string) (*Project, error) {
 	}
 
 	// attempt to read fleet
-	flt, err := ReadFleet(filepath.Join(path, "fleet.json"))
+	flt, err := fleet.ReadFleet(filepath.Join(path, "fleet.json"))
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	} else if flt == nil {
-		flt = NewFleet()
+		flt = fleet.NewFleet()
 	}
 
 	// prepare project
@@ -335,7 +335,7 @@ func (p *Project) Debug(pattern string, delete bool, jobs int, out io.Writer) er
 // Update will update the devices that match the supplied glob pattern with the
 // previously built image. The specified callback is called for every change in
 // state or progress.
-func (p *Project) Update(version, pattern string, jobs int, callback func(*Device, fleet.UpdateStatus)) error {
+func (p *Project) Update(version, pattern string, jobs int, callback func(*fleet.Device, fleet.UpdateStatus)) error {
 	// get binary
 	bytes, err := os.ReadFile(tree.AppBinary(p.Tree(), p.Manifest.Name))
 	if err != nil {

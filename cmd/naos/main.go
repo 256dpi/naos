@@ -170,7 +170,7 @@ func list(_ *command, p *naos.Project) {
 func collect(cmd *command, p *naos.Project) {
 	// clear all previously collected devices
 	if cmd.oClear {
-		p.Fleet.Devices = make(map[string]*naos.Device)
+		p.Fleet.Devices = make(map[string]*fleet.Device)
 	}
 
 	// collect devices
@@ -309,10 +309,10 @@ func monitor(cmd *command, p *naos.Project) {
 	)
 
 	// prepare list
-	list := make(map[*naos.Device]*fleet.Heartbeat)
+	list := make(map[*fleet.Device]*fleet.Heartbeat)
 
 	// monitor devices
-	exitIfSet(p.Fleet.Monitor(cmd.aPattern, quit, func(d *naos.Device, hb *fleet.Heartbeat) {
+	exitIfSet(p.Fleet.Monitor(cmd.aPattern, quit, func(d *fleet.Device, hb *fleet.Heartbeat) {
 		// set the latest heartbeat for device
 		list[d] = hb
 
@@ -394,7 +394,7 @@ func record(cmd *command, p *naos.Project) {
 	start := time.Now()
 
 	// record devices
-	exitIfSet(p.Fleet.Record(cmd.aPattern, quit, func(t time.Time, d *naos.Device, msg string) {
+	exitIfSet(p.Fleet.Record(cmd.aPattern, quit, func(t time.Time, d *fleet.Device, msg string) {
 		// show log message
 		fmt.Printf("%s [%s] %s\n", time.Since(start).Round(time.Millisecond).String(), d.DeviceName, msg)
 	}))
@@ -410,10 +410,10 @@ func update(cmd *command, p *naos.Project) {
 	tbl := newTable("DEVICE NAME", "PROGRESS", "ERROR")
 
 	// prepare list
-	list := make(map[*naos.Device]fleet.UpdateStatus)
+	list := make(map[*fleet.Device]fleet.UpdateStatus)
 
 	// update devices
-	err := p.Update(cmd.aVersion, cmd.aPattern, cmd.oJobs, func(d *naos.Device, us fleet.UpdateStatus) {
+	err := p.Update(cmd.aVersion, cmd.aPattern, cmd.oJobs, func(d *fleet.Device, us fleet.UpdateStatus) {
 		// save status
 		list[d] = us
 
