@@ -53,6 +53,16 @@ func (s *MetricsService) List() error {
 	return nil
 }
 
+func (s *MetricsService) Has(name string) bool {
+	_, ok := s.byName[name]
+	return ok
+}
+
+func (s *MetricsService) Get(name string) (MetricInfo, bool) {
+	metric, ok := s.byName[name]
+	return metric, ok
+}
+
 func (s *MetricsService) All() iter.Seq2[MetricInfo, MetricLayout] {
 	return func(yield func(MetricInfo, MetricLayout) bool) {
 		for _, info := range s.infos {

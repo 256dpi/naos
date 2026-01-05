@@ -42,6 +42,16 @@ func (s *ParamsService) List() error {
 	return nil
 }
 
+func (s *ParamsService) Has(name string) bool {
+	_, ok := s.byName[name]
+	return ok
+}
+
+func (s *ParamsService) Get(name string) (ParamInfo, bool) {
+	param, ok := s.byName[name]
+	return param, ok
+}
+
 func (s *ParamsService) All() iter.Seq2[ParamInfo, ParamUpdate] {
 	return func(yield func(ParamInfo, ParamUpdate) bool) {
 		for _, info := range s.infos {
@@ -98,7 +108,7 @@ func (s *ParamsService) Collect(names ...string) error {
 	return nil
 }
 
-func (s *ParamsService) Get(name string, reload bool) ([]byte, error) {
+func (s *ParamsService) Read(name string, reload bool) ([]byte, error) {
 	// find param
 	param, ok := s.byName[name]
 	if !ok {
@@ -123,7 +133,7 @@ func (s *ParamsService) Get(name string, reload bool) ([]byte, error) {
 	return update.Value, nil
 }
 
-func (s *ParamsService) Set(name string, value []byte) error {
+func (s *ParamsService) Write(name string, value []byte) error {
 	// find param
 	param, ok := s.byName[name]
 	if !ok {

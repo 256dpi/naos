@@ -462,7 +462,7 @@ func (d *dashboard) writeParam(info msg.ParamInfo, text string) {
 	ps := d.device.ParamsService()
 
 	// write value
-	err := ps.Set(info.Name, []byte(text))
+	err := ps.Write(info.Name, []byte(text))
 	if err != nil {
 		d.log("[red]Write %s failed[-]: %v", info.Name, err)
 		return
