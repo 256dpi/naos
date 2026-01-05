@@ -826,39 +826,24 @@ func (d *dashboard) loopLogReceive(logDone chan struct{}) {
 		d.log("[red]Log streaming failed[-]: %v", err)
 		return
 	}
+	defer func() {
+		_ = session.End(time.Second)
+	}()
 
-	// start log
-	err = msg.StartLog(session, 5*time.Second)
+	// log start
+	d.log("Log streaming starting...")
+
+	// stream logs
+	err = msg.StreamLog(session, logDone, func(line string) {
+		d.log("[blue]%s[-]", strings.TrimSpace(line))
+	})
 	if err != nil {
-		d.log("[red]Start log failed[-]: %v", err)
-		_ = session.End(5 * time.Second)
+		d.log("[red]Log streaming failed[-]: %v", err)
 		return
 	}
 
-	d.log("Log streaming started")
-
-	// receive logs
-	for {
-		select {
-		case <-logDone:
-			_ = msg.StopLog(session, time.Second)
-			_ = session.End(time.Second)
-			d.log("Log streaming stopped")
-			return
-		case <-d.done:
-			_ = msg.StopLog(session, time.Second)
-			_ = session.End(time.Second)
-			return
-		default:
-			// receive log message
-			line, err := msg.ReceiveLog(session, time.Second)
-			if err != nil {
-				// ignore timeout errors
-				continue
-			}
-			d.log("[blue]%s[-]", strings.TrimSpace(line))
-		}
-	}
+	// log stop
+	d.log("Log streaming stopped")
 }
 
 func (d *dashboard) stopLogStreaming() {

@@ -94,37 +94,61 @@ func DeleteCoredump(s *Session, timeout time.Duration) error {
 	return nil
 }
 
-// StartLog subscribes to log messages.
-func StartLog(s *Session, timeout time.Duration) error {
-	// send command
-	cmd := []byte{3}
-	err := s.Send(debugEndpoint, cmd, timeout)
+// StreamLog streams log messages and calls the provided function for each
+// message until the stop channel is closed.
+func StreamLog(s *Session, stop chan struct{}, fn func(string)) error {
+	// start log, with checking ack
+	err := s.Send(debugEndpoint, []byte{3}, 5*time.Second)
 	if err != nil {
 		return err
 	}
 
-	return nil
-}
+	// mark last message
+	last := time.Now()
 
-// StopLog unsubscribes from log messages.
-func StopLog(s *Session, timeout time.Duration) error {
-	// send command
-	cmd := []byte{4}
-	err := s.Send(debugEndpoint, cmd, timeout)
-	if err != nil {
-		return err
+	for {
+		// stop log if requested
+		select {
+		case <-stop:
+			return s.Send(debugEndpoint, []byte{4}, time.Second)
+		default:
+		}
+
+		// receive log message
+		data, err := s.Receive(debugEndpoint, true, time.Second)
+
+		// yield and continue on success
+		if err == nil {
+			last = time.Now()
+			fn(string(data))
+			continue
+		}
+
+		// ignore ack
+		if errors.Is(err, Ack) {
+			last = time.Now()
+			continue
+		}
+
+		// stop on any error except timeout
+		if !errors.Is(err, ErrTimeout) {
+			return err
+		}
+
+		/* error is timeout */
+
+		// continue if a message was received recently
+		if time.Since(last) < 20*time.Second {
+			continue
+		}
+
+		// otherwise, restart log without checking ack
+		err = s.Send(debugEndpoint, []byte{3}, 0)
+		if err != nil {
+			return err
+		}
+
+		// update last message time
+		last = time.Now()
 	}
-
-	return nil
-}
-
-// ReceiveLog receives a log message.
-func ReceiveLog(s *Session, timeout time.Duration) (string, error) {
-	// receive message
-	data, err := s.Receive(debugEndpoint, false, timeout)
-	if err != nil {
-		return "", err
-	}
-
-	return string(data), nil
 }
