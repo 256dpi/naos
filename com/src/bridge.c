@@ -39,7 +39,7 @@ static void naos_bridge_handler(naos_scope_t scope, const char *topic, const uin
                                 bool retained) {
   // handle discover messages
   if (scope == NAOS_GLOBAL && strcmp(topic, "naos/discover") == 0) {
-    naos_defer("bridge", 0, naos_bridge_discover);
+    naos_defer("naos-bridge", 0, naos_bridge_discover);
   }
 
   // dispatch incoming messages
