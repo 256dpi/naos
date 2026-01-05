@@ -113,7 +113,7 @@ func (f *Fleet) DeviceByBaseTopic(baseTopic string) *Device {
 // added to the fleet.
 func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
 	// collect announcements
-	anns, err := Collect(f.Broker, duration)
+	ann, err := Collect(f.Broker, duration)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
 	var newDevices []*Device
 
 	// handle all announcements
-	for _, a := range anns {
+	for _, a := range ann {
 		// get current device or add one if not existing
 		d, ok := f.Devices[a.DeviceName]
 		if !ok {
@@ -161,17 +161,15 @@ func (f *Fleet) Discover(pattern string, jobs int) ([]*Device, error) {
 	// prepare list of answering devices
 	var answering []*Device
 
-	// update device
+	// update devices
 	for baseTopic, parameters := range table {
 		device := f.DeviceByBaseTopic(baseTopic)
 		if device != nil {
-			// initialize unset parameters
 			for _, p := range parameters {
 				if _, ok := device.Parameters[p]; !ok {
 					device.Parameters[p] = ""
 				}
 			}
-
 			answering = append(answering, device)
 		}
 	}
@@ -280,6 +278,7 @@ func (f *Fleet) Monitor(pattern string, quit chan struct{}, callback func(*Devic
 		}
 
 		// update fields
+		device.DeviceName = heartbeat.DeviceName
 		device.AppName = heartbeat.AppName
 		device.AppVersion = heartbeat.AppVersion
 

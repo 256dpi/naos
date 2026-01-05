@@ -14,4 +14,5 @@ test:
 
 install:
 	go install ./cmd/naos
+	go install ./cmd/naos-fleet
 	go install ./cmd/naos-explorer

@@ -1,8 +1,6 @@
 package naos
 
 import (
-	"errors"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -10,7 +8,6 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/256dpi/naos/pkg/fleet"
 	"github.com/256dpi/naos/pkg/serial"
 	"github.com/256dpi/naos/pkg/tree"
 	"github.com/256dpi/naos/pkg/utils"
@@ -20,7 +17,6 @@ import (
 type Project struct {
 	Location string
 	Manifest *Manifest
-	Fleet    *fleet.Fleet
 }
 
 // CreateProject will initialize a project in the specified directory. If out is
@@ -110,19 +106,10 @@ func OpenProject(path string) (*Project, error) {
 		return nil, err
 	}
 
-	// attempt to read fleet
-	flt, err := fleet.ReadFleet(filepath.Join(path, "fleet.json"))
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return nil, err
-	} else if flt == nil {
-		flt = fleet.NewFleet()
-	}
-
 	// prepare project
 	project := &Project{
 		Location: path,
 		Manifest: man,
-		Fleet:    flt,
 	}
 
 	return project, nil
@@ -132,17 +119,6 @@ func OpenProject(path string) (*Project, error) {
 func (p *Project) SaveManifest() error {
 	// save manifest
 	err := p.Manifest.Save(filepath.Join(p.Location, "naos.json"))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// SaveFleet will save the associated fleet to disk.
-func (p *Project) SaveFleet() error {
-	// save fleet
-	err := p.Fleet.Save(filepath.Join(p.Location, "fleet.json"))
 	if err != nil {
 		return err
 	}
@@ -290,63 +266,4 @@ func (p *Project) Format(out io.Writer) error {
 // Bundle will create a bundle of the project.
 func (p *Project) Bundle(file string, out io.Writer) error {
 	return tree.Bundle(p.Tree(), file, out)
-}
-
-// Debug will request coredumps from the devices that match the supplied glob
-// pattern. The coredumps are saved to the 'debug' directory in the project.
-func (p *Project) Debug(pattern string, delete bool, jobs int, out io.Writer) error {
-	// collect coredumps
-	coredumps, err := p.Fleet.Debug(pattern, delete, jobs)
-	if err != nil {
-		return err
-	}
-
-	// log info
-	utils.Log(out, fmt.Sprintf("Got %d coredump(s)", len(coredumps)))
-
-	// ensure directory
-	err = os.MkdirAll(filepath.Join(p.Location, "debug"), 0755)
-	if err != nil {
-		return err
-	}
-
-	// go through all coredumps
-	for device, coredump := range coredumps {
-		// parse coredump
-		data, err := tree.ParseCoredump(p.Tree(), p.Manifest.Name, coredump)
-		if err != nil {
-			return err
-		}
-
-		// prepare path
-		path := filepath.Join(p.Location, "debug", device.DeviceName)
-
-		// write parsed data
-		utils.Log(out, fmt.Sprintf("Writing coredump to '%s", path))
-		err = os.WriteFile(path, data, 0644)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Update will update the devices that match the supplied glob pattern with the
-// previously built image. The specified callback is called for every change in
-// state or progress.
-func (p *Project) Update(version, pattern string, jobs int, callback func(*fleet.Device, fleet.UpdateStatus)) error {
-	// get binary
-	bytes, err := os.ReadFile(tree.AppBinary(p.Tree(), p.Manifest.Name))
-	if err != nil {
-		return err
-	}
-
-	// run update
-	err = p.Fleet.Update(version, pattern, bytes, jobs, callback)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
