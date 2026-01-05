@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"code.cloudfoundry.org/bytefmt"
@@ -105,22 +104,18 @@ func discover(cmd *command, f *fleet.Fleet) {
 	exitIfSet(err)
 
 	// prepare table
-	tbl := newTable("DEVICE NAME", "PARAMETERS")
+	tbl := newTable("DEVICE NAME", "PARAMETERS", "METRICS")
 
 	// add rows
 	for _, device := range list {
-		var list []string
-		for p := range device.Parameters {
-			list = append(list, p)
-		}
-		tbl.add(device.DeviceName, strings.Join(list, ", "))
+		tbl.add(device.DeviceName, strconv.Itoa(len(device.Parameters)), strconv.Itoa(len(device.Metrics)))
 	}
 
 	// show table
 	tbl.show(0)
 
 	// show info
-	fmt.Printf("\nGot parameters from %d devices.\n", len(list))
+	fmt.Printf("\nGot parameters and metrics from %d devices.\n", len(list))
 
 	// save fleet
 	saveFleet(f)

@@ -16,7 +16,8 @@ type Device struct {
 	DeviceName string            `json:"device_name"`
 	AppName    string            `json:"app_name"`
 	AppVersion string            `json:"app_version"`
-	Parameters map[string]string `json:"parameters"`
+	Parameters map[string]string `json:"parameters,omitempty"`
+	Metrics    []string          `json:"metrics,omitempty"`
 }
 
 // A Fleet represents the contents of the fleet file.
@@ -148,12 +149,12 @@ func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
 	return newDevices, nil
 }
 
-// Discover will request the list of parameters from all devices matching the
-// supplied glob pattern. The fleet is updated with the reported parameters
-// and a list of answering devices is returned.
+// Discover will request all parameters and metrics from all devices matching
+// the supplied glob pattern. The fleet is updated with the reported parameters
+// and metrics, and a list of answering devices is returned.
 func (f *Fleet) Discover(pattern string, jobs int) ([]*Device, error) {
-	// discover parameters
-	table, err := Discover(f.Broker, BaseTopics(f.FilterDevices(pattern)), jobs)
+	// discover parameters and metrics
+	results, err := Discover(f.Broker, BaseTopics(f.FilterDevices(pattern)), jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -162,14 +163,11 @@ func (f *Fleet) Discover(pattern string, jobs int) ([]*Device, error) {
 	var answering []*Device
 
 	// update devices
-	for baseTopic, parameters := range table {
+	for baseTopic, result := range results {
 		device := f.DeviceByBaseTopic(baseTopic)
 		if device != nil {
-			for _, p := range parameters {
-				if _, ok := device.Parameters[p]; !ok {
-					device.Parameters[p] = ""
-				}
-			}
+			device.Parameters = result.Params
+			device.Metrics = result.Metrics
 			answering = append(answering, device)
 		}
 	}
