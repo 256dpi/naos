@@ -1,8 +1,6 @@
 package mqtt
 
 import (
-	"context"
-	"errors"
 	"strings"
 	"time"
 
@@ -18,16 +16,11 @@ type Description struct {
 }
 
 // Discover uses the provided Router to discover connected MQTT devices.
-func Discover(ctx context.Context, r *Router, handle func(Description)) error {
-	// wrap context
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
+func Discover(r *Router, stop chan struct{}, handle func(Description)) error {
 	// prepare callback
 	callback := func(m *packet.Message, err error) {
 		// check for error or empty message
 		if err != nil {
-			cancel()
 			return
 		} else if len(m.Payload) == 0 {
 			return
@@ -78,8 +71,8 @@ func Discover(ctx context.Context, r *Router, handle func(Description)) error {
 
 		// wait for context cancellation
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-stop:
+			return nil
 		case <-time.After(5 * time.Second):
 			// continue
 		}
@@ -87,15 +80,19 @@ func Discover(ctx context.Context, r *Router, handle func(Description)) error {
 }
 
 // Collect uses the provided Router to collect connected MQTT devices.
-func Collect(ctx context.Context, r *Router) ([]Description, error) {
+func Collect(r *Router, timeout time.Duration) ([]Description, error) {
+	// create context
+	stop := make(chan struct{})
+	go func() {
+		time.Sleep(timeout)
+		close(stop)
+	}()
+
 	// collect devices
 	var list []Description
-	err := Discover(ctx, r, func(d Description) {
+	err := Discover(r, stop, func(d Description) {
 		list = append(list, d)
 	})
-	if err != nil && !errors.Is(err, context.Canceled) {
-		return nil, err
-	}
 
-	return list, nil
+	return list, err
 }

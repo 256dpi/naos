@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"sort"
@@ -30,7 +29,7 @@ func main() {
 	// start BLE discovery
 	go func() {
 		for {
-			err := ble.Discover(context.Background(), func(d ble.Description) {
+			err := ble.Discover(nil, func(d ble.Description) {
 				state.register(ble.NewDevice(d.Address))
 			})
 			if err != nil {
@@ -85,7 +84,7 @@ func main() {
 					time.Sleep(5 * time.Second)
 					continue
 				}
-				err = mqtt.Discover(context.Background(), router, func(d mqtt.Description) {
+				err = mqtt.Discover(router, nil, func(d mqtt.Description) {
 					state.registerWithMeta(mqtt.NewDevice(router, d.BaseTopic), d.DeviceName, d.AppName, d.AppVersion)
 				})
 				if err != nil {

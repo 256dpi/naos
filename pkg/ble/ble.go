@@ -1,7 +1,6 @@
 package ble
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -25,7 +24,7 @@ type Description struct {
 
 // Discover scans for BLE devices and calls the provided callback for each
 // discovered device.
-func Discover(ctx context.Context, cb func(device Description)) error {
+func Discover(stop chan struct{}, cb func(device Description)) error {
 	// enable BLE adapter
 	err := adapter.Enable()
 	if err != nil && !strings.Contains(err.Error(), "already calling Enable function") {
@@ -34,7 +33,7 @@ func Discover(ctx context.Context, cb func(device Description)) error {
 
 	// handle cancel
 	go func() {
-		<-ctx.Done()
+		<-stop
 		_ = adapter.StopScan()
 	}()
 
