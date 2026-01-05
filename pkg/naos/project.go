@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"gopkg.in/yaml.v2"
 
@@ -295,9 +294,9 @@ func (p *Project) Bundle(file string, out io.Writer) error {
 
 // Debug will request coredumps from the devices that match the supplied glob
 // pattern. The coredumps are saved to the 'debug' directory in the project.
-func (p *Project) Debug(pattern string, delete bool, duration time.Duration, out io.Writer) error {
+func (p *Project) Debug(pattern string, delete bool, jobs int, out io.Writer) error {
 	// collect coredumps
-	coredumps, err := p.Fleet.Debug(pattern, delete, duration)
+	coredumps, err := p.Fleet.Debug(pattern, delete, jobs)
 	if err != nil {
 		return err
 	}
@@ -320,7 +319,7 @@ func (p *Project) Debug(pattern string, delete bool, duration time.Duration, out
 		}
 
 		// prepare path
-		path := filepath.Join(p.Location, "debug", device.Name)
+		path := filepath.Join(p.Location, "debug", device.DeviceName)
 
 		// write parsed data
 		utils.Log(out, fmt.Sprintf("Writing coredump to '%s", path))
@@ -336,7 +335,7 @@ func (p *Project) Debug(pattern string, delete bool, duration time.Duration, out
 // Update will update the devices that match the supplied glob pattern with the
 // previously built image. The specified callback is called for every change in
 // state or progress.
-func (p *Project) Update(version, pattern string, jobs int, timeout time.Duration, callback func(*Device, *fleet.UpdateStatus)) error {
+func (p *Project) Update(version, pattern string, jobs int, callback func(*Device, fleet.UpdateStatus)) error {
 	// get binary
 	bytes, err := os.ReadFile(tree.AppBinary(p.Tree(), p.Manifest.Name))
 	if err != nil {
@@ -344,7 +343,7 @@ func (p *Project) Update(version, pattern string, jobs int, timeout time.Duratio
 	}
 
 	// run update
-	err = p.Fleet.Update(version, pattern, bytes, jobs, timeout, callback)
+	err = p.Fleet.Update(version, pattern, bytes, jobs, callback)
 	if err != nil {
 		return err
 	}

@@ -55,15 +55,15 @@ Usage:
   naos bundle [<file>]
   naos list
   naos collect [--clear --duration=<time>]
-  naos discover [<pattern>] [--timeout=<time>]
-  naos ping [<pattern>] [--timeout=<time>]
-  naos get <param> [<pattern>] [--timeout=<time>]
-  naos set <param> [--] <value> [<pattern>] [--timeout=<time>]
-  naos unset <param> [<pattern>] [--timeout=<time>]
-  naos monitor [<pattern>] [--timeout=<time>]
-  naos record [<pattern>] [--timeout=<time>]
-  naos debug [<pattern>] [--delete --duration=<time>]
-  naos update <version> [<pattern>] [--jobs=<count> --timeout=<time>]
+  naos discover [<pattern>] [--jobs=<count>]
+  naos ping [<pattern>] [--jobs=<count>]
+  naos get <param> [<pattern>] [--jobs=<count>]
+  naos set <param> [--] <value> [<pattern>] [--jobs=<count>]
+  naos unset <param> [<pattern>] [--jobs=<count>]
+  naos monitor [<pattern>]
+  naos record [<pattern>]
+  naos debug [<pattern>] [--delete] [--jobs=<count>]
+  naos update <version> [<pattern>] [--jobs=<count>]
   naos sdks
   naos help
 
@@ -79,7 +79,6 @@ Options:
   --delete              Delete loaded coredumps from the devices.
   -b --baud=<rate>      The baud rate.
   -d --duration=<time>  Operation duration [default: 5s].
-  -t --timeout=<time>   Operation timeout [default: 30s].
   -j --jobs=<count>     Number of simultaneous update jobs [default: 10].
 `
 
@@ -133,7 +132,6 @@ type command struct {
 	oClear       bool
 	oDelete      bool
 	oDuration    time.Duration
-	oTimeout     time.Duration
 	oJobs        int
 }
 
@@ -191,7 +189,6 @@ func parseCommand() *command {
 		oClear:       getBool(a["--clear"]),
 		oDelete:      getBool(a["--delete"]),
 		oDuration:    getDuration(a["--duration"]),
-		oTimeout:     getDuration(a["--timeout"]),
 		oJobs:        getInt(a["--jobs"]),
 	}
 }

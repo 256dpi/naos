@@ -12,11 +12,11 @@ import (
 
 // A Device represents a single device in a Fleet.
 type Device struct {
-	BaseTopic       string            `json:"base_topic"`
-	Name            string            `json:"name"`
-	Type            string            `json:"type"`
-	FirmwareVersion string            `json:"firmware_version"`
-	Parameters      map[string]string `json:"parameters"`
+	BaseTopic  string            `json:"base_topic"`
+	DeviceName string            `json:"device_name"`
+	AppName    string            `json:"app_name"`
+	AppVersion string            `json:"app_version"`
+	Parameters map[string]string `json:"parameters"`
 }
 
 // A Fleet represents the contents of the fleet file.
@@ -131,15 +131,18 @@ func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
 		// get current device or add one if not existing
 		d, ok := f.Devices[a.DeviceName]
 		if !ok {
-			d = &Device{Name: a.DeviceName, Parameters: make(map[string]string)}
+			d = &Device{
+				DeviceName: a.DeviceName,
+				Parameters: make(map[string]string),
+			}
 			f.Devices[a.DeviceName] = d
 			newDevices = append(newDevices, d)
 		}
 
 		// update fields
 		d.BaseTopic = a.BaseTopic
-		d.Type = a.DeviceType
-		d.FirmwareVersion = a.FirmwareVersion
+		d.AppName = a.AppName
+		d.AppVersion = a.AppVersion
 	}
 
 	return newDevices, nil
@@ -148,9 +151,9 @@ func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
 // Discover will request the list of parameters from all devices matching the
 // supplied glob pattern. The inventory is updated with the reported parameters
 // and a list of answering devices is returned.
-func (f *Fleet) Discover(pattern string, timeout time.Duration) ([]*Device, error) {
+func (f *Fleet) Discover(pattern string, jobs int) ([]*Device, error) {
 	// discover parameters
-	table, err := fleet.Discover(f.Broker, BaseTopics(f.FilterDevices(pattern)), timeout)
+	table, err := fleet.Discover(f.Broker, BaseTopics(f.FilterDevices(pattern)), jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -177,17 +180,17 @@ func (f *Fleet) Discover(pattern string, timeout time.Duration) ([]*Device, erro
 }
 
 // Ping will send a ping message to all devices matching the supplied glob pattern.
-func (f *Fleet) Ping(pattern string, timeout time.Duration) error {
-	_, err := f.SetParams(pattern, "ping", "", timeout)
+func (f *Fleet) Ping(pattern string, jobs int) error {
+	_, err := f.SetParams(pattern, "ping", "", jobs)
 	return err
 }
 
 // GetParams will request specified parameter from all devices matching the supplied
 // glob pattern. The inventory is updated with the reported value and a list of
 // answering devices is returned.
-func (f *Fleet) GetParams(pattern, param string, timeout time.Duration) ([]*Device, error) {
+func (f *Fleet) GetParams(pattern, param string, jobs int) ([]*Device, error) {
 	// set parameter
-	table, err := fleet.GetParams(f.Broker, param, BaseTopics(f.FilterDevices(pattern)), timeout)
+	table, err := fleet.GetParams(f.Broker, param, BaseTopics(f.FilterDevices(pattern)), jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -210,9 +213,9 @@ func (f *Fleet) GetParams(pattern, param string, timeout time.Duration) ([]*Devi
 // SetParams will set the specified parameter on all devices matching the supplied
 // glob pattern. The inventory is updated with the saved value and a list of
 // updated devices is returned.
-func (f *Fleet) SetParams(pattern, param, value string, timeout time.Duration) ([]*Device, error) {
+func (f *Fleet) SetParams(pattern, param, value string, jobs int) ([]*Device, error) {
 	// set parameter
-	table, err := fleet.SetParams(f.Broker, param, value, BaseTopics(f.FilterDevices(pattern)), timeout)
+	table, err := fleet.SetParams(f.Broker, param, value, BaseTopics(f.FilterDevices(pattern)), jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -235,9 +238,9 @@ func (f *Fleet) SetParams(pattern, param, value string, timeout time.Duration) (
 // UnsetParams will unset the specified parameter on all devices matching the
 // supplied glob pattern. The inventory is updated with the removed value and a
 // list of updated devices is returned.
-func (f *Fleet) UnsetParams(pattern, param string, timeout time.Duration) ([]*Device, error) {
+func (f *Fleet) UnsetParams(pattern, param string, jobs int) ([]*Device, error) {
 	// set parameter
-	err := fleet.UnsetParams(f.Broker, param, BaseTopics(f.FilterDevices(pattern)), timeout)
+	err := fleet.UnsetParams(f.Broker, param, BaseTopics(f.FilterDevices(pattern)), jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -256,8 +259,8 @@ func (f *Fleet) UnsetParams(pattern, param string, timeout time.Duration) ([]*De
 
 // Record will enable log recording mode and yield the received log messages
 // until the provided channel has been closed.
-func (f *Fleet) Record(pattern string, quit chan struct{}, timeout time.Duration, callback func(time.Time, *Device, string)) error {
-	return fleet.Record(f.Broker, BaseTopics(f.FilterDevices(pattern)), quit, timeout, func(log *fleet.LogMessage) {
+func (f *Fleet) Record(pattern string, quit chan struct{}, callback func(time.Time, *Device, string)) error {
+	return fleet.Record(f.Broker, BaseTopics(f.FilterDevices(pattern)), quit, func(log *fleet.LogMessage) {
 		// call user callback
 		if callback != nil {
 			callback(log.Time, f.DeviceByBaseTopic(log.BaseTopic), log.Content)
@@ -269,8 +272,8 @@ func (f *Fleet) Record(pattern string, quit chan struct{}, timeout time.Duration
 // update the inventory accordingly. The specified callback is called for every
 // heartbeat with the update device and the heartbeat available at
 // device.LastHeartbeat.
-func (f *Fleet) Monitor(pattern string, quit chan struct{}, timeout time.Duration, callback func(*Device, *fleet.Heartbeat)) error {
-	return fleet.Monitor(f.Broker, BaseTopics(f.FilterDevices(pattern)), quit, timeout, func(heartbeat *fleet.Heartbeat) {
+func (f *Fleet) Monitor(pattern string, quit chan struct{}, callback func(*Device, *fleet.Heartbeat)) error {
+	return fleet.Monitor(f.Broker, BaseTopics(f.FilterDevices(pattern)), quit, func(heartbeat *fleet.Heartbeat) {
 		// get device
 		device, ok := f.Devices[heartbeat.DeviceName]
 		if !ok {
@@ -278,8 +281,8 @@ func (f *Fleet) Monitor(pattern string, quit chan struct{}, timeout time.Duratio
 		}
 
 		// update fields
-		device.Type = heartbeat.DeviceType
-		device.FirmwareVersion = heartbeat.FirmwareVersion
+		device.AppName = heartbeat.AppName
+		device.AppVersion = heartbeat.AppVersion
 
 		// call user callback
 		if callback != nil {
@@ -290,9 +293,9 @@ func (f *Fleet) Monitor(pattern string, quit chan struct{}, timeout time.Duratio
 
 // Debug will load the coredump data from the devices that match the supplied
 // glob pattern.
-func (f *Fleet) Debug(pattern string, delete bool, duration time.Duration) (map[*Device][]byte, error) {
+func (f *Fleet) Debug(pattern string, delete bool, jobs int) (map[*Device][]byte, error) {
 	// gather coredumps
-	coredumps, err := fleet.Debug(f.Broker, BaseTopics(f.FilterDevices(pattern)), delete, duration)
+	coredumps, err := fleet.Debug(f.Broker, BaseTopics(f.FilterDevices(pattern)), delete, jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -317,21 +320,20 @@ func (f *Fleet) Debug(pattern string, delete bool, duration time.Duration) (map[
 // Update will update the devices that match the supplied glob pattern with the
 // specified image. The specified callback is called for every change in state
 // or progress.
-func (f *Fleet) Update(version, pattern string, firmware []byte, jobs int, timeout time.Duration, callback func(*Device, *fleet.UpdateStatus)) error {
+func (f *Fleet) Update(version, pattern string, firmware []byte, jobs int, callback func(*Device, fleet.UpdateStatus)) error {
 	// get devices
 	list := f.FilterDevices(pattern)
 
-	// prepare devices
+	// filter by version
 	var devices []*Device
-
-	// check version
 	for _, d := range list {
-		if d.FirmwareVersion != version {
+		if d.AppVersion != version {
 			devices = append(devices, d)
 		}
 	}
 
-	return fleet.Update(f.Broker, BaseTopics(devices), firmware, jobs, timeout, func(baseTopic string, status *fleet.UpdateStatus) {
+	// update devices
+	_, err := fleet.Update(f.Broker, BaseTopics(devices), firmware, jobs, func(baseTopic string, status fleet.UpdateStatus) {
 		// get device
 		device := f.DeviceByBaseTopic(baseTopic)
 		if device == nil {
@@ -341,6 +343,11 @@ func (f *Fleet) Update(version, pattern string, firmware []byte, jobs int, timeo
 		// call callback
 		callback(device, status)
 	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // BaseTopics returns a list of base topics from the provided devices.

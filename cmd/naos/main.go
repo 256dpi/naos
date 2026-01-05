@@ -156,11 +156,11 @@ func bundle(cmd *command, p *naos.Project) {
 
 func list(_ *command, p *naos.Project) {
 	// prepare table
-	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "BASE TOPIC")
+	tbl := newTable("DEVICE NAME", "APP NAME", "APP VERSION", "BASE TOPIC")
 
 	// add rows
 	for _, d := range p.Fleet.Devices {
-		tbl.add(d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
+		tbl.add(d.DeviceName, d.AppName, d.AppVersion, d.BaseTopic)
 	}
 
 	// show table
@@ -178,11 +178,11 @@ func collect(cmd *command, p *naos.Project) {
 	exitIfSet(err)
 
 	// prepare table
-	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "BASE TOPIC")
+	tbl := newTable("DEVICE NAME", "APP NAME", "APP VERSION", "BASE TOPIC")
 
 	// add rows
 	for _, d := range list {
-		tbl.add(d.Name, d.Type, d.FirmwareVersion, d.BaseTopic)
+		tbl.add(d.DeviceName, d.AppName, d.AppVersion, d.BaseTopic)
 	}
 
 	// show table
@@ -194,7 +194,7 @@ func collect(cmd *command, p *naos.Project) {
 
 func discover(cmd *command, p *naos.Project) {
 	// discover parameters
-	list, err := p.Fleet.Discover(cmd.aPattern, cmd.oTimeout)
+	list, err := p.Fleet.Discover(cmd.aPattern, cmd.oJobs)
 	exitIfSet(err)
 
 	// prepare table
@@ -207,7 +207,7 @@ func discover(cmd *command, p *naos.Project) {
 			list = append(list, p)
 		}
 
-		tbl.add(device.Name, strings.Join(list, ", "))
+		tbl.add(device.DeviceName, strings.Join(list, ", "))
 	}
 
 	// show table
@@ -222,12 +222,12 @@ func discover(cmd *command, p *naos.Project) {
 
 func ping(cmd *command, p *naos.Project) {
 	// ping devices
-	exitIfSet(p.Fleet.Ping(cmd.aPattern, cmd.oTimeout))
+	exitIfSet(p.Fleet.Ping(cmd.aPattern, cmd.oJobs))
 }
 
 func get(cmd *command, p *naos.Project) {
 	// get parameter
-	list, err := p.Fleet.GetParams(cmd.aPattern, cmd.aParam, cmd.oTimeout)
+	list, err := p.Fleet.GetParams(cmd.aPattern, cmd.aParam, cmd.oJobs)
 	exitIfSet(err)
 
 	// prepare table
@@ -235,7 +235,7 @@ func get(cmd *command, p *naos.Project) {
 
 	// add rows
 	for _, device := range list {
-		tbl.add(device.Name, device.Parameters[cmd.aParam])
+		tbl.add(device.DeviceName, device.Parameters[cmd.aParam])
 	}
 
 	// show table
@@ -250,7 +250,7 @@ func get(cmd *command, p *naos.Project) {
 
 func set(cmd *command, p *naos.Project) {
 	// set parameter
-	list, err := p.Fleet.SetParams(cmd.aPattern, cmd.aParam, cmd.aValue, cmd.oTimeout)
+	list, err := p.Fleet.SetParams(cmd.aPattern, cmd.aParam, cmd.aValue, cmd.oJobs)
 	exitIfSet(err)
 
 	// prepare table
@@ -258,7 +258,7 @@ func set(cmd *command, p *naos.Project) {
 
 	// add rows
 	for _, device := range list {
-		tbl.add(device.Name, device.Parameters[cmd.aParam])
+		tbl.add(device.DeviceName, device.Parameters[cmd.aParam])
 	}
 
 	// show table
@@ -273,7 +273,7 @@ func set(cmd *command, p *naos.Project) {
 
 func unset(cmd *command, p *naos.Project) {
 	// unset parameter
-	_, err := p.Fleet.UnsetParams(cmd.aPattern, cmd.aParam, cmd.oTimeout)
+	_, err := p.Fleet.UnsetParams(cmd.aPattern, cmd.aParam, cmd.oJobs)
 	exitIfSet(err)
 
 	// save inventory
@@ -293,13 +293,26 @@ func monitor(cmd *command, p *naos.Project) {
 	}()
 
 	// prepare table
-	tbl := newTable("DEVICE NAME", "DEVICE TYPE", "FIRMWARE VERSION", "FREE HEAP", "UP TIME", "PARTITION", "BATTERY", "WIFI", "CPU0", "CPU1")
+	tbl := newTable(
+		"DEVICE NAME",
+		"APP NAME",
+		"APP VERSION",
+		"APP PARTITION",
+		"FREE ALL",
+		"FREE INT",
+		"FREE EXT",
+		"UP TIME",
+		"BATTERY",
+		"WIFI",
+		"CPU0",
+		"CPU1",
+	)
 
 	// prepare list
 	list := make(map[*naos.Device]*fleet.Heartbeat)
 
 	// monitor devices
-	exitIfSet(p.Fleet.Monitor(cmd.aPattern, quit, cmd.oTimeout, func(d *naos.Device, hb *fleet.Heartbeat) {
+	exitIfSet(p.Fleet.Monitor(cmd.aPattern, quit, func(d *naos.Device, hb *fleet.Heartbeat) {
 		// set the latest heartbeat for device
 		list[d] = hb
 
@@ -308,8 +321,10 @@ func monitor(cmd *command, p *naos.Project) {
 
 		// add rows
 		for device, heartbeat := range list {
-			// prepare free heap size
-			freeHeapSize := bytefmt.ByteSize(uint64(heartbeat.FreeHeapSize))
+			// prepare free memory
+			freeMemoryAll := bytefmt.ByteSize(uint64(heartbeat.FreeMemory[0]))
+			freeMemoryInternal := bytefmt.ByteSize(uint64(heartbeat.FreeMemory[1]))
+			freeMemoryExternal := bytefmt.ByteSize(uint64(heartbeat.FreeMemory[2]))
 
 			// prepare uptime
 			uptime := heartbeat.UpTime.Truncate(time.Second).String()
@@ -335,12 +350,24 @@ func monitor(cmd *command, p *naos.Project) {
 				signalStrength = strconv.FormatInt(ss, 10) + "%"
 			}
 
-			// prepare cpu usages
-			cpu0Usage := strconv.FormatFloat(heartbeat.CPU0Usage*100, 'f', 0, 64) + "%"
-			cpu1Usage := strconv.FormatFloat(heartbeat.CPU1Usage*100, 'f', 0, 64) + "%"
+			// prepare CPU usages
+			cpu0Usage := strconv.FormatFloat(heartbeat.CPUUsage[0]*100, 'f', 0, 64) + "%"
+			cpu1Usage := strconv.FormatFloat(heartbeat.CPUUsage[1]*100, 'f', 0, 64) + "%"
 
 			// add entry
-			tbl.add(device.Name, device.Type, device.FirmwareVersion, freeHeapSize, uptime, heartbeat.StartPartition, batteryLevel, signalStrength, cpu0Usage, cpu1Usage)
+			tbl.add(
+				device.DeviceName,
+				device.AppName,
+				device.AppVersion,
+				heartbeat.AppPartition,
+				freeMemoryAll, freeMemoryInternal,
+				freeMemoryExternal,
+				uptime,
+				batteryLevel,
+				signalStrength,
+				cpu0Usage,
+				cpu1Usage,
+			)
 		}
 
 		// show table
@@ -367,15 +394,15 @@ func record(cmd *command, p *naos.Project) {
 	start := time.Now()
 
 	// record devices
-	exitIfSet(p.Fleet.Record(cmd.aPattern, quit, cmd.oTimeout, func(t time.Time, d *naos.Device, msg string) {
+	exitIfSet(p.Fleet.Record(cmd.aPattern, quit, func(t time.Time, d *naos.Device, msg string) {
 		// show log message
-		fmt.Printf("%s [%s] %s\n", time.Since(start).Round(time.Millisecond).String(), d.Name, msg)
+		fmt.Printf("%s [%s] %s\n", time.Since(start).Round(time.Millisecond).String(), d.DeviceName, msg)
 	}))
 }
 
 func debug(cmd *command, p *naos.Project) {
 	// debug devices
-	exitIfSet(p.Debug(cmd.aPattern, cmd.oDelete, cmd.oDuration, os.Stdout))
+	exitIfSet(p.Debug(cmd.aPattern, cmd.oDelete, cmd.oJobs, os.Stdout))
 }
 
 func update(cmd *command, p *naos.Project) {
@@ -383,10 +410,10 @@ func update(cmd *command, p *naos.Project) {
 	tbl := newTable("DEVICE NAME", "PROGRESS", "ERROR")
 
 	// prepare list
-	list := make(map[*naos.Device]*fleet.UpdateStatus)
+	list := make(map[*naos.Device]fleet.UpdateStatus)
 
 	// update devices
-	err := p.Update(cmd.aVersion, cmd.aPattern, cmd.oJobs, cmd.oTimeout, func(d *naos.Device, us *fleet.UpdateStatus) {
+	err := p.Update(cmd.aVersion, cmd.aPattern, cmd.oJobs, func(d *naos.Device, us fleet.UpdateStatus) {
 		// save status
 		list[d] = us
 
@@ -402,7 +429,7 @@ func update(cmd *command, p *naos.Project) {
 			}
 
 			// add row
-			tbl.add(device.Name, fmt.Sprintf("%.2f%%", status.Progress*100), errStr)
+			tbl.add(device.DeviceName, fmt.Sprintf("%.2f%%", status.Progress*100), errStr)
 		}
 
 		// show table

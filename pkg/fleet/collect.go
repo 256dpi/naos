@@ -1,20 +1,19 @@
 package fleet
 
 import (
-	"strings"
 	"time"
 
-	"github.com/256dpi/gomqtt/client"
 	"github.com/256dpi/gomqtt/packet"
+
+	"github.com/256dpi/naos/pkg/mqtt"
 )
 
 // An Announcement is returned by Collect.
 type Announcement struct {
-	ReceivedAt      time.Time
-	BaseTopic       string
-	DeviceName      string
-	DeviceType      string
-	FirmwareVersion string
+	BaseTopic  string
+	DeviceName string
+	AppName    string
+	AppVersion string
 }
 
 // Collect will collect Announcements from devices by connecting to the provided
@@ -22,96 +21,29 @@ type Announcement struct {
 //
 // Note: Not correctly formatted announcements are ignored.
 func Collect(url string, duration time.Duration) ([]*Announcement, error) {
-	// prepare channels
-	errs := make(chan error)
-	anns := make(chan *Announcement)
-
-	// create client
-	cl := client.New()
-
-	// set callback
-	cl.Callback = func(msg *packet.Message, err error) error {
-		// send errors
-		if err != nil {
-			errs <- err
-			return nil
-		}
-
-		// get data from payload
-		data := strings.Split(string(msg.Payload), ",")
-
-		// check length
-		if len(data) < 4 {
-			return nil
-		}
-
-		// add announcement
-		anns <- &Announcement{
-			ReceivedAt:      time.Now(),
-			BaseTopic:       data[3],
-			DeviceType:      data[0],
-			FirmwareVersion: data[1],
-			DeviceName:      data[2],
-		}
-
-		return nil
+	// create router
+	router, err := mqtt.Connect(url, "naos-fleet", packet.QOSAtMostOnce)
+	if err != nil {
+		return nil, err
 	}
+	defer router.Close()
 
-	// connect to the broker using the provided url
-	cf, err := cl.Connect(client.NewConfig(url))
+	// collect devices
+	list, err := mqtt.Collect(router, duration)
 	if err != nil {
 		return nil, err
 	}
 
-	// wait for ack
-	err = cf.Wait(duration)
-	if err != nil {
-		return nil, err
+	// prepare announcements
+	var ans []*Announcement
+	for _, a := range list {
+		ans = append(ans, &Announcement{
+			BaseTopic:  a.BaseTopic,
+			DeviceName: a.DeviceName,
+			AppName:    a.AppName,
+			AppVersion: a.AppVersion,
+		})
 	}
 
-	// make sure client gets closed
-	defer cl.Close()
-
-	// subscribe to announcement topic
-	sf, err := cl.Subscribe("naos/announcement", 0)
-	if err != nil {
-		return nil, err
-	}
-
-	// wait for ack
-	err = sf.Wait(duration)
-	if err != nil {
-		return nil, err
-	}
-
-	// collect all devices
-	_, err = cl.Publish("naos/collect", []byte(""), 0, false)
-	if err != nil {
-		return nil, err
-	}
-
-	// prepare list
-	var list []*Announcement
-
-	// set deadline
-	deadline := time.After(duration)
-
-	for {
-		// wait for error, announcement or deadline
-		select {
-		case err := <-errs:
-			return list, err
-		case a := <-anns:
-			list = append(list, a)
-		case <-deadline:
-			goto exit
-		}
-	}
-
-exit:
-
-	// disconnect client
-	cl.Disconnect()
-
-	return list, nil
+	return ans, nil
 }
