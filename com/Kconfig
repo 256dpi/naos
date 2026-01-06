@@ -1,5 +1,9 @@
 menu "naos"
 
+config NAOS_WIFI_SUPPORT_EAP
+    bool "Enable EAP WiFi support" # 35 kB
+    default n
+
 config NAOS_MQTT_BUFFER_SIZE
     int "The MQTT read and write buffer size"
     default 6000

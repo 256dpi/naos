@@ -6,8 +6,11 @@
 #include <esp_log.h>
 #include <esp_event.h>
 #include <esp_wifi.h>
-#include <esp_eap_client.h>
 #include <string.h>
+
+#ifdef CONFIG_NAOS_WIFI_SUPPORT_EAP
+#include <esp_eap_client.h>
+#endif
 
 #include "utils.h"
 #include "net.h"
@@ -31,15 +34,19 @@ static void naos_wifi_configure() {
   // stop station if already started
   if (naos_wifi_started) {
     ESP_ERROR_CHECK(esp_wifi_stop());
+#ifdef CONFIG_NAOS_WIFI_SUPPORT_EAP
     ESP_ERROR_CHECK(esp_wifi_sta_enterprise_disable());
+#endif
     naos_wifi_started = false;
   }
 
   // get SSID, password and manual config
   const char *ssid = naos_get_s("wifi-ssid");
   const char *password = naos_get_s("wifi-password");
+#ifdef CONFIG_NAOS_WIFI_SUPPORT_EAP
   const char *identity = naos_get_s("wifi-identity");
   const char *username = naos_get_s("wifi-username");
+#endif
   const char *manual = naos_get_s("wifi-manual");
 
   // return if SSID is missing
@@ -57,6 +64,7 @@ static void naos_wifi_configure() {
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &naos_wifi_config));
 
+#ifdef CONFIG_NAOS_WIFI_SUPPORT_EAP
   // configure enterprise if configured
   if (strlen(identity) > 0 && strlen(username) > 0) {
     ESP_ERROR_CHECK(esp_eap_client_set_identity((uint8_t *)identity, (int)strlen(identity)));
@@ -64,6 +72,7 @@ static void naos_wifi_configure() {
     ESP_ERROR_CHECK(esp_eap_client_set_password((uint8_t *)password, (int)strlen(password)));
     ESP_ERROR_CHECK(esp_wifi_sta_enterprise_enable());
   }
+#endif
 
   // start station
   ESP_ERROR_CHECK(esp_wifi_start());
@@ -159,8 +168,10 @@ static void naos_wifi_update() {
 static naos_param_t naos_wifi_params[] = {
     {.name = "wifi-ssid", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+#ifdef CONFIG_NAOS_WIFI_SUPPORT_EAP
     {.name = "wifi-identity", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-username", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
+#endif
     {.name = "wifi-manual", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "wifi-configure", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_wifi_configure},
     {.name = "wifi-addr", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
