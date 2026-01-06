@@ -4,9 +4,5 @@
   "target": "esp32s3",
   "embeds": [
     "foo.txt"
-  ],
-  "overrides": null,
-  "partitions": null,
-  "components": {},
-  "frameworks": {}
+  ]
 }

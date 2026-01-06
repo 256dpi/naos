@@ -2,7 +2,7 @@
 #include <naos/ble.h>
 #include <naos/wifi.h>
 #include <naos/mqtt.h>
-#include <naos/manager.h>
+#include <naos/bridge.h>
 
 extern const uint8_t foo_start[] asm("_binary_foo_txt_start");
 extern const uint8_t foo_end[] asm("_binary_foo_txt_end");
@@ -23,7 +23,7 @@ void app_main() {
   naos_ble_init((naos_ble_config_t){});
   naos_wifi_init();
   naos_mqtt_init(1);
-  naos_manager_init();
+  naos_bridge_install();
 
   // print foo
   naos_log("%d", foo_end - foo_start);
