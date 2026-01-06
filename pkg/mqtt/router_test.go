@@ -9,6 +9,10 @@ import (
 )
 
 func TestRouter(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	r, err := Connect("mqtt://localhost:1883", "test-router", 0)
 	assert.NoError(t, err)
 	assert.NotNil(t, r)
