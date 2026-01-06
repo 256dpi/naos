@@ -52,7 +52,7 @@ func Fetch(path, commit string, ignoredSubmodules []string, out io.Writer) error
 
 	// remove not needed submodules
 	for _, ism := range ignoredSubmodules {
-		cmd = exec.Command("git", "rm", "-rfq", ism)
+		cmd = exec.Command("git", "rm", "-rfq", "--ignore-unmatch", ism)
 		cmd.Stderr = out
 		cmd.Stdout = out
 		cmd.Dir = path
