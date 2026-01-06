@@ -12,7 +12,7 @@ void app_main() {
 `
 
 const projectCMakeListsFile = `# minimal required cmake version
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.10)
 
 # you can set your own project name
 project(my-device)
