@@ -28,13 +28,21 @@ jobs:
         if: startsWith(matrix.os, 'macos-latest')
         run: |
           env GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 go build -o naos-darwin-amd64 ./cmd/naos
+          env GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 go build -o naos-explorer-darwin-amd64 ./cmd/naos-explorer
+          env GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 go build -o naos-fleet-darwin-amd64 ./cmd/naos-fleet
           env GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -o naos-darwin-arm64 ./cmd/naos
+          env GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -o naos-explorer-darwin-arm64 ./cmd/naos-explorer
+          env GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -o naos-fleet-darwin-arm64 ./cmd/naos-fleet
 
       - name: Build (Linux)
         if: startsWith(matrix.os, 'ubuntu-latest')
         run: |
           env GOOS=linux GOARCH=amd64 go build -o naos-linux-amd64 ./cmd/naos
+          env GOOS=linux GOARCH=amd64 go build -o naos-explorer-linux-amd64 ./cmd/naos-explorer
+          env GOOS=linux GOARCH=amd64 go build -o naos-fleet-linux-amd64 ./cmd/naos-fleet
           env GOOS=linux GOARCH=arm64 go build -o naos-linux-arm64 ./cmd/naos
+          env GOOS=linux GOARCH=arm64 go build -o naos-explorer-linux-arm64 ./cmd/naos-explorer
+          env GOOS=linux GOARCH=arm64 go build -o naos-fleet-linux-arm64 ./cmd/naos-fleet
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -42,8 +50,16 @@ jobs:
         with:
           files: |
             naos-darwin-amd64
+            naos-explorer-darwin-amd64
+            naos-fleet-darwin-amd64
             naos-darwin-arm64
+            naos-explorer-darwin-arm64
+            naos-fleet-darwin-arm64
             naos-linux-amd64
+            naos-explorer-linux-amd64
+            naos-fleet-linux-amd64
             naos-linux-arm64
+            naos-explorer-linux-arm64
+            naos-fleet-linux-arm64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
