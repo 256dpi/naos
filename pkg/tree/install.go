@@ -63,7 +63,7 @@ func Install(naosPath, sourcePath, dataPath, version string, force bool, out io.
 		// perform initial repo clone
 		utils.Log(out, fmt.Sprintf("Installing NAOS '%s'...", version))
 		err = utils.Clone("https://github.com/256dpi/naos.git", naosPath, version, []string{
-			"tree/esp-idf",
+			"tree/esp-idf", // TODO: Remove at some point.
 		}, out)
 		if err != nil {
 			return err
@@ -73,7 +73,7 @@ func Install(naosPath, sourcePath, dataPath, version string, force bool, out io.
 		// perform repo update
 		utils.Log(out, fmt.Sprintf("Updating NAOS '%s'...", version))
 		err = utils.Fetch(naosPath, version, []string{
-			"tree/esp-idf",
+			"tree/esp-idf", // TODO: Remove at some point.
 		}, out)
 		if err != nil {
 			return err

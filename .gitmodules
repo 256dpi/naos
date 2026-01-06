@@ -1,7 +1,3 @@
-[submodule "tree/esp-idf"]
-	path = tree/esp-idf
-	url = https://github.com/espressif/esp-idf.git
-	ignore = dirty
 [submodule "tree/components/esp-mqtt"]
 	path = tree/components/esp-mqtt
 	url = https://github.com/256dpi/esp-mqtt.git
