@@ -42,12 +42,12 @@ Download and install all dependencies (this may take a few minutes):
 naos install
 ```
 
-*You can run `naos install` anytime to update to the dependencies.*
+*You can run `naos install` again to update the dependencies.*
 
-Run the firmware on the connected ESP32:
+Run the firmware on the connected ESP32 board:
 
 ```
 naos run
 ```
 
-*This will run the `build`, `flash` and `attach` commands in sequence.
+*This will run the `build`, `flash` and `attach` commands in sequence.*
