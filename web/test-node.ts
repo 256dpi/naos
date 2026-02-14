@@ -3,8 +3,6 @@ import { bluetooth } from "webbluetooth";
 
 import {
   bleRequest,
-  listSerialPorts,
-  NodeSerialDevice,
   ManagedDevice,
   listParams,
   collectParams,
@@ -23,6 +21,7 @@ import {
   readDoubleMetrics,
   MetricType,
 } from "./src";
+import { listSerialPorts, NodeSerialDevice } from "./src/serial-node";
 
 const tests: Record<string, (device: ManagedDevice) => Promise<void>> = {
   async params(device) {

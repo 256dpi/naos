@@ -5,15 +5,32 @@
   "type": "module",
   "source": "src/index.ts",
   "main": "dist/main.js",
-  "exports": "./dist/main.js",
+  "exports": {
+    ".": "./dist/main.js",
+    "./serial-node": "./dist/serial-node.js"
+  },
+  "targets": {
+    "main": {
+      "source": "src/index.ts"
+    },
+    "serial-node": {
+      "source": "src/serial-node.ts",
+      "distDir": "dist",
+      "outputFormat": "esmodule",
+      "context": "node",
+      "isLibrary": true
+    }
+  },
   "scripts": {
     "run": "parcel test.html --dist-dir .parcel-dist",
-    "build": "parcel build src/index.ts --dist-dir dist",
+    "build": "parcel build",
     "fmt": "prettier --write .",
     "test-node": "tsx test-node.ts"
   },
   "dependencies": {
-    "async-await-queue": "^2.1.2"
+    "async-await-queue": "^2.1.2",
+    "serialport": "^12.0.0",
+    "@serialport/parser-readline": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.2.3",
@@ -21,7 +38,6 @@
     "@types/web-bluetooth": "^0.0.20",
     "parcel": "^2.8.3",
     "prettier": "^2.8.4",
-    "serialport": "^12.0.0",
     "tsx": "^4.0.0",
     "webbluetooth": "^3.0.0"
   }

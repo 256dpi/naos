@@ -1,5 +1,5 @@
 import { SerialPort } from "serialport";
-import { ReadlineParser } from "@serialport/parser-readline";
+import ReadlineParser from "@serialport/parser-readline";
 import { Channel, Device, Queue, QueueList } from "./device";
 import { toBase64, toBuffer } from "./utils";
 
