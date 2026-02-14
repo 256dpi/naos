@@ -9,15 +9,20 @@
   "scripts": {
     "run": "parcel test.html --dist-dir .parcel-dist",
     "build": "parcel build src/index.ts --dist-dir dist",
-    "fmt": "prettier --write ."
+    "fmt": "prettier --write .",
+    "test-node": "tsx test-node.ts"
   },
   "dependencies": {
     "async-await-queue": "^2.1.2"
   },
   "devDependencies": {
+    "@types/node": "^25.2.3",
     "@types/w3c-web-serial": "^1.0.7",
     "@types/web-bluetooth": "^0.0.20",
     "parcel": "^2.8.3",
-    "prettier": "^2.8.4"
+    "prettier": "^2.8.4",
+    "serialport": "^12.0.0",
+    "tsx": "^4.0.0",
+    "webbluetooth": "^3.0.0"
   }
 }

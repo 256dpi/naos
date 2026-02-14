@@ -9,6 +9,7 @@ export * from "./params";
 export * from "./queue";
 export * from "./relay";
 export * from "./serial";
+export * from "./serial-node";
 export * from "./session";
 export * from "./update";
 export * from "./utils";
