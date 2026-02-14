@@ -31,6 +31,10 @@ import {
   authAttest,
   hmac256,
   compare,
+  checkCoredump,
+  readCoredump,
+  deleteCoredump,
+  streamLog,
 } from "./src";
 
 let device: ManagedDevice | null = null;
@@ -294,6 +298,39 @@ async function auth() {
   });
 }
 
+async function debug() {
+  console.log("Testing Debug...");
+
+  await device.activate();
+
+  await device.useSession(async (session) => {
+    // check coredump
+    const [size, reason] = await checkCoredump(session);
+    console.log("Coredump size:", size, "reason:", reason);
+
+    // read coredump if available
+    if (size > 0) {
+      const data = await readCoredump(session, 0, size);
+      console.log("Coredump data:", data.length, "bytes");
+
+      // delete coredump
+      await deleteCoredump(session);
+      console.log("Coredump deleted");
+    }
+
+    // stream log for 10 seconds
+    console.log("Streaming log for 10s...");
+    const ac = new AbortController();
+    setTimeout(() => ac.abort(), 10000);
+    await streamLog(session, ac.signal, (msg) => {
+      console.log("Log:", msg);
+    });
+    console.log("Log streaming stopped");
+  });
+
+  console.log("Done!");
+}
+
 window["_ble"] = ble;
 window["_serial"] = serial;
 window["_http"] = http;
@@ -303,6 +340,7 @@ window["_fs"] = fs;
 window["_metrics"] = metrics;
 window["_relay"] = relay;
 window["_auth"] = auth;
+window["_debug"] = debug;
 
 // redirect to localhost from '0.0.0.0'
 if (location.hostname === "0.0.0.0") {

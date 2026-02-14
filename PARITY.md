@@ -29,7 +29,7 @@ This document tracks the parity of features among the Go, TS, and Swift NAOS dri
 | Relay   |      | Done | Done  |          | Done    |       |
 | Metrics | Done | Done | Done  | Started  | Done    |       |
 | Auth    |      | Done |       |          |         |       |
-| Debug   | Done |      |       | Started  |         | Done  |
+| Debug   | Done | Done |       | Started  |         | Done  |
 
 ## Notes and Todos
 

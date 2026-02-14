@@ -1,5 +1,6 @@
 export * from "./auth";
 export * from "./ble";
+export * from "./debug";
 export * from "./device";
 export * from "./fs";
 export * from "./http";
