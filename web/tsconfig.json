@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "lib": ["dom", "ES2023"],
+    "lib": ["dom", "ES2024"],
     "moduleResolution": "node"
   }
 }

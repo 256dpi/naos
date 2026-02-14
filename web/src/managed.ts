@@ -5,7 +5,7 @@ import { Session, Status } from "./session";
 
 export class ManagedDevice {
   public device: Device;
-  private pinger: number;
+  private pinger: ReturnType<typeof setInterval>;
   private channel: Channel | null;
   private session: Session | null;
   private password: string | null = null;

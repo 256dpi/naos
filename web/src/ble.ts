@@ -100,7 +100,7 @@ export class BLEDevice implements Device {
         subscribers.drop(queue);
       },
       write: async (data: Uint8Array) => {
-        await this.char.writeValueWithoutResponse(data);
+        await this.char.writeValueWithoutResponse(data as BufferSource);
       },
       close: async () => {
         this.char.removeEventListener("characteristicvaluechanged", handler);

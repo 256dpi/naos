@@ -5,12 +5,12 @@ export function toBuffer(string: string): Uint8Array {
   return utf8Enc.encode(string);
 }
 
-export function toString(buffer: ArrayBufferLike): string {
+export function toString(buffer: AllowSharedBufferSource): string {
   return utf8Dec.decode(buffer);
 }
 
-export function toBase64(buffer: ArrayBufferLike): Uint8Array {
-  return toBuffer(btoa(String.fromCharCode(...new Uint8Array(buffer))));
+export function toBase64(buffer: AllowSharedBufferSource): Uint8Array {
+  return toBuffer(btoa(String.fromCharCode(...new Uint8Array(buffer as ArrayBuffer))));
 }
 
 export function fromBase64(base64: string): Uint8Array {
@@ -40,7 +40,7 @@ export function random(length: number): string {
 }
 
 export function secureRandom(length: number): Uint8Array {
-  return window.crypto.getRandomValues(new Uint8Array(length));
+  return crypto.getRandomValues(new Uint8Array(length));
 }
 
 export async function hmac256(
@@ -48,16 +48,20 @@ export async function hmac256(
   challenge: Uint8Array
 ): Promise<Uint8Array> {
   // import HMAC key
-  const cryptoKey = await window.crypto.subtle.importKey(
+  const cryptoKey = await crypto.subtle.importKey(
     "raw",
-    key,
+    key as BufferSource,
     { name: "HMAC", hash: { name: "SHA-256" } },
     false,
     ["sign"]
   );
 
   // generate the HMAC
-  const res = await window.crypto.subtle.sign("HMAC", cryptoKey, challenge);
+  const res = await crypto.subtle.sign(
+    "HMAC",
+    cryptoKey,
+    challenge as BufferSource
+  );
 
   return new Uint8Array(res);
 }

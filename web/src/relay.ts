@@ -22,7 +22,7 @@ export async function scanRelay(
   }
 
   // unpack reply
-  let raw = unpack("q", reply)[0] as BigInt;
+  let raw = unpack("q", reply)[0] as bigint;
 
   // prepare map
   let list: number[] = [];
