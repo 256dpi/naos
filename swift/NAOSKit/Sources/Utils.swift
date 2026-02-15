@@ -134,7 +134,7 @@ public class Channel<T> {
 	}
 }
 
-func pack(fmt: String, args: [Any]) -> Data {
+public func pack(fmt: String, args: [Any]) -> Data {
 	var buffer = Data()
 
 	for (index, code) in fmt.enumerated() {
@@ -165,7 +165,7 @@ func pack(fmt: String, args: [Any]) -> Data {
 	return buffer
 }
 
-func unpack(fmt: String, data: Data, start: Int = 0) -> [Any] {
+public func unpack(fmt: String, data: Data, start: Int = 0) -> [Any] {
 	var offset = start
 	var results: [Any] = []
 
