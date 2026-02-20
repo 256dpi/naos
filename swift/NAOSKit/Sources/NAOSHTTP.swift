@@ -38,8 +38,8 @@ public func NAOSHTTPDiscover(_ callback: @escaping @Sendable (_ device: NAOSDevi
 	}
 }
 
-class NAOSHTTPDevice: NAOSDevice {
-	let host: String
+public class NAOSHTTPDevice: NAOSDevice {
+	private let host: String
 
 	init(host: String) {
 		self.host = host

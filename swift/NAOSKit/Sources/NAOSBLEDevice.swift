@@ -26,11 +26,11 @@ public enum NAOSBLEError: LocalizedError {
 	}
 }
 
-class NAOSBLEDevice: NAOSDevice {
-	let manager: CentralManager
-	let peripheral: Peripheral
-	var service: Service?
-	var characteristic: Characteristic?
+public class NAOSBLEDevice: NAOSDevice {
+	private let manager: CentralManager
+	public let peripheral: Peripheral
+	private var service: Service?
+	private var characteristic: Characteristic?
 
 	init(manager: CentralManager, peripheral: Peripheral) {
 		self.manager = manager
