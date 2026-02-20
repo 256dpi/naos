@@ -117,13 +117,15 @@ public class NAOSBLEManager: NSObject {
 
 		// handle discovered peripherals
 		for await scanData in stream {
-			// skip if device exists already
-			if findDevice(peripheral: scanData.peripheral) != nil {
+			// update existing device if already known
+			if let device = findDevice(peripheral: scanData.peripheral) {
+				let bleDevice = device.device as! NAOSBLEDevice
+				bleDevice.update(advertisementData: scanData.advertisementData, rssi: scanData.rssi)
 				continue
 			}
 
 			// otherwise, create new device
-			let bleDevice = NAOSBLEDevice(manager: centralManager, peripheral: scanData.peripheral)
+			let bleDevice = NAOSBLEDevice(manager: centralManager, peripheral: scanData.peripheral, advertisementData: scanData.advertisementData, rssi: scanData.rssi)
 			let device = NAOSManagedDevice(device: bleDevice)
 
 			// add device

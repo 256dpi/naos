@@ -29,14 +29,34 @@ public enum NAOSBLEError: LocalizedError {
 public class NAOSBLEDevice: NAOSDevice {
 	private let manager: CentralManager
 	public let peripheral: Peripheral
+	private var _advertisementData: [String: Any]
+	private var _rssi: NSNumber
+	private let lock = NSLock()
 	private var service: Service?
 	private var characteristic: Characteristic?
 
-	init(manager: CentralManager, peripheral: Peripheral) {
+	public var advertisementData: [String: Any] {
+		lock.withLock { _advertisementData }
+	}
+
+	public var rssi: NSNumber {
+		lock.withLock { _rssi }
+	}
+
+	init(manager: CentralManager, peripheral: Peripheral, advertisementData: [String: Any], rssi: NSNumber) {
 		self.manager = manager
 		self.peripheral = peripheral
+		self._advertisementData = advertisementData
+		self._rssi = rssi
 	}
-	
+
+	func update(advertisementData: [String: Any], rssi: NSNumber) {
+		lock.withLock {
+			_advertisementData = advertisementData
+			_rssi = rssi
+		}
+	}
+
 	public func type() -> String {
 		return "BLE"
 	}
