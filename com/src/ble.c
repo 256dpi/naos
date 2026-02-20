@@ -16,14 +16,19 @@
 #include "params.h"
 #include "utils.h"
 
-#define NAOS_BLE_SIGNAL_INIT 1
-#define NAOS_BLE_SIGNAL_CONN 2
+// TODO: naos_ble_pending_id is shared state without protection; concurrent bonding could overwrite a pending identity.
+// TODO: allowlist ring buffer doesn't remove evicted entries from the controller whitelist/resolving list.
+
+#define NAOS_BLE_SIGNAL_INIT (1 << 0)
+#define NAOS_BLE_SIGNAL_CONN (1 << 1)
+#define NAOS_BLE_SIGNAL_ADV (1 << 2)
 #define NAOS_BLE_ALLOWLIST_SIZE 5
 #define NAOS_BLE_ALLOWLIST_KEY "allowlist"
 #define NAOS_BLE_NUM_CHARS 1
 #define NAOS_BLE_MAX_CONNECTIONS 8
 #define NAOS_BLE_ADDR_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
 #define NAOS_BLE_ADDR_ARGS(a) a[0], a[1], a[2], a[3], a[4], a[5]
+#define NAOS_BLE_WL_ADDR_TYPE(t) ((t) == BLE_ADDR_TYPE_PUBLIC ? BLE_WL_ADDR_TYPE_PUBLIC : BLE_WL_ADDR_TYPE_RANDOM)
 
 typedef struct {
   uint16_t id;
@@ -79,21 +84,31 @@ static struct {
   struct {
     esp_bd_addr_t addr;
     esp_ble_addr_type_t type;
+    uint8_t irk[ESP_BT_OCTET16_LEN];
+    bool has_irk;
   } entries[NAOS_BLE_ALLOWLIST_SIZE];
   size_t next;
 } naos_ble_allowlist = {0};
+
+static struct {
+  esp_bd_addr_t addr;
+  esp_ble_addr_type_t type;
+  uint8_t irk[ESP_BT_OCTET16_LEN];
+  bool valid;
+} naos_ble_pending_id = {0};
 
 static naos_ble_config_t naos_ble_config = {0};
 static naos_signal_t naos_ble_signal;
 static nvs_handle_t naos_ble_handle = 0;
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
 static uint8_t naos_ble_msg_channel_id = 0;
+static bool naos_ble_stop_adv_for_rl = false;  // set when we stop advertising to update resolving list
 
 static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
   switch (e) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT: {
-      // begin advertising
-      ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+      // trigger signal
+      naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_ADV, false);
 
       break;
     }
@@ -145,6 +160,17 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
       // log key events
       ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gap_handler: key event (type=%d)", p->ble_security.ble_key.key_type);
 
+      // capture peer identity key (stable identity address + IRK behind the RPA)
+      if (p->ble_security.ble_key.key_type == ESP_LE_KEY_PID) {
+        esp_ble_pid_keys_t *pid = &p->ble_security.ble_key.p_key_value.pid_key;
+        memcpy(naos_ble_pending_id.addr, pid->static_addr, sizeof(esp_bd_addr_t));
+        naos_ble_pending_id.type = pid->addr_type;
+        memcpy(naos_ble_pending_id.irk, pid->irk, ESP_BT_OCTET16_LEN);
+        naos_ble_pending_id.valid = true;
+        ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gap_handler: peer identity (type=%d addr=" NAOS_BLE_ADDR_FMT ")",
+                 naos_ble_pending_id.type, NAOS_BLE_ADDR_ARGS(naos_ble_pending_id.addr));
+      }
+
       break;
     }
 
@@ -155,7 +181,82 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
                  p->ble_security.auth_cmpl.auth_mode);
       } else {
         ESP_LOGW(NAOS_LOG_TAG, "naos_ble_gap_handler: authentication failed");
+        break;
       }
+
+      // commit identity address + IRK to whitelist and NVS (resolving list add is deferred to ADV_STOP_COMPLETE)
+      if (naos_ble_config.pairing && naos_ble_pending_id.valid) {
+        // add to controller whitelist
+        ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, naos_ble_pending_id.addr,
+                                                     NAOS_BLE_WL_ADDR_TYPE(naos_ble_pending_id.type)));
+
+        // persist identity in allowlist if not already present
+        bool found = false;
+        for (size_t j = 0; j < NAOS_BLE_ALLOWLIST_SIZE; j++) {
+          if (memcmp(naos_ble_allowlist.entries[j].addr, naos_ble_pending_id.addr, sizeof(esp_bd_addr_t)) == 0) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          size_t idx = naos_ble_allowlist.next;
+          memcpy(naos_ble_allowlist.entries[idx].addr, naos_ble_pending_id.addr, sizeof(esp_bd_addr_t));
+          naos_ble_allowlist.entries[idx].type = naos_ble_pending_id.type;
+          memcpy(naos_ble_allowlist.entries[idx].irk, naos_ble_pending_id.irk, ESP_BT_OCTET16_LEN);
+          naos_ble_allowlist.entries[idx].has_irk = true;
+          naos_ble_allowlist.next = (naos_ble_allowlist.next + 1) % NAOS_BLE_ALLOWLIST_SIZE;
+          ESP_ERROR_CHECK(
+              nvs_set_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, &naos_ble_allowlist, sizeof(naos_ble_allowlist)));
+          ESP_ERROR_CHECK(nvs_commit(naos_ble_handle));
+          ESP_LOGI(NAOS_LOG_TAG,
+                   "naos_ble_gap_handler: added identity to allowlist (type=%d addr=" NAOS_BLE_ADDR_FMT ")",
+                   naos_ble_pending_id.type, NAOS_BLE_ADDR_ARGS(naos_ble_pending_id.addr));
+        }
+
+        // stop advertising so ADV_STOP_COMPLETE can safely add to resolving list
+        esp_err_t err = esp_ble_gap_stop_advertising();
+        if (err == ESP_OK) {
+          naos_ble_stop_adv_for_rl = true;
+        } else if (err == ESP_ERR_INVALID_STATE) {  // not advertising
+          ESP_ERROR_CHECK(esp_ble_gap_add_device_to_resolving_list(naos_ble_pending_id.addr, naos_ble_pending_id.type,
+                                                                   naos_ble_pending_id.irk));
+          naos_ble_pending_id.valid = false;
+          ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+        } else {
+          ESP_LOGW(NAOS_LOG_TAG, "naos_ble_gap_handler: failed to stop advertising, dropping pending identity (%d)",
+                   err);
+          naos_ble_pending_id.valid = false;
+        }
+      }
+
+      break;
+    }
+
+    case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT: {
+      // only handle if we deliberately stopped advertising for a resolving list update
+      if (!naos_ble_stop_adv_for_rl) {
+        break;
+      }
+
+      // clear flag
+      naos_ble_stop_adv_for_rl = false;
+
+      // check status
+      if (p->adv_stop_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+        ESP_LOGW(NAOS_LOG_TAG, "naos_ble_gap_handler: adv stop failed during RL update (%d)", p->adv_stop_cmpl.status);
+        naos_ble_pending_id.valid = false;
+        break;
+      }
+
+      // add to resolving list now that advertising is stopped (required by controller)
+      if (naos_ble_pending_id.valid) {
+        ESP_ERROR_CHECK(esp_ble_gap_add_device_to_resolving_list(naos_ble_pending_id.addr, naos_ble_pending_id.type,
+                                                                 naos_ble_pending_id.irk));
+        naos_ble_pending_id.valid = false;
+      }
+
+      // restart advertising
+      ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
 
       break;
     }
@@ -225,6 +326,9 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
         // prepare permissions
         esp_gatt_perm_t perm = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE;
+        if (naos_ble_config.bonding) {
+          perm = ESP_GATT_PERM_READ_ENCRYPTED | ESP_GATT_PERM_WRITE_ENCRYPTED;
+        }
 
         // add characteristic
         ESP_ERROR_CHECK(
@@ -317,17 +421,14 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       // trigger signal
       naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_CONN, false);
 
-      // add device to allowlist if pairing is enabled
-      if (naos_ble_config.pairing) {
-        // log info
+      // in pairing-only mode (no bonding), add the device address directly to the allowlist on connect,
+      // since there is no AUTH_CMPL to derive a stable identity from
+      if (naos_ble_config.pairing && !naos_ble_config.bonding) {
         ESP_LOGI(NAOS_LOG_TAG,
                  "naos_ble_gatts_handler: adding address to allowlist (type=%d addr=" NAOS_BLE_ADDR_FMT ")",
                  p->connect.ble_addr_type, NAOS_BLE_ADDR_ARGS(p->connect.remote_bda));
-
-        // add device to controller allowlist
-        ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, p->connect.remote_bda, p->connect.ble_addr_type));
-
-        // check if address is already in persistent allowlist
+        ESP_ERROR_CHECK(
+            esp_ble_gap_update_whitelist(true, p->connect.remote_bda, NAOS_BLE_WL_ADDR_TYPE(p->connect.ble_addr_type)));
         bool found = false;
         for (size_t j = 0; j < NAOS_BLE_ALLOWLIST_SIZE; j++) {
           if (memcmp(naos_ble_allowlist.entries[j].addr, p->connect.remote_bda, sizeof(esp_bd_addr_t)) == 0) {
@@ -335,12 +436,10 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
             break;
           }
         }
-
-        // if not found, add to allowlist
         if (!found) {
-          memcpy(naos_ble_allowlist.entries[naos_ble_allowlist.next].addr, p->connect.remote_bda,
-                 sizeof(esp_bd_addr_t));
-          naos_ble_allowlist.entries[naos_ble_allowlist.next].type = p->connect.ble_addr_type;
+          size_t idx = naos_ble_allowlist.next;
+          memcpy(naos_ble_allowlist.entries[idx].addr, p->connect.remote_bda, sizeof(esp_bd_addr_t));
+          naos_ble_allowlist.entries[idx].type = p->connect.ble_addr_type;
           naos_ble_allowlist.next = (naos_ble_allowlist.next + 1) % NAOS_BLE_ALLOWLIST_SIZE;
           ESP_ERROR_CHECK(
               nvs_set_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, &naos_ble_allowlist, sizeof(naos_ble_allowlist)));
@@ -557,8 +656,8 @@ static void naos_ble_set_name() {
   }
 
   // cap name to not exceed adv packet
+  char copy[9] = {0};
   if (strlen(name) > 8) {
-    char copy[9] = {0};
     strncpy(copy, name, 8);
     name = copy;
   }
@@ -663,6 +762,12 @@ void naos_ble_init(naos_ble_config_t cfg) {
     naos_ble_adv_params.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST;
   }
 
+  // enable local privacy so the controller uses the resolving list for RPA resolution
+  if (cfg.pairing && cfg.bonding) {
+    naos_ble_adv_params.own_addr_type = BLE_ADDR_TYPE_RPA_PUBLIC;
+    ESP_ERROR_CHECK(esp_ble_gap_config_local_privacy(true));
+  }
+
   // register GATTS handler
   ESP_ERROR_CHECK(esp_ble_gatts_register_callback(naos_ble_gatts_handler));
 
@@ -694,13 +799,10 @@ void naos_ble_init(naos_ble_config_t cfg) {
   ESP_ERROR_CHECK(esp_ble_gatts_app_register(0x55));
   naos_await(naos_ble_signal, NAOS_BLE_SIGNAL_INIT, true, -1);
 
-  // set device name
-  naos_ble_set_name();
-
   // open nvs namespace
   ESP_ERROR_CHECK(nvs_open("naos-ble", NVS_READWRITE, &naos_ble_handle));
 
-  // restore allowlist if pairing is enabled
+  // restore allowlist before advertising starts (resolving list add requires advertising to be stopped)
   if (naos_ble_config.pairing) {
     size_t size = 0;
     esp_err_t err = nvs_get_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, NULL, &size);
@@ -712,10 +814,15 @@ void naos_ble_init(naos_ble_config_t cfg) {
       for (size_t i = 0; i < NAOS_BLE_ALLOWLIST_SIZE; i++) {
         esp_bd_addr_t zero = {0};
         if (memcmp(naos_ble_allowlist.entries[i].addr, zero, sizeof(esp_bd_addr_t)) != 0) {
+          esp_ble_wl_addr_type_t wl_type = NAOS_BLE_WL_ADDR_TYPE(naos_ble_allowlist.entries[i].type);
           ESP_LOGI(NAOS_LOG_TAG, "naos_ble_init: restoring allowlist entry (type=%d addr=" NAOS_BLE_ADDR_FMT ")",
                    naos_ble_allowlist.entries[i].type, NAOS_BLE_ADDR_ARGS(naos_ble_allowlist.entries[i].addr));
-          ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, naos_ble_allowlist.entries[i].addr,
-                                                       naos_ble_allowlist.entries[i].type));
+          ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, naos_ble_allowlist.entries[i].addr, wl_type));
+          if (naos_ble_allowlist.entries[i].has_irk) {
+            ESP_ERROR_CHECK(esp_ble_gap_add_device_to_resolving_list(naos_ble_allowlist.entries[i].addr,
+                                                                     naos_ble_allowlist.entries[i].type,
+                                                                     naos_ble_allowlist.entries[i].irk));
+          }
         }
       }
     }
@@ -730,6 +837,18 @@ void naos_ble_init(naos_ble_config_t cfg) {
       .mtu = naos_ble_msg_mtu,
       .send = naos_ble_msg_send,
   });
+
+  // clear signal
+  naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_ADV, true);
+
+  // set device name
+  naos_ble_set_name();
+
+  // await signal
+  naos_await(naos_ble_signal, NAOS_BLE_SIGNAL_ADV, true, -1);
+
+  // start advertising
+  ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
 }
 
 bool naos_ble_await(int32_t timeout_ms) {
@@ -801,6 +920,14 @@ void naos_ble_allowlist_clear() {
       nvs_set_blob(naos_ble_handle, NAOS_BLE_ALLOWLIST_KEY, &naos_ble_allowlist, sizeof(naos_ble_allowlist)));
   ESP_ERROR_CHECK(nvs_commit(naos_ble_handle));
   ESP_ERROR_CHECK(esp_ble_gap_clear_whitelist());
+
+  // clear resolving list by toggling local privacy off and on
+  if (naos_ble_config.bonding) {
+    esp_ble_gap_stop_advertising();
+    ESP_ERROR_CHECK(esp_ble_gap_config_local_privacy(false));
+    ESP_ERROR_CHECK(esp_ble_gap_config_local_privacy(true));
+    ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+  }
 }
 
 int naos_ble_peerlist_length() {
@@ -834,4 +961,12 @@ void naos_ble_peerlist_clear() {
 
   // free list
   free(list);
+
+  // clear resolving list by toggling local privacy off and on
+  if (naos_ble_config.bonding) {
+    esp_ble_gap_stop_advertising();
+    ESP_ERROR_CHECK(esp_ble_gap_config_local_privacy(false));
+    ESP_ERROR_CHECK(esp_ble_gap_config_local_privacy(true));
+    ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
+  }
 }

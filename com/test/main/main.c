@@ -237,13 +237,13 @@ static void auth_test() {
 }
 
 void ble_pairing_test() {
-  // clear bonding list
-  naos_log("clearing bonding list");
-  naos_ble_peerlist_clear();
-
   // clear allowlist
   naos_log("clearing allowlist: %d", naos_ble_allowlist_length());
   naos_ble_allowlist_clear();
+
+  // clear peerlist
+  naos_log("clearing bonding list: %d", naos_ble_peerlist_length());
+  naos_ble_peerlist_clear();
 
   for (;;) {
     // enable pairing
