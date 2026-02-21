@@ -47,10 +47,12 @@ static esp_ble_adv_params_t naos_ble_adv_params = {
 };
 
 static esp_ble_adv_data_t naos_ble_adv_data = {
-    .include_name = true,
-    .min_interval = 6,   // 7.5ms
-    .max_interval = 12,  // 15ms
     .flag = ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT,
+};
+
+static esp_ble_adv_data_t naos_ble_scan_rsp = {
+    .set_scan_rsp = true,
+    .include_name = true,
 };
 
 static struct {
@@ -107,6 +109,10 @@ static bool naos_ble_stop_adv_for_rl = false;  // set when we stop advertising t
 static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
   switch (e) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT: {
+      break;
+    }
+
+    case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT: {
       // trigger signal
       naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_ADV, false);
 
@@ -286,8 +292,9 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
   switch (e) {
     // handle registration event (status has been handled above)
     case ESP_GATTS_REG_EVT: {
-      // set advertisement config
+      // set advertisement and scan response config
       ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&naos_ble_adv_data));
+      ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&naos_ble_scan_rsp));
 
       // count required handles for service
       uint16_t total_handles = 1;
@@ -657,16 +664,16 @@ static void naos_ble_set_name() {
     name = naos_config()->app_name;
   }
 
-  // cap name to not exceed adv packet
-  char copy[9] = {0};
-  if (strlen(name) > 8) {
-    strncpy(copy, name, 8);
+  // cap name to not exceed scan response packet
+  char copy[30] = {0};
+  if (strlen(name) > 29) {
+    strncpy(copy, name, 29);
     name = copy;
   }
 
   // set name
   ESP_ERROR_CHECK(esp_ble_gap_set_device_name(name));
-  ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&naos_ble_adv_data));
+  ESP_ERROR_CHECK(esp_ble_gap_config_adv_data(&naos_ble_scan_rsp));
 }
 
 static void naos_ble_param_handler(naos_param_t *param) {
