@@ -128,7 +128,7 @@ func debug(cmd *command, p *naos.Project) {
 	exitIfSet(err)
 
 	// parse coredump
-	result, err := p.ParseCoredump(data)
+	result, err := p.ParseCoredump(cmd.aELF, data)
 	exitIfSet(err)
 
 	// write to file or stdout

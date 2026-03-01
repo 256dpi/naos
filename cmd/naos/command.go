@@ -38,7 +38,7 @@ Usage:
   naos config <file> [<device>] [--baud=<rate>]
   naos format
   naos bundle [<file>] [--add-debug]
-  naos debug <file> [--output=<file>]
+  naos debug <file> [<elf>] [--output=<file>]
   naos sdks
   naos help
 
@@ -76,6 +76,7 @@ type command struct {
 	aDevice  string
 	aFile    string
 	aCommand string
+	aELF     string
 
 	// options
 	oForce       bool
@@ -115,6 +116,7 @@ func parseCommand() *command {
 		aDevice:  getString(a["<device>"]),
 		aFile:    getString(a["<file>"]),
 		aCommand: getString(a["<command>"]),
+		aELF:     getString(a["<elf>"]),
 
 		// options
 		oForce:       getBool(a["--force"]),
