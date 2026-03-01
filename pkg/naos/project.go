@@ -266,6 +266,12 @@ func (p *Project) Format(out io.Writer) error {
 	return tree.Format(p.Tree(), out)
 }
 
+// ParseCoredump will parse the provided raw coredump data and return a
+// human-readable representation.
+func (p *Project) ParseCoredump(coredump []byte) ([]byte, error) {
+	return tree.ParseCoredump(p.Tree(), p.Manifest.Name, coredump)
+}
+
 // Bundle will create a bundle of the project.
 func (p *Project) Bundle(file string, out io.Writer) error {
 	return tree.Bundle(p.Tree(), file, out)

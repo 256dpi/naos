@@ -23,6 +23,7 @@ Project Management:
 
 Utilities:
   sdks     List installed SDKs with their versions and location.
+  debug    Parse and print a coredump analysis.
   help     Show this help message.
 
 Usage:
@@ -37,6 +38,7 @@ Usage:
   naos config <file> [<device>] [--baud=<rate>]
   naos format
   naos bundle [<file>]
+  naos debug <file> [--output=<file>]
   naos sdks
   naos help
 
@@ -49,6 +51,7 @@ Options:
   --app-only         Only build or flash the application.
   --alt              Use alternative esptool.py found in PATH.
   -b --baud=<rate>   The baud rate.
+  -o --output=<file> The output file for debug analysis.
 `
 
 type command struct {
@@ -64,6 +67,7 @@ type command struct {
 	cConfig  bool
 	cFormat  bool
 	cBundle  bool
+	cDebug   bool
 	cSDKs    bool
 	cHelp    bool
 
@@ -81,6 +85,7 @@ type command struct {
 	oErase       bool
 	oAppOnly     bool
 	oAlt         bool
+	oOutput      string
 }
 
 func parseCommand() *command {
@@ -100,6 +105,7 @@ func parseCommand() *command {
 		cConfig:  getBool(a["config"]),
 		cFormat:  getBool(a["format"]),
 		cBundle:  getBool(a["bundle"]),
+		cDebug:   getBool(a["debug"]),
 		cSDKs:    getBool(a["sdks"]),
 		cHelp:    getBool(a["help"]),
 
@@ -117,6 +123,7 @@ func parseCommand() *command {
 		oErase:       getBool(a["--erase"]),
 		oAppOnly:     getBool(a["--app-only"]),
 		oAlt:         getBool(a["--alt"]),
+		oOutput:      getString(a["--output"]),
 	}
 }
 

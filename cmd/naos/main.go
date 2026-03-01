@@ -36,6 +36,8 @@ func main() {
 		format(cmd, getProject())
 	} else if cmd.cBundle {
 		bundle(cmd, getProject())
+	} else if cmd.cDebug {
+		debug(cmd, getProject())
 	} else if cmd.cSDKs {
 		sdks()
 	} else if cmd.cHelp {
@@ -118,6 +120,24 @@ func format(_ *command, p *naos.Project) {
 func bundle(cmd *command, p *naos.Project) {
 	// bundle project
 	exitIfSet(p.Bundle(cmd.aFile, os.Stdout))
+}
+
+func debug(cmd *command, p *naos.Project) {
+	// read coredump file
+	data, err := os.ReadFile(cmd.aFile)
+	exitIfSet(err)
+
+	// parse coredump
+	result, err := p.ParseCoredump(data)
+	exitIfSet(err)
+
+	// write to file or stdout
+	if cmd.oOutput != "" {
+		exitIfSet(os.WriteFile(cmd.oOutput, result, 0644))
+	} else {
+		_, err = os.Stdout.Write(result)
+		exitIfSet(err)
+	}
 }
 
 func sdks() {
