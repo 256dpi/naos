@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/256dpi/naos/pkg/naos"
 	"github.com/256dpi/naos/pkg/sdk"
@@ -123,13 +124,29 @@ func bundle(cmd *command, p *naos.Project) {
 }
 
 func debug(cmd *command, p *naos.Project) {
-	// read coredump file
-	data, err := os.ReadFile(cmd.aFile)
-	exitIfSet(err)
+	// ensure absolute path to ELF file
+	if cmd.oELF != "" {
+		abs, err := filepath.Abs(cmd.oELF)
+		exitIfSet(err)
+		cmd.oELF = abs
+	}
 
-	// parse coredump
-	result, err := p.ParseCoredump(cmd.aELF, data)
-	exitIfSet(err)
+	// parse or load coredump
+	var result []byte
+	var err error
+	if cmd.aFile != "" {
+		// read coredump file
+		data, err := os.ReadFile(cmd.aFile)
+		exitIfSet(err)
+
+		// parse coredump
+		result, err = p.ParseCoredump(cmd.oELF, data)
+		exitIfSet(err)
+	} else {
+		// load and parse coredump from device
+		result, err = p.LoadCoredump(cmd.oELF, "")
+		exitIfSet(err)
+	}
 
 	// write to file or stdout
 	if cmd.oOutput != "" {

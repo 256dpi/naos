@@ -272,6 +272,17 @@ func (p *Project) ParseCoredump(elf string, coredump []byte) ([]byte, error) {
 	return tree.ParseCoredump(p.Tree(), p.Manifest.Name, elf, coredump)
 }
 
+// LoadCoredump will read the coredump directly from the device flash and return
+// a human-readable representation.
+func (p *Project) LoadCoredump(elf, device string) ([]byte, error) {
+	// set missing device
+	if device == "" {
+		device = serial.FindPort()
+	}
+
+	return tree.LoadCoredump(p.Tree(), p.Manifest.Name, elf, device)
+}
+
 // Bundle will create a bundle of the project.
 func (p *Project) Bundle(file string, addDebug bool, out io.Writer) error {
 	return tree.Bundle(p.Tree(), file, addDebug, out)

@@ -58,3 +58,33 @@ func ParseCoredump(naosPath, appName, elf string, coredump []byte) ([]byte, erro
 
 	return buf.Bytes(), nil
 }
+
+// LoadCoredump will read the coredump directly from flash using the specified
+// serial port and return a human-readable representation.
+func LoadCoredump(naosPath, appName, elf, port string) ([]byte, error) {
+	// get paths
+	espCoredump := filepath.Join(IDFDirectory(naosPath), "components", "espcoredump", "espcoredump.py")
+
+	// ensure ELF
+	if elf == "" {
+		elf = AppELF(naosPath, appName)
+	}
+
+	// create buffer
+	buf := new(bytes.Buffer)
+
+	// prepare args
+	var args []string
+	if port != "" {
+		args = append(args, "--port", port)
+	}
+	args = append(args, "info_corefile", elf)
+
+	// load and parse coredump from device
+	err := Exec(naosPath, buf, nil, false, false, espCoredump, args...)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", err, buf.String())
+	}
+
+	return buf.Bytes(), nil
+}

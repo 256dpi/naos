@@ -38,7 +38,7 @@ Usage:
   naos config <file> [<device>] [--baud=<rate>]
   naos format
   naos bundle [<file>] [--add-debug]
-  naos debug <file> [<elf>] [--output=<file>]
+  naos debug [<file>] [--elf=<file> --output=<file>]
   naos sdks
   naos help
 
@@ -51,6 +51,7 @@ Options:
   --app-only         Only build or flash the application.
   --alt              Use alternative esptool.py found in PATH.
   --add-debug        Add debug ELF file to bundle.
+  --elf=<file>       The ELF file for coredump analysis.
   -b --baud=<rate>   The baud rate.
   -o --output=<file> The output file for debug analysis.
 `
@@ -76,7 +77,6 @@ type command struct {
 	aDevice  string
 	aFile    string
 	aCommand string
-	aELF     string
 
 	// options
 	oForce       bool
@@ -88,6 +88,7 @@ type command struct {
 	oAppOnly     bool
 	oAlt         bool
 	oAddDebug    bool
+	oELF         string
 	oOutput      string
 }
 
@@ -116,7 +117,6 @@ func parseCommand() *command {
 		aDevice:  getString(a["<device>"]),
 		aFile:    getString(a["<file>"]),
 		aCommand: getString(a["<command>"]),
-		aELF:     getString(a["<elf>"]),
 
 		// options
 		oForce:       getBool(a["--force"]),
@@ -128,6 +128,7 @@ func parseCommand() *command {
 		oAppOnly:     getBool(a["--app-only"]),
 		oAlt:         getBool(a["--alt"]),
 		oAddDebug:    getBool(a["--add-debug"]),
+		oELF:         getString(a["--elf"]),
 		oOutput:      getString(a["--output"]),
 	}
 }
