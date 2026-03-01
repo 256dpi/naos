@@ -38,7 +38,7 @@ Usage:
   naos config <file> [<device>] [--baud=<rate>]
   naos format
   naos bundle [<file>] [--add-debug]
-  naos debug [<file>] [--elf=<file> --output=<file>]
+  naos debug [<file>] [--elf=<file>]
   naos sdks
   naos help
 
@@ -53,7 +53,6 @@ Options:
   --add-debug        Add debug ELF file to bundle.
   --elf=<file>       The ELF file for coredump analysis.
   -b --baud=<rate>   The baud rate.
-  -o --output=<file> The output file for debug analysis.
 `
 
 type command struct {
@@ -89,7 +88,6 @@ type command struct {
 	oAlt         bool
 	oAddDebug    bool
 	oELF         string
-	oOutput      string
 }
 
 func parseCommand() *command {
@@ -129,7 +127,6 @@ func parseCommand() *command {
 		oAlt:         getBool(a["--alt"]),
 		oAddDebug:    getBool(a["--add-debug"]),
 		oELF:         getString(a["--elf"]),
-		oOutput:      getString(a["--output"]),
 	}
 }
 

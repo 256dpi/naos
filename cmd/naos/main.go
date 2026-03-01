@@ -149,12 +149,8 @@ func debug(cmd *command, p *naos.Project) {
 	}
 
 	// write to file or stdout
-	if cmd.oOutput != "" {
-		exitIfSet(os.WriteFile(cmd.oOutput, result, 0644))
-	} else {
-		_, err = os.Stdout.Write(result)
-		exitIfSet(err)
-	}
+	_, err = os.Stdout.Write(result)
+	exitIfSet(err)
 }
 
 func sdks() {
