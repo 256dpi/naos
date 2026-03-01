@@ -2,6 +2,7 @@ package tree
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -41,7 +42,7 @@ func ParseCoredump(naosPath, appName string, coredump []byte) ([]byte, error) {
 	// parse coredump
 	err = Exec(naosPath, buf, nil, false, false, espCoredump, "info_corefile", "-t", "raw", "-c", file.Name(), AppELF(naosPath, appName))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %s", err, buf.String())
 	}
 
 	// delete file
