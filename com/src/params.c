@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <esp_log.h>
 #include <nvs_flash.h>
 
 #include "params.h"
@@ -486,6 +487,12 @@ void naos_register(naos_param_t *param) {
   // force application if undefined
   if (!(param->mode & (NAOS_SYSTEM | NAOS_APPLICATION))) {
     param->mode |= NAOS_APPLICATION;
+  }
+
+  // check name length for persistent parameters (NVS key limit)
+  if (!(param->mode & NAOS_VOLATILE) && strlen(param->name) > 15) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_register: name '%s' exceeds 15 char NVS key limit", param->name);
+    ESP_ERROR_CHECK(ESP_FAIL);
   }
 
   // store parameter
