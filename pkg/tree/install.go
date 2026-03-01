@@ -246,13 +246,6 @@ func InstallRegistryComponents(projectPath, naosPath string, components []IDFCom
 		return err
 	}
 
-	// update dependencies
-	utils.Log(out, "Updating IDF dependencies...")
-	err = Exec(naosPath, out, nil, false, false, "idf.py", "update-dependencies")
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
