@@ -175,7 +175,16 @@ func (p *Project) Install(force bool, out io.Writer) error {
 		return err
 	}
 
-	// TODO: Move to "build"?
+	return nil
+}
+
+// Build will build the project.
+func (p *Project) Build(clean, reconfigure, appOnly bool, out io.Writer) error {
+	// execute command
+	err := tree.Build(p.Tree(), p.Manifest.Name, p.Manifest.TagPrefix, p.Manifest.Target, p.Manifest.Overrides, p.Manifest.Embeds, p.Manifest.Partitions, clean, reconfigure, appOnly, out)
+	if err != nil {
+		return err
+	}
 
 	// update cmake lists file
 	err = tree.WriteCMakeLists(p.Tree(), out)
@@ -184,12 +193,6 @@ func (p *Project) Install(force bool, out io.Writer) error {
 	}
 
 	return nil
-}
-
-// Build will build the project.
-func (p *Project) Build(clean, reconfigure, appOnly bool, out io.Writer) error {
-	// execute command
-	return tree.Build(p.Tree(), p.Manifest.Name, p.Manifest.TagPrefix, p.Manifest.Target, p.Manifest.Overrides, p.Manifest.Embeds, p.Manifest.Partitions, clean, reconfigure, appOnly, out)
 }
 
 // Flash will flash the project to the attached device.
