@@ -11,7 +11,7 @@ import (
 // WriteCMakeLists will write a CMakeLists.txt with all included directories.
 func WriteCMakeLists(naosPath string, out io.Writer) error {
 	// log message
-	utils.Log(out, "Generating CMakeLists.txt...")
+	utils.Log(out, "Updating CMakeLists.txt...")
 
 	// get list of include directories
 	list, err := IncludeDirectories(naosPath)

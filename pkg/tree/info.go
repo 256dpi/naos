@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -61,12 +60,6 @@ func IDFMajorVersion(naosPath string) (int, error) {
 // IncludeDirectories returns a list of directories that will be included in the
 // build process.
 func IncludeDirectories(naosPath string) ([]string, error) {
-	// reconfigure project
-	err := Exec(naosPath, io.Discard, nil, false, false, "idf.py", "reconfigure")
-	if err != nil {
-		return nil, err
-	}
-
 	// read compile commands
 	data, err := os.ReadFile(filepath.Join(Directory(naosPath), "build", "compile_commands.json"))
 	if err != nil {
