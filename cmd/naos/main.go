@@ -119,7 +119,7 @@ func format(_ *command, p *naos.Project) {
 
 func bundle(cmd *command, p *naos.Project) {
 	// bundle project
-	exitIfSet(p.Bundle(cmd.aFile, os.Stdout))
+	exitIfSet(p.Bundle(cmd.aFile, cmd.oAddDebug, os.Stdout))
 }
 
 func debug(cmd *command, p *naos.Project) {

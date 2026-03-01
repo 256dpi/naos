@@ -273,6 +273,6 @@ func (p *Project) ParseCoredump(coredump []byte) ([]byte, error) {
 }
 
 // Bundle will create a bundle of the project.
-func (p *Project) Bundle(file string, out io.Writer) error {
-	return tree.Bundle(p.Tree(), file, out)
+func (p *Project) Bundle(file string, addDebug bool, out io.Writer) error {
+	return tree.Bundle(p.Tree(), file, addDebug, out)
 }

@@ -37,7 +37,7 @@ Usage:
   naos exec <command>
   naos config <file> [<device>] [--baud=<rate>]
   naos format
-  naos bundle [<file>]
+  naos bundle [<file>] [--add-debug]
   naos debug <file> [--output=<file>]
   naos sdks
   naos help
@@ -50,6 +50,7 @@ Options:
   --erase            Erase completely before flashing new image.
   --app-only         Only build or flash the application.
   --alt              Use alternative esptool.py found in PATH.
+  --add-debug        Add debug ELF file to bundle.
   -b --baud=<rate>   The baud rate.
   -o --output=<file> The output file for debug analysis.
 `
@@ -85,6 +86,7 @@ type command struct {
 	oErase       bool
 	oAppOnly     bool
 	oAlt         bool
+	oAddDebug    bool
 	oOutput      string
 }
 
@@ -123,6 +125,7 @@ func parseCommand() *command {
 		oErase:       getBool(a["--erase"]),
 		oAppOnly:     getBool(a["--app-only"]),
 		oAlt:         getBool(a["--alt"]),
+		oAddDebug:    getBool(a["--add-debug"]),
 		oOutput:      getString(a["--output"]),
 	}
 }

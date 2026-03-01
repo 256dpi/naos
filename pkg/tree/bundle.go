@@ -19,6 +19,7 @@ type bundleManifest struct {
 	FlashSize string         `json:"flashSize"`
 	FlashFreq string         `json:"flashFreq"`
 	Regions   []bundleRegion `json:"regions"`
+	DebugFile string         `json:"debugFile,omitempty"`
 }
 
 type bundleRegion struct {
@@ -52,7 +53,7 @@ type flasherArgsItem struct {
 	File   string `json:"file"`
 }
 
-func Bundle(naosPath, file string, out io.Writer) error {
+func Bundle(naosPath, file string, addDebug bool, out io.Writer) error {
 	// read project description
 	descFile := filepath.Join(Directory(naosPath), "build", "project_description.json")
 	data, err := os.ReadFile(descFile)
@@ -81,6 +82,7 @@ func Bundle(naosPath, file string, out io.Writer) error {
 	partitionsBinary := filepath.Join(Directory(naosPath), "build", "partition_table", "partition-table.bin")
 	otaDataBinary := filepath.Join(Directory(naosPath), "build", "ota_data_initial.bin")
 	projectBinary := AppBinary(naosPath, desc.Name)
+	projectELF := AppELF(naosPath, desc.Name)
 
 	// get binary sizes
 	bootLoaderStat, err := os.Stat(bootLoaderBinary)
@@ -126,6 +128,11 @@ func Bundle(naosPath, file string, out io.Writer) error {
 		},
 	}
 
+	// add debug file if requested
+	if addDebug {
+		manifest.DebugFile = filepath.Base(projectELF)
+	}
+
 	// add OTA region if available
 	if args.OTAData.Offset != "" {
 		stat, err := os.Stat(otaDataBinary)
@@ -157,17 +164,23 @@ func Bundle(naosPath, file string, out io.Writer) error {
 	w := zip.NewWriter(f)
 	defer w.Close()
 
-	// write binary files
-	for _, binary := range []string{
+	// prepare files
+	addFiles := []string{
 		bootLoaderBinary,
 		partitionsBinary,
 		projectBinary,
-	} {
-		data, err := os.ReadFile(binary)
+	}
+	if addDebug {
+		addFiles = append(addFiles, projectELF)
+	}
+
+	// write files
+	for _, addFile := range addFiles {
+		data, err := os.ReadFile(addFile)
 		if err != nil {
 			return err
 		}
-		zw, err := w.Create(filepath.Base(binary))
+		zw, err := w.Create(filepath.Base(addFile))
 		if err != nil {
 			return err
 		}
