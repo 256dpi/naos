@@ -1,5 +1,5 @@
 import { Channel, Device, Queue, QueueList } from "./device";
-import { toBase64, toBuffer, toString } from "./utils";
+import { concat, toBase64, toBuffer, toString } from "./utils";
 
 export async function serialRequest(baudRate = 115200): Promise<Device | null> {
   // request port
@@ -119,9 +119,9 @@ export class SerialDevice implements Device {
         subscribers.drop(queue);
       },
       write: async (data: Uint8Array) => {
-        await writer.write(toBuffer("NAOS!"));
-        await writer.write(toBase64(data));
-        await writer.write(toBuffer("\n"));
+        await writer.write(
+          concat(concat(toBuffer("NAOS!"), toBase64(data)), toBuffer("\n"))
+        );
       },
       close: async () => {
         await writer.close();
