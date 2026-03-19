@@ -331,6 +331,59 @@ async function debug() {
   console.log("Done!");
 }
 
+const ECHO_ENDPOINT = 0x08;
+
+async function throughput() {
+  console.log("Testing Throughput...");
+
+  await device.activate();
+
+  await device.useSession(async (session) => {
+    // get MTU
+    const mtu = await session.getMTU();
+    console.log("MTU:", mtu);
+
+    // prepare payload (fill with endpoint overhead subtracted)
+    const payloadSize = mtu - 4; // subtract message framing
+    const payload = new Uint8Array(payloadSize);
+    for (let i = 0; i < payloadSize; i++) {
+      payload[i] = i & 0xff;
+    }
+
+    // run echo rounds
+    const rounds = 100;
+    let totalBytes = 0;
+    let errors = 0;
+
+    const start = performance.now();
+
+    for (let i = 0; i < rounds; i++) {
+      // send echo request (no ACK expected from handler)
+      await session.send(ECHO_ENDPOINT, payload, 0);
+
+      // receive echo response
+      const [data, ack] = await session.receive(ECHO_ENDPOINT, false, 5000);
+      if (!data || data.length !== payload.length) {
+        errors++;
+        console.error(`Round ${i}: size mismatch (got ${data?.length}, expected ${payload.length})`);
+        continue;
+      }
+
+      totalBytes += data.length;
+    }
+
+    const elapsed = performance.now() - start;
+    const throughputKBs = (totalBytes / 1024) / (elapsed / 1000);
+
+    console.log(`Rounds: ${rounds}, Errors: ${errors}`);
+    console.log(`Total: ${totalBytes} bytes in ${(elapsed / 1000).toFixed(2)}s`);
+    console.log(`Throughput: ${throughputKBs.toFixed(2)} KB/s`);
+    console.log(`Avg round-trip: ${(elapsed / rounds).toFixed(2)} ms`);
+  });
+
+  console.log("Done!");
+}
+
 window["_ble"] = ble;
 window["_serial"] = serial;
 window["_http"] = http;
@@ -341,6 +394,7 @@ window["_metrics"] = metrics;
 window["_relay"] = relay;
 window["_auth"] = auth;
 window["_debug"] = debug;
+window["_throughput"] = throughput;
 
 // redirect to localhost from '0.0.0.0'
 if (location.hostname === "0.0.0.0") {
