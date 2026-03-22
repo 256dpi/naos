@@ -59,6 +59,9 @@ export class SerialDevice implements Device {
     // create reader
     const reader = this.port.readable.getReader();
 
+    // track reader state
+    let alive = true;
+
     // read data
     const read = async () => {
       try {
@@ -94,6 +97,7 @@ export class SerialDevice implements Device {
       } catch (err) {
         console.error("Error reading stream:", err);
       } finally {
+        alive = false;
         reader.releaseLock();
       }
     };
@@ -108,7 +112,7 @@ export class SerialDevice implements Device {
     this.ch = {
       name: () => "serial",
       valid() {
-        return true;
+        return alive;
       },
       width() {
         return 1;
