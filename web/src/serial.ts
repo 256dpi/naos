@@ -82,9 +82,10 @@ export class SerialDevice implements Device {
 
           // Process all complete lines
           for (let i = 0; i < lines.length - 1; i++) {
-            if (lines[i].startsWith("NAOS!")) {
+            const line = lines[i].replace(/\r$/, "");
+            if (line.startsWith("NAOS!")) {
               try {
-                subscribers.dispatch(fromBase64(lines[i].slice(5)));
+                subscribers.dispatch(fromBase64(line.slice(5)));
               } catch (err) {
                 console.error("Error decoding message:", err);
               }
