@@ -388,6 +388,32 @@ async function throughput() {
   console.log("Done!");
 }
 
+async function memory() {
+  console.log("Reading Memory...");
+
+  await device.activate();
+
+  // find memory metric
+  const session = await device.newSession();
+  const metrics = await listMetrics(session);
+  const mem = metrics.find((m) => m.name === "free-memory");
+  if (!mem) {
+    await session.end(1000);
+    console.error("Memory metric not found");
+    return;
+  }
+
+  // read continuously
+  const spinner = ["|", "/", "-", "\\"];
+  let tick = 0;
+  for (;;) {
+    const values = await readLongMetrics(session, mem.ref);
+    const el = document.getElementById("memory");
+    el.textContent = spinner[tick++ % 4] + " " + values.map((v) => `${(v / 1024).toFixed(0)} KB`).join(" / ");
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+}
+
 async function transfer() {
   console.log("Testing Transfer...");
 
@@ -458,6 +484,7 @@ window["_auth"] = auth;
 window["_debug"] = debug;
 window["_throughput"] = throughput;
 window["_transfer"] = transfer;
+window["_memory"] = memory;
 
 // redirect to localhost from '0.0.0.0'
 if (location.hostname === "0.0.0.0") {
