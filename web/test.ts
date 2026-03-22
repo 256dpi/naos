@@ -388,6 +388,64 @@ async function throughput() {
   console.log("Done!");
 }
 
+async function transfer() {
+  console.log("Testing Transfer...");
+
+  // prompt for size
+  const kb = parseInt(prompt("Size in KB", "64"));
+  if (!kb) return;
+  const size = kb * 1024;
+  const original = new Uint8Array(size);
+  for (let i = 0; i < size; i++) {
+    original[i] = i & 0xff;
+  }
+  console.log(`Generated ${size} bytes`);
+
+  await device.activate();
+
+  await device.useSession(async (session) => {
+    // upload
+    console.log("Uploading...");
+    const t1 = performance.now();
+    await writeFile(session, "/transfer.bin", original);
+    const uploadTime = performance.now() - t1;
+    console.log(
+      `Uploaded ${size} bytes in ${(uploadTime / 1000).toFixed(2)}s (${(
+        size /
+        1024 /
+        (uploadTime / 1000)
+      ).toFixed(2)} KB/s)`
+    );
+
+    // download
+    console.log("Downloading...");
+    const t2 = performance.now();
+    const downloaded = await readFile(session, "/transfer.bin");
+    const downloadTime = performance.now() - t2;
+    console.log(
+      `Downloaded ${downloaded.length} bytes in ${(downloadTime / 1000).toFixed(
+        2
+      )}s (${(downloaded.length / 1024 / (downloadTime / 1000)).toFixed(
+        2
+      )} KB/s)`
+    );
+
+    // compare
+    if (compare(original, downloaded)) {
+      console.log("Data matches!");
+    } else {
+      console.error(
+        `Data mismatch! original=${original.length} downloaded=${downloaded.length}`
+      );
+    }
+
+    // cleanup
+    await removePath(session, "/transfer.bin");
+  });
+
+  console.log("Done!");
+}
+
 window["_ble"] = ble;
 window["_serial"] = serial;
 window["_http"] = http;
@@ -399,6 +457,7 @@ window["_relay"] = relay;
 window["_auth"] = auth;
 window["_debug"] = debug;
 window["_throughput"] = throughput;
+window["_transfer"] = transfer;
 
 // redirect to localhost from '0.0.0.0'
 if (location.hostname === "0.0.0.0") {
