@@ -365,7 +365,9 @@ async function throughput() {
       const [data, ack] = await session.receive(ECHO_ENDPOINT, false, 5000);
       if (!data || data.length !== payload.length) {
         errors++;
-        console.error(`Round ${i}: size mismatch (got ${data?.length}, expected ${payload.length})`);
+        console.error(
+          `Round ${i}: size mismatch (got ${data?.length}, expected ${payload.length})`
+        );
         continue;
       }
 
@@ -373,10 +375,12 @@ async function throughput() {
     }
 
     const elapsed = performance.now() - start;
-    const throughputKBs = (totalBytes / 1024) / (elapsed / 1000);
+    const throughputKBs = totalBytes / 1024 / (elapsed / 1000);
 
     console.log(`Rounds: ${rounds}, Errors: ${errors}`);
-    console.log(`Total: ${totalBytes} bytes in ${(elapsed / 1000).toFixed(2)}s`);
+    console.log(
+      `Total: ${totalBytes} bytes in ${(elapsed / 1000).toFixed(2)}s`
+    );
     console.log(`Throughput: ${throughputKBs.toFixed(2)} KB/s`);
     console.log(`Avg round-trip: ${(elapsed / rounds).toFixed(2)} ms`);
   });

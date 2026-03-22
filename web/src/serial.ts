@@ -1,5 +1,5 @@
 import { Channel, Device, Queue, QueueList } from "./device";
-import { concat, toBase64, toBuffer, toString } from "./utils";
+import { concat, fromBase64, toBase64, toBuffer, toString } from "./utils";
 
 export async function serialRequest(baudRate = 115200): Promise<Device | null> {
   // request port
@@ -80,10 +80,11 @@ export class SerialDevice implements Device {
           // Process all complete lines
           for (let i = 0; i < lines.length - 1; i++) {
             if (lines[i].startsWith("NAOS!")) {
-              const data = lines[i].slice(5);
-              subscribers.dispatch(
-                Uint8Array.from(atob(data), (c) => c.charCodeAt(0))
-              );
+              try {
+                subscribers.dispatch(fromBase64(lines[i].slice(5)));
+              } catch (err) {
+                console.error("Error decoding message:", err);
+              }
             }
           }
 
@@ -120,7 +121,7 @@ export class SerialDevice implements Device {
       },
       write: async (data: Uint8Array) => {
         await writer.write(
-          concat(concat(toBuffer("NAOS!"), toBase64(data)), toBuffer("\n"))
+          concat(toBuffer("\nNAOS!"), toBase64(data), toBuffer("\n"))
         );
       },
       close: async () => {

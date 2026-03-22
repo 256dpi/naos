@@ -10,7 +10,12 @@ export function toString(buffer: AllowSharedBufferSource): string {
 }
 
 export function toBase64(buffer: AllowSharedBufferSource): Uint8Array {
-  return toBuffer(btoa(String.fromCharCode(...new Uint8Array(buffer as ArrayBuffer))));
+  const bytes = new Uint8Array(buffer as ArrayBuffer);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return toBuffer(btoa(binary));
 }
 
 export function fromBase64(base64: string): Uint8Array {
@@ -21,10 +26,17 @@ export function fromBase64(base64: string): Uint8Array {
   );
 }
 
-export function concat(buf1: Uint8Array, buf2: Uint8Array): Uint8Array {
-  const buf = new Uint8Array(buf1.byteLength + buf2.byteLength);
-  buf.set(buf1, 0);
-  buf.set(buf2, buf1.byteLength);
+export function concat(...parts: Uint8Array[]): Uint8Array {
+  let size = 0;
+  for (const p of parts) {
+    size += p.byteLength;
+  }
+  const buf = new Uint8Array(size);
+  let offset = 0;
+  for (const p of parts) {
+    buf.set(p, offset);
+    offset += p.byteLength;
+  }
   return buf;
 }
 
