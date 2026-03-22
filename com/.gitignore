@@ -7,4 +7,5 @@ test/components/esp-osc/
 test/managed_components/
 test/build/
 test/dependencies.lock
+test/.cache
 doc/

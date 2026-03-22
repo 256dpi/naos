@@ -22,7 +22,14 @@
 #include <naos/sys.h>
 #include <naos/msg.h>
 
+#define WIFI true
+#define MQTT true
+#define HTTP true
+#define OSC false
+#define SERIAL true
+#define MDNS true
 #define ETHERNET false
+#define RELAY false
 
 #define NAOS_ECHO_ENDPOINT 0x08
 
@@ -357,22 +364,34 @@ void app_main() {
       .pairing = false,
       .bonding = false,
   });
-  naos_wifi_init();
-  naos_http_init(1);
-  naos_http_serve_str("/", "text/html", "<h1>Hello world!</h1>");
-  naos_http_serve_str("/foo", "text/css", "body { color: red; }");
-  naos_mqtt_init(1);
-  naos_osc_init(1);
-  naos_osc_filter(osc_filter);
-  naos_serial_init_stdio();
-  if (CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED) {
-    naos_serial_init_secio();
+  if (WIFI) {
+    naos_wifi_init();
   }
-  naos_mdns_init((naos_mdns_config_t){
-      .main = true,
-      .http = true,
-      .osc = true,
-  });
+  if (HTTP) {
+    naos_http_init(1);
+    naos_http_serve_str("/", "text/html", "<h1>Hello world!</h1>");
+    naos_http_serve_str("/foo", "text/css", "body { color: red; }");
+  }
+  if (MQTT) {
+    naos_mqtt_init(1);
+  }
+  if (OSC) {
+    naos_osc_init(1);
+    naos_osc_filter(osc_filter);
+  }
+  if (SERIAL) {
+    naos_serial_init_stdio();
+    if (CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED) {
+      naos_serial_init_secio();
+    }
+  }
+  if (MDNS) {
+    naos_mdns_init((naos_mdns_config_t){
+        .main = true,
+        .http = HTTP,
+        .osc = OSC,
+    });
+  }
   if (ETHERNET) {
     naos_eth_olimex();
     // naos_eth_w5500((naos_eth_w5500_t){});
@@ -395,14 +414,16 @@ void app_main() {
   });
 
   // initialize relay
-  naos_relay_host_init((naos_relay_host_t){
-      .scan = host_scan,
-      .send = host_to_device,
-  });
-  naos_relay_device_init((naos_relay_device_t){
-      .mtu = 2048,
-      .send = device_to_host,
-  });
+  if (RELAY) {
+    naos_relay_host_init((naos_relay_host_t){
+        .scan = host_scan,
+        .send = host_to_device,
+    });
+    naos_relay_device_init((naos_relay_device_t){
+        .mtu = 2048,
+        .send = device_to_host,
+    });
+  }
 
   // register parameters
   naos_register(&param_counter);
