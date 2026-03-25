@@ -11,18 +11,18 @@ export IDF_COMPONENT_OVERWRITE_MANAGED_COMPONENTS=1
 default: run
 
 prepare:
-	rm -rf test/build test/esp-idf test/tools
-	git clone --recursive  https://github.com/espressif/esp-idf.git test/esp-idf
-	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
-	cd test/esp-idf; git submodule update --recursive --init
+	rm -rf test/build test/esp-idf test/tools test/components/esp-mqtt test/components/esp-osc
+	curl -L -o test/esp-idf.zip https://github.com/espressif/esp-idf/releases/download/$(ESP_IDF_VERSION)/esp-idf-$(ESP_IDF_VERSION).zip
+	unzip -q test/esp-idf.zip -d test
+	mv test/esp-idf-$(ESP_IDF_VERSION) test/esp-idf
+	rm test/esp-idf.zip
 	git clone --recursive  https://github.com/256dpi/esp-mqtt.git test/components/esp-mqtt
 	cd test/components/esp-mqtt; git fetch; git checkout $(ESP_MQTT_VERSION); git submodule update --recursive --init
 	git clone --recursive  https://github.com/256dpi/esp-osc.git test/components/esp-osc
 	cd test/components/esp-osc; git fetch; git checkout $(ESP_OSC_VERSION); git submodule update --recursive --init
 
 update:
-	cd test/esp-idf; git fetch; git checkout $(ESP_IDF_VERSION)
-	cd test/esp-idf; git submodule update --recursive --init
+	@echo "Run 'make prepare' to update the esp-idf."
 	cd test/components/esp-mqtt; git fetch; git pull; git checkout $(ESP_MQTT_VERSION); git submodule update --recursive --init
 	cd test/components/esp-osc; git fetch; git pull; git checkout $(ESP_OSC_VERSION); git submodule update --recursive --init
 	export IDF_TOOLS_PATH=$(shell pwd)/test/tools; . test/esp-idf/export.sh; cd ./test; idf.py update-dependencies
