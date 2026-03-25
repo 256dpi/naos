@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -40,17 +41,42 @@ func InstallIDF(version string, out io.Writer) (string, error) {
 		}
 	}
 
-	// clone or fetch
-	if !ok {
-		err = utils.Clone("https://github.com/espressif/esp-idf.git", dir, version, nil, out)
+	// remove existing directory if present
+	if ok {
+		utils.Log(out, "Removing existing SDK...")
+		err = os.RemoveAll(dir)
 		if err != nil {
 			return "", err
 		}
-	} else {
-		err = utils.Fetch(dir, version, nil, out)
-		if err != nil {
-			return "", err
-		}
+	}
+
+	// prepare zip path
+	zipPath := filepath.Join(base, key+".zip")
+
+	// download zip archive
+	url := fmt.Sprintf("https://github.com/espressif/esp-idf/releases/download/%s/esp-idf-%s.zip", version, version)
+	utils.Log(out, fmt.Sprintf("Downloading '%s'...", url))
+	err = utils.Download(zipPath, url)
+	if err != nil {
+		return "", err
+	}
+
+	// extract zip archive
+	utils.Log(out, "Extracting archive...")
+	err = utils.Unzip(zipPath, base, out)
+	if err != nil {
+		os.Remove(zipPath)
+		return "", err
+	}
+
+	// remove zip file
+	os.Remove(zipPath)
+
+	// rename extracted directory
+	extracted := filepath.Join(base, fmt.Sprintf("esp-idf-%s", version))
+	err = os.Rename(extracted, dir)
+	if err != nil {
+		return "", err
 	}
 
 	// write marker

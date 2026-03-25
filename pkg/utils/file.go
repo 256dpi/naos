@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -92,6 +93,15 @@ func Download(destination, source string) error {
 	}
 
 	return nil
+}
+
+// Unzip will extract the specified zip file to the provided destination using
+// the system unzip command.
+func Unzip(source, destination string, out io.Writer) error {
+	cmd := exec.Command("unzip", "-q", source, "-d", destination)
+	cmd.Stdout = out
+	cmd.Stderr = out
+	return cmd.Run()
 }
 
 // Sync will synchronize the two files. It will only copy if the destination is
