@@ -2,7 +2,9 @@ package sdk
 
 import (
 	"io"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
@@ -21,10 +23,21 @@ func InstallIDF(version string, out io.Writer) (string, error) {
 	// prepare directory
 	dir := filepath.Join(base, key)
 
+	// prepare marker
+	marker := filepath.Join(dir, ".naos-version")
+
 	// check existence
 	ok, err := utils.Exists(dir)
 	if err != nil {
 		return "", err
+	}
+
+	// check if already installed
+	if ok {
+		data, err := os.ReadFile(marker)
+		if err == nil && strings.TrimSpace(string(data)) == version {
+			return dir, nil
+		}
 	}
 
 	// clone or fetch
@@ -38,6 +51,12 @@ func InstallIDF(version string, out io.Writer) (string, error) {
 		if err != nil {
 			return "", err
 		}
+	}
+
+	// write marker
+	err = os.WriteFile(marker, []byte(version), 0644)
+	if err != nil {
+		return "", err
 	}
 
 	return dir, nil
