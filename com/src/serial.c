@@ -199,21 +199,15 @@ void naos_serial_unlock() {
 }
 
 void naos_serial_init() {
-  // ensure mutex
-  if (naos_serial_mutex == NULL) {
-    naos_serial_mutex = naos_mutex();
-  }
+  // create mutex
+  naos_serial_mutex = naos_mutex();
 
-  // ensure shared output buffer
-  if (naos_serial_output == NULL) {
-    naos_serial_output = naos_serial_alloc();
-  }
+  // allocate shared output buffer
+  naos_serial_output = naos_serial_alloc();
 
-  // ensure write mutex and custom vprintf
-  if (naos_serial_write_mutex == NULL) {
-    naos_serial_write_mutex = naos_mutex();
-    naos_serial_log_vprintf = esp_log_set_vprintf(naos_serial_vprintf);
-  }
+  // create write mutex and set custom vprintf
+  naos_serial_write_mutex = naos_mutex();
+  naos_serial_log_vprintf = esp_log_set_vprintf(naos_serial_vprintf);
 }
 
 static uint16_t naos_serial_mtu() {
@@ -286,9 +280,6 @@ static void naos_serial_stdio_task() {
 }
 
 void naos_serial_init_stdio() {
-  // init serial
-  naos_serial_init();
-
   // prepare VFS context
   naos_serial_stdio_vfs.input = stdin;
   naos_serial_stdio_vfs.output = stdout;
@@ -359,9 +350,6 @@ static void naos_serial_secio_task() {
 }
 
 void naos_serial_init_secio() {
-  // init serial
-  naos_serial_init();
-
   // open secondary stream
   FILE* stream = fopen("/dev/secondary", "r+");
   if (stream == NULL) {
@@ -458,9 +446,6 @@ static void naos_serial_usj_task() {
 }
 
 void naos_serial_init_usj() {
-  // init serial
-  naos_serial_init();
-
   // allocate input buffer
   naos_serial_usj_input = naos_serial_alloc();
 
