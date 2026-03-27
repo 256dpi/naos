@@ -338,52 +338,52 @@ async function throughput() {
 
   await device.activate();
 
-  await device.useSession(async (session) => {
-    // get MTU
-    const mtu = await session.getMTU();
-    console.log("MTU:", mtu);
+  const session = await device.newSession();
 
-    // prepare payload (fill with endpoint overhead subtracted)
-    const payloadSize = mtu - 4; // subtract message framing
-    const payload = new Uint8Array(payloadSize);
-    for (let i = 0; i < payloadSize; i++) {
-      payload[i] = i & 0xff;
+  // get MTU
+  const mtu = await session.getMTU();
+  console.log("MTU:", mtu);
+
+  // prepare payload (fill with endpoint overhead subtracted)
+  const payloadSize = mtu - 4; // subtract message framing
+  const payload = new Uint8Array(payloadSize);
+  for (let i = 0; i < payloadSize; i++) {
+    payload[i] = i & 0xff;
+  }
+
+  // run echo rounds
+  const rounds = 100;
+  let totalBytes = 0;
+  let errors = 0;
+
+  const start = performance.now();
+
+  for (let i = 0; i < rounds; i++) {
+    // send echo request (no ACK expected from handler)
+    await session.send(ECHO_ENDPOINT, payload, 0);
+
+    // receive echo response
+    const [data, ack] = await session.receive(ECHO_ENDPOINT, false, 5000);
+    if (!data || data.length !== payload.length) {
+      errors++;
+      console.error(
+        `Round ${i}: size mismatch (got ${data?.length}, expected ${payload.length})`
+      );
+      continue;
     }
 
-    // run echo rounds
-    const rounds = 100;
-    let totalBytes = 0;
-    let errors = 0;
+    totalBytes += data.length;
+  }
 
-    const start = performance.now();
+  const elapsed = performance.now() - start;
+  const throughputKBs = totalBytes / 1024 / (elapsed / 1000);
 
-    for (let i = 0; i < rounds; i++) {
-      // send echo request (no ACK expected from handler)
-      await session.send(ECHO_ENDPOINT, payload, 0);
+  console.log(`Rounds: ${rounds}, Errors: ${errors}`);
+  console.log(`Total: ${totalBytes} bytes in ${(elapsed / 1000).toFixed(2)}s`);
+  console.log(`Throughput: ${throughputKBs.toFixed(2)} KB/s`);
+  console.log(`Avg round-trip: ${(elapsed / rounds).toFixed(2)} ms`);
 
-      // receive echo response
-      const [data, ack] = await session.receive(ECHO_ENDPOINT, false, 5000);
-      if (!data || data.length !== payload.length) {
-        errors++;
-        console.error(
-          `Round ${i}: size mismatch (got ${data?.length}, expected ${payload.length})`
-        );
-        continue;
-      }
-
-      totalBytes += data.length;
-    }
-
-    const elapsed = performance.now() - start;
-    const throughputKBs = totalBytes / 1024 / (elapsed / 1000);
-
-    console.log(`Rounds: ${rounds}, Errors: ${errors}`);
-    console.log(
-      `Total: ${totalBytes} bytes in ${(elapsed / 1000).toFixed(2)}s`
-    );
-    console.log(`Throughput: ${throughputKBs.toFixed(2)} KB/s`);
-    console.log(`Avg round-trip: ${(elapsed / rounds).toFixed(2)} ms`);
-  });
+  await session.end(1000);
 
   console.log("Done!");
 }
@@ -409,7 +409,10 @@ async function memory() {
   for (;;) {
     const values = await readLongMetrics(session, mem.ref);
     const el = document.getElementById("memory");
-    el.textContent = spinner[tick++ % 4] + " " + values.map((v) => `${(v / 1024).toFixed(0)} KB`).join(" / ");
+    el.textContent =
+      spinner[tick++ % 4] +
+      " " +
+      values.map((v) => `${(v / 1024).toFixed(0)} KB`).join(" / ");
     await new Promise((r) => setTimeout(r, 1000));
   }
 }
