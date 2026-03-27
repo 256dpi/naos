@@ -73,4 +73,15 @@ void naos_serial_init_secio_usj();
  */
 void naos_serial_init_usj();
 
+/**
+ * Lock the serial write mutex. The lock is re-entrant and can be used to
+ * prevent interleaving of custom output with serial messages and log output.
+ */
+void naos_serial_lock();
+
+/**
+ * Unlock the serial write mutex.
+ */
+void naos_serial_unlock();
+
 #endif  // NAOS_SERIAL_H

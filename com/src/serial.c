@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 #include <freertos/task.h>
 #include <esp_err.h>
 #include <esp_heap_caps.h>
@@ -144,21 +145,15 @@ static void naos_serial_decode(naos_serial_decoder_t decoder) {
 static naos_mutex_t naos_serial_mutex = NULL;
 static naos_mutex_t naos_serial_write_mutex = NULL;
 static volatile TaskHandle_t naos_serial_write_owner = NULL;
+static volatile int naos_serial_write_depth = 0;
 static vprintf_like_t naos_serial_log_vprintf = NULL;
 static void* naos_serial_output = NULL;
 
 static int naos_serial_vprintf(const char* fmt, va_list args) {
-  // skip locking on re-entry
-  if (naos_serial_write_owner == xTaskGetCurrentTaskHandle()) {
-    return naos_serial_log_vprintf(fmt, args);
-  }
-
   // call original implementation
-  naos_lock(naos_serial_write_mutex);
-  naos_serial_write_owner = xTaskGetCurrentTaskHandle();
+  naos_serial_lock();
   int ret = naos_serial_log_vprintf(fmt, args);
-  naos_serial_write_owner = NULL;
-  naos_unlock(naos_serial_write_mutex);
+  naos_serial_unlock();
 
   return ret;
 }
@@ -176,7 +171,34 @@ static void* naos_serial_alloc() {
   return buf;
 }
 
-static void naos_serial_init() {
+void naos_serial_lock() {
+  // handle re-entry
+  if (naos_serial_write_owner == xTaskGetCurrentTaskHandle()) {
+    naos_serial_write_depth++;
+    return;
+  }
+
+  // acquire mutex (use xSemaphoreTake directly to avoid recursive
+  // timeout logging in naos_lock if this mutex is held too long)
+  xSemaphoreTake(naos_serial_write_mutex, portMAX_DELAY);
+  naos_serial_write_owner = xTaskGetCurrentTaskHandle();
+  naos_serial_write_depth = 1;
+}
+
+void naos_serial_unlock() {
+  // handle re-entry
+  if (naos_serial_write_depth > 1) {
+    naos_serial_write_depth--;
+    return;
+  }
+
+  // release mutex
+  naos_serial_write_depth = 0;
+  naos_serial_write_owner = NULL;
+  xSemaphoreGive(naos_serial_write_mutex);
+}
+
+void naos_serial_init() {
   // ensure mutex
   if (naos_serial_mutex == NULL) {
     naos_serial_mutex = naos_mutex();
@@ -219,12 +241,10 @@ static bool naos_serial_vfs_send(const uint8_t* data, size_t len, void* ctx) {
   }
 
   // write message
-  naos_lock(naos_serial_write_mutex);
-  naos_serial_write_owner = xTaskGetCurrentTaskHandle();
+  naos_serial_lock();
   size_t ret = fwrite(naos_serial_output, 1, enc_len, vfs->output);
   fflush(vfs->output);
-  naos_serial_write_owner = NULL;
-  naos_unlock(naos_serial_write_mutex);
+  naos_serial_unlock();
   if (ret != enc_len) {
     naos_unlock(naos_serial_mutex);
     return false;
@@ -404,11 +424,9 @@ static bool naos_serial_usj_send(const uint8_t* data, size_t len, void* _) {
   }
 
   // write message
-  naos_lock(naos_serial_write_mutex);
-  naos_serial_write_owner = xTaskGetCurrentTaskHandle();
+  naos_serial_lock();
   int ret = usb_serial_jtag_write_bytes(naos_serial_output, enc_len, portMAX_DELAY);
-  naos_serial_write_owner = NULL;
-  naos_unlock(naos_serial_write_mutex);
+  naos_serial_unlock();
   if (ret < 0 || (size_t)ret != enc_len) {
     naos_unlock(naos_serial_mutex);
     return false;

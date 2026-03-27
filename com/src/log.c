@@ -5,6 +5,7 @@
 #include <esp_err.h>
 
 #include "log.h"
+#include "serial.h"
 
 #define NAOS_LOG_MAX_SINKS 8
 
@@ -60,5 +61,7 @@ void naos_log(const char *fmt, ...) {
   uint32_t millis = esp_log_timestamp();
 
   // print message
+  naos_serial_lock();
   printf("N (%lu) %s: %s\n", millis, app_name, msg);
+  naos_serial_unlock();
 }
