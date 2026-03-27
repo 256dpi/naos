@@ -17,6 +17,12 @@ typedef struct {
    * The exposed filesystem root.
    */
   const char *root;
+
+  /**
+   * The NULL-terminated list of entries to expose at the root level. If set,
+   * listing "/" will return these entries instead of reading the root directory.
+   */
+  const char **root_entries;
 } naos_fs_config_t;
 
 /**

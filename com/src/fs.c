@@ -64,8 +64,8 @@ static naos_fs_config_t naos_fs_config = {0};
 static char naos_fs_path[256] = {0};
 
 static const char *naos_fs_concat(const char *path) {
-  // check root
-  if (naos_fs_config.root == NULL) {
+  // return path directly if root is "/"
+  if (strcmp(naos_fs_config.root, "/") == 0) {
     return path;
   }
 
@@ -164,6 +164,33 @@ static naos_msg_reply_t naos_fs_handle_stat(naos_msg_t msg) {
   return NAOS_MSG_OK;
 }
 
+static void naos_fs_send_info(uint16_t session, const char *name, bool is_dir, uint32_t size) {
+  // reply structure:
+  // TYPE (1) | IS_DIR (1) | SIZE (4) | NAME (*)
+
+  // determine length
+  size_t name_len = strlen(name);
+  size_t length = 6 + name_len;
+
+  // prepare data
+  uint8_t *data = calloc(length, 1);
+  data[0] = NAOS_FS_REPLY_INFO;
+  data[1] = is_dir;
+  memcpy(&data[2], &size, sizeof(size));
+  memcpy(&data[6], name, name_len);
+
+  // send reply
+  naos_msg_send((naos_msg_t){
+      .session = session,
+      .endpoint = NAOS_FS_ENDPOINT,
+      .data = data,
+      .len = length,
+  });
+
+  // free data
+  free(data);
+}
+
 static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {
   // command structure:
   // PATH (*)
@@ -171,6 +198,31 @@ static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {
   // check path
   if (msg.len == 0 || msg.data[0] != '/') {
     return NAOS_MSG_INVALID;
+  }
+
+  // check if listing root with configured entries
+  if (strcmp((const char *)msg.data, "/") == 0 && naos_fs_config.root_entries != NULL) {
+    // prepare path
+    char path[PATH_MAX];
+
+    // iterate over configured entries
+    for (const char **e = naos_fs_config.root_entries; *e != NULL; e++) {
+      // build full path
+      snprintf(path, sizeof(path), "/%s", *e);
+      const char *full = naos_fs_concat(path);
+
+      // stat entry
+      struct stat info;
+      int ret = stat(full, &info);
+      if (ret != 0) {
+        return naos_fs_send_error(msg.session, errno);
+      }
+
+      // send info
+      naos_fs_send_info(msg.session, *e, S_ISDIR(info.st_mode), info.st_size);
+    }
+
+    return NAOS_MSG_ACK;
   }
 
   // get root
@@ -204,33 +256,8 @@ static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {
       return naos_fs_send_error(msg.session, errno);
     }
 
-    // get info
-    bool is_dir = S_ISDIR(info.st_mode);
-    uint32_t size = info.st_size;
-
-    // reply structure:
-    // TYPE (1) | IS_DIR (1) | SIZE (4) | NAME (*)
-
-    // determine length
-    size_t length = 6 + strlen(entry->d_name);
-
-    // prepare data
-    uint8_t *data = calloc(length, 1);
-    data[0] = NAOS_FS_REPLY_INFO;
-    data[1] = is_dir;
-    memcpy(&data[2], &size, sizeof(size));
-    memcpy(&data[6], entry->d_name, strlen(entry->d_name));
-
-    // send reply
-    naos_msg_send((naos_msg_t){
-        .session = msg.session,
-        .endpoint = NAOS_FS_ENDPOINT,
-        .data = data,
-        .len = length,
-    });
-
-    // free data
-    free(data);
+    // send info
+    naos_fs_send_info(msg.session, entry->d_name, S_ISDIR(info.st_mode), info.st_size);
   }
 
   // close directory
@@ -762,8 +789,13 @@ void naos_fs_mount_fat(const char *path, const char *label, int max_files) {
 }
 
 void naos_fs_install(naos_fs_config_t cfg) {
+  // default root to "/"
+  if (cfg.root == NULL) {
+    cfg.root = "/";
+  }
+
   // check root (must begin with "/" and not end with "/")
-  if (cfg.root != NULL && (cfg.root[0] != '/' || (strlen(cfg.root) > 1 && cfg.root[strlen(cfg.root) - 1] == '/'))) {
+  if (cfg.root[0] != '/' || (strlen(cfg.root) > 1 && cfg.root[strlen(cfg.root) - 1] == '/')) {
     ESP_ERROR_CHECK(ESP_FAIL);
     return;
   }
