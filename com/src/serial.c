@@ -117,7 +117,7 @@ static void naos_serial_decode(naos_serial_decoder_t decoder) {
     }
 
     // check magic
-    if (len < offset + 5 || memcmp(decoder.buffer + offset, "NAOS!", 5) != 0) {
+    if (line_len < offset + 5 || memcmp(decoder.buffer + offset, "NAOS!", 5) != 0) {
       continue;
     }
 
@@ -192,6 +192,7 @@ static bool naos_serial_vfs_send(const uint8_t* data, size_t len, void* ctx) {
 
   // write message
   size_t ret = fwrite(naos_serial_output, 1, enc_len, vfs->output);
+  fflush(vfs->output);
   if (ret != enc_len) {
     naos_unlock(naos_serial_mutex);
     return false;
@@ -209,6 +210,9 @@ static size_t naos_serial_vfs_read(uint8_t* data, size_t len, void* ctx) {
 
   // read input
   size_t ret = fread(data, 1, len, vfs->input);
+  if (ret == 0 && ferror(vfs->input)) {
+    clearerr(vfs->input);
+  }
 
   return ret;
 }
@@ -330,6 +334,10 @@ void naos_serial_init_secio() {
   naos_run("naos-srl-secio", 4096, 1, naos_serial_secio_task);
 }
 
+/* USB Interface */
+
+#if CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED
+
 void naos_serial_init_secio_usj() {
   // configure parameters
   usb_serial_jtag_vfs_set_rx_line_endings(ESP_LINE_ENDINGS_CRLF);
@@ -337,6 +345,8 @@ void naos_serial_init_secio_usj() {
 
   // configure driver
   usb_serial_jtag_driver_config_t config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
+  config.tx_buffer_size = NAOS_SERIAL_BS;
+  config.rx_buffer_size = NAOS_SERIAL_BS;
   ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&config));
 
   // upgrade VFS driver
@@ -346,10 +356,6 @@ void naos_serial_init_secio_usj() {
   // initialize secondary IO
   naos_serial_init_secio();
 }
-
-/* USB Interface */
-
-#if CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED
 
 static uint8_t naos_serial_usj_channel = 0;
 static void* naos_serial_usj_input = NULL;
@@ -367,7 +373,7 @@ static bool naos_serial_usj_send(const uint8_t* data, size_t len, void* _) {
 
   // write message
   int ret = usb_serial_jtag_write_bytes(naos_serial_output, enc_len, portMAX_DELAY);
-  if (ret != enc_len) {
+  if (ret < 0 || (size_t)ret != enc_len) {
     naos_unlock(naos_serial_mutex);
     return false;
   }
@@ -381,6 +387,9 @@ static bool naos_serial_usj_send(const uint8_t* data, size_t len, void* _) {
 static size_t naos_serial_usj_read(uint8_t* data, size_t len, void* _) {
   // read interface
   int ret = usb_serial_jtag_read_bytes(data, len, portMAX_DELAY);
+  if (ret <= 0) {
+    return 0;
+  }
 
   return (size_t)ret;
 }
@@ -403,6 +412,8 @@ void naos_serial_init_usj() {
 
   // configure USB serial/JTAG driver
   usb_serial_jtag_driver_config_t config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
+  config.tx_buffer_size = NAOS_SERIAL_BS;
+  config.rx_buffer_size = NAOS_SERIAL_BS;
   ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&config));
 
   // register USB channel

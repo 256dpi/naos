@@ -50,6 +50,9 @@ void naos_serial_init_secio();
  * Same as `naos_serial_init_secio`, but configures the USB/Serial/JTAG driver
  * to enable blocking reads.
  *
+ * This requires setting CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG=y to
+ * enable output to the USB/Serial/JTAG peripheral.
+ *
  * Note: The function will not link if USB/JTAG support is unavailable.
  */
 void naos_serial_init_secio_usj();
@@ -58,6 +61,9 @@ void naos_serial_init_secio_usj();
  * Initialize blocking USB/Serial/JTAG based serial messaging.
  *
  * This will use the USB/Serial/JTAG peripheral directly for communication.
+ *
+ * Setting CONFIG_ESP_CONSOLE_SECONDARY_NONE=y is recommended to disable console
+ * output to the USB/Serial/JTAG peripheral.
  *
  * Note: The function will not link if USB/JTAG support is unavailable.
  */
