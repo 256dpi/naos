@@ -3,8 +3,11 @@
 #include <naos/sys.h>
 #include <string.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <esp_err.h>
 #include <esp_heap_caps.h>
+#include <esp_log.h>
 #include <mbedtls/base64.h>
 #include <driver/uart.h>
 #include <driver/uart_vfs.h>
@@ -139,7 +142,26 @@ static void naos_serial_decode(naos_serial_decoder_t decoder) {
 /* Common */
 
 static naos_mutex_t naos_serial_mutex = NULL;
+static naos_mutex_t naos_serial_write_mutex = NULL;
+static volatile TaskHandle_t naos_serial_write_owner = NULL;
+static vprintf_like_t naos_serial_log_vprintf = NULL;
 static void* naos_serial_output = NULL;
+
+static int naos_serial_vprintf(const char* fmt, va_list args) {
+  // skip locking on re-entry
+  if (naos_serial_write_owner == xTaskGetCurrentTaskHandle()) {
+    return naos_serial_log_vprintf(fmt, args);
+  }
+
+  // call original implementation
+  naos_lock(naos_serial_write_mutex);
+  naos_serial_write_owner = xTaskGetCurrentTaskHandle();
+  int ret = naos_serial_log_vprintf(fmt, args);
+  naos_serial_write_owner = NULL;
+  naos_unlock(naos_serial_write_mutex);
+
+  return ret;
+}
 
 static void* naos_serial_alloc() {
 #ifdef CONFIG_SPIRAM
@@ -163,6 +185,12 @@ static void naos_serial_init() {
   // ensure shared output buffer
   if (naos_serial_output == NULL) {
     naos_serial_output = naos_serial_alloc();
+  }
+
+  // ensure write mutex and custom vprintf
+  if (naos_serial_write_mutex == NULL) {
+    naos_serial_write_mutex = naos_mutex();
+    naos_serial_log_vprintf = esp_log_set_vprintf(naos_serial_vprintf);
   }
 }
 
@@ -191,8 +219,12 @@ static bool naos_serial_vfs_send(const uint8_t* data, size_t len, void* ctx) {
   }
 
   // write message
+  naos_lock(naos_serial_write_mutex);
+  naos_serial_write_owner = xTaskGetCurrentTaskHandle();
   size_t ret = fwrite(naos_serial_output, 1, enc_len, vfs->output);
   fflush(vfs->output);
+  naos_serial_write_owner = NULL;
+  naos_unlock(naos_serial_write_mutex);
   if (ret != enc_len) {
     naos_unlock(naos_serial_mutex);
     return false;
@@ -372,7 +404,11 @@ static bool naos_serial_usj_send(const uint8_t* data, size_t len, void* _) {
   }
 
   // write message
+  naos_lock(naos_serial_write_mutex);
+  naos_serial_write_owner = xTaskGetCurrentTaskHandle();
   int ret = usb_serial_jtag_write_bytes(naos_serial_output, enc_len, portMAX_DELAY);
+  naos_serial_write_owner = NULL;
+  naos_unlock(naos_serial_write_mutex);
   if (ret < 0 || (size_t)ret != enc_len) {
     naos_unlock(naos_serial_mutex);
     return false;

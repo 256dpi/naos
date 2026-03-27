@@ -16,6 +16,10 @@
  * character.
  *
  * Hint: Create a session with "NAOS!AQAAAKq7qrs=" to test a serial connection.
+ *
+ * Note: The implementation will use a mutex to prevent log output interleaving
+ * with messages. However, direct "printf" and similar are not intercepted and
+ * may cause instability.
  */
 
 /**
