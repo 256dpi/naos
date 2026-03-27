@@ -30,6 +30,7 @@
 #define MDNS true
 #define ETHERNET false
 #define RELAY false
+#define CONNECT false
 
 #define NAOS_ECHO_ENDPOINT 0x08
 
@@ -434,7 +435,9 @@ void app_main() {
   naos_metrics_add(&gauge_metric);
 
   // initialize connect
-  naos_connect_init();
+  if (CONNECT) {
+    naos_connect_init();
+  }
 
   // initialize auth
   naos_auth_install();
