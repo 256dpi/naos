@@ -758,7 +758,7 @@ static naos_msg_reply_t naos_fs_handle(naos_msg_t msg) {
   return reply;
 }
 
-static void naos_fs_cleanup() {
+static void naos_fs_cleanup(uint16_t session) {
   // acquire mutex
   naos_lock(naos_fs_mutex);
 
@@ -767,9 +767,10 @@ static void naos_fs_cleanup() {
 
   // close unused open files
   for (int i = 0; i < NAOS_FS_MAX_FILES; i++) {
-    if (naos_fs_files[i].active && now - naos_fs_files[i].ts > 5000) {
-      close(naos_fs_files[i].fd);
-      naos_fs_files[i] = (naos_fs_file_t){0};
+    naos_fs_file_t *f = &naos_fs_files[i];
+    if (f->active && (f->sid == session || now - f->ts > 5000)) {
+      close(f->fd);
+      *f = (naos_fs_file_t){0};
     }
   }
 
@@ -811,8 +812,6 @@ void naos_fs_install(naos_fs_config_t cfg) {
       .ref = NAOS_FS_ENDPOINT,
       .name = "fs",
       .handle = naos_fs_handle,
+      .cleanup = naos_fs_cleanup,
   });
-
-  // run cleanup periodically
-  naos_repeat("naos-fs", 1000, naos_fs_cleanup);
 }
