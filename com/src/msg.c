@@ -55,11 +55,55 @@ static naos_msg_session_t* naos_msg_find(uint16_t id) {
   return NULL;
 }
 
+static void naos_msg_cleanup() {
+  // acquire mutex
+  naos_lock(naos_msg_mutex);
+
+  // get current time
+  int64_t now = naos_millis();
+
+  // iterate over sessions
+  for (size_t i = 0; i < NAOS_MSG_MAX_SESSIONS; i++) {
+    // get session
+    naos_msg_session_t* session = &naos_msg_session[i];
+
+    // skip inactive or recent un-broken sessions
+    if (!session->active || (now - session->last_msg < 30000 && !session->broken)) {
+      continue;
+    }
+
+    // log error
+    if (session->broken) {
+      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_cleanup: session %d broken", session->id);
+    } else {
+      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_cleanup: session %d timed out", session->id);
+    }
+
+    // clean up endpoints
+    for (size_t j = 0; j < naos_msg_endpoint_count; j++) {
+      if (naos_msg_endpoints[j].cleanup != NULL) {
+        naos_msg_endpoints[j].cleanup(session->id);
+      }
+    }
+
+    // clear session
+    *session = (naos_msg_session_t){0};
+  }
+
+  // release mutex
+  naos_unlock(naos_msg_mutex);
+}
+
 static void naos_msg_worker() {
   for (;;) {
-    // await message
+    // run cleanup
+    naos_msg_cleanup();
+
+    // await message (with 1s timeout for periodic cleanup)
     naos_msg_t msg;
-    naos_pop(naos_msg_queue, &msg, -1);
+    if (!naos_pop(naos_msg_queue, &msg, 1000)) {
+      continue;
+    }
 
     // acquire mutex
     naos_lock(naos_msg_mutex);
@@ -101,45 +145,6 @@ static void naos_msg_worker() {
     // free data
     free(msg.data);
   }
-}
-
-static void naos_msg_cleaner() {
-  // acquire mutex
-  naos_lock(naos_msg_mutex);
-
-  // get current time
-  int64_t now = naos_millis();
-
-  // iterate over sessions
-  for (size_t i = 0; i < NAOS_MSG_MAX_SESSIONS; i++) {
-    // get session
-    naos_msg_session_t* session = &naos_msg_session[i];
-
-    // skip inactive or recent un-broken sessions
-    if (!session->active || (now - session->last_msg < 30000 && !session->broken)) {
-      continue;
-    }
-
-    // log error
-    if (session->broken) {
-      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_cleaner: session %d broken", session->id);
-    } else {
-      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_cleaner: session %d timed out", session->id);
-    }
-
-    // clean up endpoints
-    for (size_t j = 0; j < naos_msg_endpoint_count; j++) {
-      if (naos_msg_endpoints[j].cleanup != NULL) {
-        naos_msg_endpoints[j].cleanup(session->id);
-      }
-    }
-
-    // clear session
-    *session = (naos_msg_session_t){0};
-  }
-
-  // release mutex
-  naos_unlock(naos_msg_mutex);
 }
 
 static naos_msg_reply_t naos_msg_process_system(naos_msg_t msg) {
@@ -247,10 +252,7 @@ void naos_msg_init() {
   naos_msg_queue = naos_queue(NAOS_MSG_MAX_SESSIONS, sizeof(naos_msg_t));
 
   // run worker
-  naos_run("naos-msg-w", 8192, 1, naos_msg_worker);
-
-  // run cleaner
-  naos_repeat("naos-msg-c", 1000, naos_msg_cleaner);
+  naos_run("naos-msg", 8192, 1, naos_msg_worker);
 
   // install system endpoint
   naos_msg_install((naos_msg_endpoint_t){
