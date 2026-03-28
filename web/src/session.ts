@@ -61,7 +61,7 @@ export class Session {
 
     // verify reply
     if (msg.endpoint !== 0xfe || msg.size() !== 1) {
-      throw new Error("invalid message");
+      throw new Error("invalid reply");
     } else if (msg.data[0] !== 1) {
       throw new Error("session error: " + msg.data[0]);
     }
@@ -74,9 +74,9 @@ export class Session {
     // read reply
     const msg = await this.read(timeout);
 
-    // verify message
+    // verify reply
     if (msg.endpoint !== 0xfe || msg.size() !== 1) {
-      throw new Error("invalid message");
+      throw new Error("invalid reply");
     }
 
     return msg.data[0] === 1;
@@ -131,7 +131,7 @@ export class Session {
 
     // check reply
     if (msg.size() !== 1 || msg.endpoint !== 0xfe) {
-      throw new Error("invalid message");
+      throw new Error("invalid reply");
     } else if (msg.data[0] !== 1) {
       throw parseError(msg.data[0]);
     }
@@ -147,7 +147,7 @@ export class Session {
 
     // verify reply
     if (reply.length !== 1) {
-      throw new Error("invalid message");
+      throw new Error("invalid reply");
     }
 
     // unpack status
@@ -166,7 +166,7 @@ export class Session {
 
     // verify reply
     if (reply.length !== 1) {
-      throw new Error("invalid message");
+      throw new Error("invalid reply");
     }
 
     return reply[0] === 1;
@@ -187,7 +187,7 @@ export class Session {
 
     // verify reply
     if (reply.length !== 2) {
-      throw new Error("invalid message");
+      throw new Error("invalid reply");
     }
 
     // cache value
@@ -205,7 +205,7 @@ export class Session {
 
     // verify reply
     if (msg.endpoint !== 0xff || msg.size() > 0) {
-      throw new Error("invalid message");
+      throw new Error("invalid reply");
     }
 
     // unsubscribe from channel
@@ -229,13 +229,15 @@ export class Session {
 
 function parseError(num: number): Error {
   switch (num) {
-    case 1:
-      return new Error("invalid session");
     case 2:
-      return new Error("invalid endpoint");
+      return new Error("invalid");
     case 3:
-      return new Error("invalid data");
+      return new Error("unknown");
+    case 4:
+      return new Error("error");
+    case 5:
+      return new Error("locked");
     default:
-      return new Error("expected ack, got: " + num);
+      return new Error("unexpected reply: " + num);
   }
 }

@@ -18,7 +18,7 @@ export async function update(
 
   // verify reply
   if (reply.length !== 1 || reply[0] !== 0) {
-    throw new Error("invalid message");
+    throw new Error("invalid reply");
   }
 
   // get width
@@ -66,6 +66,6 @@ export async function update(
 
   // verify reply
   if (reply.length !== 1 || reply[0] !== 1) {
-    throw new Error("invalid message");
+    throw new Error("invalid reply");
   }
 }

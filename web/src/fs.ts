@@ -22,7 +22,7 @@ export async function statPath(
 
   // verify "info" reply
   if (reply.length !== 6 || reply[0] !== 1) {
-    throw new Error("invalid message");
+    throw new Error("invalid reply");
   }
 
   // unpack "info" reply
@@ -55,7 +55,7 @@ export async function listDir(
 
     // verify "info" reply
     if (reply.byteLength < 7 || reply[0] !== 1) {
-      throw new Error("invalid message");
+      throw new Error("invalid reply");
     }
 
     // unpack "info" reply
@@ -141,7 +141,7 @@ export async function readFileRange(
 
     // verify "chunk" reply
     if (reply.byteLength <= 5 || reply[0] !== 2) {
-      throw new Error("invalid message");
+      throw new Error("invalid reply");
     }
 
     // get offset
@@ -149,7 +149,7 @@ export async function readFileRange(
 
     // verify offset
     if (replyOffset !== offset + count) {
-      throw new Error("invalid message");
+      throw new Error("invalid offset");
     }
 
     // append data
@@ -254,7 +254,7 @@ export async function sha256File(session: Session, file: string) {
 
   // verify "chunk" reply
   if (reply.byteLength !== 33 || reply[0] !== 3) {
-    throw new Error("invalid message");
+    throw new Error("invalid reply");
   }
 
   // return hash
