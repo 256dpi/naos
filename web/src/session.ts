@@ -26,8 +26,13 @@ export class Session {
 
     // await reply
     let sid;
+    const deadline = Date.now() + 10 * 1000;
     for (;;) {
-      const reply = await read(queue, 10 * 1000);
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) {
+        throw new Error("timeout");
+      }
+      const reply = await read(queue, remaining);
       if (reply.endpoint === 0 && toString(reply.data) === handle) {
         sid = reply.session;
         break;
@@ -208,8 +213,13 @@ export class Session {
   }
 
   async read(timeout: number): Promise<Message> {
+    const deadline = Date.now() + timeout;
     for (;;) {
-      const msg = await read(this.qu, timeout);
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) {
+        throw new Error("timeout");
+      }
+      const msg = await read(this.qu, remaining);
       if (msg.session === this.id) {
         return msg;
       }
