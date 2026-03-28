@@ -17,7 +17,7 @@ export async function scanRelay(
   const [reply] = await s.receive(relayEndpoint, false, timeout);
 
   // verify reply
-  if (reply.length != 8) {
+  if (reply.length !== 8) {
     throw new Error("Invalid reply");
   }
 

@@ -97,7 +97,7 @@ export class NodeSerialDevice implements Device {
       write: async (data: Uint8Array) => {
         const frame = new Uint8Array([
           ...toBuffer("NAOS!"),
-          ...toBase64(data.buffer),
+          ...toBase64(data),
           ...toBuffer("\n"),
         ]);
         await new Promise<void>((resolve, reject) => {

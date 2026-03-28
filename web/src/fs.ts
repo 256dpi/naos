@@ -64,7 +64,7 @@ export async function listDir(
     // add info
     infos.push({
       name: args[2],
-      isDir: args[0] == 1,
+      isDir: args[0] === 1,
       size: args[1],
     });
   }
@@ -150,7 +150,7 @@ export async function readFileRange(
     }
 
     // append data
-    data.set(new Uint8Array(reply.buffer.slice(5)), count);
+    data.set(reply.slice(5), count);
 
     // increment
     count += reply.byteLength - 5;
@@ -255,7 +255,7 @@ export async function sha256File(session: Session, file: string) {
   }
 
   // return hash
-  return new Uint8Array(reply.buffer.slice(1));
+  return reply.slice(1);
 }
 
 export async function makePath(session: Session, path: string) {
@@ -270,7 +270,7 @@ async function receive(
   session: Session,
   expectAck: boolean,
   timeout = 5000
-): Promise<Uint8Array> {
+): Promise<Uint8Array | null> {
   // receive reply
   let [data] = await session.receive(fsEndpoint, expectAck, timeout);
   if (!data) {

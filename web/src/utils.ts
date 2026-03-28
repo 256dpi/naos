@@ -97,6 +97,8 @@ export function pack(fmt: string, ...args: any[]): Uint8Array {
   for (const [index, arg] of args.entries()) {
     switch (fmt.charAt(index)) {
       case "s":
+        size += toBuffer(arg).byteLength;
+        break;
       case "b":
         size += arg.length;
         break;
@@ -125,10 +127,12 @@ export function pack(fmt: string, ...args: any[]): Uint8Array {
   let offset = 0;
   for (const [index, arg] of args.entries()) {
     switch (fmt.charAt(index)) {
-      case "s":
-        buffer.set(toBuffer(arg), offset);
-        offset += arg.length;
+      case "s": {
+        const encoded = toBuffer(arg);
+        buffer.set(encoded, offset);
+        offset += encoded.byteLength;
         break;
+      }
       case "b":
         buffer.set(arg, offset);
         offset += arg.length;
@@ -172,7 +176,7 @@ export function unpack(fmt: string, buffer: Uint8Array): any[] {
         let end = buffer.indexOf(0, pos);
         if (end === -1) end = buffer.length;
         result.push(toString(buffer.slice(pos, end)));
-        pos = end;
+        pos = end + 1;
         break;
       }
       case "b": {

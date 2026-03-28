@@ -26,8 +26,8 @@ export class AsyncQueue<Type> {
       // handle timeout
       if (timeout > 0) {
         setTimeout((): void => {
-          if (this.waiters.includes(resolve)) {
-            const index: number = this.waiters.indexOf(resolve);
+          const index = this.waiters.indexOf(resolve);
+          if (index >= 0) {
             this.waiters.splice(index, 1);
             resolve(null);
           }

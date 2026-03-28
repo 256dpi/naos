@@ -89,7 +89,7 @@ export async function authDescribe(
   // verify signature if a key is provided
   if (key) {
     const expectedSignature = await hmac256(key, reply.slice(0, 27));
-    if (compare(expectedSignature, signature)) {
+    if (!compare(expectedSignature.slice(0, 5), signature)) {
       throw new Error("invalid signature");
     }
   }

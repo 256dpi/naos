@@ -45,7 +45,7 @@ export class HTTPDevice implements Device {
     this.ch = {
       name: () => "http",
       valid() {
-        return true;
+        return socket.readyState === WebSocket.OPEN;
       },
       width() {
         return 10;

@@ -257,17 +257,18 @@ async function auth() {
     let provisioned = await authStatus(session);
     if (provisioned) {
       console.log("Device already provisioned");
-      return;
     }
 
     const key = toBuffer("0123456789abcdef0123456789abcdef");
-    await authProvision(session, key, {
-      uuid: toBuffer("ABCDEF0123456789"),
-      product: 1,
-      revision: 2,
-      batch: 3,
-      date: Date.now() / 1000,
-    });
+    if (!provisioned) {
+      await authProvision(session, key, {
+        uuid: toBuffer("ABCDEF0123456789"),
+        product: 1,
+        revision: 2,
+        batch: 3,
+        date: Date.now() / 1000,
+      });
+    }
 
     provisioned = await authStatus(session);
     if (!provisioned) {

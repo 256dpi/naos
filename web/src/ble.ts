@@ -73,7 +73,8 @@ export class BLEDevice implements Device {
 
     // prepare handler
     const handler = () => {
-      const data = new Uint8Array(this.char.value.buffer);
+      const value = this.char.value;
+      const data = new Uint8Array(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength));
       subscribers.dispatch(data);
     };
 

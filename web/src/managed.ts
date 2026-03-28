@@ -35,11 +35,11 @@ export class ManagedDevice {
     this.channel = await this.device.open();
   }
 
-  active(): Boolean {
+  active(): boolean {
     return this.channel != null;
   }
 
-  async locked(): Promise<Boolean> {
+  async locked(): Promise<boolean> {
     // check state
     if (!this.active()) {
       throw new Error("device not active");
@@ -51,7 +51,7 @@ export class ManagedDevice {
       status = await session.status(1000);
     });
 
-    return (status & Status.locked) != 0;
+    return (status & Status.locked) !== 0;
   }
 
   async unlock(password: string): Promise<boolean> {
@@ -112,7 +112,7 @@ export class ManagedDevice {
       } catch (e) {
         // close session
         try {
-          this.session.end(1000).then();
+          this.session.end(1000).catch(() => {});
           this.session = null;
         } catch (e) {
           // ignore
@@ -139,10 +139,12 @@ export class ManagedDevice {
     this.session = null;
 
     // end session
-    try {
-      await session.end(1000);
-    } catch (e) {
-      // ignore
+    if (session) {
+      try {
+        await session.end(1000);
+      } catch (e) {
+        // ignore
+      }
     }
 
     // close channel

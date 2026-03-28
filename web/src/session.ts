@@ -75,7 +75,7 @@ export class Session {
     const msg = await this.read(timeout);
 
     // verify message
-    if (msg.endpoint !== 0xfe || msg.data.byteLength !== 1) {
+    if (msg.endpoint !== 0xfe || msg.size() !== 1) {
       throw new Error("invalid message");
     }
 
@@ -130,7 +130,7 @@ export class Session {
     const msg = await this.read(ackTimeout);
 
     // check reply
-    if (msg.data.byteLength !== 1 || msg.endpoint !== 0xfe) {
+    if (msg.size() !== 1 || msg.endpoint !== 0xfe) {
       throw new Error("invalid message");
     } else if (msg.data[0] !== 1) {
       throw parseError(msg.data[0]);

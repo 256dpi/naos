@@ -17,7 +17,7 @@ export async function update(
   let [reply] = await session.receive(updateEndpoint, false, timeout);
 
   // verify reply
-  if (reply.length !== 1 && reply[0] !== 0) {
+  if (reply.length !== 1 || reply[0] !== 0) {
     throw new Error("invalid message");
   }
 
@@ -65,7 +65,7 @@ export async function update(
   [reply] = await session.receive(updateEndpoint, false, timeout);
 
   // verify reply
-  if (reply.length !== 1 && reply[0] !== 1) {
+  if (reply.length !== 1 || reply[0] !== 1) {
     throw new Error("invalid message");
   }
 }
