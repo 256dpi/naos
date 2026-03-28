@@ -4,6 +4,7 @@ import {
   listDir,
   listParams,
   makeHTTPDevice,
+  makePath,
   ManagedDevice,
   random,
   readFile,
@@ -171,20 +172,55 @@ async function fs() {
   await device.activate();
 
   await device.useSession(async (session) => {
-    console.log(await statPath(session, "/lol.txt"));
-    console.log(await listDir(session, "/"));
+    // create directory
+    await makePath(session, "/TEST");
+    const dirStat = await statPath(session, "/TEST");
+    console.assert(dirStat.isDir, "expected directory");
+    console.log("makePath: OK");
 
-    console.log(toString(await readFile(session, "/lol.txt")));
+    // write file
+    const content = random(64);
+    await writeFile(session, "/TEST/TEST.TXT", toBuffer(content));
+    console.log("writeFile: OK");
 
-    await writeFile(session, "/test.txt", toBuffer(random(16)));
-    console.log(toString(await readFile(session, "/test.txt")));
-    await renamePath(session, "/test.txt", "/test2.txt");
-    console.log(await sha256File(session, "/test2.txt"));
-    await removePath(session, "/test2.txt");
+    // stat file
+    const fileStat = await statPath(session, "/TEST/TEST.TXT");
+    console.assert(!fileStat.isDir, "expected file");
+    console.assert(
+      fileStat.size === toBuffer(content).byteLength,
+      "size mismatch"
+    );
+    console.log("statPath: OK");
 
-    // await write(session, "/data.bin", new Uint8Array(4096));
-    // console.log(await stat(session, "/data.bin"));
-    // console.log(await read(session, "/data.bin"));
+    // read file and verify content
+    const readBack = toString(await readFile(session, "/TEST/TEST.TXT"));
+    console.assert(readBack === content, "content mismatch");
+    console.log("readFile: OK");
+
+    // list directory
+    const entries = await listDir(session, "/TEST");
+    console.assert(entries.length === 1, "expected 1 entry");
+    console.assert(entries[0].name === "TEST.TXT", "unexpected entry name");
+    console.log("listDir: OK");
+
+    // hash file
+    const hash = await sha256File(session, "/TEST/TEST.TXT");
+    console.assert(hash.byteLength === 32, "expected 32 byte hash");
+    console.log("sha256File: OK");
+
+    // rename file
+    await renamePath(session, "/TEST/TEST.TXT", "/TEST/RENAMED.TXT");
+    const renamedStat = await statPath(session, "/TEST/RENAMED.TXT");
+    console.assert(
+      renamedStat.size === fileStat.size,
+      "size changed after rename"
+    );
+    console.log("renamePath: OK");
+
+    // remove file and directory
+    await removePath(session, "/TEST/RENAMED.TXT");
+    await removePath(session, "/TEST");
+    console.log("removePath: OK");
   });
 
   console.log("Done!");
