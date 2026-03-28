@@ -95,25 +95,30 @@ export class RelayDevice implements Device {
     // create list
     const subscribers = new QueueList();
 
+    // prepare flag
+    let closed = false;
+
     // run receiver
     (async () => {
-      while (true) {
+      while (!closed) {
         try {
           // TODO: Use same trick as in swift to directly read from the session.
           const data = await receiveRelay(session);
           subscribers.dispatch(data);
         } catch (e) {
-          console.error(e);
+          if (!closed) {
+            console.error(e);
+          }
           break;
         }
       }
-    })().then();
+    })().catch(() => {});
 
     // create channel
     this.ch = {
       name: () => "relay",
       valid() {
-        return true;
+        return !closed;
       },
       width() {
         return 10;
@@ -128,8 +133,13 @@ export class RelayDevice implements Device {
         await sendRelay(session, this.device, data);
       },
       close: async () => {
-        await session.end(0);
+        closed = true;
         this.ch = null;
+        try {
+          await session.end();
+        } catch (e) {
+          // ignore
+        }
       },
     };
 

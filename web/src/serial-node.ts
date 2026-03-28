@@ -1,7 +1,7 @@
 import { SerialPort } from "serialport";
 import ReadlineParser from "@serialport/parser-readline";
 import { Channel, Device, Queue, QueueList } from "./device";
-import { toBase64, toBuffer } from "./utils";
+import { concat, toBase64, toBuffer } from "./utils";
 
 const knownPrefixes = ["tty.SLAB", "tty.usbserial", "tty.usbmodem", "ttyUSB"];
 
@@ -95,11 +95,11 @@ export class NodeSerialDevice implements Device {
         subscribers.drop(queue);
       },
       write: async (data: Uint8Array) => {
-        const frame = new Uint8Array([
-          ...toBuffer("NAOS!"),
-          ...toBase64(data),
-          ...toBuffer("\n"),
-        ]);
+        const frame = concat(
+          toBuffer("\nNAOS!"),
+          toBase64(data),
+          toBuffer("\n")
+        );
         await new Promise<void>((resolve, reject) => {
           port.write(frame, (err) => {
             if (err) {

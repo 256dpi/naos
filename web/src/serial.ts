@@ -26,10 +26,10 @@ export class SerialDevice implements Device {
     this.port = port;
     this.baudRate = baudRate;
 
-    // close open chanel if disconnected
+    // close open channel if disconnected
     this.port.addEventListener("disconnect", () => {
       if (this.ch) {
-        this.ch.close();
+        this.ch.close().catch(() => {});
         this.ch = null;
       }
     });
@@ -104,7 +104,7 @@ export class SerialDevice implements Device {
     };
 
     // start reading
-    read().then();
+    read().catch(() => {});
 
     // create writer
     const writer = this.port.writable.getWriter();

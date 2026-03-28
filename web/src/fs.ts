@@ -29,7 +29,7 @@ export async function statPath(
   const args = unpack("oi", reply.slice(1));
 
   return {
-    name: "",
+    name: path.split("/").pop() || "",
     isDir: args[0] === 1,
     size: args[1],
   };
@@ -77,6 +77,9 @@ export async function readFile(
 ): Promise<Uint8Array> {
   // stat file
   const info = await statPath(session, file);
+  if (!info) {
+    throw new Error("file not found");
+  }
 
   // prepare data
   const data = new Uint8Array(info.size);

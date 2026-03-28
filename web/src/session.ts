@@ -203,8 +203,8 @@ export class Session {
     // read reply
     const msg = await this.read(timeout);
 
-    // verify reply if available
-    if (msg && (msg.endpoint !== 0xff || msg.size() > 0)) {
+    // verify reply
+    if (msg.endpoint !== 0xff || msg.size() > 0) {
       throw new Error("invalid message");
     }
 
