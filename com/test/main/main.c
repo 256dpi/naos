@@ -381,9 +381,9 @@ void app_main() {
     naos_osc_filter(osc_filter);
   }
   if (SERIAL) {
-    naos_serial_init_stdio();
+    // naos_serial_init_stdio();
     if (CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED) {
-      naos_serial_init_secio();
+      naos_serial_init_secio_usj();
     }
   }
   if (MDNS) {

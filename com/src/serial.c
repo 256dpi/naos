@@ -411,11 +411,6 @@ static void naos_serial_secio_task() {
 }
 
 void naos_serial_init_secio() {
-  // assert config
-  if (!CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG) {
-    ESP_ERROR_CHECK(ESP_FAIL);
-  }
-
   // open secondary stream
   FILE* stream = fopen("/dev/secondary", "r+");
   if (stream == NULL) {
@@ -448,9 +443,9 @@ void naos_serial_init_secio() {
 
 void naos_serial_init_secio_usj() {
   // assert config
-  if (!CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG) {
-    ESP_ERROR_CHECK(ESP_FAIL);
-  }
+#ifndef CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+  ESP_ERROR_CHECK(ESP_FAIL);
+#endif
 
   // configure parameters
   usb_serial_jtag_vfs_set_rx_line_endings(ESP_LINE_ENDINGS_CRLF);
@@ -536,22 +531,23 @@ static void naos_serial_usj_task() {
       .buffer = naos_serial_usj_input,
       .read = naos_serial_usj_read,
       .channel = naos_serial_usj_channel,
+      .blocking = true,
   });
 }
 
 void naos_serial_init_usj() {
   // assert config
-  if (CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG) {
-    ESP_ERROR_CHECK(ESP_FAIL);
-  }
+#ifdef CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+  ESP_ERROR_CHECK(ESP_FAIL);
+#endif
 
   // allocate input buffer
   naos_serial_usj_input = naos_serial_alloc();
 
   // configure USB serial/JTAG driver
   usb_serial_jtag_driver_config_t config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
-  config.tx_buffer_size = NAOS_SERIAL_BS;
-  config.rx_buffer_size = NAOS_SERIAL_BS;
+  config.tx_buffer_size = NAOS_SERIAL_BS * 2;
+  config.rx_buffer_size = NAOS_SERIAL_BS * 2;
   ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&config));
 
   // register USB channel

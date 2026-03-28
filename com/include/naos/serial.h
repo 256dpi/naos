@@ -23,19 +23,16 @@
  */
 
 /**
- * Initialize the STDIO based serial messaging.
+ * Initialize UART based serial messaging.
  *
- * This will use the standard input/output file streams for communication.
- *
- * Notes: Requires that `CONFIG_ESP_CONSOLE` is configured accordingly.
+ * This will use the `/dev/uart/0` file stream for communication.
  */
 void naos_serial_init_stdio();
 
 /**
- * Initialize blocking UART based STDIO serial messaging.
+ * Initialize UART based serial messaging using the driver.
  *
- * Same as `naos_serial_init_stdio`, but configures the UART driver to enable
- * blocking reads.
+ * Same as `naos_serial_init_stdio` but configures an UART driver.
  */
 void naos_serial_init_stdio_uart();
 
@@ -62,7 +59,7 @@ void naos_serial_init_secio();
 void naos_serial_init_secio_usj();
 
 /**
- * Initialize blocking USB/Serial/JTAG based serial messaging.
+ * Initialize native USB/Serial/JTAG based serial messaging.
  *
  * This will use the USB/Serial/JTAG peripheral directly for communication.
  *
