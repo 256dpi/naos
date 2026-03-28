@@ -350,6 +350,11 @@ static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
       // get parameter
       naos_param_t *param = naos_params[msg.data[0]];
 
+      // check mode
+      if (param->mode & NAOS_LOCKED) {
+        return NAOS_MSG_ERROR;
+      }
+
       // set value
       naos_set(param->name, msg.data + 1, msg.len - 1);
 
@@ -379,7 +384,7 @@ static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
         naos_param_t *param = naos_params[i];
 
         // skip action, unchanged, or not requested
-        if (param->type == NAOS_ACTION || param->age < since || !(map & (1 << i))) {
+        if (param->type == NAOS_ACTION || param->age < since || !(map & ((uint64_t)1 << i))) {
           continue;
         }
 

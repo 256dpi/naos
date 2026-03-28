@@ -16,12 +16,15 @@ const char *naos_d2str(char buf[32], double num) {
   return buf;
 }
 
-char *naos_format(char *fmt, ...) {
+char *naos_format(const char *fmt, ...) {
   // measure
   va_list va;
   va_start(va, fmt);
   int ret = vsnprintf(NULL, 0, fmt, va);
   va_end(va);
+  if (ret < 0) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
 
   // format
   char *buf = malloc(ret + 1);

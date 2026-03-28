@@ -9,11 +9,11 @@
 
 #define NAOS_OSC_MAX_TARGETS 8
 
-naos_mutex_t naos_osc_mutex;
-esp_osc_client_t naos_osc_client;
-esp_osc_target_t naos_osc_targets[NAOS_OSC_MAX_TARGETS];
-size_t naos_osc_target_count = 0;
-esp_osc_callback_t naos_osc_filter_callback = NULL;
+static naos_mutex_t naos_osc_mutex;
+static esp_osc_client_t naos_osc_client;
+static esp_osc_target_t naos_osc_targets[NAOS_OSC_MAX_TARGETS];
+static size_t naos_osc_target_count = 0;
+static esp_osc_callback_t naos_osc_filter_callback = NULL;
 
 static bool naos_osc_callback(const char *topic, const char *format, esp_osc_value_t *values) {
   // filter using callback if available
@@ -139,9 +139,12 @@ bool naos_osc_send(const char *topic, const char *format, ...) {
   va_start(args, format);
   bool ok = true;
   for (size_t i = 0; i < naos_osc_target_count; i++) {
-    if (!esp_osc_send_v(&naos_osc_client, &naos_osc_targets[i], topic, format, args)) {
+    va_list copy;
+    va_copy(copy, args);
+    if (!esp_osc_send_v(&naos_osc_client, &naos_osc_targets[i], topic, format, copy)) {
       ok = false;
     }
+    va_end(copy);
   }
   va_end(args);
 

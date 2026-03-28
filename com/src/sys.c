@@ -200,7 +200,8 @@ bool naos_await(naos_signal_t signal, uint16_t bits, bool clear, int32_t timeout
 
   // await bits
   if (timeout_ms >= 0) {
-    return xEventGroupWaitBits(signal, bits, clear, pdTRUE, timeout_ms / portTICK_PERIOD_MS) == pdPASS;
+    EventBits_t result = xEventGroupWaitBits(signal, bits, clear, pdTRUE, timeout_ms / portTICK_PERIOD_MS);
+    return (result & bits) == bits;
   }
   while (xEventGroupWaitBits(signal, bits, clear, pdTRUE, portMAX_DELAY) == 0) {
   }

@@ -15,7 +15,7 @@ static naos_com_transport_t naos_com_transports[NAOS_COM_MAX_TRANSPORTS] = {0};
 static size_t naos_com_transport_count = 0;
 static naos_com_handler_t naos_com_handlers[NAOS_COM_MAX_HANDLERS] = {0};
 static size_t naos_com_handler_count = 0;
-static naos_param_t *naos_com_base_topic = {0};
+static naos_param_t *naos_com_base_topic = NULL;
 
 static char *naos_com_with_base_topic(const char *topic) {
   // prefix base topic

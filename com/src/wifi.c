@@ -59,8 +59,10 @@ static void naos_wifi_configure() {
   naos_net_configure(naos_wifi_netif, manual);
 
   // configure station
-  strcpy((char *)naos_wifi_config.sta.ssid, ssid);
-  strcpy((char *)naos_wifi_config.sta.password, password);
+  strncpy((char *)naos_wifi_config.sta.ssid, ssid, sizeof(naos_wifi_config.sta.ssid) - 1);
+  naos_wifi_config.sta.ssid[sizeof(naos_wifi_config.sta.ssid) - 1] = 0;
+  strncpy((char *)naos_wifi_config.sta.password, password, sizeof(naos_wifi_config.sta.password) - 1);
+  naos_wifi_config.sta.password[sizeof(naos_wifi_config.sta.password) - 1] = 0;
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &naos_wifi_config));
 

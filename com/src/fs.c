@@ -365,6 +365,11 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
     return naos_fs_send_error(msg.session, errno);
   }
 
+  // check offset bounds
+  if (offset >= info.st_size) {
+    return naos_fs_send_error(msg.session, EINVAL);
+  }
+
   // seek to offset
   off_t ret = lseek(file->fd, offset, SEEK_SET);
   if (ret < 0) {
@@ -372,11 +377,7 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
   }
 
   // determine length if zero or limit length
-  if (length == 0) {
-    if (info.st_size > offset) {
-      length = info.st_size - offset;
-    }
-  } else if (offset + length > info.st_size) {
+  if (length == 0 || offset + length > info.st_size) {
     length = info.st_size - offset;
   }
 

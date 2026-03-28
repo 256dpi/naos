@@ -11,7 +11,7 @@
 static naos_mutex_t naos_mqtt_mutex;
 static bool naos_mqtt_started = false;
 static bool naos_mqtt_networked = false;
-static uint32_t naos_mqtt_generation = false;
+static uint32_t naos_mqtt_generation = 0;
 
 static void naos_mqtt_status_handler(esp_mqtt_status_t status) {
   // acquire mutex

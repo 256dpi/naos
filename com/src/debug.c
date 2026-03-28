@@ -76,12 +76,13 @@ static naos_msg_reply_t naos_debug_handle_cdp_read(naos_msg_t msg) {
   memcpy(&offset, msg.data, sizeof(offset));
   memcpy(&length, &msg.data[4], sizeof(length));
 
+  // check offset bounds
+  if (offset >= size) {
+    return NAOS_MSG_ERROR;
+  }
+
   // determine length if zero or limit length
-  if (length == 0) {
-    if (size > offset) {
-      length = size - offset;
-    }
-  } else if (offset + length > size) {
+  if (length == 0 || offset + length > size) {
     length = size - offset;
   }
 
