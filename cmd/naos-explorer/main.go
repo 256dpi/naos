@@ -30,7 +30,7 @@ func main() {
 	go func() {
 		for {
 			err := ble.Discover(nil, func(d ble.Description) {
-				state.register(ble.NewDevice(d.Address))
+				state.registerWithMeta(ble.NewDevice(d.Address), d.Name, "", "")
 			})
 			if err != nil {
 				state.log("[red]BLE discover error[-]: %v", err)

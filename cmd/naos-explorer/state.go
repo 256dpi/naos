@@ -35,6 +35,7 @@ func (s *state) registerWithMeta(dev msg.Device, deviceName, appName, appVersion
 	key := dev.ID()
 
 	if existing, ok := s.devices[key]; ok {
+		existing.UpdateMeta(deviceName, appName, appVersion)
 		existing.UpdateLastSeen(time.Now())
 		return existing
 	}

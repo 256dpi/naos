@@ -54,6 +54,21 @@ func (d *device) ID() string {
 	return d.md.Device().ID()
 }
 
+func (d *device) UpdateMeta(deviceName, appName, appVersion string) {
+	d.mut.Lock()
+	defer d.mut.Unlock()
+
+	if d.deviceName == "" {
+		d.deviceName = deviceName
+	}
+	if d.appName == "" {
+		d.appName = appName
+	}
+	if d.appVersion == "" {
+		d.appVersion = appVersion
+	}
+}
+
 func (d *device) LastSeen() time.Time {
 	// acquire mutex
 	d.mut.Lock()
