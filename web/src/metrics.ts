@@ -1,5 +1,5 @@
 import { Session } from "./session";
-import { pack, toString } from "./utils";
+import { pack, toString, toView } from "./utils";
 
 const metricsEndpoint = 0x05;
 
@@ -160,7 +160,7 @@ export async function readLongMetrics(
   // convert reply
   let list: number[] = [];
   for (let i = 0; i < reply.length; i += 4) {
-    list.push(new DataView(reply.buffer).getInt32(i, true));
+    list.push(toView(reply).getInt32(i, true));
   }
 
   return list;
@@ -177,7 +177,7 @@ export async function readFloatMetrics(
   // convert reply
   let list: number[] = [];
   for (let i = 0; i < reply.length; i += 4) {
-    list.push(new DataView(reply.buffer).getFloat32(i, true));
+    list.push(toView(reply).getFloat32(i, true));
   }
 
   return list;
@@ -194,7 +194,7 @@ export async function readDoubleMetrics(
   // convert reply
   let list: number[] = [];
   for (let i = 0; i < reply.length; i += 8) {
-    list.push(new DataView(reply.buffer).getFloat64(i, true));
+    list.push(toView(reply).getFloat64(i, true));
   }
 
   return list;

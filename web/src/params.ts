@@ -1,5 +1,5 @@
 import { Session } from "./session";
-import { pack, toString } from "./utils";
+import { pack, toString, toView } from "./utils";
 
 const paramsEndpoint = 0x01;
 
@@ -163,7 +163,7 @@ export async function collectParams(
     }
 
     // parse reply
-    const view = new DataView(reply.buffer);
+    const view = toView(reply);
     const ref = reply[0];
     const age = view.getBigUint64(1, true);
     const value = reply.slice(9);

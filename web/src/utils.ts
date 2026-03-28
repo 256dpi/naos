@@ -163,7 +163,7 @@ export function pack(fmt: string, ...args: any[]): Uint8Array {
 
 export function unpack(fmt: string, buffer: Uint8Array): any[] {
   // get view
-  const view = new DataView(buffer.buffer);
+  const view = toView(buffer);
 
   // prepare result
   const result: any[] = [];
@@ -210,6 +210,10 @@ export function unpack(fmt: string, buffer: Uint8Array): any[] {
   }
 
   return result;
+}
+
+export function toView(buffer: Uint8Array): DataView {
+  return new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 }
 
 export function compare(buf1: Uint8Array, buf2: Uint8Array): boolean {
