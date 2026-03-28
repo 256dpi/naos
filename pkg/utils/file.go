@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -79,6 +80,11 @@ func Download(destination, source string) error {
 
 	// make sure the body gets closed
 	defer resp.Body.Close()
+
+	// check status code
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("download failed with status %d", resp.StatusCode)
+	}
 
 	// write body to file
 	_, err = io.Copy(file, resp.Body)

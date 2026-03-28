@@ -76,10 +76,15 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 	// find main compile command
 	suffix := filepath.Join("tree", "build", "esp-idf", "main")
 	var cmd compileCommand
+	var found bool
 	for _, cmd = range compileCommands {
 		if strings.HasSuffix(cmd.Directory, suffix) {
+			found = true
 			break
 		}
+	}
+	if !found {
+		return nil, fmt.Errorf("compile command not found for %s", suffix)
 	}
 
 	// collect include options

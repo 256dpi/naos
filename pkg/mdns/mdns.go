@@ -33,6 +33,9 @@ func Discover(duration time.Duration) ([]Location, error) {
 	var addresses []Location
 	go func() {
 		for entry := range entries {
+			if len(entry.AddrIPv4) == 0 {
+				continue
+			}
 			addresses = append(addresses, Location{
 				Hostname: entry.HostName,
 				Address:  entry.AddrIPv4[0].String(),

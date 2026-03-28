@@ -36,14 +36,14 @@ func List() ([]SDK, error) {
 	var sdks []SDK
 	for _, entry := range entries {
 		if !entry.IsDir() {
-			return nil, nil
+			continue
 		}
 
 		// split name
 		name := entry.Name()
 		parts := strings.Split(name, "+")
 		if len(parts) != 2 {
-			return nil, nil
+			continue
 		}
 
 		// append sdk

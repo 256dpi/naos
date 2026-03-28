@@ -93,12 +93,12 @@ func Unpack(fmt string, buffer []byte) []any {
 	for _, code := range fmt {
 		switch code {
 		case 's':
-			length := bytes.IndexByte(buffer[pos:], 0)
-			if length == -1 {
-				length = len(buffer) - pos
+			end := bytes.IndexByte(buffer[pos:], 0)
+			if end == -1 {
+				end = len(buffer) - pos
 			}
-			result = append(result, string(buffer[pos:pos+length]))
-			pos += length
+			result = append(result, string(buffer[pos:pos+end]))
+			pos += end + 1
 		case 'b':
 			result = append(result, buffer[pos:])
 			pos += len(buffer) - pos
