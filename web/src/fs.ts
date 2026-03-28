@@ -73,7 +73,7 @@ export async function listDir(
 export async function readFile(
   session: Session,
   file: string,
-  report: (count: number) => void = null
+  report?: (count: number) => void
 ): Promise<Uint8Array> {
   // stat file
   const info = await statPath(session, file);
@@ -113,7 +113,7 @@ export async function readFileRange(
   file: string,
   offset: number,
   length: number,
-  report: (count: number) => void = null
+  report?: (count: number) => void
 ): Promise<Uint8Array> {
   // send "open" command
   let cmd = pack("oos", 2, 0, file);
@@ -172,7 +172,7 @@ export async function writeFile(
   session: Session,
   file: string,
   data: Uint8Array,
-  report: (count: number) => void = null
+  report?: (count: number) => void
 ) {
   // send "create" command (create & truncate)
   let cmd = pack("oos", 2, (1 << 0) | (1 << 2), file);

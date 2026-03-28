@@ -36,7 +36,7 @@ export async function readCoredump(
   await s.send(debugEndpoint, cmd, 0);
 
   // prepare data
-  let data = new Uint8Array(0);
+  let data: Uint8Array = new Uint8Array(0);
 
   for (;;) {
     // receive reply or return data on ack

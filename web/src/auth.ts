@@ -58,7 +58,7 @@ export async function authProvision(
 
 export async function authDescribe(
   s: Session,
-  key: Uint8Array = undefined,
+  key?: Uint8Array,
   timeout: number = 5000
 ): Promise<AuthData> {
   // send command

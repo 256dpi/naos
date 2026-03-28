@@ -6,7 +6,7 @@ const updateEndpoint = 0x2;
 export async function update(
   session: Session,
   data: Uint8Array,
-  report: (count: number) => void = null,
+  report?: (count: number) => void,
   timeout: number = 30000
 ) {
   // send "begin" command
