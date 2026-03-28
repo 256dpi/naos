@@ -628,8 +628,8 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
 
     // handle execute write event
     case ESP_GATTS_EXEC_WRITE_EVT: {
-      ESP_ERROR_CHECK(
-          esp_ble_gatts_send_response(i, p->exec_write.conn_id, p->exec_write.trans_id, ESP_GATT_REQ_NOT_SUPPORTED, NULL));
+      ESP_ERROR_CHECK(esp_ble_gatts_send_response(i, p->exec_write.conn_id, p->exec_write.trans_id,
+                                                  ESP_GATT_REQ_NOT_SUPPORTED, NULL));
 
       break;
     }

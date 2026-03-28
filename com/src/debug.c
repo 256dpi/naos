@@ -382,7 +382,6 @@ void naos_debug_cdp_delete() {
     return;
   }
 
-  // reset size
-  uint32_t size = 0xFFFFFFFF;
-  ESP_ERROR_CHECK(esp_partition_write(p, 0, &size, sizeof(size)));
+  // reset header
+  ESP_ERROR_CHECK(esp_partition_erase_range(p, 0, p->erase_size));
 }
