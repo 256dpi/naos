@@ -14,6 +14,7 @@
 #include <driver/uart_vfs.h>
 #include <driver/usb_serial_jtag.h>
 #include <driver/usb_serial_jtag_vfs.h>
+#include <sys/fcntl.h>
 
 #define NAOS_SERIAL_BS CONFIG_NAOS_SERIAL_BUFFER_SIZE
 
@@ -48,6 +49,7 @@ typedef struct {
   uint8_t* buffer;
   naos_serial_read_t read;
   uint8_t channel;
+  bool blocking;
 } naos_serial_decoder_t;
 
 static void naos_serial_decode(naos_serial_decoder_t decoder) {
@@ -94,10 +96,17 @@ static void naos_serial_decode(naos_serial_decoder_t decoder) {
         continue;
       }
 
+      // slow down
+      if (decoder.blocking) {
+        naos_delay(1);
+      }
+
       // read into buffer
       size_t ret = decoder.read(decoder.buffer + len, space, decoder.ctx);
       if (ret == 0) {
-        naos_delay(5);
+        if (!decoder.blocking) {
+          naos_delay(1);
+        }
         continue;
       }
 
@@ -116,8 +125,8 @@ static void naos_serial_decode(naos_serial_decoder_t decoder) {
 
     // determine offset
     size_t offset = 0;
-    if (decoder.buffer[0] == '\n') {
-      offset = 1;
+    if (offset < line_len && decoder.buffer[offset] == '\n') {
+      offset++;
     }
 
     // check magic
@@ -216,8 +225,8 @@ static uint16_t naos_serial_mtu() {
 }
 
 typedef struct {
-  void* input;
-  void* output;
+  int fd;
+  FILE* stream;
 } naos_serial_vfs_t;
 
 static bool naos_serial_vfs_send(const uint8_t* data, size_t len, void* ctx) {
@@ -236,16 +245,25 @@ static bool naos_serial_vfs_send(const uint8_t* data, size_t len, void* ctx) {
 
   // write message
   naos_serial_lock();
-  size_t ret = fwrite(naos_serial_output, 1, enc_len, vfs->output);
-  fflush(vfs->output);
+  bool ok = false;
+  if (vfs->stream != NULL) {
+    size_t ret = fwrite(naos_serial_output, 1, enc_len, vfs->stream);
+    ok = ret == enc_len;
+  } else {
+    ssize_t ret = write(vfs->fd, naos_serial_output, enc_len);
+    ok = ret == enc_len;
+  }
   naos_serial_unlock();
-  if (ret != enc_len) {
+  if (!ok) {
     naos_unlock(naos_serial_mutex);
     return false;
   }
 
   // release mutex
   naos_unlock(naos_serial_mutex);
+
+  // slow down
+  naos_delay(1);
 
   return true;
 }
@@ -255,9 +273,17 @@ static size_t naos_serial_vfs_read(uint8_t* data, size_t len, void* ctx) {
   naos_serial_vfs_t* vfs = ctx;
 
   // read input
-  size_t ret = fread(data, 1, len, vfs->input);
-  if (ret == 0 && ferror(vfs->input)) {
-    clearerr(vfs->input);
+  size_t ret = 0;
+  if (vfs->stream != NULL) {
+    ret = fread(data, 1, len, vfs->stream);
+    if (ret == 0 && ferror(vfs->stream)) {
+      clearerr(vfs->stream);
+    }
+  } else {
+    ssize_t _ret = read(vfs->fd, data, len);
+    if (_ret > 0) {
+      ret = _ret;
+    }
   }
 
   return ret;
@@ -268,6 +294,7 @@ static size_t naos_serial_vfs_read(uint8_t* data, size_t len, void* ctx) {
 static naos_serial_vfs_t naos_serial_stdio_vfs;
 static uint8_t naos_serial_stdio_channel = 0;
 static void* naos_serial_stdio_input = NULL;
+static bool naos_serial_stdio_blocking = false;
 
 static void naos_serial_stdio_task() {
   // run decoder
@@ -276,13 +303,24 @@ static void naos_serial_stdio_task() {
       .buffer = naos_serial_stdio_input,
       .read = naos_serial_vfs_read,
       .channel = naos_serial_stdio_channel,
+      .blocking = naos_serial_stdio_blocking,
   });
 }
 
 void naos_serial_init_stdio() {
+  // assert config
+  if (CONFIG_VFS_SUPPORT_IO != 1 || CONFIG_ESP_CONSOLE_UART_NUM != 0) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // open UART stream
+  FILE* fd = fopen("/dev/uart/0", "r+");
+  if (!fd) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
   // prepare VFS context
-  naos_serial_stdio_vfs.input = stdin;
-  naos_serial_stdio_vfs.output = stdout;
+  naos_serial_stdio_vfs.stream = fd;
 
   // allocate input buffer
   naos_serial_stdio_input = naos_serial_alloc();
@@ -294,19 +332,18 @@ void naos_serial_init_stdio() {
       .send = naos_serial_vfs_send,
   });
 
+  // set blocking
+  naos_serial_stdio_blocking = false;
+
   // start task
   naos_run("naos-srl-stdio", 4096, 1, naos_serial_stdio_task);
 }
 
 void naos_serial_init_stdio_uart() {
-  // drain outputs
-  fflush(stdout);
-  fflush(stderr);
-
-  // disable buffering
-  setvbuf(stdout, NULL, _IONBF, 0);
-  setvbuf(stderr, NULL, _IONBF, 0);
-  setvbuf(stdin, NULL, _IONBF, 0);
+  // assert config
+  if (CONFIG_VFS_SUPPORT_IO != 1 || CONFIG_ESP_CONSOLE_UART_NUM != 0) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
 
   // configure UART parameters
   ESP_ERROR_CHECK(uart_vfs_dev_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF));
@@ -323,14 +360,36 @@ void naos_serial_init_stdio_uart() {
   };
 
   // install UART driver
-  ESP_ERROR_CHECK(uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM, 256, 256, 0, NULL, 0));
+  ESP_ERROR_CHECK(uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM, NAOS_SERIAL_BS * 2, NAOS_SERIAL_BS * 2, 0, NULL, 0));
   ESP_ERROR_CHECK(uart_param_config(CONFIG_ESP_CONSOLE_UART_NUM, &uart_config));
 
   // enable VFS driver
   uart_vfs_dev_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
 
-  // initialize stdio IO
-  naos_serial_init_stdio();
+  // open UART stream
+  int fd = open("/dev/uart/0", O_RDWR);
+  if (fd < 0) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // prepare VFS context
+  naos_serial_stdio_vfs.fd = fd;
+
+  // allocate input buffer
+  naos_serial_stdio_input = naos_serial_alloc();
+
+  // register channel
+  naos_serial_stdio_channel = naos_msg_register((naos_msg_channel_t){
+      .name = "serial-stdio",
+      .mtu = naos_serial_mtu,
+      .send = naos_serial_vfs_send,
+  });
+
+  // set blocking
+  naos_serial_stdio_blocking = true;
+
+  // start task
+  naos_run("naos-srl-stdio", 4096, 1, naos_serial_stdio_task);
 }
 
 /* Secondary Interface */
@@ -338,6 +397,7 @@ void naos_serial_init_stdio_uart() {
 static naos_serial_vfs_t naos_serial_secio_vfs;
 static uint8_t naos_serial_secio_channel = 0;
 static void* naos_serial_secio_input = NULL;
+static bool naos_serial_secio_blocking = false;
 
 static void naos_serial_secio_task() {
   // run decoder
@@ -346,10 +406,16 @@ static void naos_serial_secio_task() {
       .buffer = naos_serial_secio_input,
       .read = naos_serial_vfs_read,
       .channel = naos_serial_secio_channel,
+      .blocking = naos_serial_secio_blocking,
   });
 }
 
 void naos_serial_init_secio() {
+  // assert config
+  if (!CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
   // open secondary stream
   FILE* stream = fopen("/dev/secondary", "r+");
   if (stream == NULL) {
@@ -357,8 +423,7 @@ void naos_serial_init_secio() {
   }
 
   // prepare VFS context
-  naos_serial_secio_vfs.input = stream;
-  naos_serial_secio_vfs.output = stream;
+  naos_serial_secio_vfs.stream = stream;
 
   // allocate input buffer
   naos_serial_secio_input = naos_serial_alloc();
@@ -370,6 +435,9 @@ void naos_serial_init_secio() {
       .send = naos_serial_vfs_send,
   });
 
+  // set blocking
+  naos_serial_secio_blocking = false;
+
   // start task
   naos_run("naos-srl-secio", 4096, 1, naos_serial_secio_task);
 }
@@ -379,22 +447,48 @@ void naos_serial_init_secio() {
 #if CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED
 
 void naos_serial_init_secio_usj() {
+  // assert config
+  if (!CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
   // configure parameters
   usb_serial_jtag_vfs_set_rx_line_endings(ESP_LINE_ENDINGS_CRLF);
   usb_serial_jtag_vfs_set_tx_line_endings(ESP_LINE_ENDINGS_LF);
 
   // configure driver
   usb_serial_jtag_driver_config_t config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
-  config.tx_buffer_size = NAOS_SERIAL_BS;
-  config.rx_buffer_size = NAOS_SERIAL_BS;
+  config.tx_buffer_size = NAOS_SERIAL_BS * 2;
+  config.rx_buffer_size = NAOS_SERIAL_BS * 2;
   ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&config));
 
   // upgrade VFS driver
-  ESP_ERROR_CHECK(usb_serial_jtag_vfs_register());
   usb_serial_jtag_vfs_use_driver();
 
-  // initialize secondary IO
-  naos_serial_init_secio();
+  // open file descriptor
+  int fd = open("/dev/secondary", O_RDWR);
+  if (fd < 0) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // prepare VFS context
+  naos_serial_secio_vfs.fd = fd;
+
+  // allocate input buffer
+  naos_serial_secio_input = naos_serial_alloc();
+
+  // register channel
+  naos_serial_secio_channel = naos_msg_register((naos_msg_channel_t){
+      .name = "serial-secio",
+      .mtu = naos_serial_mtu,
+      .send = naos_serial_vfs_send,
+  });
+
+  // set blocking
+  naos_serial_secio_blocking = true;
+
+  // start task
+  naos_run("naos-srl-secio", 4096, 1, naos_serial_secio_task);
 }
 
 static uint8_t naos_serial_usj_channel = 0;
@@ -446,6 +540,11 @@ static void naos_serial_usj_task() {
 }
 
 void naos_serial_init_usj() {
+  // assert config
+  if (CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
   // allocate input buffer
   naos_serial_usj_input = naos_serial_alloc();
 

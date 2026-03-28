@@ -26,6 +26,6 @@ config NAOS_MSG_DEBUG
 
 config NAOS_SERIAL_BUFFER_SIZE
     int "The serial buffer sizes"
-    default 4096
+    default 2048
 
 endmenu
