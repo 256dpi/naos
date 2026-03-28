@@ -351,6 +351,13 @@ async function throughput() {
     payload[i] = i & 0xff;
   }
 
+  // create progress bar
+  const bar = document.createElement("progress");
+  bar.max = 100;
+  bar.value = 0;
+  bar.style.display = "block";
+  document.body.appendChild(bar);
+
   // run echo rounds
   const rounds = 100;
   let totalBytes = 0;
@@ -363,16 +370,18 @@ async function throughput() {
     await session.send(ECHO_ENDPOINT, payload, 0);
 
     // receive echo response
-    const [data, ack] = await session.receive(ECHO_ENDPOINT, false, 5000);
-    if (!data || data.length !== payload.length) {
+    const [data] = await session.receive(ECHO_ENDPOINT, false, 5000);
+    if (!data || data.length !== payload.length || !compare(payload, data)) {
       errors++;
       console.error(
         `Round ${i}: size mismatch (got ${data?.length}, expected ${payload.length})`
       );
+      bar.value = i + 1;
       continue;
     }
 
     totalBytes += data.length;
+    bar.value = i + 1;
   }
 
   const elapsed = performance.now() - start;
@@ -382,6 +391,9 @@ async function throughput() {
   console.log(`Total: ${totalBytes} bytes in ${(elapsed / 1000).toFixed(2)}s`);
   console.log(`Throughput: ${throughputKBs.toFixed(2)} KB/s`);
   console.log(`Avg round-trip: ${(elapsed / rounds).toFixed(2)} ms`);
+
+  // remove progress bar
+  bar.remove();
 
   await session.end(1000);
 
