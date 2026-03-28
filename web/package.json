@@ -24,6 +24,7 @@
   "scripts": {
     "run": "parcel test.html --dist-dir .parcel-dist",
     "build": "parcel build",
+    "typecheck": "tsc --noEmit",
     "fmt": "prettier --write .",
     "test-node": "tsx test-node.ts"
   },
@@ -36,6 +37,7 @@
     "@types/node": "^25.2.3",
     "@types/w3c-web-serial": "^1.0.7",
     "@types/web-bluetooth": "^0.0.20",
+    "typescript": "^5.8.0",
     "parcel": "^2.8.3",
     "prettier": "^2.8.4",
     "tsx": "^4.0.0",
