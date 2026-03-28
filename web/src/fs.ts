@@ -165,7 +165,7 @@ export async function readFileRange(
   cmd = pack("o", 5);
   await send(session, cmd, true);
 
-  return data;
+  return data.slice(0, count);
 }
 
 export async function writeFile(

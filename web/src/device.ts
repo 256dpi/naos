@@ -1,4 +1,5 @@
 import { AsyncQueue } from "./queue";
+import { toView } from "./utils";
 
 /**
  * Device represents a device that can be communicated with.
@@ -107,7 +108,7 @@ export async function read(queue: Queue, timeout: number): Promise<Message> {
   }
 
   // get view
-  const view = new DataView(data.buffer);
+  const view = toView(data);
 
   return new Message(
     view.getUint16(1, true),
@@ -122,7 +123,7 @@ export async function read(queue: Queue, timeout: number): Promise<Message> {
 export async function write(ch: Channel, msg: Message): Promise<void> {
   // prepare data
   const data = new Uint8Array(4 + msg.size());
-  const view = new DataView(data.buffer);
+  const view = toView(data);
   view.setUint8(0, 1); // version
   view.setUint16(1, msg.session, true);
   view.setUint8(3, msg.endpoint);

@@ -159,8 +159,9 @@ export async function readLongMetrics(
 
   // convert reply
   let list: number[] = [];
+  const view = toView(reply);
   for (let i = 0; i < reply.length; i += 4) {
-    list.push(toView(reply).getInt32(i, true));
+    list.push(view.getInt32(i, true));
   }
 
   return list;
@@ -176,8 +177,9 @@ export async function readFloatMetrics(
 
   // convert reply
   let list: number[] = [];
+  const view = toView(reply);
   for (let i = 0; i < reply.length; i += 4) {
-    list.push(toView(reply).getFloat32(i, true));
+    list.push(view.getFloat32(i, true));
   }
 
   return list;
@@ -193,8 +195,9 @@ export async function readDoubleMetrics(
 
   // convert reply
   let list: number[] = [];
+  const view = toView(reply);
   for (let i = 0; i < reply.length; i += 8) {
-    list.push(toView(reply).getFloat64(i, true));
+    list.push(view.getFloat64(i, true));
   }
 
   return list;

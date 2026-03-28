@@ -121,7 +121,7 @@ export function pack(fmt: string, ...args: any[]): Uint8Array {
 
   // create buffer and view
   const buffer = new Uint8Array(size);
-  const view = new DataView(buffer.buffer);
+  const view = toView(buffer);
 
   // write arguments
   let offset = 0;
@@ -223,11 +223,8 @@ export function compare(buf1: Uint8Array, buf2: Uint8Array): boolean {
   }
 
   // compare bytes
-  const view1 = new DataView(buf1.buffer);
-  const view2 = new DataView(buf2.buffer);
-  let i = buf1.byteLength;
-  while (i--) {
-    if (view1.getUint8(i) !== view2.getUint8(i)) {
+  for (let i = 0; i < buf1.byteLength; i++) {
+    if (buf1[i] !== buf2[i]) {
       return false;
     }
   }
