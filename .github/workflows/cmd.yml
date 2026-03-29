@@ -1,5 +1,5 @@
 on: [push, pull_request]
-name: CLI
+name: Commands
 jobs:
   cli:
     strategy:
