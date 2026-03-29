@@ -83,6 +83,7 @@ public class NAOSBLEManager: NSObject {
 					try await self.scan()
 				} catch {
 					print("error while scanning: ", error.localizedDescription)
+					try? await Task.sleep(for: .seconds(2))
 				}
 			}
 		}

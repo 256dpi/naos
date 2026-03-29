@@ -83,22 +83,29 @@ class httpChannel: NAOSChannel {
 		let ch = httpChannel(task: task)
 
 		// run forwarder
-		Task {
+		Task { [weak ch] in
 			while true {
-				let msg = try await task.receive()
-				let targets = ch.lock.withLock { ch.queues }
-				switch msg {
-				case .data(let data):
-					for queue in targets {
-						queue.send(value: data)
+				guard let ch else { break }
+				do {
+					let msg = try await task.receive()
+					let targets = ch.lock.withLock { ch.queues }
+					switch msg {
+					case .data(let data):
+						for queue in targets {
+							queue.send(value: data)
+						}
+					case .string(let text):
+						if let data = text.data(using: .utf8) {
+							for queue in targets {
+								queue.send(value: data)
+							}
+						}
+					@unknown default:
+						break
 					}
-				case .string(let text):
-					let data = text.data(using: .utf8)!
-					for queue in targets {
-						queue.send(value: data)
-					}
-				@unknown default:
-					fatalError("unhandled type")
+				} catch {
+					ch.close()
+					break
 				}
 			}
 		}

@@ -107,15 +107,12 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 
 	@objc func relay(a: NSMenuItem) {
 		// get device
-		let device = a.representedObject as! NAOSDevice
+		let relayDevice = a.representedObject as! NAOSDevice
 
-		Task {
-			// prepare device
-			let managedDevice = NAOSManagedDevice(device: device)
-
-			// let manager open device
-			DeviceManager.shared.openDevice(device: managedDevice)
-		}
+		// prepare managed device and open it
+		let managedDevice = NAOSManagedDevice(device: relayDevice)
+		DeviceManager.shared.addDevice(device: managedDevice)
+		DeviceManager.shared.openDevice(device: managedDevice)
 	}
 
 	@IBAction func metrics(_: AnyObject) {

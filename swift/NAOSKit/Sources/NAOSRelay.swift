@@ -113,8 +113,10 @@ public class NAOSRelayChannel: NAOSChannel {
 		self.device = device
 
 		// run forwarder
-		Task {
-			while true {
+		Task { [weak self] in
+			while !Task.isCancelled {
+				guard let self else { break }
+
 				// receive message
 				let data = try? await NAOSRelay.receive(session: session, timeout: 1)
 

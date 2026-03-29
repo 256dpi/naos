@@ -130,6 +130,7 @@ class MetricsViewController: NSHostingController<MetricsView> {
 
 			// get session
 			let session = try await device.newSession()
+			defer { session.cleanup() }
 
 			// gather metrics
 			metrics = try await NAOSMetrics.list(session: session)

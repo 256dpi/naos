@@ -217,6 +217,12 @@ class bleChannel: NAOSChannel {
 		subscription.cancel()
 
 		// close connection
-		Task { try await peripheral.close() }
+		Task {
+			do {
+				try await peripheral.close()
+			} catch {
+				print("error closing BLE connection: \(error.localizedDescription)")
+			}
+		}
 	}
 }

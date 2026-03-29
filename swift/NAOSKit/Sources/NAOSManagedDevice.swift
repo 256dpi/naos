@@ -67,6 +67,7 @@ public enum NAOSManagedError: LocalizedError {
 public class NAOSManagedDevice: NSObject {
 	private var mutex = AsyncSemaphore(value: 1)
 	private var session: NAOSSession?
+	private var updaterTask: Task<Void, Never>?
 
 	public private(set) var device: NAOSDevice
 	public private(set) var channel: NAOSChannel? = nil
@@ -98,27 +99,31 @@ public class NAOSManagedDevice: NSObject {
 		parameters[.appType] = "unknown"
 
 		// run updater
-		Task {
-			while true {
+		updaterTask = Task { [weak self] in
+			while !Task.isCancelled {
 				// wait a second
-				try await Task.sleep(for: .seconds(1))
+				try? await Task.sleep(for: .seconds(1))
+				if Task.isCancelled { break }
+
+				// get strong reference for this iteration
+				guard let self else { break }
 
 				// collect updates
 				var updates = [NAOSParamUpdate]()
-				try? await useSession { session in
-					updates = try await NAOSParams.collect(session: session, refs: nil, since: maxAge)
+				try? await self.useSession { session in
+					updates = try await NAOSParams.collect(session: session, refs: nil, since: self.maxAge)
 				}
 
 				// update parameters
 				for update in updates {
-					if let param = (availableParameters.first { p in p.ref == update.ref }) {
-						parameters[param] = String(data: update.value, encoding: .utf8)!
-						maxAge = max(maxAge, update.age)
+					if let param = (self.availableParameters.first { p in p.ref == update.ref }) {
+						self.parameters[param] = String(data: update.value, encoding: .utf8) ?? ""
+						self.maxAge = max(self.maxAge, update.age)
 					}
 				}
 
 				// call delegate if present
-				if let d = delegate {
+				if let d = self.delegate {
 					for update in updates {
 						DispatchQueue.main.async {
 							if let param =
@@ -134,6 +139,10 @@ public class NAOSManagedDevice: NSObject {
 				}
 			}
 		}
+	}
+
+	deinit {
+		updaterTask?.cancel()
 	}
 
 	/// Connect will initiate a connection to a device.
@@ -287,13 +296,10 @@ public class NAOSManagedDevice: NSObject {
 			throw NAOSManagedError.notConnected
 		}
 
-		// use session
+		// write parameter
 		try await withSession { session in
-			// write parameter
-			try await NAOSParams.write(
-				session: session,
-				ref: parameter.ref,
-				value: parameters[parameter]!.data(using: .utf8)!)
+			let value = (parameters[parameter] ?? "").data(using: .utf8) ?? Data()
+			try await NAOSParams.write(session: session, ref: parameter.ref, value: value)
 		}
 
 		// call delegate if present

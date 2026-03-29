@@ -224,7 +224,7 @@ public class NAOSSession {
 	/// Request the session status.
 	public func status(timeout: TimeInterval = 5) async throws -> NAOSSessionStatus {
 		// send command
-		try? await send(endpoint: 0xFD, data: Data([0]), ackTimeout: 0)
+		try await send(endpoint: 0xFD, data: Data([0]), ackTimeout: 0)
 
 		// await reply
 		let reply = try await receive(endpoint: 0xFD, expectAck: false, timeout: timeout)!
@@ -247,7 +247,7 @@ public class NAOSSession {
 		cmd.append(password.data(using: .utf8)!)
 
 		// send command
-		try? await send(endpoint: 0xFD, data: cmd, ackTimeout: 0)
+		try await send(endpoint: 0xFD, data: cmd, ackTimeout: 0)
 
 		// await reply
 		let reply = try await receive(endpoint: 0xFD, expectAck: false, timeout: timeout)!
