@@ -260,7 +260,10 @@ public class NAOSFS {
 
 		// handle errors
 		if data[0] == 0 {
-			throw POSIXError(POSIXErrorCode(rawValue: Int32(data[1]))!)
+			if data.count < 2 {
+				throw NAOSSessionError.invalidMessage
+			}
+			throw POSIXError(POSIXErrorCode(rawValue: Int32(data[1])) ?? .EIO)
 		}
 
 		return data

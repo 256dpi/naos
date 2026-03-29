@@ -216,25 +216,12 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 	}
 
 	func naosBLEManagerDidReset(manager _: NAOSBLEManager) {
-		// close all windows
-		let allControllers = controllers
-		controllers.removeAll()
-		for (_, c) in allControllers {
-			c.close()
+		// find BLE devices
+		let bleDevices = devices.keys.filter { $0.device is NAOSBLEDevice }
+
+		// remove BLE devices
+		for device in bleDevices {
+			removeDevice(device: device)
 		}
-
-		// hide dock icon
-		if allControllers.count > 0 {
-			NSApp.setActivationPolicy(.accessory)
-		}
-
-		// remove all devices
-		devices.removeAll()
-
-		// remove all items
-		devicesMenu.removeAllItems()
-
-		// update menu item title
-		devicesMenuItem.title = "0 Devices"
 	}
 }

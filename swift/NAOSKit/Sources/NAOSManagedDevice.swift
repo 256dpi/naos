@@ -114,13 +114,15 @@ public class NAOSManagedDevice: NSObject {
 					updates = try await NAOSParams.collect(session: session, refs: nil, since: self.maxAge)
 				}
 
-				// update parameters
+				// apply updates
+				await self.mutex.wait()
 				for update in updates {
 					if let param = (self.availableParameters.first { p in p.ref == update.ref }) {
 						self.parameters[param] = String(data: update.value, encoding: .utf8) ?? ""
 						self.maxAge = max(self.maxAge, update.age)
 					}
 				}
+				self.mutex.signal()
 
 				// call delegate if present
 				if let d = self.delegate {

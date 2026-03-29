@@ -60,7 +60,10 @@ public class NAOSHTTPDevice: NAOSDevice {
 	public func open() async throws -> NAOSChannel {
 		// create task
 		let urlSession = URLSession(configuration: .default)
-		let webSocketTask = urlSession.webSocketTask(with: URL(string: "ws://" + host)!)
+		guard let url = URL(string: "ws://" + host) else {
+			throw URLError(.badURL)
+		}
+		let webSocketTask = urlSession.webSocketTask(with: url)
 
 		return await httpChannel.create(task: webSocketTask)
 	}

@@ -111,7 +111,6 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 
 		// prepare managed device and open it
 		let managedDevice = NAOSManagedDevice(device: relayDevice)
-		DeviceManager.shared.addDevice(device: managedDevice)
 		DeviceManager.shared.openDevice(device: managedDevice)
 	}
 
