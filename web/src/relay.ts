@@ -102,7 +102,6 @@ export class RelayDevice implements Device {
     (async () => {
       while (!closed) {
         try {
-          // TODO: Use same trick as in swift to directly read from the session.
           const data = await receiveRelay(session);
           subscribers.dispatch(data);
         } catch (e) {
@@ -136,7 +135,7 @@ export class RelayDevice implements Device {
         closed = true;
         this.ch = null;
         try {
-          await session.end();
+          await session.end(1000);
         } catch (e) {
           // ignore
         }
