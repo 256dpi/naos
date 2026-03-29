@@ -108,8 +108,6 @@ typedef enum {
   NAOS_MSG_LOCKED,
 } naos_msg_reply_t;
 
-// TODO: Ensure that handle is never called after cleanup.
-
 /**
  * A message endpoint.
  *

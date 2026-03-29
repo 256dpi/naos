@@ -117,6 +117,14 @@ static void naos_msg_worker() {
     // acquire mutex
     naos_lock(naos_msg_mutex);
 
+    // check if session is still valid
+    naos_msg_session_t* session = naos_msg_find(msg.session);
+    if (session == NULL) {
+      naos_unlock(naos_msg_mutex);
+      free(msg.data);
+      continue;
+    }
+
     // find endpoint
     naos_msg_endpoint_t* endpoint = NULL;
     for (size_t i = 0; i < naos_msg_endpoint_count; i++) {
