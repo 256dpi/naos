@@ -16,7 +16,7 @@ jobs:
         run: yarn build
         working-directory: ./web
       - name: Sync
-        run: ./.github/workflows/web.sh
+        run: ./.github/workflows/sync.sh web NAOS.js
         shell: bash
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
