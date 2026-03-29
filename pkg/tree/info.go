@@ -84,7 +84,7 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 		}
 	}
 	if !found {
-		return nil, fmt.Errorf("compile command not found for %s", suffix)
+		return nil, nil
 	}
 
 	// collect include options
