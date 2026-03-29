@@ -120,7 +120,8 @@ class MetricsViewController: NSHostingController<MetricsView> {
 		// get data
 		let container = rootView.data
 		var metrics = [NAOSMetricInfo]()
-		var layouts = [NAOSMetricLayout]()
+		var layouts = [UInt8: NAOSMetricLayout]()
+		var seriesIndex = [UInt8: Int]()
 
 		// create task
 		task = Task {
@@ -134,18 +135,22 @@ class MetricsViewController: NSHostingController<MetricsView> {
 			metrics = try await NAOSMetrics.list(session: session)
 			for m in metrics {
 				let layout = try await NAOSMetrics.describe(session: session, ref: m.ref)
-				layouts.insert(layout, at: Int(m.ref))
+				layouts[m.ref] = layout
 			}
 
 			// create series
-			for m in metrics {
+			for (i, m) in metrics.enumerated() {
 				container.series.append(MetricsSeries(name: m.name, samples: []))
+				seriesIndex[m.ref] = i
 			}
 
 			// get data
 			while !Task.isCancelled {
 				// load metrics data
 				for m in metrics {
+					// get series index
+					let idx = seriesIndex[m.ref]!
+
 					// read data
 					var data: [Double]
 					switch m.type {
@@ -165,13 +170,13 @@ class MetricsViewController: NSHostingController<MetricsView> {
 					let now = Date.now
 
 					// add samples
-					container.series[Int(m.ref)].samples.append(contentsOf: data.enumerated().map { i, n in
+					container.series[idx].samples.append(contentsOf: data.enumerated().map { i, n in
 						// find keys and values
 						var name = "scalar"
 						if m.size > 1 {
 							name = ""
 							var offset = i
-							let layout = layouts[Int(m.ref)]
+							let layout = layouts[m.ref]!
 							for key in layout.keys.enumerated().reversed() {
 								let vn = offset % layout.values[key.offset].count
 								offset /= layout.values[key.offset].count
@@ -184,7 +189,7 @@ class MetricsViewController: NSHostingController<MetricsView> {
 						// get value
 						var value = n
 						if m.kind == .counter {
-							if let last = container.series[Int(m.ref)].samples.last(where: { s in
+							if let last = container.series[idx].samples.last(where: { s in
 								s.name == name
 							})?.rawValue {
 								value -= last
@@ -197,7 +202,7 @@ class MetricsViewController: NSHostingController<MetricsView> {
 					})
 
 					// trim samples
-					container.series[Int(m.ref)].samples = container.series[Int(m.ref)].samples.filter { sample in
+					container.series[idx].samples = container.series[idx].samples.filter { sample in
 						Date.now.timeIntervalSince(sample.time) < 30
 					}
 				}

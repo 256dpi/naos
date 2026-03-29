@@ -73,7 +73,7 @@ public class NAOSBLEDevice: NAOSDevice {
 		// connect
 		try await manager.connect(peripheral)
 
-		// discovet device
+		// discover device
 		try await withTimeout(seconds: 10) {
 			// discover service
 			try await self.peripheral.discoverServices([bleService])
@@ -148,7 +148,7 @@ public class NAOSBLEDevice: NAOSDevice {
 	}
 
 	func close() async throws {
-		// disconenct
+		// disconnect
 		try await manager.cancelPeripheralConnection(peripheral)
 
 		// clear state
@@ -160,6 +160,7 @@ public class NAOSBLEDevice: NAOSDevice {
 class bleChannel: NAOSChannel {
 	private var peripheral: NAOSBLEDevice
 	private var subscription: AnyCancellable
+	private let lock = NSLock()
 	private var queues: [NAOSQueue] = []
 
 	public func width() -> Int {
@@ -176,7 +177,8 @@ class bleChannel: NAOSChannel {
 		// run forwarder
 		Task {
 			for await data in stream {
-				for queue in ch.queues {
+				let targets = ch.lock.withLock { ch.queues }
+				for queue in targets {
 					queue.send(value: data)
 				}
 			}
@@ -192,15 +194,17 @@ class bleChannel: NAOSChannel {
 	}
 
 	public func subscribe(queue: NAOSQueue) {
-		// add queue
-		if queues.first(where: { $0 === queue }) == nil {
-			queues.append(queue)
+		lock.withLock {
+			if queues.first(where: { $0 === queue }) == nil {
+				queues.append(queue)
+			}
 		}
 	}
 
 	public func unsubscribe(queue: NAOSQueue) {
-		// remove queue
-		queues.removeAll { $0 === queue }
+		lock.withLock {
+			queues.removeAll { $0 === queue }
+		}
 	}
 
 	public func write(data: Data) async throws {

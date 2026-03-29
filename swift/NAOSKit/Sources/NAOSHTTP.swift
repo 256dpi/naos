@@ -68,6 +68,7 @@ public class NAOSHTTPDevice: NAOSDevice {
 
 class httpChannel: NAOSChannel {
 	private var task: URLSessionWebSocketTask
+	private let lock = NSLock()
 	private var queues: [NAOSQueue] = []
 
 	public func width() -> Int {
@@ -85,14 +86,15 @@ class httpChannel: NAOSChannel {
 		Task {
 			while true {
 				let msg = try await task.receive()
+				let targets = ch.lock.withLock { ch.queues }
 				switch msg {
 				case .data(let data):
-					for queue in ch.queues {
+					for queue in targets {
 						queue.send(value: data)
 					}
 				case .string(let text):
 					let data = text.data(using: .utf8)!
-					for queue in ch.queues {
+					for queue in targets {
 						queue.send(value: data)
 					}
 				@unknown default:
@@ -110,15 +112,17 @@ class httpChannel: NAOSChannel {
 	}
 
 	public func subscribe(queue: NAOSQueue) {
-		// add queue
-		if queues.first(where: { $0 === queue }) == nil {
-			queues.append(queue)
+		lock.withLock {
+			if queues.first(where: { $0 === queue }) == nil {
+				queues.append(queue)
+			}
 		}
 	}
 
 	public func unsubscribe(queue: NAOSQueue) {
-		// remove queue
-		queues.removeAll { $0 === queue }
+		lock.withLock {
+			queues.removeAll { $0 === queue }
+		}
 	}
 
 	public func write(data: Data) async throws {

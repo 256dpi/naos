@@ -15,7 +15,7 @@ public struct NAOSSessionStatus: OptionSet {
 	public static let locked = NAOSSessionStatus(rawValue: 1 << 0)
 }
 
-/// An session specific error..
+/// A session specific error.
 public enum NAOSSessionError: LocalizedError {
 	case unavailable
 	case timeout
@@ -46,7 +46,7 @@ public enum NAOSSessionError: LocalizedError {
 		case .closed:
 			return "Session has been closed."
 		case .expectedAck:
-			return "Expected acknowledgemnt."
+			return "Expected acknowledgement."
 		case .unexpectedAck:
 			return "Unexpected acknowledgement."
 		case .invalidMessage:

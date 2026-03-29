@@ -252,9 +252,11 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 		}
 
 		// find index
-		let index = device.availableParameters.firstIndex(of: parameter)!
+		guard let index = device.availableParameters.firstIndex(of: parameter) else {
+			return
+		}
 
-		// reload paramter
+		// reload parameter
 		parameterTableView.reloadData(
 			forRowIndexes: IndexSet(integer: index), columnIndexes: IndexSet(integer: 1))
 	}

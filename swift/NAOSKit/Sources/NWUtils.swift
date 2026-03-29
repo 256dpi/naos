@@ -27,23 +27,36 @@ func resolveService(endpoint: NWEndpoint) async throws -> String {
 		let connection = NWConnection(to: .service(name: name, type: type, domain: domain, interface: nil), using: .udp)
 
 		// handle state changes
+		var resumed = false
+
 		connection.stateUpdateHandler = { state in
 			switch state {
 			case .ready:
-				if let innerEndpoint = connection.currentPath?.remoteEndpoint, case .hostPort(let host, let port) = innerEndpoint {
-					let addr = String(format: "%@:%d", arguments: [stripInterface(from: host.debugDescription), Int(port.rawValue)])
-					continuation.resume(returning: (addr))
-				} else {
-					continuation.resume(throwing: NSError(domain: "NWConnectionError", code: -1, userInfo: [
-						NSLocalizedDescriptionKey: "Unexpected endpoint type: \(endpoint)",
-					]))
+				if !resumed {
+					resumed = true
+					if let innerEndpoint = connection.currentPath?.remoteEndpoint, case .hostPort(let host, let port) = innerEndpoint {
+						let addr = String(format: "%@:%d", arguments: [stripInterface(from: host.debugDescription), Int(port.rawValue)])
+						continuation.resume(returning: (addr))
+					} else {
+						continuation.resume(throwing: NSError(domain: "NWConnectionError", code: -1, userInfo: [
+							NSLocalizedDescriptionKey: "Unexpected endpoint type: \(endpoint)",
+						]))
+					}
 				}
 				connection.cancel()
 			case .failed(let error):
-				continuation.resume(throwing: error)
+				if !resumed {
+					resumed = true
+					continuation.resume(throwing: error)
+				}
 				connection.cancel()
 			case .cancelled:
-				break
+				if !resumed {
+					resumed = true
+					continuation.resume(throwing: NSError(domain: "NWConnectionError", code: -1, userInfo: [
+						NSLocalizedDescriptionKey: "Connection timed out.",
+					]))
+				}
 			default:
 				break
 			}

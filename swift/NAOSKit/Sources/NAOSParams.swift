@@ -117,9 +117,13 @@ public class NAOSParams {
 
 			// parse reply
 			let ref = reply[0]
-			let type = NAOSParamType(rawValue: reply[1])!
+			guard let type = NAOSParamType(rawValue: reply[1]) else {
+				throw NAOSSessionError.invalidMessage
+			}
 			let mode = NAOSParamMode(rawValue: reply[2])
-			let name = String(data: Data(reply[3...]), encoding: .utf8)!
+			guard let name = String(data: Data(reply[3...]), encoding: .utf8) else {
+				throw NAOSSessionError.invalidMessage
+			}
 
 			// append info
 			list.append(NAOSParamInfo(ref: ref, type: type, mode: mode, name: name))

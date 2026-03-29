@@ -65,8 +65,12 @@ public class NAOSMetrics {
 
 			// parse reply
 			let ref = args[0] as! UInt8
-			let kind = NAOSMetricKind(rawValue: args[1] as! UInt8)!
-			let type = NAOSMetricType(rawValue: args[2] as! UInt8)!
+			guard let kind = NAOSMetricKind(rawValue: args[1] as! UInt8) else {
+				throw NAOSSessionError.invalidMessage
+			}
+			guard let type = NAOSMetricType(rawValue: args[2] as! UInt8) else {
+				throw NAOSSessionError.invalidMessage
+			}
 			let size = args[3] as! UInt8
 			let name = args[4] as! String
 

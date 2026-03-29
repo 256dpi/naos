@@ -91,7 +91,7 @@ public class NAOSBLEManager: NSObject {
 	/// Reset discovered devices.
 	public func reset() {
 		// clear devices
-		queue.sync {
+		queue.sync(flags: .barrier) {
 			devices.removeAll()
 		}
 
@@ -129,7 +129,7 @@ public class NAOSBLEManager: NSObject {
 			let device = NAOSManagedDevice(device: bleDevice)
 
 			// add device
-			queue.sync {
+			queue.sync(flags: .barrier) {
 				devices.append(device)
 			}
 
