@@ -572,8 +572,19 @@ static naos_msg_reply_t naos_fs_handle_remove(naos_msg_t msg) {
   // get path
   const char *path = naos_fs_concat((const char *)msg.data);
 
-  // remove file
-  int ret = remove(path);
+  // stat path
+  struct stat info;
+  int ret = stat(path, &info);
+  if (ret != 0) {
+    return naos_fs_send_error(msg.session, errno);
+  }
+
+  // remove directory or file
+  if (S_ISDIR(info.st_mode)) {
+    ret = rmdir(path);
+  } else {
+    ret = unlink(path);
+  }
   if (ret != 0) {
     return naos_fs_send_error(msg.session, errno);
   }
