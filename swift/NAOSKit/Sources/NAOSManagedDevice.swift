@@ -142,7 +142,7 @@ public class NAOSManagedDevice: NSObject {
 		await mutex.wait()
 		defer { mutex.signal() }
 
-		// chceck state
+		// check state
 		if connected {
 			return
 		}
@@ -158,7 +158,7 @@ public class NAOSManagedDevice: NSObject {
 			locked = try await session.status().contains(.locked)
 		}
 
-		// reset max aage
+		// reset max age
 		maxAge = 0
 	}
 

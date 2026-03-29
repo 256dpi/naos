@@ -128,7 +128,7 @@ class MetricsViewController: NSHostingController<MetricsView> {
 			// ensure close on error
 			defer { self.dismiss(nil) }
 
-			// get sessions
+			// get session
 			let session = try await device.newSession()
 
 			// gather metrics

@@ -119,7 +119,7 @@ func saveFile(withName name: String, data: Data) async throws {
 
 func prompt(message: String, defaultValue: String? = nil) async -> String? {
 	return await MainActor.run {
-		// prepare aleert
+		// prepare alert
 		let alert = NSAlert()
 		alert.messageText = message
 		alert.addButton(withTitle: "OK")
@@ -130,7 +130,7 @@ func prompt(message: String, defaultValue: String? = nil) async -> String? {
 		textField.stringValue = defaultValue ?? ""
 		alert.accessoryView = textField
 
-		// handle resposne
+		// handle response
 		let response = alert.runModal()
 		if response == .alertFirstButtonReturn {
 			return textField.stringValue

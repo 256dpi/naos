@@ -79,7 +79,7 @@ public class NAOSMetrics {
 		}
 	}
 
-	/// Describe a metric's keys and values,
+	/// Describe a metric's keys and values.
 	public static func describe(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> NAOSMetricLayout {
 		// send command
 		let cmd = Data([UInt8(1), ref])
@@ -149,7 +149,7 @@ public class NAOSMetrics {
 		}
 	}
 
-	/// Read metrics as  raw data.
+	/// Read metrics as raw data.
 	public static func read(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> Data {
 		// send command
 		let cmd = Data([2, ref])
@@ -161,7 +161,7 @@ public class NAOSMetrics {
 		return reply
 	}
 
-	/// Read metrics as  long data.
+	/// Read metrics as long data.
 	public static func readLong(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> [Int32] {
 		// receive value
 		let reply = try await read(session: session, ref: ref, timeout: timeout)
@@ -176,7 +176,7 @@ public class NAOSMetrics {
 		return list
 	}
 
-	/// Read metrics as  float data.
+	/// Read metrics as float data.
 	public static func readFloat(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> [Float] {
 		// receive value
 		let reply = try await read(session: session, ref: ref, timeout: timeout)

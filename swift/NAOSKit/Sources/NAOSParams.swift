@@ -93,7 +93,7 @@ public class NAOSParams {
 		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: timeout)
 	}
 
-	/// Obtain a list of all known parametersession.
+	/// Obtain a list of all known parameters.
 	public static func list(session: NAOSSession, timeout: TimeInterval = 5) async throws -> [NAOSParamInfo] {
 		// send command
 		try await session.send(endpoint: self.endpoint, data: Data([2]), ackTimeout: 0)

@@ -215,7 +215,7 @@ class bleChannel: NAOSChannel {
 	public func close() {
 		// cancel subscription
 		subscription.cancel()
-		
+
 		// close connection
 		Task { try await peripheral.close() }
 	}

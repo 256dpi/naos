@@ -147,7 +147,7 @@ public class NAOSSession {
 		try await write(
 			msg: NAOSMessage(session: id, endpoint: endpoint, data: Data()))
 
-		// reaad reply
+		// read reply
 		let msg = try await read(timeout: timeout)
 
 		// verify message
@@ -240,7 +240,7 @@ public class NAOSSession {
 		return status
 	}
 
-	/// Unlock  a locked session with the password.
+	/// Unlock a locked session with the password.
 	public func unlock(password: String, timeout: TimeInterval = 5) async throws -> Bool {
 		// prepare command
 		var cmd = Data([1])
@@ -310,7 +310,7 @@ public class NAOSSession {
 		}
 	}
 
-	/// Clean  up the session.
+	/// Clean up the session.
 	public func cleanup() {
 		// end session in background
 		Task { try? await end(timeout: 0) }
