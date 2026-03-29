@@ -10,7 +10,7 @@ jobs:
     runs-on: macos-latest
     env:
       APP_NAME: NAOS
-      SCHEME: NAOSDesktop
+      SCHEME: NAOS
       PROJECT: swift/NAOS.xcodeproj
     steps:
       - name: Checkout
@@ -41,10 +41,13 @@ jobs:
           DERIVED_DATA: ${{ runner.temp }}/DerivedData
         run: |
           set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
           xcodebuild -project "$PROJECT" \
             -scheme "$SCHEME" \
             -configuration Release \
             -derivedDataPath "$DERIVED_DATA" \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$VERSION" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build
