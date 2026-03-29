@@ -9,15 +9,15 @@ This document tracks the parity of features among the Go, TS, and Swift NAOS dri
 | BLE     | Yes        | Yes | Yes | Yes   |
 | HTTP    | Yes (TLS)  | Yes | Yes | Yes   |
 | Serial  | No (Wired) | Yes | Yes | Yes   |
-| Bridge  | Depends    |     |     |       |
-| Connect | Yes (TLS)  |     |     |       |
+| Bridge  | Depends    | n/a | n/a | n/a   |
+| Connect | Yes (TLS)  | n/a | n/a | n/a   |
 
 ## Transports
 
 | Name | Securable | Go  |
 |------|-----------|-----|
 | MQTT | Yes (TLS) | Yes |
-| OSC  | No        |     |
+| OSC  | No        | n/a |
 
 ## Endpoints
 

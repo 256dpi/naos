@@ -9,7 +9,7 @@ At the core of NAOS is the **esp-idf component** that is used to enable and conf
 
 The `naos-explorer` **TUI tool** and macOS **desktop app** are used to inspect, configure, and interact with NAOS-enabled devices over the supported connectivity standards. Groups of multiple NAOS devices can be managed with the `naos-fleet` **CLI tool**.
 
-Finally, the **Go, TypeScript and Swift libraries** can be used to build web, mobile and desktop applications that interface with NAOS devices comfortably.
+Finally, the **Go, TypeScript, and Swift libraries** can be used to build web, mobile and desktop applications that interface with NAOS devices comfortably.
 
 ## Features
 
@@ -35,14 +35,14 @@ These features are provided by a messaging system exposed through various connec
 - HTTP/WS-Server (Channel)
 - HTTP/WS-Client (Reverse-Channel)
 - Serial (Channel)
-- OSC (Transport) [deprecated]
+- OSC (Transport)
 - Relay (Channel, Reverse-Channel)
 
 *Link: physical/network interface · Channel: bidirectional session layer · Transport: routed or brokered messaging*
 
 ## Quickstart
 
-The following steps illustrate how you can get started with NAOS. We will guide you through installation, project setup and flashing.
+The following steps illustrate how you can get started with NAOS. We will guide you through installation, project setup, and flashing.
 
 ### Installation
 
