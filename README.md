@@ -83,6 +83,19 @@ naos run
 
 *This will run the `build`, `flash` and `attach` commands in sequence.*
 
+## SDKs
+
+- **Go** — `go get github.com/256dpi/naos/pkg/...`
+- **JS/TS** — [NAOS.js](https://github.com/256dpi/NAOS.js)
+- **Swift** — [NAOSKit](https://github.com/256dpi/NAOSKit)
+
+> [!NOTE]
+> NAOS.js and NAOSKit commit hashes will not match with the main repository since the mirror creates its own commits.
+
+## Versioning
+
+NAOS uses lockstep versioning with a single repository-wide `vX.X.X` tag on the main branch. Any change can move the version forward, but not every version introduces changes to every component. CI workflows triggered by the tag handle building CLI binaries, syncing the NAOS.js and NAOSKit mirrors, and building the desktop app. Go packages are available immediately via the module proxy.
+
 ## License
 
 Copyright © Joël Gähwiler.
