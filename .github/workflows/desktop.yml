@@ -1,0 +1,110 @@
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+name: Desktop
+jobs:
+  desktop:
+    runs-on: macos-latest
+    env:
+      APP_NAME: NAOS
+      SCHEME: NAOSDesktop
+      PROJECT: swift/NAOS.xcodeproj
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up signing certificate
+        shell: bash
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN_PATH="$RUNNER_TEMP/naos-build.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          echo "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN_PATH" -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain
+          rm "$RUNNER_TEMP/certificate.p12"
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+
+      - name: Build (Release)
+        shell: bash
+        env:
+          DERIVED_DATA: ${{ runner.temp }}/DerivedData
+        run: |
+          set -euo pipefail
+          xcodebuild -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -derivedDataPath "$DERIVED_DATA" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+          APP_PATH="$DERIVED_DATA/Build/Products/Release/${APP_NAME}.app"
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+
+      - name: Codesign
+        shell: bash
+        env:
+          SIGNING_IDENTITY: ${{ secrets.MACOS_CERTIFICATE_IDENTITY }}
+        run: |
+          set -euo pipefail
+          codesign --force --options runtime --timestamp \
+            --sign "$SIGNING_IDENTITY" \
+            --entitlements swift/NAOSDesktop/NAOS.entitlements \
+            --keychain "$KEYCHAIN_PATH" \
+            "$APP_PATH"
+          codesign --verify --deep --strict "$APP_PATH"
+
+      - name: Notarize
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          NOTARIZATION_APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+          NOTARIZATION_TEAM_ID: ${{ secrets.MACOS_NOTARIZATION_TEAM_ID }}
+          NOTARIZATION_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+        run: |
+          set -euo pipefail
+          ARCHIVE_ZIP="$RUNNER_TEMP/${APP_NAME}-notarization.zip"
+          ditto -c -k --keepParent "$APP_PATH" "$ARCHIVE_ZIP"
+          xcrun notarytool submit "$ARCHIVE_ZIP" \
+            --apple-id "$NOTARIZATION_APPLE_ID" \
+            --team-id "$NOTARIZATION_TEAM_ID" \
+            --password "$NOTARIZATION_PASSWORD" \
+            --wait
+          xcrun stapler staple "$APP_PATH"
+
+      - name: Package release artifact
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          ARCHIVE_NAME="${APP_NAME}-${GITHUB_REF_NAME}-mac.zip"
+          ditto -c -k --keepParent "$APP_PATH" "dist/$ARCHIVE_NAME"
+          echo "RELEASE_ASSET=dist/$ARCHIVE_NAME" >> "$GITHUB_ENV"
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ env.RELEASE_ASSET }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Clean up keychain
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${KEYCHAIN_PATH:-}" && -f "$KEYCHAIN_PATH" ]]; then
+            security delete-keychain "$KEYCHAIN_PATH"
+          fi
