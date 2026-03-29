@@ -62,6 +62,10 @@ static void naos_msg_cleanup() {
   // get current time
   int64_t now = naos_millis();
 
+  // collect sessions to clean up
+  uint16_t stale[NAOS_MSG_MAX_SESSIONS];
+  size_t stale_count = 0;
+
   // iterate over sessions
   for (size_t i = 0; i < NAOS_MSG_MAX_SESSIONS; i++) {
     // get session
@@ -79,12 +83,8 @@ static void naos_msg_cleanup() {
       ESP_LOGE(NAOS_LOG_TAG, "naos_msg_cleanup: session %d timed out", session->id);
     }
 
-    // clean up endpoints
-    for (size_t j = 0; j < naos_msg_endpoint_count; j++) {
-      if (naos_msg_endpoints[j].cleanup != NULL) {
-        naos_msg_endpoints[j].cleanup(session->id);
-      }
-    }
+    // collect session id
+    stale[stale_count++] = session->id;
 
     // clear session
     *session = (naos_msg_session_t){0};
@@ -92,6 +92,15 @@ static void naos_msg_cleanup() {
 
   // release mutex
   naos_unlock(naos_msg_mutex);
+
+  // clean up endpoints outside of mutex
+  for (size_t i = 0; i < stale_count; i++) {
+    for (size_t j = 0; j < naos_msg_endpoint_count; j++) {
+      if (naos_msg_endpoints[j].cleanup != NULL) {
+        naos_msg_endpoints[j].cleanup(stale[i]);
+      }
+    }
+  }
 }
 
 static void naos_msg_worker() {
@@ -451,14 +460,8 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 
   // handle "end" command
   if (eid == 0xFF) {
-    // clean up endpoints
-    for (size_t i = 0; i < naos_msg_endpoint_count; i++) {
-      if (naos_msg_endpoints[i].cleanup != NULL) {
-        naos_msg_endpoints[i].cleanup(session->id);
-      }
-    }
-
-    // capture context
+    // capture session info
+    uint16_t session_id = session->id;
     void* session_ctx = session->context;
 
     // clear session
@@ -466,6 +469,13 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 
     // release mutex
     naos_unlock(naos_msg_mutex);
+
+    // clean up endpoints outside of mutex
+    for (size_t i = 0; i < naos_msg_endpoint_count; i++) {
+      if (naos_msg_endpoints[i].cleanup != NULL) {
+        naos_msg_endpoints[i].cleanup(session_id);
+      }
+    }
 
 #if NAOS_MSG_DEBUG
     // log message
