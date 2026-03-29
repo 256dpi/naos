@@ -35,6 +35,14 @@ else
   echo "No changes to commit"
 fi
 
+# Tag if triggered by a tag push
+if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+  TAG="${GITHUB_REF#refs/tags/}"
+  echo "Creating tag $TAG"
+  git tag "$TAG"
+  git push origin "$TAG"
+fi
+
 cd ..
 rm -rf $REPO_NAME
 cd $BASE
