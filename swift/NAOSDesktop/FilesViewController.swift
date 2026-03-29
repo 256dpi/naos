@@ -22,7 +22,7 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 
 		// register path field action
 		pathField.target = self
-		pathField.action = #selector(self.list(_:))
+		pathField.action = #selector(self.pathChanged(_:))
 
 		// initial list
 		list(self)
@@ -66,18 +66,26 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 		}
 		
 		// update path
+		if !pathField.stringValue.hasSuffix("/") {
+			pathField.stringValue += "/"
+		}
 		pathField.stringValue += file.name + "/"
 		
 		// trigger list
 		list(_: self)
 	}
 
-	@IBAction public func list(_: AnyObject) {
+	@objc private func pathChanged(_: AnyObject) {
 		// skip if path unchanged
 		if self.root() == lastPath {
 			return
 		}
 
+		// trigger list
+		list(self)
+	}
+
+	@IBAction public func list(_: AnyObject) {
 		Task {
 			// list directory
 			var dir = self.root()
@@ -254,15 +262,15 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 	
 	@IBAction public func make(_: AnyObject) {
 		Task {
-			// request new name
-			guard let name = await prompt(message: "Path:", defaultValue: self.root())
+			// request name
+			guard let name = await prompt(message: "Name:", defaultValue: "")
 			else {
 				return
 			}
 
 			// make path
 			await run(title: "Making...") { session in
-				try await NAOSFS.make(session: session, path: name)
+				try await NAOSFS.make(session: session, path: self.root() + name)
 			}
 
 			// re-list
