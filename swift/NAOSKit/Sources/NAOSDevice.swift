@@ -49,7 +49,7 @@ func NAOSRead(queue: NAOSQueue, timeout: TimeInterval) async throws -> NAOSMessa
 	}
 
 	// unpack message
-	let args = unpack(fmt: "hob", data: data, start: 1)
+	let args = try unpack(fmt: "hob", data: data, start: 1)
 
 	return NAOSMessage(
 		session: args[0] as! UInt16,

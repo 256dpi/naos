@@ -61,7 +61,7 @@ public class NAOSMetrics {
 			}
 
 			// parse reply
-			let args = unpack(fmt: "oooos", data: reply)
+			let args = try unpack(fmt: "oooos", data: reply)
 
 			// parse reply
 			let ref = args[0] as! UInt8
@@ -111,7 +111,7 @@ public class NAOSMetrics {
 				}
 
 				// parse reply
-				let args = unpack(fmt: "os", data: reply, start: 1)
+				let args = try unpack(fmt: "os", data: reply, start: 1)
 
 				// parse reply
 				let num = args[0] as! UInt8
@@ -132,7 +132,7 @@ public class NAOSMetrics {
 				}
 
 				// parse reply
-				let args = unpack(fmt: "oos", data: reply, start: 1)
+				let args = try unpack(fmt: "oos", data: reply, start: 1)
 
 				// parse reply
 				let numKey = args[0] as! UInt8

@@ -165,13 +165,22 @@ public func pack(fmt: String, args: [Any]) -> Data {
 	return buffer
 }
 
-public func unpack(fmt: String, data: Data, start: Int = 0) -> [Any] {
+struct UnpackError: LocalizedError, Equatable {
+	public var errorDescription: String? {
+		return "Not enough data to unpack."
+	}
+}
+
+public func unpack(fmt: String, data: Data, start: Int = 0) throws -> [Any] {
 	var offset = start
 	var results: [Any] = []
 
 	for code in fmt {
 		switch code {
 		case "s":
+			if offset > data.count {
+				throw UnpackError()
+			}
 			if let end = data[offset...].firstIndex(of: 0) {
 				let stringData = data[offset..<end]
 				let value = String(data: stringData, encoding: .utf8) ?? ""
@@ -184,21 +193,36 @@ public func unpack(fmt: String, data: Data, start: Int = 0) -> [Any] {
 				offset += stringData.count
 			}
 		case "b":
+			if offset > data.count {
+				throw UnpackError()
+			}
 			let value = Data(data[offset...])
 			results.append(value)
 			offset += value.count
 		case "o":
+			if offset + 1 > data.count {
+				throw UnpackError()
+			}
 			results.append(data[offset])
 			offset += 1
 		case "h":
+			if offset + 2 > data.count {
+				throw UnpackError()
+			}
 			let value = readUint16(data: Data(data[offset..<offset + 2]))
 			results.append(value)
 			offset += 2
 		case "i":
+			if offset + 4 > data.count {
+				throw UnpackError()
+			}
 			let value = readUint32(data: Data(data[offset..<offset + 4]))
 			results.append(value)
 			offset += 4
 		case "q":
+			if offset + 8 > data.count {
+				throw UnpackError()
+			}
 			let value = readUint64(data: Data(data[offset..<offset + 8]))
 			results.append(value)
 			offset += 8

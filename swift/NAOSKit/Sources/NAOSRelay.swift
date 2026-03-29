@@ -26,7 +26,7 @@ public class NAOSRelay {
 		}
 
 		// unpack reply
-		let raw = unpack(fmt: "q", data: reply)[0] as! UInt64
+		let raw = try unpack(fmt: "q", data: reply)[0] as! UInt64
 
 		// prepare map
 		var map = [UInt8]()
