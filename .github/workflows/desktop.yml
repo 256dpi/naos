@@ -91,7 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          ARCHIVE_NAME="${APP_NAME}-${GITHUB_REF_NAME}-mac.zip"
+          ARCHIVE_NAME="NAOS-Desktop.zip"
           ditto -c -k --keepParent "$APP_PATH" "dist/$ARCHIVE_NAME"
           echo "RELEASE_ASSET=dist/$ARCHIVE_NAME" >> "$GITHUB_ENV"
 
