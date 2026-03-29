@@ -210,14 +210,16 @@ public class NAOSFS {
 	public static func rename(session: NAOSSession, from: String, to: String, timeout: TimeInterval = 5) async throws {
 		// send command
 		let cmd = pack(fmt: "osos", args: [UInt8(6), from, UInt8(0), to])
-		try await send(session: session, cmd: cmd, ack: true, timeout: timeout)
+		try await send(session: session, cmd: cmd, ack: false, timeout: timeout)
+		_ = try await receive(session: session, expectAck: true, timeout: timeout)
 	}
 
 	/// Remove a file.
 	public static func remove(session: NAOSSession, path: String, timeout: TimeInterval = 5) async throws {
 		// send command
 		let cmd = pack(fmt: "os", args: [UInt8(7), path])
-		try await send(session: session, cmd: cmd, ack: true, timeout: timeout)
+		try await send(session: session, cmd: cmd, ack: false, timeout: timeout)
+		_ = try await receive(session: session, expectAck: true, timeout: timeout)
 	}
 
 	/// Calculate the SHA256 checksum of a file.
@@ -244,7 +246,8 @@ public class NAOSFS {
 	public static func make(session: NAOSSession, path: String, timeout: TimeInterval = 5) async throws {
 		// send command
 		let cmd = pack(fmt: "os", args: [UInt8(9), path])
-		try await send(session: session, cmd: cmd, ack: true, timeout: timeout)
+		try await send(session: session, cmd: cmd, ack: false, timeout: timeout)
+		_ = try await receive(session: session, expectAck: true, timeout: timeout)
 	}
 
 	// - Helpers

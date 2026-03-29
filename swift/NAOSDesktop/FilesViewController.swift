@@ -12,12 +12,30 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 	@IBOutlet var listTable: NSTableView!
 
 	var files: [NAOSFSInfo] = []
+	var lastPath: String = ""
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
 		// register double click handler
 		listTable.doubleAction = #selector(self.descend(_:))
+
+		// register path field action
+		pathField.target = self
+		pathField.action = #selector(self.list(_:))
+
+		// initial list
+		list(self)
+	}
+
+	override func keyDown(with event: NSEvent) {
+		if event.keyCode == 36 && listTable.selectedRow >= 0 {
+			descend(self)
+		} else if event.keyCode == 51 {
+			ascend(self)
+		} else {
+			super.keyDown(with: event)
+		}
 	}
 
 	private func root() -> String {
@@ -26,11 +44,11 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 	
 	@IBAction public func ascend(_: AnyObject) {
 		// make new path
-		let path = self.root().split(separator: "/").dropLast().joined(separator: "/")
-		
+		let parts = self.root().split(separator: "/").dropLast()
+
 		// update path
-		pathField.stringValue = "/" + path
-		
+		pathField.stringValue = "/" + parts.joined(separator: "/") + (parts.isEmpty ? "" : "/")
+
 		// trigger list
 		list(_: self)
 	}
@@ -55,11 +73,23 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 	}
 
 	@IBAction public func list(_: AnyObject) {
+		// skip if path unchanged
+		if self.root() == lastPath {
+			return
+		}
+
 		Task {
 			// list directory
-			await run(title: "Listing...") { session in
-				self.files = try await NAOSFS.list(session: session, dir: self.root())
+			var dir = self.root()
+			if dir.count > 1 && dir.hasSuffix("/") {
+				dir = String(dir.dropLast())
 			}
+			await run(title: "Listing...") { session in
+				self.files = try await NAOSFS.list(session: session, dir: dir)
+			}
+
+			// update last path
+			self.lastPath = self.root()
 
 			// reload list
 			self.listTable.reloadData()
@@ -74,7 +104,7 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 			// iterate files
 			for file in files {
 				// prepare path
-				let path = self.root() + "/" + file.name
+				let path = self.root() + file.name
 
 				// write file
 				await process(title: "Uploading...") { session, progress in
@@ -122,7 +152,7 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 				// read file
 				data = try await NAOSFS.read(
 					session: session,
-					file: self.root() + "/" + file.name,
+					file: self.root() + file.name,
 					report: { done in
 						// calculate delta
 						let delta = Date().timeIntervalSince(start)
@@ -162,8 +192,8 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 				// rename file
 				try await NAOSFS.rename(
 					session: session,
-					from: self.root() + "/" + file.name,
-					to: self.root() + "/" + name)
+					from: self.root() + file.name,
+					to: self.root() + name)
 			}
 
 			// re-list
@@ -183,7 +213,7 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 		Task {
 			// remove file
 			await run(title: "Removing...") { session in
-				try await NAOSFS.remove(session: session, path: self.root() + "/" + file.name)
+				try await NAOSFS.remove(session: session, path: self.root() + file.name)
 			}
 
 			// re-list
@@ -204,7 +234,7 @@ class FilesViewController: SessionViewController, NSTableViewDataSource, NSTable
 			// hash file
 			var sum: Data?
 			await run(title: "Hashing...") { session in
-				sum = try await NAOSFS.sha256(session: session, file: self.root() + "/" + file.name)
+				sum = try await NAOSFS.sha256(session: session, file: self.root() + file.name)
 			}
 			if sum == nil {
 				return
