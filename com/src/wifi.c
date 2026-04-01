@@ -28,16 +28,18 @@ static void naos_wifi_configure() {
   // log call
   ESP_LOGI(NAOS_LOG_TAG, "naos_wifi_configure: called");
 
-  // acquire mutex
+  // check and clear started flag
   naos_lock(naos_wifi_mutex);
+  bool was_started = naos_wifi_started;
+  naos_wifi_started = false;
+  naos_unlock(naos_wifi_mutex);
 
   // stop station if already started
-  if (naos_wifi_started) {
+  if (was_started) {
     ESP_ERROR_CHECK(esp_wifi_stop());
 #ifdef CONFIG_NAOS_WIFI_SUPPORT_EAP
     ESP_ERROR_CHECK(esp_wifi_sta_enterprise_disable());
 #endif
-    naos_wifi_started = false;
   }
 
   // get SSID, password and manual config
@@ -51,7 +53,6 @@ static void naos_wifi_configure() {
 
   // return if SSID is missing
   if (strlen(ssid) == 0) {
-    naos_unlock(naos_wifi_mutex);
     return;
   }
 
@@ -76,39 +77,46 @@ static void naos_wifi_configure() {
   }
 #endif
 
+  // set started flag
+  naos_lock(naos_wifi_mutex);
+  naos_wifi_started = true;
+  naos_unlock(naos_wifi_mutex);
+
   // start station
   ESP_ERROR_CHECK(esp_wifi_start());
-  naos_wifi_started = true;
-
-  // release mutex
-  naos_unlock(naos_wifi_mutex);
 }
 
 static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void *data) {
-  // acquire mutex
-  naos_lock(naos_wifi_mutex);
-
   // handle WiFi events
   if (base == WIFI_EVENT) {
     switch (id) {
       case WIFI_EVENT_STA_START: {
         // initial connection
-        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
+        esp_err_t err = esp_wifi_connect();
+        if (err != ESP_ERR_WIFI_CONN) {
+          ESP_ERROR_CHECK(err);
+        }
 
         break;
       }
 
       case WIFI_EVENT_STA_DISCONNECTED: {
-        // set status
+        // update state
+        naos_lock(naos_wifi_mutex);
         naos_wifi_connected = false;
+        memset(naos_wifi_addr, 0, 16);
+        bool started = naos_wifi_started;
+        naos_unlock(naos_wifi_mutex);
 
         // clear addr
-        memset(naos_wifi_addr, 0, 16);
         naos_set_s("wifi-addr", "");
 
         // attempt to reconnect if started
-        if (naos_wifi_started) {
-          ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
+        if (started) {
+          esp_err_t err = esp_wifi_connect();
+          if (err != ESP_ERR_WIFI_NOT_STARTED && err != ESP_ERR_WIFI_CONN) {
+            ESP_ERROR_CHECK(err);
+          }
         }
 
         break;
@@ -124,14 +132,20 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
   if (base == IP_EVENT) {
     switch (id) {
       case IP_EVENT_STA_GOT_IP: {
-        // set status
+        // get addr
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
+        char addr[16] = {0};
+        naos_net_ip2str(&event->ip_info.ip, addr);
+
+        // update state
+        naos_lock(naos_wifi_mutex);
         naos_wifi_connected = true;
         naos_wifi_generation++;
+        memcpy(naos_wifi_addr, addr, 16);
+        naos_unlock(naos_wifi_mutex);
 
         // set addr
-        ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
-        naos_net_ip2str(&event->ip_info.ip, naos_wifi_addr);
-        naos_set_s("wifi-addr", naos_wifi_addr);
+        naos_set_s("wifi-addr", addr);
 
         break;
       }
@@ -141,9 +155,6 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
       }
     }
   }
-
-  // release mutex
-  naos_unlock(naos_wifi_mutex);
 }
 
 static naos_net_status_t naos_wifi_status() {

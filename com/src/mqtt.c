@@ -73,8 +73,12 @@ static void naos_mqtt_start() {
     return;
   }
 
-  // set flag
+  // check and set flag
   naos_lock(naos_mqtt_mutex);
+  if (naos_mqtt_started) {
+    naos_unlock(naos_mqtt_mutex);
+    return;
+  }
   naos_mqtt_started = true;
   naos_unlock(naos_mqtt_mutex);
 
@@ -84,28 +88,27 @@ static void naos_mqtt_start() {
 }
 
 static void naos_mqtt_stop() {
-  // stop the MQTT client
-  esp_mqtt_stop();
-
-  // set flags
+  // check and clear flags
   naos_lock(naos_mqtt_mutex);
+  if (!naos_mqtt_started) {
+    naos_unlock(naos_mqtt_mutex);
+    return;
+  }
   naos_mqtt_started = false;
   naos_mqtt_networked = false;
   naos_unlock(naos_mqtt_mutex);
+
+  // stop the MQTT client
+  esp_mqtt_stop();
 }
 
 static void naos_mqtt_configure() {
   // log call
   ESP_LOGI(NAOS_LOG_TAG, "naos_mqtt_configure");
 
-  // get started
-  naos_lock(naos_mqtt_mutex);
-  bool started = naos_mqtt_started;
-  naos_unlock(naos_mqtt_mutex);
-
-  // restart MQTT if started
-  if (started) {
-    naos_mqtt_stop();
+  // stop and start MQTT
+  naos_mqtt_stop();
+  if (naos_status() >= NAOS_CONNECTED) {
     naos_mqtt_start();
   }
 }

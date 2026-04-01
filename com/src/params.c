@@ -165,6 +165,7 @@ static void naos_params_update(naos_param_t *param, bool init) {
     case NAOS_ACTION: {
       // defer trigger
       if (yield && param->func_a != NULL) {
+        // ALWAYS USE DEFER! CALLBACKS EXPECT SERIAL EXECUTION (e.g. wifi/eth/mqtt-configure)
         naos_defer("naos-action", 0, param->func_a);
       }
 
