@@ -32,7 +32,7 @@ Usage:
   naos build [--clean --reconfigure --app-only]
   naos detect
   naos flash [<device>] [--baud=<rate> --erase --app-only --alt]
-  naos attach [<device>]
+  naos attach [<device>] [--no-reset]
   naos run [<device>] [--clean --reconfigure --app-only --baud=<rate> --erase --alt]
   naos exec <command>
   naos config <file> [<device>] [--baud=<rate>]
@@ -50,6 +50,7 @@ Options:
   --erase            Erase completely before flashing new image.
   --app-only         Only build or flash the application.
   --alt              Use alternative esptool.py found in PATH.
+  --no-reset         Do not reset the device when attaching.
   --add-debug        Add debug ELF file to bundle.
   --elf=<file>       The ELF file for coredump analysis.
   -b --baud=<rate>   The baud rate.
@@ -87,6 +88,7 @@ type command struct {
 	oAppOnly     bool
 	oAlt         bool
 	oAddDebug    bool
+	oNoReset     bool
 	oELF         string
 }
 
@@ -125,6 +127,7 @@ func parseCommand() *command {
 		oErase:       getBool(a["--erase"]),
 		oAppOnly:     getBool(a["--app-only"]),
 		oAlt:         getBool(a["--alt"]),
+		oNoReset:     getBool(a["--no-reset"]),
 		oAddDebug:    getBool(a["--add-debug"]),
 		oELF:         getString(a["--elf"]),
 	}

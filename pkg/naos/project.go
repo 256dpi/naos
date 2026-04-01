@@ -214,13 +214,13 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly, alt bool, 
 }
 
 // Attach will attach to the attached device.
-func (p *Project) Attach(device string, out io.Writer, in io.Reader) error {
+func (p *Project) Attach(device string, noReset bool, out io.Writer, in io.Reader) error {
 	// set missing device
 	if device == "" {
 		device = serial.FindPort()
 	}
 
-	return tree.Attach(p.Tree(), device, out, in)
+	return tree.Attach(p.Tree(), device, noReset, out, in)
 }
 
 // Exec will execute a command withing the tree.
