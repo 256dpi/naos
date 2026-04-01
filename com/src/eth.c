@@ -24,43 +24,43 @@ static void naos_eth_configure() {
   // log call
   ESP_LOGI(NAOS_LOG_TAG, "naos_eth_configure");
 
-  // acquire mutex
+  // check and clear started flag
   naos_lock(naos_eth_mutex);
+  bool was_started = naos_eth_started;
+  naos_eth_started = false;
+  naos_eth_connected = false;
+  naos_unlock(naos_eth_mutex);
 
   // stop driver if already started
-  if (naos_eth_started) {
+  if (was_started) {
     ESP_ERROR_CHECK(esp_eth_stop(naos_eth_handle));
-    naos_eth_started = false;
   }
-
-  // set flag
-  naos_eth_connected = false;
 
   // configure network
   const char *manual = naos_get_s("eth-manual");
   naos_net_configure(naos_eth_netif, manual);
 
+  // set started flag
+  naos_lock(naos_eth_mutex);
+  naos_eth_started = true;
+  naos_unlock(naos_eth_mutex);
+
   // start driver
   ESP_ERROR_CHECK(esp_eth_start(naos_eth_handle));
-  naos_eth_started = true;
-
-  // release mutex
-  naos_unlock(naos_eth_mutex);
 }
 
 static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void *data) {
-  // acquire mutex
-  naos_lock(naos_eth_mutex);
-
   // handle ethernet events
   if (base == ETH_EVENT) {
     switch (id) {
       case ETHERNET_EVENT_DISCONNECTED: {
-        // set status
+        // update state
+        naos_lock(naos_eth_mutex);
         naos_eth_connected = false;
+        memset(naos_eth_addr, 0, 16);
+        naos_unlock(naos_eth_mutex);
 
         // clear addr
-        memset(naos_eth_addr, 0, 16);
         naos_set_s("eth-addr", "");
 
         break;
@@ -76,14 +76,20 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
   if (base == IP_EVENT) {
     switch (id) {
       case IP_EVENT_ETH_GOT_IP: {
-        // set status
+        // get addr
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
+        char addr[16] = {0};
+        naos_net_ip2str(&event->ip_info.ip, addr);
+
+        // update state
+        naos_lock(naos_eth_mutex);
         naos_eth_connected = true;
         naos_eth_generation++;
+        memcpy(naos_eth_addr, addr, 16);
+        naos_unlock(naos_eth_mutex);
 
         // set addr
-        ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
-        naos_net_ip2str(&event->ip_info.ip, naos_eth_addr);
-        naos_set_s("eth-addr", naos_eth_addr);
+        naos_set_s("eth-addr", addr);
 
         break;
       }
@@ -93,9 +99,6 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
       }
     }
   }
-
-  // release mutex
-  naos_unlock(naos_eth_mutex);
 }
 
 static naos_net_status_t naos_eth_status() {

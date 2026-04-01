@@ -37,8 +37,12 @@ static void naos_connect_start() {
     return;
   }
 
-  // set flag
+  // check and set flag
   naos_lock(naos_connect_mutex);
+  if (naos_connect_started) {
+    naos_unlock(naos_connect_mutex);
+    return;
+  }
   naos_connect_started = true;
   naos_unlock(naos_connect_mutex);
 
@@ -46,33 +50,35 @@ static void naos_connect_start() {
   ESP_ERROR_CHECK(esp_websocket_client_set_uri(naos_connect_client, url));
   ESP_ERROR_CHECK(esp_websocket_client_append_header(naos_connect_client, "Authorization", token));
 
-  // start the MQTT client
+  // start the client
   ESP_ERROR_CHECK(esp_websocket_client_start(naos_connect_client));
 }
 
 static void naos_connect_stop() {
-  // stop the MQTT client
-  ESP_ERROR_CHECK(esp_websocket_client_stop(naos_connect_client));
-
-  // set flags
+  // check and clear flags
   naos_lock(naos_connect_mutex);
+  if (!naos_connect_started) {
+    naos_unlock(naos_connect_mutex);
+    return;
+  }
   naos_connect_started = false;
   naos_connect_connected = false;
   naos_unlock(naos_connect_mutex);
+
+  // clear status
+  naos_set_s("connect-status", "");
+
+  // stop the client
+  ESP_ERROR_CHECK(esp_websocket_client_stop(naos_connect_client));
 }
 
 static void naos_connect_configure() {
   // log call
   ESP_LOGI(NAOS_LOG_TAG, "naos_connect_configure: called");
 
-  // get started
-  naos_lock(naos_connect_mutex);
-  bool started = naos_connect_started;
-  naos_unlock(naos_connect_mutex);
-
-  // restart if started
-  if (started) {
-    naos_connect_stop();
+  // stop and start
+  naos_connect_stop();
+  if (naos_status() >= NAOS_CONNECTED) {
     naos_connect_start();
   }
 }
@@ -104,8 +110,12 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
       // log event
       ESP_LOGI(NAOS_LOG_TAG, "naos_connect_handler: connected");
 
-      // set flag
+      // check and set flag
       naos_lock(naos_connect_mutex);
+      if (!naos_connect_started) {
+        naos_unlock(naos_connect_mutex);
+        break;
+      }
       naos_connect_connected = true;
       naos_unlock(naos_connect_mutex);
 
@@ -118,8 +128,12 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
       // log event
       ESP_LOGI(NAOS_LOG_TAG, "naos_connect_handler: disconnected");
 
-      // set flag
+      // check and clear flag
       naos_lock(naos_connect_mutex);
+      if (!naos_connect_started) {
+        naos_unlock(naos_connect_mutex);
+        break;
+      }
       naos_connect_connected = false;
       naos_unlock(naos_connect_mutex);
 
@@ -167,26 +181,30 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
   }
 }
 
+static naos_mutex_t naos_connect_send_mutex;
+
 static bool naos_connect_send(const uint8_t *data, size_t len, void *ctx) {
-  // get status
-  naos_lock(naos_connect_mutex);
-  bool connected = naos_connect_connected;
-  naos_unlock(naos_connect_mutex);
-
-  // return if not connected
-  if (!connected) {
-    return false;
-  }
-
-  // send message
+  // prepare header
   naos_connect_header_t header = {
       .version = NAOS_CONNECT_VERSION,
       .cmd = NAOS_CONNECT_MSG,
   };
+
+  // check connection
+  naos_lock(naos_connect_mutex);
+  if (!naos_connect_connected) {
+    naos_unlock(naos_connect_mutex);
+    return false;
+  }
+  naos_unlock(naos_connect_mutex);
+
+  // serialize sends
+  naos_lock(naos_connect_send_mutex);
   int r1 = esp_websocket_client_send_bin_partial(naos_connect_client, (char *)&header, sizeof(naos_connect_header_t),
                                                  portMAX_DELAY);
   int r2 = esp_websocket_client_send_cont_msg(naos_connect_client, (char *)data, (int)len, portMAX_DELAY);
   int r3 = esp_websocket_client_send_fin(naos_connect_client, portMAX_DELAY);
+  naos_unlock(naos_connect_send_mutex);
 
   return r1 >= 0 && r2 >= 0 && r3 >= 0;
 }
@@ -201,8 +219,9 @@ static naos_param_t naos_connect_params[] = {
 };
 
 void naos_connect_init() {
-  // initialize mutex
+  // initialize mutexes
   naos_connect_mutex = naos_mutex();
+  naos_connect_send_mutex = naos_mutex();
 
   // register parameters
   for (size_t i = 0; i < NAOS_COUNT(naos_connect_params); i++) {
