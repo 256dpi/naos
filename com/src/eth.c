@@ -54,8 +54,12 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
   if (base == ETH_EVENT) {
     switch (id) {
       case ETHERNET_EVENT_DISCONNECTED: {
-        // update state
+        // check and update state
         naos_lock(naos_eth_mutex);
+        if (!naos_eth_started) {
+          naos_unlock(naos_eth_mutex);
+          break;
+        }
         naos_eth_connected = false;
         memset(naos_eth_addr, 0, 16);
         naos_unlock(naos_eth_mutex);
@@ -81,8 +85,12 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
         char addr[16] = {0};
         naos_net_ip2str(&event->ip_info.ip, addr);
 
-        // update state
+        // check and update state
         naos_lock(naos_eth_mutex);
+        if (!naos_eth_started) {
+          naos_unlock(naos_eth_mutex);
+          break;
+        }
         naos_eth_connected = true;
         naos_eth_generation++;
         memcpy(naos_eth_addr, addr, 16);

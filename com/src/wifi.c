@@ -32,6 +32,7 @@ static void naos_wifi_configure() {
   naos_lock(naos_wifi_mutex);
   bool was_started = naos_wifi_started;
   naos_wifi_started = false;
+  naos_wifi_connected = false;
   naos_unlock(naos_wifi_mutex);
 
   // stop station if already started
@@ -101,22 +102,23 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
       }
 
       case WIFI_EVENT_STA_DISCONNECTED: {
-        // update state
+        // check and update state
         naos_lock(naos_wifi_mutex);
+        if (!naos_wifi_started) {
+          naos_unlock(naos_wifi_mutex);
+          break;
+        }
         naos_wifi_connected = false;
         memset(naos_wifi_addr, 0, 16);
-        bool started = naos_wifi_started;
         naos_unlock(naos_wifi_mutex);
 
         // clear addr
         naos_set_s("wifi-addr", "");
 
-        // attempt to reconnect if started
-        if (started) {
-          esp_err_t err = esp_wifi_connect();
-          if (err != ESP_ERR_WIFI_NOT_STARTED && err != ESP_ERR_WIFI_CONN) {
-            ESP_ERROR_CHECK(err);
-          }
+        // attempt to reconnect
+        esp_err_t err = esp_wifi_connect();
+        if (err != ESP_ERR_WIFI_NOT_STARTED && err != ESP_ERR_WIFI_CONN) {
+          ESP_ERROR_CHECK(err);
         }
 
         break;
@@ -137,8 +139,12 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
         char addr[16] = {0};
         naos_net_ip2str(&event->ip_info.ip, addr);
 
-        // update state
+        // check and update state
         naos_lock(naos_wifi_mutex);
+        if (!naos_wifi_started) {
+          naos_unlock(naos_wifi_mutex);
+          break;
+        }
         naos_wifi_connected = true;
         naos_wifi_generation++;
         memcpy(naos_wifi_addr, addr, 16);
