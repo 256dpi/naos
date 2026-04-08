@@ -17,19 +17,21 @@ static esp_eth_handle_t naos_eth_handle;
 static esp_netif_t *naos_eth_netif;
 static bool naos_eth_started = false;
 static bool naos_eth_connected = false;
-static uint16_t naos_eth_generation = 0;
+static uint32_t naos_eth_generation = 0;
 static char naos_eth_addr[16] = {0};
 
 static void naos_eth_configure() {
   // log call
   ESP_LOGI(NAOS_LOG_TAG, "naos_eth_configure");
 
-  // check and clear started flag
+  // clear state before stopping so published status does not keep a stale address
   naos_lock(naos_eth_mutex);
   bool was_started = naos_eth_started;
   naos_eth_started = false;
   naos_eth_connected = false;
+  memset(naos_eth_addr, 0, 16);
   naos_unlock(naos_eth_mutex);
+  naos_set_s("eth-addr", "");
 
   // stop driver if already started
   if (was_started) {

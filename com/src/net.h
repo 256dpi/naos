@@ -5,7 +5,7 @@
 
 typedef struct {
   bool connected;
-  uint16_t generation;
+  uint32_t generation;
 } naos_net_status_t;
 
 typedef struct {

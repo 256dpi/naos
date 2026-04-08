@@ -17,6 +17,12 @@ static void naos_mqtt_status_handler(esp_mqtt_status_t status) {
   // acquire mutex
   naos_lock(naos_mqtt_mutex);
 
+  // ignore callbacks if not started
+  if (!naos_mqtt_started) {
+    naos_unlock(naos_mqtt_mutex);
+    return;
+  }
+
   // set status
   naos_mqtt_networked = status == ESP_MQTT_STATUS_CONNECTED;
   if (naos_mqtt_networked) {

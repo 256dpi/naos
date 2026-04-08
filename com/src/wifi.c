@@ -20,7 +20,7 @@ static wifi_config_t naos_wifi_config;
 static esp_netif_t *naos_wifi_netif;
 static bool naos_wifi_started;
 static bool naos_wifi_connected;
-static uint16_t naos_wifi_generation = 0;
+static uint32_t naos_wifi_generation = 0;
 static char naos_wifi_addr[16] = {0};
 static int32_t naos_wifi_rssi = 0;
 
@@ -28,12 +28,14 @@ static void naos_wifi_configure() {
   // log call
   ESP_LOGI(NAOS_LOG_TAG, "naos_wifi_configure: called");
 
-  // check and clear started flag
+  // clear state before stopping so published status does not keep a stale address
   naos_lock(naos_wifi_mutex);
   bool was_started = naos_wifi_started;
   naos_wifi_started = false;
   naos_wifi_connected = false;
+  memset(naos_wifi_addr, 0, 16);
   naos_unlock(naos_wifi_mutex);
+  naos_set_s("wifi-addr", "");
 
   // stop station if already started
   if (was_started) {
