@@ -21,12 +21,24 @@ typedef struct {
   naos_connect_command_t cmd;
 } naos_connect_header_t;
 
+typedef enum {
+  NAOS_CONNECT_STOPPED,
+  NAOS_CONNECT_STARTING,
+  NAOS_CONNECT_STARTED,
+  NAOS_CONNECT_CONNECTED,
+} naos_connect_state_t;
+
+// Locking model:
+// - naos_connect_mutex protects logical connection state.
+// - naos_connect_client_mutex serializes client lifecycle and send access.
+// - Code that needs both locks must always take naos_connect_client_mutex first
+//   and naos_connect_mutex second to avoid races and lock inversion.
+
 static naos_mutex_t naos_connect_mutex;
-static naos_mutex_t naos_connect_op_mutex;
+static naos_mutex_t naos_connect_client_mutex;
 static esp_websocket_client_handle_t naos_connect_client;
 static uint8_t naos_connect_channel = 0;
-static bool naos_connect_started = false;
-static bool naos_connect_connected = false;
+static naos_connect_state_t naos_connect_state = NAOS_CONNECT_STOPPED;
 
 static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *d);
 
@@ -70,16 +82,19 @@ static void naos_connect_start() {
     return;
   }
 
-  // check state
+  // serialize client lifecycle
+  naos_lock(naos_connect_client_mutex);
+
+  // re-check state after taking the client lock
   naos_lock(naos_connect_mutex);
-  if (naos_connect_started) {
+  if (naos_connect_state != NAOS_CONNECT_STOPPED) {
     naos_unlock(naos_connect_mutex);
+    naos_unlock(naos_connect_client_mutex);
     return;
   }
+  naos_connect_state = NAOS_CONNECT_STARTING;
   naos_unlock(naos_connect_mutex);
 
-  // create and start the client (serialized)
-  naos_lock(naos_connect_op_mutex);
   if (naos_connect_client != NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
@@ -89,35 +104,36 @@ static void naos_connect_start() {
   }
   ESP_ERROR_CHECK(esp_websocket_client_start(naos_connect_client));
 
-  // set started flag
   naos_lock(naos_connect_mutex);
-  naos_connect_started = true;
+  if (naos_connect_state == NAOS_CONNECT_STARTING) {
+    naos_connect_state = NAOS_CONNECT_STARTED;
+  }
   naos_unlock(naos_connect_mutex);
-  naos_unlock(naos_connect_op_mutex);
+  naos_unlock(naos_connect_client_mutex);
 }
 
 static void naos_connect_stop() {
-  // check and clear flags
+  // serialize against start/destroy and re-check state under the same lock order as start
+  naos_lock(naos_connect_client_mutex);
   naos_lock(naos_connect_mutex);
-  if (!naos_connect_started) {
+  if (naos_connect_state == NAOS_CONNECT_STOPPED) {
     naos_unlock(naos_connect_mutex);
+    naos_unlock(naos_connect_client_mutex);
     return;
   }
-  naos_connect_started = false;
-  naos_connect_connected = false;
+  naos_connect_state = NAOS_CONNECT_STOPPED;
   naos_unlock(naos_connect_mutex);
 
   // clear status
   naos_set_s("connect-status", "");
 
-  // stop and destroy the client (serialized)
-  naos_lock(naos_connect_op_mutex);
+  // stop and destroy the client
   if (naos_connect_client != NULL) {
     ESP_ERROR_CHECK(esp_websocket_client_stop(naos_connect_client));
     ESP_ERROR_CHECK(esp_websocket_client_destroy(naos_connect_client));
     naos_connect_client = NULL;
   }
-  naos_unlock(naos_connect_op_mutex);
+  naos_unlock(naos_connect_client_mutex);
 }
 
 static void naos_connect_configure() {
@@ -135,15 +151,15 @@ static void naos_connect_manage(naos_status_t status) {
   // get network status
   bool connected = status >= NAOS_CONNECTED;
 
-  // get started
+  // get state
   naos_lock(naos_connect_mutex);
-  bool started = naos_connect_started;
+  naos_connect_state_t state = naos_connect_state;
   naos_unlock(naos_connect_mutex);
 
   // handle status
-  if (connected && !started) {
+  if (connected && state == NAOS_CONNECT_STOPPED) {
     naos_connect_start();
-  } else if (!connected && started) {
+  } else if (!connected && state != NAOS_CONNECT_STOPPED) {
     naos_connect_stop();
   }
 }
@@ -160,11 +176,11 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
 
       // check and set flag
       naos_lock(naos_connect_mutex);
-      if (!naos_connect_started) {
+      if (naos_connect_state == NAOS_CONNECT_STOPPED) {
         naos_unlock(naos_connect_mutex);
         break;
       }
-      naos_connect_connected = true;
+      naos_connect_state = NAOS_CONNECT_CONNECTED;
       naos_unlock(naos_connect_mutex);
 
       // set status
@@ -178,11 +194,11 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
 
       // check and clear flag
       naos_lock(naos_connect_mutex);
-      if (!naos_connect_started) {
+      if (naos_connect_state == NAOS_CONNECT_STOPPED) {
         naos_unlock(naos_connect_mutex);
         break;
       }
-      naos_connect_connected = false;
+      naos_connect_state = NAOS_CONNECT_STARTED;
       naos_unlock(naos_connect_mutex);
 
       // set status
@@ -193,7 +209,7 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
     case WEBSOCKET_EVENT_DATA:
       // ignore stale events
       naos_lock(naos_connect_mutex);
-      if (!naos_connect_started) {
+      if (naos_connect_state == NAOS_CONNECT_STOPPED) {
         naos_unlock(naos_connect_mutex);
         break;
       }
@@ -243,8 +259,6 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
   }
 }
 
-static naos_mutex_t naos_connect_send_mutex;
-
 static bool naos_connect_send(const uint8_t *data, size_t len, void *ctx) {
   // prepare header
   naos_connect_header_t header = {
@@ -252,26 +266,38 @@ static bool naos_connect_send(const uint8_t *data, size_t len, void *ctx) {
       .cmd = NAOS_CONNECT_MSG,
   };
 
-  // check connection
+  // validate payload length against the websocket frame budget
+  if (len > NAOS_CONNECT_BUFFER - sizeof(naos_connect_header_t)) {
+    return false;
+  }
+
+  // require an active connection
   naos_lock(naos_connect_mutex);
-  if (!naos_connect_connected) {
+  if (naos_connect_state != NAOS_CONNECT_CONNECTED) {
     naos_unlock(naos_connect_mutex);
     return false;
   }
   naos_unlock(naos_connect_mutex);
 
-  // serialize sends
-  naos_lock(naos_connect_send_mutex);
-  int r1 = esp_websocket_client_send_bin_partial(naos_connect_client, (char *)&header, sizeof(naos_connect_header_t),
-                                                 portMAX_DELAY);
-  int r2 = esp_websocket_client_send_cont_msg(naos_connect_client, (char *)data, (int)len, portMAX_DELAY);
-  int r3 = esp_websocket_client_send_fin(naos_connect_client, portMAX_DELAY);
-  naos_unlock(naos_connect_send_mutex);
+  // serialize client access against stop/destroy and other sends
+  naos_lock(naos_connect_client_mutex);
+  esp_websocket_client_handle_t client = naos_connect_client;
+  if (client == NULL) {
+    naos_unlock(naos_connect_client_mutex);
+    return false;
+  }
+  int r1 = esp_websocket_client_send_bin_partial(client, (char *)&header, sizeof(naos_connect_header_t), portMAX_DELAY);
+  int r2 = esp_websocket_client_send_cont_msg(client, (char *)data, (int)len, portMAX_DELAY);
+  int r3 = esp_websocket_client_send_fin(client, portMAX_DELAY);
+  naos_unlock(naos_connect_client_mutex);
 
   return r1 >= 0 && r2 >= 0 && r3 >= 0;
 }
 
-static uint16_t naos_connect_mtu() { return NAOS_CONNECT_BUFFER; }
+static uint16_t naos_connect_mtu() {
+  // calculate MTU
+  return NAOS_CONNECT_BUFFER - sizeof(naos_connect_header_t);
+}
 
 static naos_param_t naos_connect_params[] = {
     {.name = "connect-url", .type = NAOS_STRING},
@@ -283,8 +309,7 @@ static naos_param_t naos_connect_params[] = {
 void naos_connect_init() {
   // initialize mutexes
   naos_connect_mutex = naos_mutex();
-  naos_connect_op_mutex = naos_mutex();
-  naos_connect_send_mutex = naos_mutex();
+  naos_connect_client_mutex = naos_mutex();
 
   // register parameters
   for (size_t i = 0; i < NAOS_COUNT(naos_connect_params); i++) {
