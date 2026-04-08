@@ -89,8 +89,17 @@ static void naos_mqtt_start() {
   naos_unlock(naos_mqtt_mutex);
 
   // start the MQTT client
-  esp_mqtt_tls(tls, true, NULL, 0);
-  esp_mqtt_start(host, port, client_id, username, password);
+  bool ok = esp_mqtt_tls(tls, true, NULL, 0);
+  if (ok) {
+    ok = esp_mqtt_start(host, port, client_id, username, password);
+  }
+  if (!ok) {
+    ESP_LOGW(NAOS_LOG_TAG, "naos_mqtt_start: failed to start MQTT client");
+    naos_lock(naos_mqtt_mutex);
+    naos_mqtt_started = false;
+    naos_mqtt_networked = false;
+    naos_unlock(naos_mqtt_mutex);
+  }
 }
 
 static void naos_mqtt_stop() {
