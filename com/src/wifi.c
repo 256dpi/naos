@@ -252,7 +252,12 @@ void naos_wifi_init() {
 void naos_wifi_info(int8_t *rssi) {
   // get info
   wifi_ap_record_t record = {0};
-  esp_wifi_sta_get_ap_info(&record);
+  esp_err_t err = esp_wifi_sta_get_ap_info(&record);
+  if (err == ESP_ERR_WIFI_NOT_CONNECT) {
+    *rssi = -128;
+    return;
+  }
+  ESP_ERROR_CHECK(err);
 
   // set RSSI
   *rssi = record.rssi;

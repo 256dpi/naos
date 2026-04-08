@@ -7,7 +7,10 @@
 void naos_wifi_init();
 
 /**
- * Get the WiFi information.
+ * Get the WiFi RSSI in dBm.
+ *
+ * Returns `-128` if the station is currently disconnected and no RSSI is
+ * available.
  */
 void naos_wifi_info(int8_t * rssi);
 
