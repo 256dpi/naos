@@ -10,6 +10,7 @@
 static naos_mutex_t naos_task_mutex;
 static naos_task_t naos_task_handle;
 static bool naos_task_started = false;
+static naos_status_t naos_task_last_status = NAOS_DISCONNECTED;
 
 static void naos_task_process() {
   for (;;) {
@@ -27,8 +28,13 @@ static void naos_task_status(naos_status_t status) {
   // acquire lock
   naos_lock(naos_task_mutex);
 
-  // stop task if started
-  if (naos_task_started) {
+  // transition online lifecycle only when entering or leaving the networked state
+  bool was_networked = naos_task_last_status == NAOS_NETWORKED;
+  bool is_networked = status == NAOS_NETWORKED;
+  naos_task_last_status = status;
+
+  // stop task if leaving the networked state
+  if (was_networked && !is_networked && naos_task_started) {
     // run offline callback if available
     if (naos_config()->offline_callback) {
       naos_config()->offline_callback();
@@ -44,8 +50,8 @@ static void naos_task_status(naos_status_t status) {
     naos_task_started = false;
   }
 
-  // start task if newly networked or generation updated
-  if (status == NAOS_NETWORKED) {
+  // start task if entering the networked state
+  if (!was_networked && is_networked) {
     // call online callback if available
     if (naos_config()->online_callback) {
       naos_config()->online_callback();
