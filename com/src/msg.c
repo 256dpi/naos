@@ -585,11 +585,15 @@ bool naos_msg_send(naos_msg_t msg) {
   // get channel
   naos_msg_channel_t channel = naos_msg_channels[session->channel];
 
+  // copy session info
+  uint16_t mtu = session->mtu;
+  void* context = session->context;
+
   // release mutex
   naos_unlock(naos_msg_mutex);
 
   // check channel MTU
-  if (4 + msg.len > session->mtu) {
+  if (4 + msg.len > mtu) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: message too large (%s)", channel.name);
     return false;
   }
@@ -608,7 +612,7 @@ bool naos_msg_send(naos_msg_t msg) {
 #endif
 
   // send message via channel
-  bool ok = channel.send(frame, 4 + msg.len, session->context);
+  bool ok = channel.send(frame, 4 + msg.len, context);
   if (!ok) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: failed to send message (%s)", channel.name);
   }
@@ -618,10 +622,16 @@ bool naos_msg_send(naos_msg_t msg) {
 
   // update session status
   naos_lock(naos_msg_mutex);
-  if (ok) {
-    session->last_msg = naos_millis();
-  } else {
-    session->broken = true;
+
+  // resolve the session again after the unlocked send path. as it may have been
+  // cleaned up and the slot reused while the transport was sending
+  session = naos_msg_find(msg.session);
+  if (session != NULL) {
+    if (ok) {
+      session->last_msg = naos_millis();
+    } else {
+      session->broken = true;
+    }
   }
   naos_unlock(naos_msg_mutex);
 
