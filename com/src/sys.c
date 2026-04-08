@@ -73,7 +73,9 @@ naos_task_t naos_run(const char *name, uint16_t stack, int core, naos_func_t fun
 
   // create task
   TaskHandle_t handle = {0};
-  xTaskCreatePinnedToCore(naos_execute, name, stack, func, 2, &handle, core);
+  if (xTaskCreatePinnedToCore(naos_execute, name, stack, func, 2, &handle, core) != pdPASS) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
 
   return handle;
 }
@@ -86,6 +88,9 @@ void naos_kill(naos_task_t task) {
 void naos_repeat(const char *name, uint32_t period_ms, naos_func_t func) {
   // create and start timer
   TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(period_ms), pdTRUE, 0, func);
+  if (timer == NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
   while (xTimerStart(timer, portMAX_DELAY) != pdPASS) {
   }
 }
@@ -114,7 +119,9 @@ void naos_defer(const char *name, uint32_t delay_ms, naos_func_t func) {
   }
 
   // start timer
-  xTimerStart(timer, portMAX_DELAY);
+  if (xTimerStart(timer, portMAX_DELAY) != pdPASS) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
 }
 
 bool naos_defer_isr(naos_func_t func) {
@@ -151,7 +158,9 @@ void naos_lock(naos_mutex_t mutex) {
 
 void naos_unlock(naos_mutex_t mutex) {
   // release mutex
-  xSemaphoreGive(mutex);
+  if (xSemaphoreGive(mutex) != pdPASS) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
 }
 
 void naos_mutex_delete(naos_mutex_t mutex) {
@@ -186,9 +195,13 @@ void naos_trigger_isr(naos_signal_t signal, uint16_t bits, bool clear) {
 
   // clear or set bits
   if (clear) {
-    xEventGroupClearBitsFromISR(signal, bits);
+    if (xEventGroupClearBitsFromISR(signal, bits) != pdPASS) {
+      ESP_ERROR_CHECK(ESP_FAIL);
+    }
   } else {
-    xEventGroupSetBitsFromISR(signal, bits, NULL);
+    if (xEventGroupSetBitsFromISR(signal, bits, NULL) != pdPASS) {
+      ESP_ERROR_CHECK(ESP_FAIL);
+    }
   }
 }
 
