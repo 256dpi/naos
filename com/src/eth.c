@@ -63,6 +63,7 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
           break;
         }
         naos_eth_connected = false;
+        naos_eth_generation++;
         memset(naos_eth_addr, 0, 16);
         naos_unlock(naos_eth_mutex);
 
@@ -100,6 +101,24 @@ static void naos_eth_handler(void *arg, esp_event_base_t base, int32_t id, void 
 
         // set addr
         naos_set_s("eth-addr", addr);
+
+        break;
+      }
+
+      case IP_EVENT_ETH_LOST_IP: {
+        // check and update state
+        naos_lock(naos_eth_mutex);
+        if (!naos_eth_started) {
+          naos_unlock(naos_eth_mutex);
+          break;
+        }
+        naos_eth_connected = false;
+        naos_eth_generation++;
+        memset(naos_eth_addr, 0, 16);
+        naos_unlock(naos_eth_mutex);
+
+        // clear addr
+        naos_set_s("eth-addr", "");
 
         break;
       }

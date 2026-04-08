@@ -24,8 +24,9 @@ static void naos_mqtt_status_handler(esp_mqtt_status_t status) {
   }
 
   // set status
-  naos_mqtt_networked = status == ESP_MQTT_STATUS_CONNECTED;
-  if (naos_mqtt_networked) {
+  bool networked = status == ESP_MQTT_STATUS_CONNECTED;
+  if (naos_mqtt_networked != networked) {
+    naos_mqtt_networked = networked;
     naos_mqtt_generation++;
   }
 

@@ -111,6 +111,7 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
           break;
         }
         naos_wifi_connected = false;
+        naos_wifi_generation++;
         memset(naos_wifi_addr, 0, 16);
         naos_unlock(naos_wifi_mutex);
 
@@ -154,6 +155,24 @@ static void naos_wifi_handler(void *arg, esp_event_base_t base, int32_t id, void
 
         // set addr
         naos_set_s("wifi-addr", addr);
+
+        break;
+      }
+
+      case IP_EVENT_STA_LOST_IP: {
+        // check and update state
+        naos_lock(naos_wifi_mutex);
+        if (!naos_wifi_started) {
+          naos_unlock(naos_wifi_mutex);
+          break;
+        }
+        naos_wifi_connected = false;
+        naos_wifi_generation++;
+        memset(naos_wifi_addr, 0, 16);
+        naos_unlock(naos_wifi_mutex);
+
+        // clear addr
+        naos_set_s("wifi-addr", "");
 
         break;
       }

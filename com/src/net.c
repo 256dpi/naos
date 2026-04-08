@@ -49,11 +49,11 @@ bool naos_net_connected(uint32_t *generation) {
   bool connected = false;
   for (size_t i = 0; i < naos_net_link_count; i++) {
     naos_net_status_t status = naos_net_links[i].status();
+    if (generation != NULL) {
+      *generation += (uint32_t)status.generation;
+    }
     if (status.connected) {
       connected = true;
-      if (generation != NULL) {
-        *generation += (uint32_t)status.generation;
-      }
     }
   }
 

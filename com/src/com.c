@@ -105,11 +105,11 @@ bool naos_com_networked(uint32_t *generation) {
   bool networked = false;
   for (size_t i = 0; i < naos_com_transport_count; i++) {
     naos_com_status_t status = naos_com_transports[i].status();
+    if (generation != NULL) {
+      *generation += (uint32_t)status.generation;
+    }
     if (status.networked) {
       networked = true;
-      if (generation != NULL) {
-        *generation += (uint32_t)status.generation;
-      }
     }
   }
 
