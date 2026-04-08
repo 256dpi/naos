@@ -43,6 +43,12 @@ static naos_connect_state_t naos_connect_state = NAOS_CONNECT_STOPPED;
 static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *d);
 
 static esp_websocket_client_handle_t naos_connect_client_create(const char *url, const char *token) {
+  // handle scheme and select transport
+  esp_websocket_transport_t transport = WEBSOCKET_TRANSPORT_OVER_TCP;
+  if (strncasecmp(url, "wss://", 6) == 0) {
+    transport = WEBSOCKET_TRANSPORT_OVER_SSL;
+  }
+
   // prepare headers
   char *headers = NULL;
   if (strlen(token) > 0) {
@@ -54,7 +60,7 @@ static esp_websocket_client_handle_t naos_connect_client_create(const char *url,
       .uri = url,
       .headers = headers,
       .buffer_size = NAOS_CONNECT_BUFFER,
-      .transport = WEBSOCKET_TRANSPORT_OVER_TCP,
+      .transport = transport,
       .subprotocol = "naos",
       .reconnect_timeout_ms = 5000,
       .network_timeout_ms = 5000,
