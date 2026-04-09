@@ -226,7 +226,16 @@ bool naos_update_begin(size_t size) {
   naos_update_size = size;
 
   // begin update (without full flash erase)
-  ESP_ERROR_CHECK(esp_ota_begin(naos_update_partition, OTA_WITH_SEQUENTIAL_WRITES, &naos_update_handle));
+  esp_err_t err = esp_ota_begin(naos_update_partition, OTA_WITH_SEQUENTIAL_WRITES, &naos_update_handle);
+  if (err == ESP_ERR_OTA_ROLLBACK_INVALID_STATE) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_begin: %s", esp_err_to_name(err));
+    naos_update_partition = NULL;
+    naos_update_size = 0;
+    naos_update_handle = 0;
+    naos_unlock(naos_update_mutex);
+    return false;
+  }
+  ESP_ERROR_CHECK(err);
 
   // log message
   ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin: update begun!");
@@ -256,7 +265,18 @@ bool naos_update_write(const uint8_t *chunk, size_t len) {
   }
 
   // write chunk
-  ESP_ERROR_CHECK(esp_ota_write(naos_update_handle, chunk, len));
+  esp_err_t err = esp_ota_write(naos_update_handle, chunk, len);
+  if (err == ESP_ERR_OTA_VALIDATE_FAILED || err == ESP_ERR_INVALID_SIZE) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_write: %s", esp_err_to_name(err));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ota_abort(naos_update_handle));
+    naos_update_partition = NULL;
+    naos_update_size = 0;
+    naos_update_handle = 0;
+    naos_update_session = 0;
+    naos_unlock(naos_update_mutex);
+    return false;
+  }
+  ESP_ERROR_CHECK(err);
 
   // release mutex
   naos_unlock(naos_update_mutex);
@@ -314,16 +334,38 @@ bool naos_update_finish() {
   ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish: finishing update...");
 
   // end update
-  ESP_ERROR_CHECK(esp_ota_end(naos_update_handle));
+  esp_err_t err = esp_ota_end(naos_update_handle);
+  if (err == ESP_ERR_OTA_VALIDATE_FAILED) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_finish: esp_ota_end failed: %s", esp_err_to_name(err));
+    naos_update_partition = NULL;
+    naos_update_size = 0;
+    naos_update_handle = 0;
+    naos_unlock(naos_update_mutex);
+    return false;
+  }
+  ESP_ERROR_CHECK(err);
+  naos_update_handle = 0;
 
   // set boot partition
-  ESP_ERROR_CHECK(esp_ota_set_boot_partition(naos_update_partition));
+  err = esp_ota_set_boot_partition(naos_update_partition);
+  if (err == ESP_ERR_OTA_VALIDATE_FAILED) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_finish: esp_ota_set_boot_partition failed: %s", esp_err_to_name(err));
+    naos_update_partition = NULL;
+    naos_update_size = 0;
+    naos_unlock(naos_update_mutex);
+    return false;
+  }
+  ESP_ERROR_CHECK(err);
 
   // log message
   ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish: update finished!");
 
   // set block
   naos_update_block = true;
+
+  // clear state
+  naos_update_partition = NULL;
+  naos_update_size = 0;
 
   // release mutex
   naos_unlock(naos_update_mutex);
