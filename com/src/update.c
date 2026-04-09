@@ -29,9 +29,20 @@ typedef enum {
 static naos_mutex_t naos_update_mutex;
 static const esp_partition_t *naos_update_partition = NULL;
 static size_t naos_update_size = 0;
+static size_t naos_update_written = 0;
 static esp_ota_handle_t naos_update_handle = 0;
 static uint16_t naos_update_session = 0;
 static bool naos_update_block = false;
+
+static void naos_update_reset(bool clear_session) {
+  naos_update_partition = NULL;
+  naos_update_size = 0;
+  naos_update_written = 0;
+  naos_update_handle = 0;
+  if (clear_session) {
+    naos_update_session = 0;
+  }
+}
 
 static naos_msg_reply_t naos_update_process(naos_msg_t msg) {
   // check length
@@ -222,16 +233,23 @@ bool naos_update_begin(size_t size) {
   // log message
   ESP_LOGI(NAOS_LOG_TAG, "naos_update_begin: beginning update...");
 
+  // reject empty updates
+  if (size == 0) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_begin: invalid size");
+    naos_update_partition = NULL;
+    naos_unlock(naos_update_mutex);
+    return false;
+  }
+
   // store size
   naos_update_size = size;
+  naos_update_written = 0;
 
   // begin update (without full flash erase)
   esp_err_t err = esp_ota_begin(naos_update_partition, OTA_WITH_SEQUENTIAL_WRITES, &naos_update_handle);
   if (err == ESP_ERR_OTA_ROLLBACK_INVALID_STATE) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_begin: %s", esp_err_to_name(err));
-    naos_update_partition = NULL;
-    naos_update_size = 0;
-    naos_update_handle = 0;
+    naos_update_reset(false);
     naos_unlock(naos_update_mutex);
     return false;
   }
@@ -264,19 +282,28 @@ bool naos_update_write(const uint8_t *chunk, size_t len) {
     return false;
   }
 
+  // check length against declared update size
+  if (len > naos_update_size - naos_update_written) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_write: write exceeds declared update size");
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ota_abort(naos_update_handle));
+    naos_update_reset(true);
+    naos_unlock(naos_update_mutex);
+    return false;
+  }
+
   // write chunk
   esp_err_t err = esp_ota_write(naos_update_handle, chunk, len);
   if (err == ESP_ERR_OTA_VALIDATE_FAILED || err == ESP_ERR_INVALID_SIZE) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_write: %s", esp_err_to_name(err));
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ota_abort(naos_update_handle));
-    naos_update_partition = NULL;
-    naos_update_size = 0;
-    naos_update_handle = 0;
-    naos_update_session = 0;
+    naos_update_reset(true);
     naos_unlock(naos_update_mutex);
     return false;
   }
   ESP_ERROR_CHECK(err);
+
+  // track bytes written
+  naos_update_written += len;
 
   // release mutex
   naos_unlock(naos_update_mutex);
@@ -302,9 +329,7 @@ bool naos_update_abort() {
   }
 
   // clear state
-  naos_update_partition = NULL;
-  naos_update_size = 0;
-  naos_update_handle = 0;
+  naos_update_reset(false);
 
   // release mutex
   naos_unlock(naos_update_mutex);
@@ -333,13 +358,20 @@ bool naos_update_finish() {
   // log message
   ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish: finishing update...");
 
+  // verify size
+  if (naos_update_written != naos_update_size) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_finish: incomplete update");
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ota_abort(naos_update_handle));
+    naos_update_reset(true);
+    naos_unlock(naos_update_mutex);
+    return false;
+  }
+
   // end update
   esp_err_t err = esp_ota_end(naos_update_handle);
   if (err == ESP_ERR_OTA_VALIDATE_FAILED) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_finish: esp_ota_end failed: %s", esp_err_to_name(err));
-    naos_update_partition = NULL;
-    naos_update_size = 0;
-    naos_update_handle = 0;
+    naos_update_reset(true);
     naos_unlock(naos_update_mutex);
     return false;
   }
@@ -350,8 +382,7 @@ bool naos_update_finish() {
   err = esp_ota_set_boot_partition(naos_update_partition);
   if (err == ESP_ERR_OTA_VALIDATE_FAILED) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_finish: esp_ota_set_boot_partition failed: %s", esp_err_to_name(err));
-    naos_update_partition = NULL;
-    naos_update_size = 0;
+    naos_update_reset(true);
     naos_unlock(naos_update_mutex);
     return false;
   }
@@ -364,8 +395,7 @@ bool naos_update_finish() {
   naos_update_block = true;
 
   // clear state
-  naos_update_partition = NULL;
-  naos_update_size = 0;
+  naos_update_reset(false);
 
   // release mutex
   naos_unlock(naos_update_mutex);
