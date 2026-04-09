@@ -67,7 +67,9 @@ static naos_msg_reply_t naos_update_process(naos_msg_t msg) {
       memcpy(&size, msg.data, 4);
 
       // begin update
-      naos_update_begin(size);
+      if (!naos_update_begin(size)) {
+        return NAOS_MSG_ERROR;
+      }
 
       // set session
       naos_update_session = msg.session;
@@ -102,7 +104,9 @@ static naos_msg_reply_t naos_update_process(naos_msg_t msg) {
       bool acked = msg.data[0] == 1;
 
       // write data
-      naos_update_write(msg.data + 1, msg.len - 1);
+      if (!naos_update_write(msg.data + 1, msg.len - 1)) {
+        return NAOS_MSG_ERROR;
+      }
 
       return acked ? NAOS_MSG_ACK : NAOS_MSG_OK;
     }
@@ -119,7 +123,9 @@ static naos_msg_reply_t naos_update_process(naos_msg_t msg) {
       }
 
       // abort update
-      naos_update_abort();
+      if (!naos_update_abort()) {
+        return NAOS_MSG_ERROR;
+      }
 
       // clear session
       naos_update_session = 0;
@@ -139,7 +145,9 @@ static naos_msg_reply_t naos_update_process(naos_msg_t msg) {
       }
 
       // finish update
-      naos_update_finish();
+      if (!naos_update_finish()) {
+        return NAOS_MSG_ERROR;
+      }
 
       // clear session
       naos_update_session = 0;
