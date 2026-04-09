@@ -241,6 +241,15 @@ bool naos_update_begin(size_t size) {
     return false;
   }
 
+  // reject updates that do not fit into the target partition
+  if (size > naos_update_partition->size) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_begin: update too large (%u > %u)", (unsigned int)size,
+             (unsigned int)naos_update_partition->size);
+    naos_update_partition = NULL;
+    naos_unlock(naos_update_mutex);
+    return false;
+  }
+
   // store size
   naos_update_size = size;
   naos_update_written = 0;
