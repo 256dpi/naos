@@ -61,20 +61,47 @@ typedef struct {
 static naos_mutex_t naos_fs_mutex = 0;
 static naos_fs_file_t naos_fs_files[NAOS_FS_MAX_FILES] = {0};
 static naos_fs_config_t naos_fs_config = {0};
-static char naos_fs_path[256] = {0};
 
-static const char *naos_fs_concat(const char *path) {
-  // return path directly if root is "/"
-  if (strcmp(naos_fs_config.root, "/") == 0) {
-    return path;
+static bool naos_fs_valid_path(const char *path) {
+  // require absolute paths
+  if (path == NULL || path[0] != '/') {
+    return false;
   }
 
-  // build path
-  naos_fs_path[0] = 0;
-  strcat(naos_fs_path, naos_fs_config.root);
-  strcat(naos_fs_path, path);
+  // reject traversal segments
+  const char *cursor = path;
+  while ((cursor = strstr(cursor, "..")) != NULL) {
+    bool start = cursor == path || cursor[-1] == '/';
+    bool end = cursor[2] == '\0' || cursor[2] == '/';
+    if (start && end) {
+      return false;
+    }
+    cursor += 2;
+  }
 
-  return naos_fs_path;
+  return true;
+}
+
+static bool naos_fs_join(char *buf, size_t len, const char *path) {
+  // validate path before joining it to the configured root
+  if (!naos_fs_valid_path(path)) {
+    errno = EINVAL;
+    return false;
+  }
+
+  // return path directly if root is "/"
+  int written = 0;
+  if (strcmp(naos_fs_config.root, "/") == 0) {
+    written = snprintf(buf, len, "%s", path);
+  } else {
+    written = snprintf(buf, len, "%s%s", naos_fs_config.root, path);
+  }
+  if (written < 0 || (size_t)written >= len) {
+    errno = ENAMETOOLONG;
+    return false;
+  }
+
+  return true;
 }
 
 static int naos_fs_mkdir(const char *path, mode_t mode) {
@@ -133,7 +160,10 @@ static naos_msg_reply_t naos_fs_handle_stat(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat((const char *)msg.data);
+  char path[PATH_MAX];
+  if (!naos_fs_join(path, sizeof(path), (const char *)msg.data)) {
+    return naos_fs_send_error(msg.session, errno);
+  }
 
   // stat path
   struct stat info;
@@ -209,7 +239,10 @@ static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {
     for (const char **e = naos_fs_config.root_entries; *e != NULL; e++) {
       // build full path
       snprintf(path, sizeof(path), "/%s", *e);
-      const char *full = naos_fs_concat(path);
+      char full[PATH_MAX];
+      if (!naos_fs_join(full, sizeof(full), path)) {
+        return naos_fs_send_error(msg.session, errno);
+      }
 
       // stat entry
       struct stat info;
@@ -226,7 +259,10 @@ static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {
   }
 
   // get root
-  const char *root = naos_fs_concat((const char *)msg.data);
+  char root[PATH_MAX];
+  if (!naos_fs_join(root, sizeof(root), (const char *)msg.data)) {
+    return naos_fs_send_error(msg.session, errno);
+  }
 
   // open directory
   DIR *dir = opendir(root);
@@ -246,7 +282,11 @@ static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {
     }
 
     // join path
-    snprintf(path, sizeof(path), "%s/%s", root, entry->d_name);
+    int written = snprintf(path, sizeof(path), "%s/%s", root, entry->d_name);
+    if (written < 0 || (size_t)written >= sizeof(path)) {
+      closedir(dir);
+      return naos_fs_send_error(msg.session, ENAMETOOLONG);
+    }
 
     // stat file
     struct stat info;
@@ -314,7 +354,10 @@ static naos_msg_reply_t naos_fs_handle_open(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat((const char *)(msg.data + 1));
+  char path[PATH_MAX];
+  if (!naos_fs_join(path, sizeof(path), (const char *)(msg.data + 1))) {
+    return naos_fs_send_error(msg.session, errno);
+  }
 
   // create file
   int fd = open(path, open_flags, 0644);
@@ -541,8 +584,12 @@ static naos_msg_reply_t naos_fs_handle_rename(naos_msg_t msg) {
   }
 
   // get paths
-  char *from = strdup(naos_fs_concat((const char *)msg.data));
-  const char *to = naos_fs_concat((const char *)&msg.data[from_len + 1]);
+  char from[PATH_MAX];
+  char to[PATH_MAX];
+  if (!naos_fs_join(from, sizeof(from), (const char *)msg.data) ||
+      !naos_fs_join(to, sizeof(to), (const char *)&msg.data[from_len + 1])) {
+    return naos_fs_send_error(msg.session, errno);
+  }
 
   // remove existing file, if any
   remove(to);
@@ -550,12 +597,8 @@ static naos_msg_reply_t naos_fs_handle_rename(naos_msg_t msg) {
   // rename file
   int ret = rename(from, to);
   if (ret != 0) {
-    free(from);
     return naos_fs_send_error(msg.session, errno);
   }
-
-  // free from
-  free(from);
 
   return NAOS_MSG_ACK;
 }
@@ -570,7 +613,10 @@ static naos_msg_reply_t naos_fs_handle_remove(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat((const char *)msg.data);
+  char path[PATH_MAX];
+  if (!naos_fs_join(path, sizeof(path), (const char *)msg.data)) {
+    return naos_fs_send_error(msg.session, errno);
+  }
 
   // stat path
   struct stat info;
@@ -602,7 +648,10 @@ static naos_msg_reply_t naos_fs_handle_sha256(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat((const char *)msg.data);
+  char path[PATH_MAX];
+  if (!naos_fs_join(path, sizeof(path), (const char *)msg.data)) {
+    return naos_fs_send_error(msg.session, errno);
+  }
 
   // open file
   int fd = open(path, O_RDONLY, 0);
@@ -692,7 +741,10 @@ static naos_msg_reply_t naos_fs_handle_make(naos_msg_t msg) {
   }
 
   // get path
-  const char *path = naos_fs_concat((const char *)msg.data);
+  char path[PATH_MAX];
+  if (!naos_fs_join(path, sizeof(path), (const char *)msg.data)) {
+    return naos_fs_send_error(msg.session, errno);
+  }
 
   // prepare directory
   int ret = naos_fs_mkdir((char *)path, 0755);
