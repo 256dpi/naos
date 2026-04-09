@@ -572,22 +572,29 @@ static naos_msg_reply_t naos_fs_handle_rename(naos_msg_t msg) {
   // command structure:
   // FROM (*) | 0 | TO (*)
 
-  // get lengths
-  size_t from_len = strlen((const char *)msg.data);
-  size_t to_len = strlen((const char *)&msg.data[from_len + 1]);
-  if (from_len == 0 || to_len == 0) {
-    return NAOS_MSG_INVALID;
-  } else if (from_len + 1 + to_len > msg.len) {
-    return NAOS_MSG_INVALID;
-  } else if (msg.data[0] != '/' || msg.data[from_len + 1] != '/') {
+  // locate separator within the bounded message
+  uint8_t *sep = memchr(msg.data, '\0', msg.len);
+  if (sep == NULL) {
     return NAOS_MSG_INVALID;
   }
+
+  // get lengths
+  size_t from_len = (size_t)(sep - msg.data);
+  size_t to_len = msg.len - from_len - 1;
+  if (from_len == 0 || to_len == 0) {
+    return NAOS_MSG_INVALID;
+  } else if (msg.data[0] != '/' || sep[1] != '/') {
+    return NAOS_MSG_INVALID;
+  }
+
+  // msg.data is always terminated at msg.data[msg.len] by naos_msg_dispatch, so
+  // after finding the in-bounds separator, both path slices are valid C strings.
 
   // get paths
   char from[PATH_MAX];
   char to[PATH_MAX];
   if (!naos_fs_join(from, sizeof(from), (const char *)msg.data) ||
-      !naos_fs_join(to, sizeof(to), (const char *)&msg.data[from_len + 1])) {
+      !naos_fs_join(to, sizeof(to), (const char *)(sep + 1))) {
     return naos_fs_send_error(msg.session, errno);
   }
 
