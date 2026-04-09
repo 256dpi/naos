@@ -55,6 +55,21 @@ static naos_msg_session_t* naos_msg_find(uint16_t id) {
   return NULL;
 }
 
+static uint16_t naos_msg_get_session_id() {
+  // search the 16-bit space for the next unused non-zero ID
+  for (size_t tries = 0; tries < UINT16_MAX; tries++) {
+    uint16_t id = naos_msg_next_session++;
+    if (id == 0) {
+      continue;
+    }
+    if (naos_msg_find(id) == NULL) {
+      return id;
+    }
+  }
+
+  return 0;
+}
+
 static void naos_msg_cleanup() {
   // acquire mutex
   naos_lock(naos_msg_mutex);
@@ -376,11 +391,14 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     // set active
     session->active = true;
 
-    // assign id
-    session->id = naos_msg_next_session;
-    naos_msg_next_session++;
-
-    // TODO: Handle wrap-around of session IDs.
+    // get and assign id
+    session->id = naos_msg_get_session_id();
+    if (session->id == 0) {
+      *session = (naos_msg_session_t){0};
+      naos_unlock(naos_msg_mutex);
+      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: no free session id (%s)", name);
+      return false;
+    }
 
     // set channel
     session->channel = channel;
