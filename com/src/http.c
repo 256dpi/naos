@@ -95,6 +95,7 @@ static esp_err_t naos_http_request(httpd_req_t *req) {
 
     // set context
     req->sess_ctx = ctx;
+    req->free_ctx = free;
 
     return ESP_OK;
   }
