@@ -348,7 +348,7 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope);
  * @param scope The scope.
  * @return Whether the command was successful.
  */
-bool naos_publish(const char *topic, void *payload, size_t len, int qos, bool retained, naos_scope_t scope);
+bool naos_publish(const char *topic, const uint8_t *payload, size_t len, int qos, bool retained, naos_scope_t scope);
 bool naos_publish_s(const char *topic, const char *payload, int qos, bool retained, naos_scope_t scope);
 bool naos_publish_b(const char *topic, bool payload, int qos, bool retained, naos_scope_t scope);
 bool naos_publish_l(const char *topic, int32_t payload, int qos, bool retained, naos_scope_t scope);

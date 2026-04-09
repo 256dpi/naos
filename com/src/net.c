@@ -47,14 +47,18 @@ bool naos_net_connected(uint32_t *generation) {
 
   // get status
   bool connected = false;
+  uint32_t current_generation = 0;
   for (size_t i = 0; i < naos_net_link_count; i++) {
     naos_net_status_t status = naos_net_links[i].status();
-    if (generation != NULL) {
-      *generation += (uint32_t)status.generation;
-    }
+    current_generation += status.generation;
     if (status.connected) {
       connected = true;
     }
+  }
+
+  // update generation
+  if (generation != NULL) {
+    *generation = current_generation;
   }
 
   // release mutex
@@ -102,8 +106,8 @@ void naos_net_configure(esp_netif_t *netif, const char *config) {
     ESP_ERROR_CHECK(esp_netif_set_ip_info(netif, &info));
   } else {
     // configure automatic
-    esp_netif_ip_info_t info = {0};
-    ESP_ERROR_CHECK(esp_netif_set_ip_info(netif, &info));
+    esp_netif_ip_info_t auto_info = {0};
+    ESP_ERROR_CHECK(esp_netif_set_ip_info(netif, &auto_info));
 
     // start DHCP
     ESP_ERROR_CHECK(esp_netif_dhcpc_start(netif));

@@ -28,7 +28,7 @@ static void naos_bridge_discover() {
   const char *base_topic = naos_get_s("base-topic");
 
   // construct description
-  char loc[96];
+  char loc[128];
   snprintf(loc, sizeof(loc), "0|%s|%s|%s|%s", app_name, app_version, device_name, base_topic);
 
   // publish description
@@ -52,7 +52,7 @@ static uint16_t naos_bridge_mtu() { return 4096; }
 
 static bool naos_bridge_send(const uint8_t *data, size_t len, void *ctx) {
   // publish message
-  bool ok = naos_publish("naos/outbox", (void *)data, len, 0, false, NAOS_LOCAL);
+  bool ok = naos_publish("naos/outbox", data, len, 0, false, NAOS_LOCAL);
 
   return ok;
 }

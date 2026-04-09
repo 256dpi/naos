@@ -686,7 +686,7 @@ bool naos_msg_is_locked(uint16_t id) {
   if (session == NULL) {
     naos_unlock(naos_msg_mutex);
     ESP_LOGE(NAOS_LOG_TAG, "naos_msg_is_locked: session not found");
-    return 0;
+    return false;
   }
 
   // get lock status

@@ -453,6 +453,10 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
       free(data);
       return naos_fs_send_error(msg.session, errno);
     }
+    if (ret == 0) {
+      free(data);
+      return naos_fs_send_error(msg.session, EIO);
+    }
 
     // send reply
     naos_msg_send((naos_msg_t){

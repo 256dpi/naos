@@ -173,7 +173,7 @@ bool naos_unsubscribe(const char *topic, naos_scope_t scope) {
   return ok;
 }
 
-bool naos_publish(const char *topic, void *payload, size_t len, int qos, bool retained, naos_scope_t scope) {
+bool naos_publish(const char *topic, const uint8_t *payload, size_t len, int qos, bool retained, naos_scope_t scope) {
   // add base topic if scope is local
   if (scope == NAOS_LOCAL) {
     topic = naos_com_with_base_topic(topic);
@@ -201,7 +201,7 @@ bool naos_publish(const char *topic, void *payload, size_t len, int qos, bool re
 }
 
 bool naos_publish_s(const char *topic, const char *payload, int qos, bool retained, naos_scope_t scope) {
-  return naos_publish(topic, (char *)payload, strlen(payload), qos, retained, scope);
+  return naos_publish(topic, (const uint8_t *)payload, strlen(payload), qos, retained, scope);
 }
 
 bool naos_publish_b(const char *topic, bool payload, int qos, bool retained, naos_scope_t scope) {

@@ -43,7 +43,7 @@ static naos_value_t naos_params_default(naos_param_t *param) {
       len = param->default_r.len;
       break;
     case NAOS_STRING:
-      if (param->default_s != 0) {
+      if (param->default_s != NULL) {
         buf = (uint8_t *)param->default_s;
         len = strlen(param->default_s);
       }
@@ -476,7 +476,7 @@ void naos_register(naos_param_t *param) {
     ESP_ERROR_CHECK(ESP_FAIL);
   } else if (strlen(param->name) > NAOS_PARAMS_MAX_NAME_LEN) {
     ESP_ERROR_CHECK(ESP_FAIL);
-  } else if (param->type < 0 || param->type > NAOS_ACTION) {
+  } else if (param->type > NAOS_ACTION) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 

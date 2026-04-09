@@ -195,13 +195,9 @@ void naos_trigger_isr(naos_signal_t signal, uint16_t bits, bool clear) {
 
   // clear or set bits
   if (clear) {
-    if (xEventGroupClearBitsFromISR(signal, bits) != pdPASS) {
-      ESP_ERROR_CHECK(ESP_FAIL);
-    }
+    xEventGroupClearBitsFromISR(signal, bits);
   } else {
-    if (xEventGroupSetBitsFromISR(signal, bits, NULL) != pdPASS) {
-      ESP_ERROR_CHECK(ESP_FAIL);
-    }
+    xEventGroupSetBitsFromISR(signal, bits, NULL);
   }
 }
 
