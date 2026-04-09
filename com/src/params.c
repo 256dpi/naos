@@ -11,6 +11,7 @@
 
 #define NAOS_PARAMS_ENDPOINT 0x1
 #define NAOS_PARAMS_MAX_HANDLERS 8
+#define NAOS_PARAMS_MAX_NAME_LEN 32
 
 typedef enum {
   NAOS_PARAMS_CMD_GET,
@@ -272,7 +273,7 @@ static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
       // REF (1) | TYPE (1) | MODE (1) | NAME (*)
 
       // iterate parameters
-      uint8_t data[256] = {0};
+      uint8_t data[2 * NAOS_PARAMS_MAX_NAME_LEN] = {0};
       for (int i = 0; i < naos_params_count; i++) {
         // get param
         naos_param_t *param = naos_params[i];
@@ -472,6 +473,8 @@ void naos_register(naos_param_t *param) {
   if (strlen(param->name) == 0) {
     ESP_ERROR_CHECK(ESP_FAIL);
   } else if (naos_lookup(param->name) != NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  } else if (strlen(param->name) > NAOS_PARAMS_MAX_NAME_LEN) {
     ESP_ERROR_CHECK(ESP_FAIL);
   } else if (param->type < 0 || param->type > NAOS_ACTION) {
     ESP_ERROR_CHECK(ESP_FAIL);

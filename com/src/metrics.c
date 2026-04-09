@@ -5,6 +5,9 @@
 
 #define NAOS_METRICS_NUM 32
 #define NAOS_METRICS_ENDPOINT 0x5
+#define NAOS_METRICS_MAX_NAME_LEN 32
+#define NAOS_METRICS_MAX_KEY_LEN 32
+#define NAOS_METRICS_MAX_VALUE_LEN 64
 
 typedef enum {
   NAOS_METRICS_CMD_LIST,
@@ -25,7 +28,7 @@ static naos_msg_reply_t naos_metrics_handle_list(naos_msg_t msg) {
   // REF (1) | KIND (1) | TYPE (1) | SIZE(1) | NAME (*)
 
   // iterate metrics
-  uint8_t data[256] = {0};
+  uint8_t data[2 * NAOS_METRICS_MAX_NAME_LEN] = {0};
   for (int i = 0; i < naos_metrics_count; i++) {
     // get metric
     naos_metric_t *metric = naos_metrics_list[i];
@@ -74,7 +77,7 @@ static naos_msg_reply_t naos_metrics_handle_describe(naos_msg_t msg) {
   // 1 | KEY(1) | VALUE(1) | STRING(*)
 
   // iterate keys
-  uint8_t data[256] = {0};
+  uint8_t data[2 * NAOS_METRICS_MAX_VALUE_LEN] = {0};
   for (int i = 0; i < metric->num_keys; i++) {
     // prepare data
     data[0] = 0;
@@ -213,6 +216,11 @@ void naos_metrics_add(naos_metric_t *metric) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
+  // validate metric metadata against the internal protocol limits
+  if (metric->name == NULL || strlen(metric->name) == 0 || strlen(metric->name) > NAOS_METRICS_MAX_NAME_LEN) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
   // clear internal state
   metric->num_keys = 0;
   memset(metric->num_values, 0, sizeof(metric->num_values));
@@ -221,6 +229,9 @@ void naos_metrics_add(naos_metric_t *metric) {
 
   // count keys
   while (metric->keys[metric->num_keys] != NULL) {
+    if (strlen(metric->keys[metric->num_keys]) > NAOS_METRICS_MAX_KEY_LEN) {
+      ESP_ERROR_CHECK(ESP_FAIL);
+    }
     metric->num_keys++;
   }
   if (metric->num_keys > NAOS_METRIC_KEYS) {
@@ -239,6 +250,9 @@ void naos_metrics_add(naos_metric_t *metric) {
     // count values
     const char **values = metric->values + metric->first_value[i];
     while (values[metric->num_values[i]] != NULL) {
+      if (strlen(values[metric->num_values[i]]) > NAOS_METRICS_MAX_VALUE_LEN) {
+        ESP_ERROR_CHECK(ESP_FAIL);
+      }
       metric->num_values[i]++;
     }
   }
