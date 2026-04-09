@@ -9,9 +9,6 @@
 
 #include "utils.h"
 
-// TODO: Remove events, use built-in replies.
-// TODO: Verify update size and sequential writes.
-
 #define NAOS_UPDATE_ENDPOINT 0x2
 
 typedef enum {
@@ -20,11 +17,6 @@ typedef enum {
   NAOS_UPDATE_ABORT,
   NAOS_UPDATE_FINISH,
 } naos_update_cmd_t;
-
-typedef enum {
-  NAOS_UPDATE_READY,
-  NAOS_UPDATE_DONE,
-} naos_update_event_t;
 
 static naos_mutex_t naos_update_mutex;
 static const esp_partition_t *naos_update_partition = NULL;
@@ -85,24 +77,15 @@ static naos_msg_reply_t naos_update_process(naos_msg_t msg) {
       // set session
       naos_update_session = msg.session;
 
-      // send reply to session
-      uint8_t event = NAOS_UPDATE_READY;
-      naos_msg_send((naos_msg_t){
-          .session = msg.session,
-          .endpoint = NAOS_UPDATE_ENDPOINT,
-          .data = &event,
-          .len = 1,
-      });
-
-      return NAOS_MSG_OK;
+      return NAOS_MSG_ACK;
     }
 
     case NAOS_UPDATE_WRITE: {
       // command structure:
-      // ACKED (1) | DATA (*)
+      // ACKED (1) | OFFSET (4) | DATA (*)
 
       // check length
-      if (msg.len <= 1) {
+      if (msg.len <= 5) {
         return NAOS_MSG_INVALID;
       }
 
@@ -114,8 +97,12 @@ static naos_msg_reply_t naos_update_process(naos_msg_t msg) {
       // get acked
       bool acked = msg.data[0] == 1;
 
+      // get offset
+      uint32_t offset = 0;
+      memcpy(&offset, msg.data + 1, 4);
+
       // write data
-      if (!naos_update_write(msg.data + 1, msg.len - 1)) {
+      if (!naos_update_write(offset, msg.data + 5, msg.len - 5)) {
         return NAOS_MSG_ERROR;
       }
 
@@ -163,16 +150,7 @@ static naos_msg_reply_t naos_update_process(naos_msg_t msg) {
       // clear session
       naos_update_session = 0;
 
-      // send reply to session
-      uint8_t event = NAOS_UPDATE_DONE;
-      naos_msg_send((naos_msg_t){
-          .session = msg.session,
-          .endpoint = NAOS_UPDATE_ENDPOINT,
-          .data = &event,
-          .len = 1,
-      });
-
-      return NAOS_MSG_OK;
+      return NAOS_MSG_ACK;
     }
 
     default:
@@ -273,7 +251,7 @@ bool naos_update_begin(size_t size) {
   return true;
 }
 
-bool naos_update_write(const uint8_t *chunk, size_t len) {
+bool naos_update_write(uint32_t offset, const uint8_t *chunk, size_t len) {
   // acquire mutex
   naos_lock(naos_update_mutex);
 
@@ -291,11 +269,17 @@ bool naos_update_write(const uint8_t *chunk, size_t len) {
     return false;
   }
 
+  // enforce monotonic sequential writes
+  if (offset != naos_update_written) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_update_write: unexpected offset %u, expected %u", (unsigned int)offset,
+             (unsigned int)naos_update_written);
+    naos_unlock(naos_update_mutex);
+    return false;
+  }
+
   // check length against declared update size
   if (len > naos_update_size - naos_update_written) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_update_write: write exceeds declared update size");
-    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ota_abort(naos_update_handle));
-    naos_update_reset(true);
     naos_unlock(naos_update_mutex);
     return false;
   }

@@ -14,13 +14,14 @@
 bool naos_update_begin(size_t size);
 
 /**
- * Write a chunk of data to the update.
+ * Write a chunk of data to the update at the expected offset.
  *
+ * @param offset The offset of the chunk within the update.
  * @param chunk The chunk of data.
  * @param len The length of the chunk.
  * @return True if the chunk was written successfully, false otherwise.
  */
-bool naos_update_write(const uint8_t *chunk, size_t len);
+bool naos_update_write(uint32_t offset, const uint8_t *chunk, size_t len);
 
 /**
  * Abort the update.

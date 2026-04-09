@@ -14,21 +14,13 @@ public class NAOSUpdate {
 	public static func run(session: NAOSSession, image: Data, report: ((Int) -> Void)?, timeout: TimeInterval = 30) async throws {
 		// send "begin" command
 		var cmd = pack(fmt: "oi", args: [UInt8(0), UInt32(image.count)])
-		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: 0)
-
-		// receive reply
-		var reply = try await session.receive(endpoint: self.endpoint, expectAck: false, timeout: timeout)!
-
-		// verify reply
-		if reply.count != 1 || reply[0] != 0 {
-			throw NAOSSessionError.invalidMessage
-		}
+		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: timeout)
 		
 		// determine MTU
 		var mtu = Int(try await session.getMTU())
 		
 		// subtract overhead
-		mtu -= 2
+		mtu -= 6
 		
 		// determine channel width
 		let width = max(1, session.channel.width())
@@ -45,7 +37,7 @@ public class NAOSUpdate {
 			let acked = num % width == 0
 
 			// send "write" command
-			cmd = pack(fmt: "oob", args: [UInt8(1), UInt8(acked ? 1 : 0), chunkData])
+			cmd = pack(fmt: "ooib", args: [UInt8(1), UInt8(acked ? 1 : 0), UInt32(offset), chunkData])
 			try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: acked ? timeout : 0)
 
 			// increment offset
@@ -62,14 +54,6 @@ public class NAOSUpdate {
 
 		// send "finish" command
 		cmd = pack(fmt: "o", args: [UInt8(3)])
-		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: 0)
-
-		// receive reply
-		reply = try await session.receive(endpoint: self.endpoint, expectAck: false, timeout: timeout)!
-
-		// verify reply
-		if reply.count != 1 || reply[0] != 1 {
-			throw NAOSSessionError.invalidMessage
-		}
+		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: timeout)
 	}
 }

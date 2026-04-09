@@ -11,15 +11,7 @@ export async function update(
 ) {
   // send "begin" command
   let cmd = pack("oi", 0, data.length);
-  await session.send(updateEndpoint, cmd, 0);
-
-  // receive reply
-  let [reply] = await session.receive(updateEndpoint, false, timeout);
-
-  // verify reply
-  if (reply.length !== 1 || reply[0] !== 0) {
-    throw new Error("invalid reply");
-  }
+  await session.send(updateEndpoint, cmd, timeout);
 
   // get width
   const width = session.channel().width();
@@ -28,7 +20,7 @@ export async function update(
   let mtu = await session.getMTU();
 
   // subtract overhead
-  mtu -= 2;
+  mtu -= 6;
 
   // write data in chunks
   let num = 0;
@@ -42,7 +34,7 @@ export async function update(
     let acked = num % width === 0;
 
     // send "write" command
-    cmd = pack("oob", 1, acked ? 1 : 0, chunkData);
+    cmd = pack("ooib", 1, acked ? 1 : 0, offset, chunkData);
     await session.send(updateEndpoint, cmd, acked ? timeout : 0);
 
     // increment offset
@@ -59,13 +51,5 @@ export async function update(
 
   // send "finish" command
   cmd = pack("o", 3);
-  await session.send(updateEndpoint, cmd, 0);
-
-  // receive reply
-  [reply] = await session.receive(updateEndpoint, false, timeout);
-
-  // verify reply
-  if (reply.length !== 1 || reply[0] !== 1) {
-    throw new Error("invalid reply");
-  }
+  await session.send(updateEndpoint, cmd, timeout);
 }
