@@ -16,7 +16,6 @@
 #include "params.h"
 #include "utils.h"
 
-// TODO: naos_ble_pending_id is shared state without protection; concurrent bonding could overwrite a pending identity.
 // TODO: allowlist ring buffer doesn't remove evicted entries from the controller whitelist/resolving list.
 
 #define NAOS_BLE_SIGNAL_INIT (1 << 0)
@@ -31,10 +30,18 @@
 #define NAOS_BLE_WL_ADDR_TYPE(t) ((t) == BLE_ADDR_TYPE_PUBLIC ? BLE_WL_ADDR_TYPE_PUBLIC : BLE_WL_ADDR_TYPE_RANDOM)
 
 typedef struct {
+  esp_bd_addr_t addr;
+  esp_ble_addr_type_t type;
+  uint8_t irk[ESP_BT_OCTET16_LEN];
+  bool valid;
+} naos_ble_identity_t;
+
+typedef struct {
   uint16_t id;
   uint16_t mtu;
   bool congested;
   bool connected;
+  naos_ble_identity_t pending_id;
 } naos_ble_conn_t;
 
 static esp_ble_adv_params_t naos_ble_adv_params = {
@@ -92,19 +99,25 @@ static struct {
   size_t next;
 } naos_ble_allowlist = {0};
 
-static struct {
-  esp_bd_addr_t addr;
-  esp_ble_addr_type_t type;
-  uint8_t irk[ESP_BT_OCTET16_LEN];
-  bool valid;
-} naos_ble_pending_id = {0};
-
 static naos_ble_config_t naos_ble_config = {0};
 static naos_signal_t naos_ble_signal;
 static nvs_handle_t naos_ble_handle = 0;
 static naos_ble_conn_t naos_ble_conns[NAOS_BLE_MAX_CONNECTIONS];
 static uint8_t naos_ble_msg_channel_id = 0;
 static bool naos_ble_stop_adv_for_rl = false;  // set when we stop advertising to update resolving list
+static naos_ble_identity_t naos_ble_resolving_id = {0};
+
+static naos_ble_conn_t *naos_ble_find_conn(const esp_bd_addr_t addr) {
+  // find connection by address
+  for (size_t i = 0; i < NAOS_BLE_MAX_CONNECTIONS; i++) {
+    naos_ble_conn_t *conn = &naos_ble_conns[i];
+    if (conn->connected && memcmp(conn->pending_id.addr, addr, sizeof(esp_bd_addr_t)) == 0) {
+      return conn;
+    }
+  }
+
+  return NULL;
+}
 
 static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
   switch (e) {
@@ -169,12 +182,17 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
       // capture peer identity key (stable identity address + IRK behind the RPA)
       if (p->ble_security.ble_key.key_type == ESP_LE_KEY_PID) {
         esp_ble_pid_keys_t *pid = &p->ble_security.ble_key.p_key_value.pid_key;
-        memcpy(naos_ble_pending_id.addr, pid->static_addr, sizeof(esp_bd_addr_t));
-        naos_ble_pending_id.type = pid->addr_type;
-        memcpy(naos_ble_pending_id.irk, pid->irk, ESP_BT_OCTET16_LEN);
-        naos_ble_pending_id.valid = true;
+        naos_ble_conn_t *conn = naos_ble_find_conn(p->ble_security.ble_key.bd_addr);
+        if (conn == NULL) {
+          ESP_LOGW(NAOS_LOG_TAG, "naos_ble_gap_handler: missing pending connection for identity key");
+          break;
+        }
+        memcpy(conn->pending_id.addr, pid->static_addr, sizeof(esp_bd_addr_t));
+        conn->pending_id.type = pid->addr_type;
+        memcpy(conn->pending_id.irk, pid->irk, ESP_BT_OCTET16_LEN);
+        conn->pending_id.valid = true;
         ESP_LOGI(NAOS_LOG_TAG, "naos_ble_gap_handler: peer identity (type=%d addr=" NAOS_BLE_ADDR_FMT ")",
-                 naos_ble_pending_id.type, NAOS_BLE_ADDR_ARGS(naos_ble_pending_id.addr));
+                 conn->pending_id.type, NAOS_BLE_ADDR_ARGS(conn->pending_id.addr));
       }
 
       break;
@@ -191,24 +209,25 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
       }
 
       // commit identity address + IRK to whitelist and NVS (resolving list add is deferred to ADV_STOP_COMPLETE)
-      if (naos_ble_config.pairing && naos_ble_pending_id.valid) {
+      naos_ble_conn_t *conn = naos_ble_find_conn(p->ble_security.auth_cmpl.bd_addr);
+      if (naos_ble_config.pairing && conn != NULL && conn->pending_id.valid) {
         // add to controller whitelist
-        ESP_ERROR_CHECK(esp_ble_gap_update_whitelist(true, naos_ble_pending_id.addr,
-                                                     NAOS_BLE_WL_ADDR_TYPE(naos_ble_pending_id.type)));
+        ESP_ERROR_CHECK(
+            esp_ble_gap_update_whitelist(true, conn->pending_id.addr, NAOS_BLE_WL_ADDR_TYPE(conn->pending_id.type)));
 
         // persist identity in allowlist if not already present
         bool found = false;
         for (size_t j = 0; j < NAOS_BLE_ALLOWLIST_SIZE; j++) {
-          if (memcmp(naos_ble_allowlist.entries[j].addr, naos_ble_pending_id.addr, sizeof(esp_bd_addr_t)) == 0) {
+          if (memcmp(naos_ble_allowlist.entries[j].addr, conn->pending_id.addr, sizeof(esp_bd_addr_t)) == 0) {
             found = true;
             break;
           }
         }
         if (!found) {
           size_t idx = naos_ble_allowlist.next;
-          memcpy(naos_ble_allowlist.entries[idx].addr, naos_ble_pending_id.addr, sizeof(esp_bd_addr_t));
-          naos_ble_allowlist.entries[idx].type = naos_ble_pending_id.type;
-          memcpy(naos_ble_allowlist.entries[idx].irk, naos_ble_pending_id.irk, ESP_BT_OCTET16_LEN);
+          memcpy(naos_ble_allowlist.entries[idx].addr, conn->pending_id.addr, sizeof(esp_bd_addr_t));
+          naos_ble_allowlist.entries[idx].type = conn->pending_id.type;
+          memcpy(naos_ble_allowlist.entries[idx].irk, conn->pending_id.irk, ESP_BT_OCTET16_LEN);
           naos_ble_allowlist.entries[idx].has_irk = true;
           naos_ble_allowlist.next = (naos_ble_allowlist.next + 1) % NAOS_BLE_ALLOWLIST_SIZE;
           ESP_ERROR_CHECK(
@@ -216,22 +235,24 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
           ESP_ERROR_CHECK(nvs_commit(naos_ble_handle));
           ESP_LOGI(NAOS_LOG_TAG,
                    "naos_ble_gap_handler: added identity to allowlist (type=%d addr=" NAOS_BLE_ADDR_FMT ")",
-                   naos_ble_pending_id.type, NAOS_BLE_ADDR_ARGS(naos_ble_pending_id.addr));
+                   conn->pending_id.type, NAOS_BLE_ADDR_ARGS(conn->pending_id.addr));
         }
 
         // stop advertising so ADV_STOP_COMPLETE can safely add to resolving list
         esp_err_t err = esp_ble_gap_stop_advertising();
         if (err == ESP_OK) {
+          naos_ble_resolving_id = conn->pending_id;
+          conn->pending_id.valid = false;
           naos_ble_stop_adv_for_rl = true;
         } else if (err == ESP_ERR_INVALID_STATE) {  // not advertising
-          ESP_ERROR_CHECK(esp_ble_gap_add_device_to_resolving_list(naos_ble_pending_id.addr, naos_ble_pending_id.type,
-                                                                   naos_ble_pending_id.irk));
-          naos_ble_pending_id.valid = false;
+          ESP_ERROR_CHECK(esp_ble_gap_add_device_to_resolving_list(conn->pending_id.addr, conn->pending_id.type,
+                                                                   conn->pending_id.irk));
+          conn->pending_id.valid = false;
           ESP_ERROR_CHECK(esp_ble_gap_start_advertising(&naos_ble_adv_params));
         } else {
           ESP_LOGW(NAOS_LOG_TAG, "naos_ble_gap_handler: failed to stop advertising, dropping pending identity (%d)",
                    err);
-          naos_ble_pending_id.valid = false;
+          conn->pending_id.valid = false;
         }
       }
 
@@ -250,15 +271,15 @@ static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_
       // check status
       if (p->adv_stop_cmpl.status != ESP_BT_STATUS_SUCCESS) {
         ESP_LOGW(NAOS_LOG_TAG, "naos_ble_gap_handler: adv stop failed during RL update (%d)", p->adv_stop_cmpl.status);
-        naos_ble_pending_id.valid = false;
+        naos_ble_resolving_id.valid = false;
         break;
       }
 
       // add to resolving list now that advertising is stopped (required by controller)
-      if (naos_ble_pending_id.valid) {
-        ESP_ERROR_CHECK(esp_ble_gap_add_device_to_resolving_list(naos_ble_pending_id.addr, naos_ble_pending_id.type,
-                                                                 naos_ble_pending_id.irk));
-        naos_ble_pending_id.valid = false;
+      if (naos_ble_resolving_id.valid) {
+        ESP_ERROR_CHECK(esp_ble_gap_add_device_to_resolving_list(naos_ble_resolving_id.addr, naos_ble_resolving_id.type,
+                                                                 naos_ble_resolving_id.irk));
+        naos_ble_resolving_id.valid = false;
       }
 
       // restart advertising
@@ -415,6 +436,9 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
       naos_ble_conns[p->connect.conn_id].id = p->connect.conn_id;
       naos_ble_conns[p->connect.conn_id].mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
       naos_ble_conns[p->connect.conn_id].connected = true;
+      memset(&naos_ble_conns[p->connect.conn_id].pending_id, 0, sizeof(naos_ble_conns[p->connect.conn_id].pending_id));
+      memcpy(naos_ble_conns[p->connect.conn_id].pending_id.addr, p->connect.remote_bda, sizeof(esp_bd_addr_t));
+      naos_ble_conns[p->connect.conn_id].pending_id.type = p->connect.ble_addr_type;
 
       // update connection params
       esp_ble_conn_update_params_t conn_params;
