@@ -25,13 +25,14 @@ var (
 	SessionUnknownMessage = errors.New("unknown message")
 	SessionEndpointError  = errors.New("endpoint error")
 	SessionLockedError    = errors.New("session locked")
+	SessionWrongOwner     = errors.New("wrong owner")
 	SessionExpectedAck    = errors.New("expected ack")
 )
 
 // Session represents a communication session with a NAOS device.
 type Session struct {
 	id  uint16
-	ch  Channel
+	ch  *Channel
 	qu  Queue
 	mtu uint16
 	mu  sync.Mutex
@@ -41,15 +42,15 @@ type Session struct {
 var Ack = errors.New("acknowledgement")
 
 // OpenSession opens a new session using the specified channel.
-func OpenSession(channel Channel) (*Session, error) {
+func OpenSession(channel *Channel) (*Session, error) {
 	return OpenSessionTimeout(channel, 10*time.Second)
 }
 
 // OpenSessionTimeout opens a new session using the specified channel and waits
 // up to the provided timeout for the initial session reply.
-func OpenSessionTimeout(channel Channel, timeout time.Duration) (*Session, error) {
+func OpenSessionTimeout(channel *Channel, timeout time.Duration) (*Session, error) {
 	// prepare queue
-	queue := make(Queue, 64)
+	queue := make(Queue, 128)
 
 	// subscribe to channel
 	channel.Subscribe(queue)
@@ -66,7 +67,7 @@ func OpenSessionTimeout(channel Channel, timeout time.Duration) (*Session, error
 	handle := random(16)
 
 	// begin session
-	err := Write(channel, Message{Session: 0, Endpoint: 0x0, Data: handle})
+	err := Write(channel, queue, Message{Session: 0, Endpoint: 0x0, Data: handle})
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +101,7 @@ func (s *Session) ID() uint16 {
 }
 
 // Channel returns the channel used by the session.
-func (s *Session) Channel() Channel {
+func (s *Session) Channel() *Channel {
 	return s.ch
 }
 
@@ -111,7 +112,7 @@ func (s *Session) Ping(timeout time.Duration) error {
 	defer s.mu.Unlock()
 
 	// write command
-	err := Write(s.ch, Message{Session: s.id, Endpoint: 0xFE, Data: nil})
+	err := Write(s.ch, s.qu, Message{Session: s.id, Endpoint: 0xFE, Data: nil})
 	if err != nil {
 		return err
 	}
@@ -139,7 +140,7 @@ func (s *Session) Query(endpoint uint8, timeout time.Duration) (bool, error) {
 	defer s.mu.Unlock()
 
 	// write command
-	err := Write(s.ch, Message{Session: s.id, Endpoint: endpoint, Data: nil})
+	err := Write(s.ch, s.qu, Message{Session: s.id, Endpoint: endpoint, Data: nil})
 	if err != nil {
 		return false, err
 	}
@@ -206,7 +207,7 @@ func (s *Session) Send(endpoint uint8, data []byte, ackTimeout time.Duration) er
 	defer s.mu.Unlock()
 
 	// write message
-	err := Write(s.ch, Message{Session: s.id, Endpoint: endpoint, Data: data})
+	err := Write(s.ch, s.qu, Message{Session: s.id, Endpoint: endpoint, Data: data})
 	if err != nil {
 		return err
 	}
@@ -321,7 +322,7 @@ func (s *Session) End(timeout time.Duration) error {
 	defer s.mu.Unlock()
 
 	// write command
-	err := Write(s.ch, Message{Session: s.id, Endpoint: 0xFF, Data: nil})
+	err := Write(s.ch, s.qu, Message{Session: s.id, Endpoint: 0xFF, Data: nil})
 	if err != nil {
 		return err
 	}

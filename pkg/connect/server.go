@@ -33,7 +33,7 @@ type connectedDevice struct {
 	appName    string
 	appVersion string
 	connected  time.Time
-	channel    *Channel
+	channel    *msg.Channel
 }
 
 // NewServer returns a new NAOS Connect server.
@@ -108,7 +108,7 @@ func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	channel := NewChannel(nil, conn)
+	channel := msg.NewChannel(NewTransport(conn), nil, 10)
 	dev := &connectedDevice{
 		id:        s.nextID(),
 		connected: time.Now(),
@@ -153,50 +153,54 @@ func (s *Server) handleDevice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	remoteAddr := conn.RemoteAddr().String()
-	client := NewChannel(nil, conn)
+	client := NewTransport(conn)
 	if err := s.bridge(dev, client, remoteAddr); err != nil && !errors.Is(err, io.EOF) {
 		s.logf("%s bridge error: %v", dev.label(), err)
 	}
 }
 
-func (s *Server) bridge(dev *connectedDevice, client *Channel, remoteAddr string) error {
+func (s *Server) bridge(dev *connectedDevice, client *Transport, remoteAddr string) error {
 	s.logf("%s client attached from %s", dev.label(), remoteAddr)
 
+	deviceQueue := make(msg.Queue, 64)
+	dev.channel.Subscribe(deviceQueue)
+
 	defer func() {
+		dev.channel.Unsubscribe(deviceQueue)
 		client.Close()
 		s.logf("%s client detached", dev.label())
 	}()
 
-	// TODO: Replace raw relay fan-out with session-aware multiplexing so
-	//  multiple clients can safely share one device connection.
-
 	errs := make(chan error, 2)
-	go relay(dev.channel, client, errs)
-	go relay(client, dev.channel, errs)
-
-	return <-errs
-}
-
-func relay(src *Channel, dst *Channel, errs chan<- error) {
-	queue := make(msg.Queue, 64)
-	src.Subscribe(queue)
-	defer src.Unsubscribe(queue)
-
-	for {
-		select {
-		case <-src.Done():
-			errs <- io.EOF
-			return
-		case <-dst.Done():
-			errs <- io.EOF
-			return
-		case data := <-queue:
-			if err := dst.Write(data); err != nil {
+	go func() {
+		for {
+			data, err := client.Read()
+			if err != nil {
+				errs <- err
+				return
+			}
+			if err := dev.channel.Write(deviceQueue, data); err != nil {
 				errs <- err
 				return
 			}
 		}
-	}
+	}()
+	go func() {
+		for {
+			select {
+			case <-dev.channel.Done():
+				errs <- io.EOF
+				return
+			case data := <-deviceQueue:
+				if err := client.Write(data); err != nil {
+					errs <- err
+					return
+				}
+			}
+		}
+	}()
+
+	return <-errs
 }
 
 func (s *Server) probeWithRetry(dev *connectedDevice, attempts int) bool {

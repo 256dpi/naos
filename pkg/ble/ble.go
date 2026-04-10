@@ -2,6 +2,7 @@ package ble
 
 import (
 	"fmt"
+	"io"
 	"strings"
 	"sync"
 
@@ -57,7 +58,7 @@ func Discover(stop chan struct{}, cb func(device Description)) error {
 
 type device struct {
 	addr    bluetooth.Address
-	channel msg.Channel
+	channel *msg.Channel
 	mutex   sync.Mutex
 }
 
@@ -72,7 +73,7 @@ func (d *device) ID() string {
 	return fmt.Sprintf("ble/%s", d.addr.String())
 }
 
-func (d *device) Open() (msg.Channel, error) {
+func (d *device) Open() (*msg.Channel, error) {
 	// acquire mutex
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
@@ -115,10 +116,12 @@ func (d *device) Open() (msg.Channel, error) {
 	// get characteristic
 	char := chars[0]
 
-	// prepare channel
-	ch := &channel{
-		dev:  d,
-		char: chars[0],
+	// prepare transport
+	ch := &transport{
+		dev:   d,
+		char:  chars[0],
+		reads: make(chan []byte, 64),
+		done:  make(chan struct{}),
 		close: func() {
 			d.mutex.Lock()
 			_ = device.Disconnect()
@@ -129,57 +132,49 @@ func (d *device) Open() (msg.Channel, error) {
 
 	// subscribe to characteristic
 	err = char.EnableNotifications(func(data []byte) {
-		ch.mutex.Lock()
-		defer ch.mutex.Unlock()
-		for sub := range ch.subs.Range {
-			queue := sub.(msg.Queue)
-			select {
-			case queue <- data:
-			default:
-				// drop message if queue is full
-			}
+		select {
+		case ch.reads <- append([]byte(nil), data...):
+		default:
+			// TODO: Alert overflow?
 		}
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return ch, nil
+	// create channel
+	d.channel = msg.NewChannel(ch, d, 10)
+
+	return d.channel, nil
 }
 
-type channel struct {
+type transport struct {
 	dev   *device
 	char  bluetooth.DeviceCharacteristic
-	subs  sync.Map
+	reads chan []byte
+	done  chan struct{}
 	close func()
 	mutex sync.Mutex
+	once  sync.Once
 }
 
-func (c *channel) Width() int {
-	return 10
+func (t *transport) Read() ([]byte, error) {
+	// read async message
+	select {
+	case data := <-t.reads:
+		return data, nil
+	case <-t.done:
+		return nil, io.EOF
+	}
 }
 
-func (c *channel) Device() msg.Device {
-	return c.dev
-}
-
-func (c *channel) Subscribe(queue msg.Queue) {
-	// add subscription
-	c.subs.Store(queue, struct{}{})
-}
-
-func (c *channel) Unsubscribe(queue msg.Queue) {
-	// remove subscription
-	c.subs.Delete(queue)
-}
-
-func (c *channel) Write(bytes []byte) error {
+func (t *transport) Write(bytes []byte) error {
 	// acquire mutex
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 
 	// write to characteristic
-	err := write(c.char, bytes)
+	err := write(t.char, bytes)
 	if err != nil {
 		return err
 	}
@@ -187,19 +182,12 @@ func (c *channel) Write(bytes []byte) error {
 	return nil
 }
 
-func (c *channel) Close() {
-	// acquire mutex
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	// close subscriptions
-	for sub := range c.subs.Range {
-		close(sub.(msg.Queue))
-	}
-
-	// clear subscriptions
-	c.subs = sync.Map{}
-
-	// close device
-	c.close()
+func (t *transport) Close() {
+	// close transport
+	t.once.Do(func() {
+		close(t.done)
+		t.mutex.Lock()
+		t.close()
+		t.mutex.Unlock()
+	})
 }

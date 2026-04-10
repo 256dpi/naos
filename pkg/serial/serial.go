@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -65,8 +66,8 @@ func NewDevice(path string) (msg.Device, error) {
 
 type device struct {
 	path    string
-	port    serial.Port
-	channel msg.Channel
+	port    io.ReadWriteCloser
+	channel *msg.Channel
 	mutex   sync.Mutex
 }
 
@@ -74,7 +75,7 @@ func (d *device) ID() string {
 	return fmt.Sprintf("serial/%s", filepath.Base(d.path))
 }
 
-func (d *device) Open() (msg.Channel, error) {
+func (d *device) Open() (*msg.Channel, error) {
 	// acquire mutex
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
@@ -92,10 +93,11 @@ func (d *device) Open() (msg.Channel, error) {
 		return nil, err
 	}
 
-	// prepare channel
-	ch := &channel{
-		dev:  d,
-		port: port,
+	// prepare transport
+	ch := &transport{
+		dev:     d,
+		port:    port,
+		scanner: bufio.NewScanner(port),
 		close: func() {
 			d.mutex.Lock()
 			_ = port.Close()
@@ -104,73 +106,48 @@ func (d *device) Open() (msg.Channel, error) {
 		},
 	}
 
-	// read from port
-	go func() {
-		defer ch.Close()
-		var scanner = bufio.NewScanner(port)
-		for scanner.Scan() {
-			// get line
-			line := scanner.Bytes()
-			if len(line) < 6 || string(line[:5]) != "NAOS!" {
-				continue
-			}
+	// create channel
+	d.channel = msg.NewChannel(ch, d, 1)
 
-			// strip prefix and decode
-			data, _ := base64.StdEncoding.AppendDecode(nil, line[5:])
+	return d.channel, nil
+}
 
-			// call notification handler
-			ch.mutex.Lock()
-			for sub := range ch.subs.Range {
-				queue := sub.(msg.Queue)
-				select {
-				case queue <- data:
-				default:
-					// drop message if queue is full
-				}
-			}
-			ch.mutex.Unlock()
+type transport struct {
+	dev     *device
+	port    io.Writer
+	scanner *bufio.Scanner
+	close   func()
+	mutex   sync.Mutex
+	once    sync.Once
+}
+
+func (t *transport) Read() ([]byte, error) {
+	for t.scanner.Scan() {
+		// get line
+		line := t.scanner.Bytes()
+		if len(line) < 6 || string(line[:5]) != "NAOS!" {
+			continue
 		}
-	}()
 
-	return ch, nil
+		// strip prefix and decode
+		data, _ := base64.StdEncoding.AppendDecode(nil, line[5:])
+
+		return data, nil
+	}
+
+	return nil, t.scanner.Err()
 }
 
-type channel struct {
-	dev   *device
-	port  serial.Port
-	subs  sync.Map
-	close func()
-	mutex sync.Mutex
-}
-
-func (c *channel) Width() int {
-	return 1
-}
-
-func (c *channel) Device() msg.Device {
-	return c.dev
-}
-
-func (c *channel) Subscribe(queue msg.Queue) {
-	// add subscription
-	c.subs.Store(queue, struct{}{})
-}
-
-func (c *channel) Unsubscribe(queue msg.Queue) {
-	// remove subscription
-	c.subs.Delete(queue)
-}
-
-func (c *channel) Write(bytes []byte) error {
+func (t *transport) Write(bytes []byte) error {
 	// acquire mutex
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 
 	// encode message
 	encoded := append(base64.StdEncoding.AppendEncode([]byte("\nNAOS!"), bytes), '\n')
 
 	// write to port
-	_, err := c.port.Write(encoded)
+	_, err := t.port.Write(encoded)
 	if err != nil {
 		return err
 	}
@@ -178,19 +155,10 @@ func (c *channel) Write(bytes []byte) error {
 	return nil
 }
 
-func (c *channel) Close() {
-	// acquire mutex
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	// close subscriptions
-	for sub := range c.subs.Range {
-		close(sub.(msg.Queue))
-	}
-
-	// clear subscriptions
-	c.subs = sync.Map{}
-
-	// close device
-	c.close()
+func (t *transport) Close() {
+	t.once.Do(func() {
+		t.mutex.Lock()
+		t.close()
+		t.mutex.Unlock()
+	})
 }

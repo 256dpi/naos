@@ -15,27 +15,32 @@ type Device interface {
 
 	// Open opens a channel to the device. An opened channel must fail or be
 	// closed before another channel can be opened.
-	Open() (Channel, error)
+	Open() (*Channel, error)
 }
 
 // Queue is used to receive messages from a channel.
 type Queue chan []byte
-
-// Channel provides the mechanism to exchange messages between a device and a client.
-type Channel interface {
-	Width() int
-	Device() Device
-	Subscribe(Queue)
-	Unsubscribe(Queue)
-	Write([]byte) error
-	Close()
-}
 
 // Message represents a message exchanged between a device and a client.
 type Message struct {
 	Session  uint16
 	Endpoint uint8
 	Data     []byte
+}
+
+// Parse decodes raw message bytes.
+func Parse(data []byte) (Message, bool) {
+	if len(data) < 4 || data[0] != 1 {
+		return Message{}, false
+	}
+
+	args := Unpack("hob", data[1:])
+
+	return Message{
+		Session:  args[0].(uint16),
+		Endpoint: args[1].(uint8),
+		Data:     args[2].([]byte),
+	}, true
 }
 
 // Size returns the size of the message.
@@ -58,23 +63,22 @@ func Read(q Queue, timeout time.Duration) (Message, error) {
 		return Message{}, errors.New("invalid message: length or version")
 	}
 
-	// unpack message
-	args := Unpack("hob", data[1:])
+	msg, ok := Parse(data)
+	if !ok {
+		return Message{}, errors.New("invalid message: length or version")
+	}
 
-	return Message{
-		Session:  args[0].(uint16),
-		Endpoint: args[1].(uint8),
-		Data:     args[2].([]byte),
-	}, nil
+	return msg, nil
 }
 
-// Write writes a message to the channel.
-func Write(ch Channel, msg Message) error {
+// Write writes a message to the channel on behalf of the specified queue. A
+// nil queue means the write has no subscriber ownership context.
+func Write(ch *Channel, queue Queue, msg Message) error {
 	// prepare data
 	data := Pack("ohob", uint8(1), msg.Session, msg.Endpoint, msg.Data)
 
 	// write data
-	err := ch.Write(data)
+	err := ch.Write(queue, data)
 	if err != nil {
 		return err
 	}

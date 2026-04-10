@@ -1,6 +1,7 @@
 package mqtt
 
 import (
+	"io"
 	"sync"
 
 	"github.com/256dpi/gomqtt/packet"
@@ -25,36 +26,32 @@ func (d *device) ID() string {
 	return "mqtt/" + d.baseTopic
 }
 
-func (d *device) Open() (msg.Channel, error) {
+func (d *device) Open() (*msg.Channel, error) {
 	// prepare topics
 	inbox := d.baseTopic + "/naos/inbox"
 	outbox := d.baseTopic + "/naos/outbox"
 
-	// prepare channel
-	ch := &channel{
+	// prepare transport
+	ch := &transport{
 		device: d,
+		reads:  make(chan []byte, 64),
+		done:   make(chan struct{}),
 		router: d.router,
 		inbox:  inbox,
 		outbox: outbox,
 	}
 
-	// set callback
-	callback := func(m *packet.Message, err error) {
+	// subscribe outbox
+	id, err := d.router.Subscribe(outbox, func(m *packet.Message, err error) {
 		if err != nil {
 			return
 		}
-		for sub := range ch.subs.Range {
-			queue := sub.(msg.Queue)
-			select {
-			case queue <- m.Payload:
-			default:
-				// drop message if queue is full
-			}
+		select {
+		case ch.reads <- append([]byte(nil), m.Payload...):
+		default:
+			// TODO: Alert overflow?
 		}
-	}
-
-	// subscribe
-	id, err := d.router.Subscribe(outbox, callback)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -62,39 +59,34 @@ func (d *device) Open() (msg.Channel, error) {
 	// set handle
 	ch.handle = id
 
-	return ch, nil
+	return msg.NewChannel(ch, d, 10), nil
 }
 
-type channel struct {
+type transport struct {
 	device *device
-	subs   sync.Map
+	reads  chan []byte
+	done   chan struct{}
 	router *Router
 	inbox  string
 	outbox string
 	handle uint64
+	mutex  sync.Mutex
+	once   sync.Once
 }
 
-func (c *channel) Width() int {
-	return 10
+func (t *transport) Read() ([]byte, error) {
+	// read message
+	select {
+	case data := <-t.reads:
+		return data, nil
+	case <-t.done:
+		return nil, io.EOF
+	}
 }
 
-func (c *channel) Device() msg.Device {
-	return c.device
-}
-
-func (c *channel) Subscribe(queue msg.Queue) {
-	// add queue
-	c.subs.Store(queue, nil)
-}
-
-func (c *channel) Unsubscribe(queue msg.Queue) {
-	// remove queue
-	c.subs.Delete(queue)
-}
-
-func (c *channel) Write(bytes []byte) error {
+func (t *transport) Write(bytes []byte) error {
 	// send message
-	err := c.router.Publish(c.inbox, bytes)
+	err := t.router.Publish(t.inbox, bytes)
 	if err != nil {
 		return err
 	}
@@ -102,7 +94,12 @@ func (c *channel) Write(bytes []byte) error {
 	return nil
 }
 
-func (c *channel) Close() {
-	// unsubscribe
-	_ = c.router.Unsubscribe(c.outbox, c.handle)
+func (t *transport) Close() {
+	// close transport
+	t.once.Do(func() {
+		close(t.done)
+		t.mutex.Lock()
+		_ = t.router.Unsubscribe(t.outbox, t.handle)
+		t.mutex.Unlock()
+	})
 }

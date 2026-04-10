@@ -3,7 +3,6 @@ package msg
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/coder/websocket"
 )
@@ -23,7 +22,7 @@ func (d *httpDevice) ID() string {
 	return "http/" + d.host
 }
 
-func (d *httpDevice) Open() (Channel, error) {
+func (d *httpDevice) Open() (*Channel, error) {
 	// create context
 	var ok bool
 	ctx, cancel := context.WithCancel(context.Background())
@@ -41,8 +40,8 @@ func (d *httpDevice) Open() (Channel, error) {
 		return nil, err
 	}
 
-	// prepare channel
-	c := &httpChannel{
+	// prepare transport
+	t := &httpTransport{
 		dev:    d,
 		ctx:    ctx,
 		conn:   conn,
@@ -52,74 +51,31 @@ func (d *httpDevice) Open() (Channel, error) {
 	// set flag
 	ok = true
 
-	// run reader
-	go c.reader()
-
-	return c, nil
+	return NewChannel(t, d, 10), nil
 }
 
-type httpChannel struct {
+type httpTransport struct {
 	dev    *httpDevice
 	ctx    context.Context
 	conn   *websocket.Conn
 	cancel context.CancelFunc
-	subs   sync.Map
 }
 
-func (c *httpChannel) Width() int {
-	return 10
+func (t *httpTransport) Read() ([]byte, error) {
+	// read message
+	_, data, err := t.conn.Read(t.ctx)
+	return data, err
 }
 
-func (c *httpChannel) Device() Device {
-	return c.dev
-}
-
-func (c *httpChannel) Subscribe(queue Queue) {
-	// add subscription
-	c.subs.Store(queue, struct{}{})
-}
-
-func (c *httpChannel) Unsubscribe(queue Queue) {
-	// remove subscription
-	c.subs.Delete(queue)
-}
-
-func (c *httpChannel) Write(bytes []byte) error {
+func (t *httpTransport) Write(bytes []byte) error {
 	// write message
-	err := c.conn.Write(c.ctx, websocket.MessageBinary, bytes)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return t.conn.Write(t.ctx, websocket.MessageBinary, bytes)
 }
 
-func (c *httpChannel) Close() {
+func (t *httpTransport) Close() {
 	// cancel context
-	defer c.cancel()
+	defer t.cancel()
 
 	// close connection
-	_ = c.conn.Close(websocket.StatusNormalClosure, "")
-}
-
-func (c *httpChannel) reader() {
-	for {
-		// read messages
-		_, data, err := c.conn.Read(c.ctx)
-		if err != nil {
-			// TODO: Handle error.
-			fmt.Println("httpChannel.reader: read error: " + err.Error())
-			return
-		}
-
-		// yield message
-		for q := range c.subs.Range {
-			queue := q.(Queue)
-			select {
-			case queue <- data:
-			default:
-				// drop message if queue is full
-			}
-		}
-	}
+	_ = t.conn.Close(websocket.StatusNormalClosure, "")
 }

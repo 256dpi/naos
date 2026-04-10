@@ -18,7 +18,7 @@ func TestConnect(t *testing.T) {
 	serverErrs := make(chan error, 1)
 
 	server := httptest.NewServer(Handle(func(conn *WebSocketConn) {
-		channel := NewChannel(nil, conn)
+		channel := msg.NewChannel(NewTransport(conn), nil, 10)
 		queue := make(msg.Queue, 1)
 		channel.Subscribe(queue)
 		defer channel.Unsubscribe(queue)
@@ -46,14 +46,16 @@ func TestConnect(t *testing.T) {
 	}
 	defer conn.Close()
 
-	err = conn.WriteMessage(websocket.BinaryMessage, []byte{version, cmdMsg, 0xaa, 0xbb})
+	// send a valid msg-protocol frame: version=1, session=0, endpoint=0x42, data={0xaa,0xbb}
+	payload := msg.Pack("ohob", uint8(1), uint16(0), uint8(0x42), []byte{0xaa, 0xbb})
+	err = conn.WriteMessage(websocket.BinaryMessage, append([]byte{version, cmdMsg}, payload...))
 	if err != nil {
 		t.Fatalf("failed to write valid frame: %v", err)
 	}
 
 	select {
 	case data := <-payloads:
-		if len(data) != 2 || data[0] != 0xaa || data[1] != 0xbb {
+		if string(data) != string(payload) {
 			t.Fatalf("unexpected payload: %v", data)
 		}
 	case <-time.After(time.Second):

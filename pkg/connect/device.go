@@ -23,6 +23,7 @@ func NewDevice(baseURL string, id string) msg.Device {
 
 // NewDeviceWithToken returns a msg.Device that connects through a protected NAOS Connect server.
 func NewDeviceWithToken(baseURL string, token string, id string) msg.Device {
+	// determine label
 	label := id
 	if parsed, err := url.Parse(baseURL); err == nil && parsed.Host != "" {
 		label = parsed.Host + "/" + id
@@ -40,15 +41,18 @@ func (d *device) ID() string {
 	return "connect/" + d.label
 }
 
-func (d *device) Open() (msg.Channel, error) {
+func (d *device) Open() (*msg.Channel, error) {
+	// get device URL
 	target, err := deviceWebSocketURL(d.baseURL, d.id)
 	if err != nil {
 		return nil, err
 	}
 
+	// prepare dialer
 	dialer := *websocket.DefaultDialer
 	dialer.Subprotocols = []string{"naos"}
 
+	// prepare header
 	var header map[string][]string
 	if d.token != "" {
 		header = map[string][]string{
@@ -56,6 +60,7 @@ func (d *device) Open() (msg.Channel, error) {
 		}
 	}
 
+	// dial server
 	conn, resp, err := dialer.Dial(target, header)
 	if err != nil {
 		if resp != nil {
@@ -64,5 +69,8 @@ func (d *device) Open() (msg.Channel, error) {
 		return nil, err
 	}
 
-	return NewChannel(d, NewWebSocketConn(conn)), nil
+	// create channel
+	ch := msg.NewChannel(NewTransport(NewWebSocketConn(conn)), d, 10)
+
+	return ch, nil
 }

@@ -9,7 +9,7 @@ import (
 // ManagedDevice represents a managed device.
 type ManagedDevice struct {
 	device   Device
-	channel  Channel
+	channel  *Channel
 	session  *Session
 	password string
 	mutex    sync.Mutex
