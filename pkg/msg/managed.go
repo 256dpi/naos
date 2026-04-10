@@ -219,7 +219,10 @@ func (d *ManagedDevice) pinger() {
 
 		// ping session if available
 		if d.session != nil {
-			_ = d.session.Ping(time.Second)
+			if err := d.session.Ping(5 * time.Second); err != nil {
+				_ = d.session.End(time.Second)
+				d.session = nil
+			}
 		}
 
 		// release mutex
