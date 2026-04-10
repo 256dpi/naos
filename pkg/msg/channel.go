@@ -91,8 +91,8 @@ func (c *Channel) Unsubscribe(queue Queue) {
 
 // Write sends a single framed message on behalf of a specific queue. A nil
 // queue means the write has no subscriber ownership context.
-func (c *Channel) Write(queue Queue, data []byte) error {
-	return c.write(queue, data)
+func (c *Channel) Write(queue Queue, msg Message) error {
+	return c.write(queue, msg)
 }
 
 // Close closes the channel and the underlying transport.
@@ -134,23 +134,17 @@ func (c *Channel) reader() {
 		// queue message
 		for _, queue := range targets {
 			select {
-			case queue <- data:
+			case queue <- msg:
 			case <-time.After(dispatchTimeout):
 			}
 		}
 	}
 }
 
-func (c *Channel) write(from Queue, data []byte) error {
-	// parse message
-	msg, ok := Parse(data)
-	if !ok {
-		return SessionInvalidMessage
-	}
-
+func (c *Channel) write(from Queue, msg Message) error {
 	// forward broadcast messages
 	if from == nil {
-		return c.tr.Write(data)
+		return c.tr.Write(msg.Build())
 	}
 
 	// check owned messages
@@ -174,7 +168,7 @@ func (c *Channel) write(from Queue, data []byte) error {
 	c.mu.Unlock()
 
 	// write message
-	err := c.tr.Write(data)
+	err := c.tr.Write(msg.Build())
 	if err != nil {
 		// revert registrations (session opens and closes)
 		c.mu.Lock()

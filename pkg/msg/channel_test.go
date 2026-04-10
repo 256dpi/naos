@@ -16,14 +16,14 @@ func TestChannelRoutesSessionLifecycle(t *testing.T) {
 
 	openOwnedSession(t, channel, tr, queue, "open-happy", 21)
 
-	data := Pack("ohob", uint8(1), uint16(21), uint8(0x42), []byte("payload"))
-	closeMsg := Pack("ohob", uint8(1), uint16(21), uint8(0xFF), []byte{})
-	tr.reads <- data
-	tr.reads <- closeMsg
+	dataMsg := Message{Session: 21, Endpoint: 0x42, Data: []byte("payload")}
+	closeMsg := Message{Session: 21, Endpoint: 0xFF, Data: []byte{}}
+	tr.reads <- dataMsg.Build()
+	tr.reads <- closeMsg.Build()
 
-	expectQueueData(t, queue, data)
-	expectQueueData(t, queue, closeMsg)
-	expectNoQueueData(t, queue)
+	expectQueueMsg(t, queue, dataMsg)
+	expectQueueMsg(t, queue, closeMsg)
+	expectNoQueueMsg(t, queue)
 }
 
 func TestChannelRegistersPendingBeforeWriteReturns(t *testing.T) {
@@ -33,20 +33,20 @@ func TestChannelRegistersPendingBeforeWriteReturns(t *testing.T) {
 	channel.Subscribe(queue)
 
 	handle := []byte("open-race")
-	reply := Pack("ohob", uint8(1), uint16(21), uint8(0x0), handle)
-	data := Pack("ohob", uint8(1), uint16(21), uint8(0x42), []byte("payload"))
+	replyMsg := Message{Session: 21, Endpoint: 0x0, Data: handle}
+	dataMsg := Message{Session: 21, Endpoint: 0x42, Data: []byte("payload")}
 
 	tr.onWrite = func(written []byte) error {
-		tr.reads <- reply
-		tr.reads <- data
+		tr.reads <- replyMsg.Build()
+		tr.reads <- dataMsg.Build()
 		return nil
 	}
 
-	assert.NoError(t, channel.Write(queue, Pack("ohob", uint8(1), uint16(0), uint8(0x0), handle)))
+	assert.NoError(t, channel.Write(queue, Message{Session: 0, Endpoint: 0x0, Data: handle}))
 
-	expectQueueData(t, queue, reply)
-	expectQueueData(t, queue, data)
-	expectNoQueueData(t, queue)
+	expectQueueMsg(t, queue, replyMsg)
+	expectQueueMsg(t, queue, dataMsg)
+	expectNoQueueMsg(t, queue)
 }
 
 func TestChannelDropsSessionOwnershipAfterPeerClose(t *testing.T) {
@@ -58,18 +58,18 @@ func TestChannelDropsSessionOwnershipAfterPeerClose(t *testing.T) {
 	channel.Subscribe(q2)
 
 	openOwnedSession(t, channel, tr, q1, "open-1", 21)
-	close1 := Pack("ohob", uint8(1), uint16(21), uint8(0xFF), []byte{})
-	tr.reads <- close1
+	close1 := Message{Session: 21, Endpoint: 0xFF, Data: []byte{}}
+	tr.reads <- close1.Build()
 
-	expectQueueData(t, q1, close1)
-	expectNoQueueData(t, q2)
+	expectQueueMsg(t, q1, close1)
+	expectNoQueueMsg(t, q2)
 
 	openOwnedSession(t, channel, tr, q2, "open-2", 21)
-	data2 := Pack("ohob", uint8(1), uint16(21), uint8(0x42), []byte("payload"))
-	tr.reads <- data2
+	data2 := Message{Session: 21, Endpoint: 0x42, Data: []byte("payload")}
+	tr.reads <- data2.Build()
 
-	expectQueueData(t, q2, data2)
-	expectNoQueueData(t, q1)
+	expectQueueMsg(t, q2, data2)
+	expectNoQueueMsg(t, q1)
 }
 
 func TestChannelWaitsBrieflyForOwnedQueueBackpressure(t *testing.T) {
@@ -79,19 +79,20 @@ func TestChannelWaitsBrieflyForOwnedQueueBackpressure(t *testing.T) {
 	channel.Subscribe(queue)
 
 	openOwnedSession(t, channel, tr, queue, "open-backpressure", 7)
-	payload := Pack("ohob", uint8(1), uint16(7), uint8(0x42), []byte("payload"))
+	payloadMsg := Message{Session: 7, Endpoint: 0x42, Data: []byte("payload")}
+	busyMsg := Message{Session: 7, Endpoint: 0x01, Data: []byte("busy")}
 
-	queue <- []byte("busy")
+	queue <- busyMsg
 
 	done := make(chan struct{})
 	go func() {
-		tr.reads <- payload
+		tr.reads <- payloadMsg.Build()
 		close(done)
 	}()
 
 	time.Sleep(20 * time.Millisecond)
-	expectQueueData(t, queue, []byte("busy"))
-	expectQueueData(t, queue, payload)
+	expectQueueMsg(t, queue, busyMsg)
+	expectQueueMsg(t, queue, payloadMsg)
 
 	select {
 	case <-done:
@@ -108,7 +109,7 @@ func TestChannelDropsInvalidFrames(t *testing.T) {
 
 	tr.reads <- []byte{0xFF, 0x01, 0x02}
 
-	expectNoQueueData(t, queue)
+	expectNoQueueMsg(t, queue)
 }
 
 func TestChannelRejectsWrongOwnerWrites(t *testing.T) {
@@ -121,7 +122,7 @@ func TestChannelRejectsWrongOwnerWrites(t *testing.T) {
 
 	openOwnedSession(t, channel, tr, q1, "open-owner", 9)
 
-	assert.ErrorIs(t, channel.Write(q2, Pack("ohob", uint8(1), uint16(9), uint8(0x42), []byte("payload"))), SessionWrongOwner)
+	assert.ErrorIs(t, channel.Write(q2, Message{Session: 9, Endpoint: 0x42, Data: []byte("payload")}), SessionWrongOwner)
 }
 
 func TestChannelRoutesMultipleSessions(t *testing.T) {
@@ -135,15 +136,15 @@ func TestChannelRoutesMultipleSessions(t *testing.T) {
 	openOwnedSession(t, channel, tr, q1, "open-1", 11)
 	openOwnedSession(t, channel, tr, q2, "open-2", 12)
 
-	data1 := Pack("ohob", uint8(1), uint16(11), uint8(0x10), []byte("a"))
-	data2 := Pack("ohob", uint8(1), uint16(12), uint8(0x11), []byte("b"))
-	tr.reads <- data1
-	tr.reads <- data2
+	msg1 := Message{Session: 11, Endpoint: 0x10, Data: []byte("a")}
+	msg2 := Message{Session: 12, Endpoint: 0x11, Data: []byte("b")}
+	tr.reads <- msg1.Build()
+	tr.reads <- msg2.Build()
 
-	expectQueueData(t, q1, data1)
-	expectQueueData(t, q2, data2)
-	expectNoQueueData(t, q1)
-	expectNoQueueData(t, q2)
+	expectQueueMsg(t, q1, msg1)
+	expectQueueMsg(t, q2, msg2)
+	expectNoQueueMsg(t, q1)
+	expectNoQueueMsg(t, q2)
 }
 
 func newTestChannel(t *testing.T) (*Channel, *memTransport) {
@@ -158,36 +159,34 @@ func newTestChannel(t *testing.T) (*Channel, *memTransport) {
 	return channel, tr
 }
 
-func openOwnedSession(t *testing.T, channel *Channel, tr *memTransport, queue Queue, handle string, session uint16) []byte {
+func openOwnedSession(t *testing.T, channel *Channel, tr *memTransport, queue Queue, handle string, session uint16) {
 	t.Helper()
 
 	rawHandle := []byte(handle)
-	assert.NoError(t, channel.Write(queue, Pack("ohob", uint8(1), uint16(0), uint8(0x0), rawHandle)))
+	assert.NoError(t, channel.Write(queue, Message{Session: 0, Endpoint: 0x0, Data: rawHandle}))
 
-	reply := Pack("ohob", uint8(1), session, uint8(0x0), rawHandle)
-	tr.reads <- reply
-	expectQueueData(t, queue, reply)
-
-	return reply
+	replyMsg := Message{Session: session, Endpoint: 0x0, Data: rawHandle}
+	tr.reads <- replyMsg.Build()
+	expectQueueMsg(t, queue, replyMsg)
 }
 
-func expectQueueData(t *testing.T, queue Queue, want []byte) {
+func expectQueueMsg(t *testing.T, queue Queue, want Message) {
 	t.Helper()
 
 	select {
 	case got := <-queue:
 		assert.Equal(t, want, got)
 	case <-time.After(time.Second):
-		t.Fatal("timed out waiting for queue payload")
+		t.Fatal("timed out waiting for queue message")
 	}
 }
 
-func expectNoQueueData(t *testing.T, queue Queue) {
+func expectNoQueueMsg(t *testing.T, queue Queue) {
 	t.Helper()
 
 	select {
 	case got := <-queue:
-		t.Fatalf("unexpected queue payload: %v", got)
+		t.Fatalf("unexpected queue message: %v", got)
 	case <-time.After(10 * time.Millisecond):
 	}
 }

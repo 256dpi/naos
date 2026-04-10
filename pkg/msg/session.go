@@ -62,7 +62,7 @@ func OpenSession(channel *Channel, timeout time.Duration) (*Session, error) {
 	handle := random(16)
 
 	// begin session
-	err := Write(channel, queue, Message{Session: 0, Endpoint: 0x0, Data: handle})
+	err := channel.Write(queue, Message{Session: 0, Endpoint: 0x0, Data: handle})
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func OpenSession(channel *Channel, timeout time.Duration) (*Session, error) {
 	// await reply
 	var sid uint16
 	for {
-		msg, err := Read(queue, timeout)
+		msg, err := queue.Read(timeout)
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +107,7 @@ func (s *Session) Ping(timeout time.Duration) error {
 	defer s.mu.Unlock()
 
 	// write command
-	err := Write(s.ch, s.qu, Message{Session: s.id, Endpoint: 0xFE, Data: nil})
+	err := s.ch.Write(s.qu, Message{Session: s.id, Endpoint: 0xFE, Data: nil})
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func (s *Session) Query(endpoint uint8, timeout time.Duration) (bool, error) {
 	defer s.mu.Unlock()
 
 	// write command
-	err := Write(s.ch, s.qu, Message{Session: s.id, Endpoint: endpoint, Data: nil})
+	err := s.ch.Write(s.qu, Message{Session: s.id, Endpoint: endpoint, Data: nil})
 	if err != nil {
 		return false, err
 	}
@@ -202,7 +202,7 @@ func (s *Session) Send(endpoint uint8, data []byte, ackTimeout time.Duration) er
 	defer s.mu.Unlock()
 
 	// write message
-	err := Write(s.ch, s.qu, Message{Session: s.id, Endpoint: endpoint, Data: data})
+	err := s.ch.Write(s.qu, Message{Session: s.id, Endpoint: endpoint, Data: data})
 	if err != nil {
 		return err
 	}
@@ -317,7 +317,7 @@ func (s *Session) End(timeout time.Duration) error {
 	defer s.mu.Unlock()
 
 	// write command
-	err := Write(s.ch, s.qu, Message{Session: s.id, Endpoint: 0xFF, Data: nil})
+	err := s.ch.Write(s.qu, Message{Session: s.id, Endpoint: 0xFF, Data: nil})
 	if err != nil {
 		return err
 	}
@@ -340,14 +340,15 @@ func (s *Session) End(timeout time.Duration) error {
 }
 
 func (s *Session) read(timeout time.Duration) (Message, error) {
-	for {
-		msg, err := Read(s.qu, timeout)
-		if err != nil {
-			return Message{}, err
-		} else if msg.Session == s.id {
-			return msg, nil
-		}
+	// read message
+	msg, err := s.qu.Read(timeout)
+	if err != nil {
+		return Message{}, err
+	} else if msg.Session != s.id {
+		return Message{}, fmt.Errorf("unexpected session: %d", msg.Session)
 	}
+
+	return msg, nil
 }
 
 func parseError(num uint8) error {

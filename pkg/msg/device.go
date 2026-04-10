@@ -19,7 +19,17 @@ type Device interface {
 }
 
 // Queue is used to receive messages from a channel.
-type Queue chan []byte
+type Queue chan Message
+
+// Read reads a message from the queue.
+func (q Queue) Read(timeout time.Duration) (Message, error) {
+	select {
+	case msg := <-q:
+		return msg, nil
+	case <-time.After(timeout):
+		return Message{}, ErrTimeout
+	}
+}
 
 // Message represents a message exchanged between a device and a client.
 type Message struct {
@@ -30,10 +40,12 @@ type Message struct {
 
 // Parse decodes raw message bytes.
 func Parse(data []byte) (Message, bool) {
+	// check header
 	if len(data) < 4 || data[0] != 1 {
 		return Message{}, false
 	}
 
+	// unpack header
 	args := Unpack("hob", data[1:])
 
 	return Message{
@@ -43,45 +55,12 @@ func Parse(data []byte) (Message, bool) {
 	}, true
 }
 
+// Build encodes the message to its wire format.
+func (m *Message) Build() []byte {
+	return Pack("ohob", uint8(1), m.Session, m.Endpoint, m.Data)
+}
+
 // Size returns the size of the message.
 func (m *Message) Size() int {
 	return len(m.Data)
-}
-
-// Read reads a message from the queue.
-func Read(q Queue, timeout time.Duration) (Message, error) {
-	// read data
-	var data []byte
-	select {
-	case data = <-q:
-	case <-time.After(timeout):
-		return Message{}, ErrTimeout
-	}
-
-	// check length and version
-	if len(data) < 4 || data[0] != 1 {
-		return Message{}, errors.New("invalid message: length or version")
-	}
-
-	msg, ok := Parse(data)
-	if !ok {
-		return Message{}, errors.New("invalid message: length or version")
-	}
-
-	return msg, nil
-}
-
-// Write writes a message to the channel on behalf of the specified queue. A
-// nil queue means the write has no subscriber ownership context.
-func Write(ch *Channel, queue Queue, msg Message) error {
-	// prepare data
-	data := Pack("ohob", uint8(1), msg.Session, msg.Endpoint, msg.Data)
-
-	// write data
-	err := ch.Write(queue, data)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -13,7 +13,7 @@ import (
 )
 
 func TestConnect(t *testing.T) {
-	payloads := make(chan []byte, 1)
+	payloads := make(chan msg.Message, 1)
 	done := make(chan struct{})
 	serverErrs := make(chan error, 1)
 
@@ -24,8 +24,8 @@ func TestConnect(t *testing.T) {
 		defer channel.Unsubscribe(queue)
 
 		select {
-		case data := <-queue:
-			payloads <- data
+		case m := <-queue:
+			payloads <- m
 		case <-time.After(time.Second):
 			serverErrs <- io.ErrNoProgress
 			return
@@ -54,9 +54,9 @@ func TestConnect(t *testing.T) {
 	}
 
 	select {
-	case data := <-payloads:
-		if string(data) != string(payload) {
-			t.Fatalf("unexpected payload: %v", data)
+	case m := <-payloads:
+		if string(m.Build()) != string(payload) {
+			t.Fatalf("unexpected payload: %v", m)
 		}
 	case <-time.After(time.Second):
 		t.Fatal("timed out waiting for payload")

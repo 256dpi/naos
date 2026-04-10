@@ -179,7 +179,12 @@ func (s *Server) bridge(dev *connectedDevice, client *Transport, remoteAddr stri
 				errs <- err
 				return
 			}
-			if err := dev.channel.Write(deviceQueue, data); err != nil {
+			m, ok := msg.Parse(data)
+			if !ok {
+				errs <- fmt.Errorf("invalid message")
+				return
+			}
+			if err := dev.channel.Write(deviceQueue, m); err != nil {
 				errs <- err
 				return
 			}
@@ -191,8 +196,8 @@ func (s *Server) bridge(dev *connectedDevice, client *Transport, remoteAddr stri
 			case <-dev.channel.Done():
 				errs <- io.EOF
 				return
-			case data := <-deviceQueue:
-				if err := client.Write(data); err != nil {
+			case m := <-deviceQueue:
+				if err := client.Write(m.Build()); err != nil {
 					errs <- err
 					return
 				}
