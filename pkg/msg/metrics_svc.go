@@ -2,6 +2,7 @@ package msg
 
 import (
 	"errors"
+	"fmt"
 	"iter"
 	"time"
 
@@ -105,7 +106,7 @@ func (s *MetricsService) Read(name string) ([]float64, error) {
 			return nil, err
 		}
 		return values, nil
+	default:
+		return nil, fmt.Errorf("unknown metric type: %d", metric.Type)
 	}
-
-	return nil, nil
 }

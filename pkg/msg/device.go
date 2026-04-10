@@ -23,10 +23,12 @@ type Queue chan Message
 
 // Read reads a message from the queue.
 func (q Queue) Read(timeout time.Duration) (Message, error) {
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
 	select {
 	case msg := <-q:
 		return msg, nil
-	case <-time.After(timeout):
+	case <-timer.C:
 		return Message{}, ErrTimeout
 	}
 }

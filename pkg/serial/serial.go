@@ -130,7 +130,10 @@ func (t *transport) Read() ([]byte, error) {
 		}
 
 		// strip prefix and decode
-		data, _ := base64.StdEncoding.AppendDecode(nil, line[5:])
+		data, err := base64.StdEncoding.AppendDecode(nil, line[5:])
+		if err != nil {
+			return nil, err
+		}
 
 		return data, nil
 	}

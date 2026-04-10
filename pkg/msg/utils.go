@@ -28,7 +28,9 @@ func random(n int) []byte {
 	return handle
 }
 
-// Pack a byte buffer as specified by the format.
+// Pack a byte buffer as specified by the format. The 's' format code does not
+// write a null terminator; it must be the last code or followed by a field whose
+// first byte is zero (e.g. a uint8 zero) to allow correct unpacking.
 func Pack(fmt string, args ...any) []byte {
 	// calculate size
 	size := 0

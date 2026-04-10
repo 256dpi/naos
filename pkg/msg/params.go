@@ -174,6 +174,9 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 	if len(refs) > 0 {
 		mp = 0
 		for _, ref := range refs {
+			if ref >= 64 {
+				return nil, fmt.Errorf("ref %d exceeds bitmap capacity", ref)
+			}
 			mp |= 1 << ref
 		}
 	}

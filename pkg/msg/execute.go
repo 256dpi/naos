@@ -73,6 +73,9 @@ func execute(d Device, fn func(s *Session) (any, error)) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		_ = session.End(time.Second)
+	}()
 
 	// execute function
 	return fn(session)

@@ -30,6 +30,10 @@ var (
 )
 
 // Session represents a communication session with a NAOS device.
+//
+// A Session must not be used concurrently from multiple goroutines. The
+// internal mutex only serializes individual queue operations; multi-step
+// request/response exchanges must still be driven by a single caller.
 type Session struct {
 	id  uint16
 	ch  *Channel
@@ -155,6 +159,8 @@ func (s *Session) Query(endpoint uint8, timeout time.Duration) (bool, error) {
 }
 
 // Receive waits for a message on the specified endpoint.
+//
+// Receive must not be called concurrently with any other Session method.
 func (s *Session) Receive(endpoint uint8, expectAck bool, timeout time.Duration) ([]byte, error) {
 	// acquire mutex
 	s.mu.Lock()
@@ -165,8 +171,6 @@ func (s *Session) Receive(endpoint uint8, expectAck bool, timeout time.Duration)
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO: Check session ID.
 
 	// handle acknowledgements
 	if msg.Endpoint == 0xFE {
@@ -196,6 +200,8 @@ func (s *Session) Receive(endpoint uint8, expectAck bool, timeout time.Duration)
 }
 
 // Send sends a message to the specified endpoint.
+//
+// Send must not be called concurrently with any other Session method.
 func (s *Session) Send(endpoint uint8, data []byte, ackTimeout time.Duration) error {
 	// acquire mutex
 	s.mu.Lock()
@@ -278,6 +284,8 @@ func (s *Session) Unlock(password string, timeout time.Duration) (bool, error) {
 	return msg[0] == 1, nil
 }
 
+// GetMTU returns the maximum transmission unit of the session. The value is
+// cached after the first successful retrieval.
 func (s *Session) GetMTU(timeout time.Duration) (uint16, error) {
 	// taking the mutex would deadlock
 

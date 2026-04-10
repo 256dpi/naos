@@ -22,7 +22,7 @@ func TestStatPath(t *testing.T) {
 
 	info, err := StatPath(s, "/test.txt", time.Second)
 	assert.NoError(t, err)
-	assert.Equal(t, &FSInfo{IsDir: false, Size: 42}, info)
+	assert.Equal(t, &FSInfo{Name: "test.txt", IsDir: false, Size: 42}, info)
 
 	err = s.End(time.Second)
 	assert.NoError(t, err)

@@ -60,6 +60,24 @@ func TestDescribeMetric(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestDescribeMetricInvalidKeyIndex(t *testing.T) {
+	dev := newTestDevice(t, 42, []testMessage{
+		receive(Message{Endpoint: metricsEndpoint, Data: Pack("oo", uint8(1), uint8(2))}),
+		send(Message{Endpoint: metricsEndpoint, Data: Pack("ooos", uint8(1), uint8(1), uint8(0), "x")}),
+		ack(),
+	})
+
+	ch, err := dev.Open()
+	assert.NoError(t, err)
+
+	s, err := OpenSession(ch, time.Second)
+	assert.NoError(t, err)
+
+	layout, err := DescribeMetric(s, 2, time.Second)
+	assert.Error(t, err)
+	assert.Nil(t, layout)
+}
+
 func TestReadLongMetrics(t *testing.T) {
 	v := int32(-200)
 	data := make([]byte, 8)
@@ -83,6 +101,23 @@ func TestReadLongMetrics(t *testing.T) {
 
 	err = s.End(time.Second)
 	assert.NoError(t, err)
+}
+
+func TestReadLongMetricsInvalidPayloadLength(t *testing.T) {
+	dev := newTestDevice(t, 42, []testMessage{
+		receive(Message{Endpoint: metricsEndpoint, Data: Pack("oo", uint8(2), uint8(1))}),
+		send(Message{Endpoint: metricsEndpoint, Data: []byte{1, 2, 3}}),
+	})
+
+	ch, err := dev.Open()
+	assert.NoError(t, err)
+
+	s, err := OpenSession(ch, time.Second)
+	assert.NoError(t, err)
+
+	metrics, err := ReadLongMetrics(s, 1, time.Second)
+	assert.Error(t, err)
+	assert.Nil(t, metrics)
 }
 
 func TestReadFloatMetrics(t *testing.T) {
@@ -109,6 +144,23 @@ func TestReadFloatMetrics(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestReadFloatMetricsInvalidPayloadLength(t *testing.T) {
+	dev := newTestDevice(t, 42, []testMessage{
+		receive(Message{Endpoint: metricsEndpoint, Data: Pack("oo", uint8(2), uint8(1))}),
+		send(Message{Endpoint: metricsEndpoint, Data: []byte{1, 2, 3}}),
+	})
+
+	ch, err := dev.Open()
+	assert.NoError(t, err)
+
+	s, err := OpenSession(ch, time.Second)
+	assert.NoError(t, err)
+
+	metrics, err := ReadFloatMetrics(s, 1, time.Second)
+	assert.Error(t, err)
+	assert.Nil(t, metrics)
+}
+
 func TestReadDoubleMetrics(t *testing.T) {
 	data := make([]byte, 16)
 	binary.LittleEndian.PutUint64(data[0:], math.Float64bits(1.5))
@@ -131,4 +183,21 @@ func TestReadDoubleMetrics(t *testing.T) {
 
 	err = s.End(time.Second)
 	assert.NoError(t, err)
+}
+
+func TestReadDoubleMetricsInvalidPayloadLength(t *testing.T) {
+	dev := newTestDevice(t, 42, []testMessage{
+		receive(Message{Endpoint: metricsEndpoint, Data: Pack("oo", uint8(2), uint8(1))}),
+		send(Message{Endpoint: metricsEndpoint, Data: []byte{1, 2, 3, 4, 5, 6, 7}}),
+	})
+
+	ch, err := dev.Open()
+	assert.NoError(t, err)
+
+	s, err := OpenSession(ch, time.Second)
+	assert.NoError(t, err)
+
+	metrics, err := ReadDoubleMetrics(s, 1, time.Second)
+	assert.Error(t, err)
+	assert.Nil(t, metrics)
 }

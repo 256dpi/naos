@@ -117,11 +117,14 @@ func (s *ParamsService) Read(name string, reload bool) ([]byte, error) {
 
 	// reload param
 	if reload {
-		update, err := CollectParams(s.session, []uint8{param.Ref}, 0, 5*time.Second)
+		updates, err := CollectParams(s.session, []uint8{param.Ref}, 0, 5*time.Second)
 		if err != nil {
 			return nil, err
 		}
-		s.updates[param.Ref] = update[0]
+		if len(updates) == 0 {
+			return nil, ErrParamNotFound
+		}
+		s.updates[param.Ref] = updates[0]
 	}
 
 	// find update

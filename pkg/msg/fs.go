@@ -3,6 +3,7 @@ package msg
 import (
 	"errors"
 	"fmt"
+	stdpath "path"
 	"time"
 )
 
@@ -42,6 +43,7 @@ func StatPath(s *Session, path string, timeout time.Duration) (*FSInfo, error) {
 	}
 
 	return &FSInfo{
+		Name:  stdpath.Base(path),
 		IsDir: args[0].(uint8) == 1,
 		Size:  args[1].(uint32),
 	}, nil

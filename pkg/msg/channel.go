@@ -61,6 +61,7 @@ func (c *Channel) Subscribe(queue Queue) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// add queue
 	c.queues[queue] = struct{}{}
 }
 
@@ -69,8 +70,8 @@ func (c *Channel) Unsubscribe(queue Queue) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// remove queue
 	delete(c.queues, queue)
-
 	for handle, owner := range c.opening {
 		if owner == queue {
 			delete(c.opening, handle)

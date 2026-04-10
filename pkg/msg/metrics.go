@@ -3,6 +3,7 @@ package msg
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"math"
 	"time"
 )
@@ -152,6 +153,9 @@ func DescribeMetric(s *Session, ref uint8, timeout time.Duration) (*MetricLayout
 			value := args[2].(string)
 
 			// add value
+			if int(numKey) >= len(values) {
+				return nil, fmt.Errorf("invalid key index: %d", numKey)
+			}
 			values[numKey] = append(values[numKey], value)
 
 			continue
@@ -189,6 +193,9 @@ func ReadLongMetrics(s *Session, ref uint8, timeout time.Duration) ([]int32, err
 	if err != nil {
 		return nil, err
 	}
+	if len(data)%4 != 0 {
+		return nil, fmt.Errorf("invalid metric payload length: %d", len(data))
+	}
 
 	// parse metrics
 	var metrics []int32
@@ -206,6 +213,9 @@ func ReadFloatMetrics(s *Session, ref uint8, timeout time.Duration) ([]float32, 
 	if err != nil {
 		return nil, err
 	}
+	if len(data)%4 != 0 {
+		return nil, fmt.Errorf("invalid metric payload length: %d", len(data))
+	}
 
 	// parse metrics
 	var metrics []float32
@@ -222,6 +232,9 @@ func ReadDoubleMetrics(s *Session, ref uint8, timeout time.Duration) ([]float64,
 	data, err := ReadMetrics(s, ref, timeout)
 	if err != nil {
 		return nil, err
+	}
+	if len(data)%8 != 0 {
+		return nil, fmt.Errorf("invalid metric payload length: %d", len(data))
 	}
 
 	// parse metrics

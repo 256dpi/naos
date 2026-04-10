@@ -65,13 +65,22 @@ func (d *ManagedDevice) Active() bool {
 	return d.channel != nil
 }
 
-// Locked returns whether the device is locked.
-func (d *ManagedDevice) Locked() bool {
+// HasSession returns whether the device has a managed session.
+func (d *ManagedDevice) HasSession() bool {
 	// acquire mutex
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
 	return d.session != nil
+}
+
+// SetPassword sets the password used for auto-unlock.
+func (d *ManagedDevice) SetPassword(password string) {
+	// acquire mutex
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	d.password = password
 }
 
 // NewSession creates a new session.
@@ -85,27 +94,7 @@ func (d *ManagedDevice) NewSession() (*Session, error) {
 		return nil, fmt.Errorf("device not active")
 	}
 
-	// open new session
-	session, err := OpenSession(d.channel, 5*time.Second)
-	if err != nil {
-		return nil, err
-	}
-
-	// get status
-	status, err := session.Status(time.Second)
-	if err != nil {
-		return nil, err
-	}
-
-	// try to unlock if password is available and locked
-	if d.password != "" && (status&StatusLocked != 0) {
-		_, err := session.Unlock(d.password, time.Second)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return session, nil
+	return d.openSession()
 }
 
 // UseSession uses the managed session.
@@ -121,27 +110,10 @@ func (d *ManagedDevice) UseSession(fn func(*Session) error) error {
 
 	// create session if missing
 	if d.session == nil {
-		// open new session
-		session, err := OpenSession(d.channel, 5*time.Second)
+		session, err := d.openSession()
 		if err != nil {
 			return err
 		}
-
-		// get status
-		status, err := session.Status(time.Second)
-		if err != nil {
-			return err
-		}
-
-		// try to unlock if password is available and locked
-		if d.password != "" && status&StatusLocked != 0 {
-			_, err := session.Unlock(d.password, time.Second)
-			if err != nil {
-				return err
-			}
-		}
-
-		// set session
 		d.session = session
 	}
 
@@ -156,6 +128,30 @@ func (d *ManagedDevice) UseSession(fn func(*Session) error) error {
 	d.session = nil
 
 	return err
+}
+
+func (d *ManagedDevice) openSession() (*Session, error) {
+	// open new session
+	session, err := OpenSession(d.channel, 5*time.Second)
+	if err != nil {
+		return nil, err
+	}
+
+	// get status
+	status, err := session.Status(time.Second)
+	if err != nil {
+		return nil, err
+	}
+
+	// try to unlock if password is available and locked
+	if d.password != "" && status&StatusLocked != 0 {
+		_, err := session.Unlock(d.password, time.Second)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return session, nil
 }
 
 // Deactivate deactivates the device.

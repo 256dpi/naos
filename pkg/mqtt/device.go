@@ -49,7 +49,7 @@ func (d *device) Open() (*msg.Channel, error) {
 		select {
 		case ch.reads <- append([]byte(nil), m.Payload...):
 		default:
-			// TODO: Alert overflow?
+			ch.Close()
 		}
 	})
 	if err != nil {
