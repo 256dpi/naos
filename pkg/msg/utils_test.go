@@ -21,11 +21,29 @@ func TestPacking(t *testing.T) {
 		'w', 'o', 'r', 'l', 'd',
 	}, buf)
 
-	args := Unpack("ohiqsb", buf)
+	args, err := Unpack("ohiqsb", buf)
+	assert.NoError(t, err)
 	assert.Equal(t, byte(1), args[0].(byte))
 	assert.Equal(t, uint16(2), args[1].(uint16))
 	assert.Equal(t, uint32(3), args[2].(uint32))
 	assert.Equal(t, uint64(4), args[3].(uint64))
 	assert.Equal(t, "hello", args[4].(string))
 	assert.Equal(t, []byte("world"), args[5].([]byte))
+}
+
+func TestUnpackShortBuffer(t *testing.T) {
+	_, err := Unpack("h", []byte{0x01})
+	assert.ErrorIs(t, err, ErrShortBuffer)
+
+	_, err = Unpack("i", []byte{0x01, 0x02})
+	assert.ErrorIs(t, err, ErrShortBuffer)
+
+	_, err = Unpack("q", []byte{0x01})
+	assert.ErrorIs(t, err, ErrShortBuffer)
+
+	_, err = Unpack("o", []byte{})
+	assert.ErrorIs(t, err, ErrShortBuffer)
+
+	_, err = Unpack("s", []byte{})
+	assert.ErrorIs(t, err, ErrShortBuffer)
 }

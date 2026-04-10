@@ -46,7 +46,10 @@ func Parse(data []byte) (Message, bool) {
 	}
 
 	// unpack header
-	args := Unpack("hob", data[1:])
+	args, err := Unpack("hob", data[1:])
+	if err != nil {
+		return Message{}, false
+	}
 
 	return Message{
 		Session:  args[0].(uint16),

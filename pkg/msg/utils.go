@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/binary"
+	"errors"
 )
 
 func b2u(b bool) uint8 {
@@ -83,8 +84,11 @@ func Pack(fmt string, args ...any) []byte {
 	return buffer
 }
 
+// ErrShortBuffer is returned when the buffer is too short for unpacking.
+var ErrShortBuffer = errors.New("short buffer")
+
 // Unpack a byte buffer as specified by the format.
-func Unpack(fmt string, buffer []byte) []any {
+func Unpack(fmt string, buffer []byte) ([]any, error) {
 	// prepare result
 	result := make([]any, 0, len(fmt))
 
@@ -93,6 +97,9 @@ func Unpack(fmt string, buffer []byte) []any {
 	for _, code := range fmt {
 		switch code {
 		case 's':
+			if pos >= len(buffer) {
+				return nil, ErrShortBuffer
+			}
 			end := bytes.IndexByte(buffer[pos:], 0)
 			if end == -1 {
 				end = len(buffer) - pos
@@ -103,15 +110,27 @@ func Unpack(fmt string, buffer []byte) []any {
 			result = append(result, buffer[pos:])
 			pos += len(buffer) - pos
 		case 'o':
+			if pos+1 > len(buffer) {
+				return nil, ErrShortBuffer
+			}
 			result = append(result, buffer[pos])
 			pos++
 		case 'h':
+			if pos+2 > len(buffer) {
+				return nil, ErrShortBuffer
+			}
 			result = append(result, binary.LittleEndian.Uint16(buffer[pos:]))
 			pos += 2
 		case 'i':
+			if pos+4 > len(buffer) {
+				return nil, ErrShortBuffer
+			}
 			result = append(result, binary.LittleEndian.Uint32(buffer[pos:]))
 			pos += 4
 		case 'q':
+			if pos+8 > len(buffer) {
+				return nil, ErrShortBuffer
+			}
 			result = append(result, binary.LittleEndian.Uint64(buffer[pos:]))
 			pos += 8
 		default:
@@ -119,5 +138,5 @@ func Unpack(fmt string, buffer []byte) []any {
 		}
 	}
 
-	return result
+	return result, nil
 }

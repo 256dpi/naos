@@ -304,8 +304,14 @@ func (s *Session) GetMTU(timeout time.Duration) (uint16, error) {
 		return 0, fmt.Errorf("invalid message: MTU reply")
 	}
 
+	// unpack value
+	args, err := Unpack("h", msg)
+	if err != nil {
+		return 0, err
+	}
+
 	// cache value
-	s.mtu = Unpack("h", msg)[0].(uint16)
+	s.mtu = args[0].(uint16)
 
 	return s.mtu, nil
 }

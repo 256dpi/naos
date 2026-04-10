@@ -36,7 +36,10 @@ func StatPath(s *Session, path string, timeout time.Duration) (*FSInfo, error) {
 	}
 
 	// unpack "info" reply
-	args := Unpack("oi", reply[1:])
+	args, err := Unpack("oi", reply[1:])
+	if err != nil {
+		return nil, err
+	}
 
 	return &FSInfo{
 		IsDir: args[0].(uint8) == 1,
@@ -50,7 +53,7 @@ func ListDir(s *Session, dir string, timeout time.Duration) ([]FSInfo, error) {
 	cmd := Pack("os", uint8(1), dir)
 	err := fsSend(s, cmd, false, timeout)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	// prepare infos
@@ -71,7 +74,10 @@ func ListDir(s *Session, dir string, timeout time.Duration) ([]FSInfo, error) {
 		}
 
 		// unpack "info" reply
-		args := Unpack("ois", reply[1:])
+		args, err := Unpack("ois", reply[1:])
+		if err != nil {
+			return nil, err
+		}
 
 		// add info
 		infos = append(infos, FSInfo{
@@ -154,7 +160,11 @@ func ReadFileRange(s *Session, file string, offset, length uint32, report func(u
 		}
 
 		// unpack offset
-		replyOffset := Unpack("i", reply[1:])[0].(uint32)
+		args, err := Unpack("i", reply[1:])
+		if err != nil {
+			return nil, err
+		}
+		replyOffset := args[0].(uint32)
 
 		// verify offset
 		if replyOffset != offset+count {

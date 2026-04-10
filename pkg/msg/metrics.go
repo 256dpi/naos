@@ -70,7 +70,10 @@ func ListMetrics(s *Session, timeout time.Duration) ([]MetricInfo, error) {
 		}
 
 		// unpack reply
-		args := Unpack("oooos", reply)
+		args, err := Unpack("oooos", reply)
+		if err != nil {
+			return nil, err
+		}
 
 		// append info
 		list = append(list, MetricInfo{
@@ -118,7 +121,10 @@ func DescribeMetric(s *Session, ref uint8, timeout time.Duration) (*MetricLayout
 			}
 
 			// parse reply
-			args := Unpack("os", reply[1:])
+			args, err := Unpack("os", reply[1:])
+			if err != nil {
+				return nil, err
+			}
 			// num := args[0].(uint8)
 			key := args[1].(string)
 
@@ -137,7 +143,10 @@ func DescribeMetric(s *Session, ref uint8, timeout time.Duration) (*MetricLayout
 			}
 
 			// parse reply
-			args := Unpack("oos", reply[1:])
+			args, err := Unpack("oos", reply[1:])
+			if err != nil {
+				return nil, err
+			}
 			numKey := args[0].(uint8)
 			// numValue := args[1].(uint8)
 			value := args[2].(string)

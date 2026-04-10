@@ -203,7 +203,10 @@ func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration
 		}
 
 		// unpack reply
-		args := Unpack("oqb", reply)
+		args, err := Unpack("oqb", reply)
+		if err != nil {
+			return nil, err
+		}
 
 		// append info
 		list = append(list, ParamUpdate{
