@@ -164,8 +164,10 @@ func (s *Server) bridge(dev *connectedDevice, client *Transport, remoteAddr stri
 
 	deviceQueue := make(msg.Queue, 64)
 	dev.channel.Subscribe(deviceQueue)
+	stop := make(chan struct{})
 
 	defer func() {
+		close(stop)
 		dev.channel.Unsubscribe(deviceQueue)
 		client.Close()
 		s.logf("%s client detached", dev.label())
@@ -193,6 +195,8 @@ func (s *Server) bridge(dev *connectedDevice, client *Transport, remoteAddr stri
 	go func() {
 		for {
 			select {
+			case <-stop:
+				return
 			case <-dev.channel.Done():
 				errs <- io.EOF
 				return
