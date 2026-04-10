@@ -20,12 +20,7 @@ type Description struct {
 }
 
 // List fetches the currently connected devices from a NAOS Connect server.
-func List(rawURL string) ([]Description, error) {
-	return ListWithToken(rawURL, "")
-}
-
-// ListWithToken fetches the currently connected devices from a NAOS Connect server.
-func ListWithToken(rawURL string, token string) ([]Description, error) {
+func List(rawURL string, token string) ([]Description, error) {
 	base, err := normalizeBaseURL(rawURL)
 	if err != nil {
 		return nil, err

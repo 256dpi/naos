@@ -102,12 +102,12 @@ func main() {
 	if *hubURL != "" {
 		go func() {
 			for {
-				devices, err := connect.ListWithToken(*hubURL, *hubToken)
+				devices, err := connect.List(*hubURL, *hubToken)
 				if err != nil {
 					state.log("[red]Hub discover error[-]: %v", err)
 				} else {
 					for _, d := range devices {
-						state.registerWithMeta(connect.NewDeviceWithToken(*hubURL, *hubToken, d.ID), d.DeviceName, d.AppName, d.AppVersion)
+						state.registerWithMeta(connect.NewDevice(*hubURL, *hubToken, d.ID), d.DeviceName, d.AppName, d.AppVersion)
 					}
 				}
 				time.Sleep(5 * time.Second)

@@ -16,13 +16,8 @@ type device struct {
 	label   string
 }
 
-// NewDevice returns a msg.Device that connects through a NAOS Connect server.
-func NewDevice(baseURL string, id string) msg.Device {
-	return NewDeviceWithToken(baseURL, "", id)
-}
-
-// NewDeviceWithToken returns a msg.Device that connects through a protected NAOS Connect server.
-func NewDeviceWithToken(baseURL string, token string, id string) msg.Device {
+// NewDevice returns a msg.Device that connects through a Connect server.
+func NewDevice(baseURL string, token string, id string) msg.Device {
 	// determine label
 	label := id
 	if parsed, err := url.Parse(baseURL); err == nil && parsed.Host != "" {

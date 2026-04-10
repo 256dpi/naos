@@ -149,7 +149,7 @@ func TestServerTokenAuthorization(t *testing.T) {
 	}
 }
 
-func TestListWithToken(t *testing.T) {
+func TestList(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if got := r.Header.Get("Authorization"); got != "Bearer secret" {
 			t.Fatalf("unexpected authorization header: %q", got)
@@ -159,7 +159,7 @@ func TestListWithToken(t *testing.T) {
 	}))
 	defer server.Close()
 
-	devices, err := ListWithToken(server.URL, "secret")
+	devices, err := List(server.URL, "secret")
 	if err != nil {
 		t.Fatalf("list failed: %v", err)
 	}

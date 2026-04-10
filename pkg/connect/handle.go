@@ -4,11 +4,11 @@ import "net/http"
 
 // Handle returns an HTTP handler that upgrades websocket requests and invokes handler.
 func Handle(handler func(*WebSocketConn)) http.Handler {
-	return HandleWith(nil, handler)
+	return HandleFallback(nil, handler)
 }
 
-// HandleWith returns an HTTP handler that upgrades websocket requests and invokes handler.
-func HandleWith(fallback http.Handler, handler func(*WebSocketConn)) http.Handler {
+// HandleFallback returns an HTTP handler that upgrades websocket requests and invokes handler.
+func HandleFallback(fallback http.Handler, handler func(*WebSocketConn)) http.Handler {
 	upgrader := NewWebSocketUpgrader(fallback)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
