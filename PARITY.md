@@ -8,16 +8,9 @@ This document tracks the parity of features among the Go, TS, and Swift NAOS dri
 |---------|------------|-----|-----|-------|
 | BLE     | Yes        | Yes | Yes | Yes   |
 | HTTP    | Yes (TLS)  | Yes | Yes | Yes   |
+| MQTT    | Yes (TLS)  | Yes |     |       |
 | Serial  | No (Wired) | Yes | Yes | Yes   |
-| Bridge  | Depends    | n/a | n/a | n/a   |
-| Connect | Yes (TLS)  | n/a | n/a | n/a   |
-
-## Transports
-
-| Name | Securable | Go  |
-|------|-----------|-----|
-| MQTT | Yes (TLS) | Yes |
-| OSC  | No        | n/a |
+| Connect | Yes (TLS)  | Yes |     |       |
 
 ## Endpoints
 
@@ -33,6 +26,6 @@ This document tracks the parity of features among the Go, TS, and Swift NAOS dri
 
 ## Notes and Todos
 
+- Use Go's Channel design in TS and Swift
 - Decouple Swift Messaging
 - Align Swift Managed Device
-- Make channels reference counted?
