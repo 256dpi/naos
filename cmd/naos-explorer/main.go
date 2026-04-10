@@ -12,9 +12,9 @@ import (
 
 	"github.com/256dpi/naos/pkg/ble"
 	"github.com/256dpi/naos/pkg/connect"
+	"github.com/256dpi/naos/pkg/http"
 	"github.com/256dpi/naos/pkg/mdns"
 	"github.com/256dpi/naos/pkg/mqtt"
-	"github.com/256dpi/naos/pkg/msg"
 	"github.com/256dpi/naos/pkg/serial"
 )
 
@@ -49,7 +49,7 @@ func main() {
 				state.log("[red]mDNS discover error[-]: %v", err)
 			} else {
 				for _, loc := range locs {
-					state.register(msg.NewHTTPDevice(loc.Hostname))
+					state.register(http.NewDevice(loc.Hostname))
 				}
 			}
 			time.Sleep(5 * time.Second)

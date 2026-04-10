@@ -1,28 +1,30 @@
-package msg
+package http
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/coder/websocket"
+
+	"github.com/256dpi/naos/pkg/msg"
 )
 
-type httpDevice struct {
+type device struct {
 	host string
 }
 
-// NewHTTPDevice creates a new HTTP device.
-func NewHTTPDevice(host string) Device {
-	return &httpDevice{
+// NewDevice creates a new HTTP device.
+func NewDevice(host string) msg.Device {
+	return &device{
 		host: host,
 	}
 }
 
-func (d *httpDevice) ID() string {
+func (d *device) ID() string {
 	return "http/" + d.host
 }
 
-func (d *httpDevice) Open() (*Channel, error) {
+func (d *device) Open() (*msg.Channel, error) {
 	// create context
 	var ok bool
 	ctx, cancel := context.WithCancel(context.Background())
@@ -41,7 +43,7 @@ func (d *httpDevice) Open() (*Channel, error) {
 	}
 
 	// prepare transport
-	t := &httpTransport{
+	t := &transport{
 		dev:    d,
 		ctx:    ctx,
 		conn:   conn,
@@ -51,28 +53,28 @@ func (d *httpDevice) Open() (*Channel, error) {
 	// set flag
 	ok = true
 
-	return NewChannel(t, d, 10), nil
+	return msg.NewChannel(t, d, 10), nil
 }
 
-type httpTransport struct {
-	dev    *httpDevice
+type transport struct {
+	dev    *device
 	ctx    context.Context
 	conn   *websocket.Conn
 	cancel context.CancelFunc
 }
 
-func (t *httpTransport) Read() ([]byte, error) {
+func (t *transport) Read() ([]byte, error) {
 	// read message
 	_, data, err := t.conn.Read(t.ctx)
 	return data, err
 }
 
-func (t *httpTransport) Write(bytes []byte) error {
+func (t *transport) Write(bytes []byte) error {
 	// write message
 	return t.conn.Write(t.ctx, websocket.MessageBinary, bytes)
 }
 
-func (t *httpTransport) Close() {
+func (t *transport) Close() {
 	// cancel context
 	defer t.cancel()
 

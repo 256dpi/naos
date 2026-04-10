@@ -1,10 +1,12 @@
-package msg
+package http
 
 import (
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/256dpi/naos/pkg/msg"
 )
 
 // TODO: Resolve dependency on real device.
@@ -14,13 +16,13 @@ func TestHTTPChannel(t *testing.T) {
 		return
 	}
 
-	dev := NewHTTPDevice("10.0.1.7")
+	dev := NewDevice("10.0.1.7")
 
 	ch, err := dev.Open()
 	assert.NoError(t, err)
 	assert.NotNil(t, ch)
 
-	s, err := OpenSession(ch, time.Second)
+	s, err := msg.OpenSession(ch, time.Second)
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
