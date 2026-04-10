@@ -111,3 +111,57 @@ func TestWebSocketUpgraderFallback(t *testing.T) {
 		t.Fatal("expected fallback handler to be called")
 	}
 }
+
+func TestServerTokenAuthorization(t *testing.T) {
+	server := NewServer()
+	server.SetToken("secret")
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	server.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("unexpected status without token: got %d want %d", rec.Code, http.StatusUnauthorized)
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/?token=secret", nil)
+	rec = httptest.NewRecorder()
+	server.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("unexpected status with query token: got %d want %d", rec.Code, http.StatusOK)
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("Authorization", "Bearer secret")
+	rec = httptest.NewRecorder()
+	server.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("unexpected status with bearer token: got %d want %d", rec.Code, http.StatusOK)
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("Authorization", "secret")
+	rec = httptest.NewRecorder()
+	server.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("unexpected status with raw token: got %d want %d", rec.Code, http.StatusOK)
+	}
+}
+
+func TestListWithToken(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "Bearer secret" {
+			t.Fatalf("unexpected authorization header: %q", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	defer server.Close()
+
+	devices, err := ListWithToken(server.URL, "secret")
+	if err != nil {
+		t.Fatalf("list failed: %v", err)
+	}
+	if len(devices) != 0 {
+		t.Fatalf("unexpected devices: %v", devices)
+	}
+}

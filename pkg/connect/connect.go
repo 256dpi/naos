@@ -21,12 +21,25 @@ type Description struct {
 
 // List fetches the currently connected devices from a NAOS Connect server.
 func List(rawURL string) ([]Description, error) {
+	return ListWithToken(rawURL, "")
+}
+
+// ListWithToken fetches the currently connected devices from a NAOS Connect server.
+func ListWithToken(rawURL string, token string) ([]Description, error) {
 	base, err := normalizeBaseURL(rawURL)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.Get(base)
+	req, err := http.NewRequest(http.MethodGet, base, nil)
+	if err != nil {
+		return nil, err
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

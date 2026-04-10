@@ -20,6 +20,7 @@ import (
 type Server struct {
 	upgrader *WebSocketUpgrader
 	logger   func(string, ...any)
+	token    string
 	mu       sync.RWMutex
 	seq      uint64
 	devices  map[string]*connectedDevice
@@ -48,8 +49,18 @@ func (s *Server) SetLogger(logger func(string, ...any)) {
 	s.logger = logger
 }
 
+// SetToken sets the token required to access the server. If empty, access is unrestricted.
+func (s *Server) SetToken(token string) {
+	s.token = token
+}
+
 // ServeHTTP serves the NAOS Connect HTTP and websocket endpoints.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if !s.authorized(r) {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	switch {
 	case r.Method == http.MethodGet && r.URL.Path == "/":
 		s.handleList(w, r)
@@ -60,6 +71,30 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.NotFound(w, r)
 	}
+}
+
+func (s *Server) authorized(r *http.Request) bool {
+	if s.token == "" {
+		return true
+	}
+	if r.URL.Query().Get("token") == s.token {
+		return true
+	}
+
+	auth := strings.TrimSpace(r.Header.Get("Authorization"))
+	if auth == "" {
+		return false
+	}
+	if auth == s.token {
+		return true
+	}
+
+	const prefix = "Bearer "
+	if strings.HasPrefix(auth, prefix) && strings.TrimSpace(auth[len(prefix):]) == s.token {
+		return true
+	}
+
+	return false
 }
 
 func (s *Server) handleList(w http.ResponseWriter, _ *http.Request) {
