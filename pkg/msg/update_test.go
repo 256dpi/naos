@@ -1,42 +1,48 @@
 package msg
 
 import (
-	"fmt"
-	"os"
+	"bytes"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-const binPath = "/Users/256dpi/Development/GitHub/256dpi/naos/com/test/build/naos.bin"
-
 func TestUpdate(t *testing.T) {
-	if testing.Short() {
-		return
-	}
+	imageData := bytes.Repeat([]byte{0xBB}, 50)
 
-	// read binary
-	data, err := os.ReadFile(binPath)
-	assert.NoError(t, err)
-
-	dev := NewHTTPDevice("10.0.1.7")
+	dev := newTestDevice(t, 42, []testMessage{
+		// begin
+		receive(Message{Endpoint: updateEndpoint, Data: Pack("oi", uint8(0), uint32(50))}),
+		ack(),
+		// GetMTU
+		receive(Message{Endpoint: SystemEndpoint, Data: Pack("o", uint8(2))}),
+		send(Message{Endpoint: SystemEndpoint, Data: Pack("h", uint16(30))}),
+		// chunk 0: 24 bytes, acked (b2u(true)=1)
+		receive(Message{Endpoint: updateEndpoint, Data: Pack("ooib", uint8(1), uint8(1), uint32(0), imageData[0:24])}),
+		ack(),
+		// chunk 1: 24 bytes, not acked (b2u(false)=0)
+		receive(Message{Endpoint: updateEndpoint, Data: Pack("ooib", uint8(1), uint8(0), uint32(24), imageData[24:48])}),
+		// chunk 2: 2 bytes, not acked (b2u(false)=0)
+		receive(Message{Endpoint: updateEndpoint, Data: Pack("ooib", uint8(1), uint8(0), uint32(48), imageData[48:50])}),
+		// finish
+		receive(Message{Endpoint: updateEndpoint, Data: Pack("o", uint8(3))}),
+		ack(),
+	})
 
 	ch, err := dev.Open()
 	assert.NoError(t, err)
-	assert.NotNil(t, ch)
 
 	s, err := OpenSession(ch, time.Second)
 	assert.NoError(t, err)
-	assert.NotNil(t, s)
 
-	err = Update(s, data, func(pos int) {
-		fmt.Printf("progress: %f\n", float64(pos)/float64(len(data))*100)
-	}, 30*time.Second)
+	var progress []int
+	err = Update(s, imageData, func(pos int) {
+		progress = append(progress, pos)
+	}, time.Second)
 	assert.NoError(t, err)
+	assert.Equal(t, []int{24, 48, 50}, progress)
 
 	err = s.End(time.Second)
 	assert.NoError(t, err)
-
-	ch.Close()
 }
