@@ -1,6 +1,9 @@
 package msg
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 // Result represents the result of a command execution.
 type Result struct {
@@ -66,7 +69,7 @@ func execute(d Device, fn func(s *Session) (any, error)) (any, error) {
 	defer ch.Close()
 
 	// open session
-	session, err := OpenSession(ch)
+	session, err := OpenSession(ch, 5*time.Second)
 	if err != nil {
 		return nil, err
 	}

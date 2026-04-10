@@ -18,7 +18,7 @@ func TestFSEndpoint(t *testing.T) {
 	ch, err := dev.Open()
 	assert.NoError(t, err)
 
-	s, err := OpenSession(ch)
+	s, err := OpenSession(ch, time.Second)
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 

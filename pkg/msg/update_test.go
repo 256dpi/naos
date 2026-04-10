@@ -26,7 +26,7 @@ func TestUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, ch)
 
-	s, err := OpenSession(ch)
+	s, err := OpenSession(ch, time.Second)
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 

@@ -86,7 +86,7 @@ func (d *ManagedDevice) NewSession() (*Session, error) {
 	}
 
 	// open new session
-	session, err := OpenSession(d.channel)
+	session, err := OpenSession(d.channel, 5*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (d *ManagedDevice) UseSession(fn func(*Session) error) error {
 	// create session if missing
 	if d.session == nil {
 		// open new session
-		session, err := OpenSession(d.channel)
+		session, err := OpenSession(d.channel, 5*time.Second)
 		if err != nil {
 			return err
 		}

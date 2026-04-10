@@ -239,7 +239,7 @@ func (s *Server) probeWithRetry(dev *connectedDevice, attempts int) bool {
 }
 
 func (s *Server) probe(dev *connectedDevice, timeout time.Duration) error {
-	session, err := msg.OpenSessionTimeout(dev.channel, timeout)
+	session, err := msg.OpenSession(dev.channel, timeout)
 	if err != nil {
 		return err
 	}

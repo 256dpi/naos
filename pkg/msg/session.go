@@ -41,14 +41,9 @@ type Session struct {
 // Ack is an error returned when an acknowledgement is received.
 var Ack = errors.New("acknowledgement")
 
-// OpenSession opens a new session using the specified channel.
-func OpenSession(channel *Channel) (*Session, error) {
-	return OpenSessionTimeout(channel, 10*time.Second)
-}
-
-// OpenSessionTimeout opens a new session using the specified channel and waits
+// OpenSession opens a new session using the specified channel and waits
 // up to the provided timeout for the initial session reply.
-func OpenSessionTimeout(channel *Channel, timeout time.Duration) (*Session, error) {
+func OpenSession(channel *Channel, timeout time.Duration) (*Session, error) {
 	// prepare queue
 	queue := make(Queue, 128)
 
