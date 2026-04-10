@@ -11,6 +11,7 @@ import (
 	"github.com/rivo/tview"
 
 	"github.com/256dpi/naos/pkg/ble"
+	"github.com/256dpi/naos/pkg/connect"
 	"github.com/256dpi/naos/pkg/mdns"
 	"github.com/256dpi/naos/pkg/mqtt"
 	"github.com/256dpi/naos/pkg/msg"
@@ -18,6 +19,8 @@ import (
 )
 
 var mqttURI = flag.String("mqtt", "", "The MQTT broker URI.")
+var hubURL = flag.String("hub", "", "The hub base URL.")
+var hubToken = flag.String("hub-token", "", "The token required to access the hub.")
 
 func main() {
 	// parse flags
@@ -89,6 +92,23 @@ func main() {
 				})
 				if err != nil {
 					state.log("[red]MQTT discover error[-]: %v", err)
+				}
+				time.Sleep(5 * time.Second)
+			}
+		}()
+	}
+
+	// start hub discovery
+	if *hubURL != "" {
+		go func() {
+			for {
+				devices, err := connect.ListWithToken(*hubURL, *hubToken)
+				if err != nil {
+					state.log("[red]Hub discover error[-]: %v", err)
+				} else {
+					for _, d := range devices {
+						state.registerWithMeta(connect.NewDeviceWithToken(*hubURL, *hubToken, d.ID), d.DeviceName, d.AppName, d.AppVersion)
+					}
 				}
 				time.Sleep(5 * time.Second)
 			}
