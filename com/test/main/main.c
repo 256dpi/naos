@@ -31,6 +31,8 @@
 #define ETHERNET false
 #define RELAY false
 #define CONNECT false
+#define BLE_PAIRING false
+#define BLE_BONDING false
 
 #define NAOS_ECHO_ENDPOINT 0x08
 
@@ -362,8 +364,8 @@ void app_main() {
   naos_init(&config);
   naos_cpu_init();
   naos_ble_init((naos_ble_config_t){
-      .pairing = false,
-      .bonding = false,
+      .pairing = BLE_PAIRING,
+      .bonding = BLE_BONDING,
   });
   if (WIFI) {
     naos_wifi_init();
@@ -465,5 +467,7 @@ void app_main() {
   // auth_test();
 
   // test BLE pairing
-  // ble_pairing_test();
+  if (BLE_PAIRING) {
+    ble_pairing_test();
+  }
 }
