@@ -89,10 +89,12 @@ static bool naos_fs_join(char *buf, size_t len, const char *path) {
     return false;
   }
 
-  // return path directly if root is "/"
+  // map the exposed root path directly to the configured mount root
   int written = 0;
   if (strcmp(naos_fs_config.root, "/") == 0) {
     written = snprintf(buf, len, "%s", path);
+  } else if (strcmp(path, "/") == 0) {
+    written = snprintf(buf, len, "%s", naos_fs_config.root);
   } else {
     written = snprintf(buf, len, "%s%s", naos_fs_config.root, path);
   }
@@ -106,8 +108,13 @@ static bool naos_fs_join(char *buf, size_t len, const char *path) {
 
 static int naos_fs_mkdir(const char *path, mode_t mode) {
   // copy path
-  char tmp[256] = {0};
-  strncpy(tmp, path, sizeof(tmp) - 1);
+  char tmp[PATH_MAX] = {0};
+  size_t path_len = strlen(path);
+  if (path_len >= sizeof(tmp)) {
+    errno = ENAMETOOLONG;
+    return -1;
+  }
+  memcpy(tmp, path, path_len + 1);
 
   // remove trailing slash
   size_t len = strlen(tmp);
