@@ -50,22 +50,16 @@ func Connect(url, cid string, qos packet.QOS) (*Router, error) {
 
 	// set handler
 	c.Callback = func(msg *packet.Message, err error) error {
-		// acquire mutex
-		r.mutex.Lock()
-		defer r.mutex.Unlock()
-
-		// handle errors
+		// cancel all callbacks on error
 		if err != nil {
-			for _, cbs := range r.callbacks {
-				for _, cb := range cbs {
-					cb.fn(nil, err)
-				}
+			for _, cb := range r.snapshotCallbacks(nil) {
+				cb.fn(nil, err)
 			}
 			return err
 		}
 
-		// call callbacks
-		for _, cb := range r.callbacks[msg.Topic] {
+		// otherwise, forward message
+		for _, cb := range r.snapshotCallbacks(msg) {
 			cb.fn(msg, nil)
 		}
 
@@ -155,15 +149,18 @@ func (r *Router) Unsubscribe(topic string, id uint64) error {
 
 // Close closes the router and disconnects the underlying client.
 func (r *Router) Close() error {
-	// acquire mutex
+	// collect all callbacks
 	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	callbacks := make([]callback, 0, len(r.callbacks))
+	for _, cbs := range r.callbacks {
+		callbacks = append(callbacks, cbs...)
+	}
+	r.callbacks = make(map[string][]callback)
+	r.mutex.Unlock()
 
 	// cancel callbacks
-	for _, cbs := range r.callbacks {
-		for _, cb := range cbs {
-			go cb.fn(nil, fmt.Errorf("router closed"))
-		}
+	for _, cb := range callbacks {
+		go cb.fn(nil, fmt.Errorf("router closed"))
 	}
 
 	// disconnect client
@@ -173,4 +170,23 @@ func (r *Router) Close() error {
 	}
 
 	return nil
+}
+
+func (r *Router) snapshotCallbacks(msg *packet.Message) []callback {
+	// acquire mutex
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	// collect matching callbacks
+	if msg != nil {
+		return append([]callback(nil), r.callbacks[msg.Topic]...)
+	}
+
+	// collect all callbacks
+	callbacks := make([]callback, 0, len(r.callbacks))
+	for _, cbs := range r.callbacks {
+		callbacks = append(callbacks, cbs...)
+	}
+
+	return callbacks
 }
