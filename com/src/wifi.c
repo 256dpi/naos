@@ -269,14 +269,15 @@ void naos_wifi_init() {
 }
 
 void naos_wifi_info(int8_t *rssi) {
+  // default to unavailable
+  *rssi = -128;
+
   // get info
   wifi_ap_record_t record = {0};
   esp_err_t err = esp_wifi_sta_get_ap_info(&record);
-  if (err == ESP_ERR_WIFI_NOT_CONNECT) {
-    *rssi = -128;
+  if (err != ESP_OK) {
     return;
   }
-  ESP_ERROR_CHECK(err);
 
   // set RSSI
   *rssi = record.rssi;
