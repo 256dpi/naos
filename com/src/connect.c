@@ -221,9 +221,12 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
       }
       naos_unlock(naos_connect_mutex);
 
-      // ignore non-binary messages
+      // ignore websocket control frames; only binary frames carry NAOS data
       if (data->op_code != 0x2) {
-        ESP_LOGE(NAOS_LOG_TAG, "naos_connect_handler: ignored non-binary message");
+        if (data->op_code == 0x8 || data->op_code == 0x9 || data->op_code == 0xA) {
+          break;
+        }
+        ESP_LOGE(NAOS_LOG_TAG, "naos_connect_handler: ignored unexpected opcode: 0x%x", data->op_code);
         break;
       }
 
