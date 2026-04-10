@@ -42,6 +42,12 @@ var Ack = errors.New("acknowledgement")
 
 // OpenSession opens a new session using the specified channel.
 func OpenSession(channel Channel) (*Session, error) {
+	return OpenSessionTimeout(channel, 10*time.Second)
+}
+
+// OpenSessionTimeout opens a new session using the specified channel and waits
+// up to the provided timeout for the initial session reply.
+func OpenSessionTimeout(channel Channel, timeout time.Duration) (*Session, error) {
 	// prepare queue
 	queue := make(Queue, 64)
 
@@ -68,7 +74,7 @@ func OpenSession(channel Channel) (*Session, error) {
 	// await reply
 	var sid uint16
 	for {
-		msg, err := Read(queue, 10*time.Second)
+		msg, err := Read(queue, timeout)
 		if err != nil {
 			return nil, err
 		}
