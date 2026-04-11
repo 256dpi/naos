@@ -2,13 +2,14 @@ package connect
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/256dpi/naos/pkg/msg"
 )
@@ -28,7 +29,7 @@ func TestConnect(t *testing.T) {
 		case m := <-queue:
 			payloads <- m
 		case <-time.After(time.Second):
-			serverErrs <- io.ErrNoProgress
+			serverErrs <- assert.AnError
 			return
 		}
 
@@ -42,48 +43,38 @@ func TestConnect(t *testing.T) {
 	dialer.Subprotocols = []string{"naos"}
 
 	conn, _, err := dialer.Dial(wsURL, nil)
-	if err != nil {
-		t.Fatalf("dial failed: %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 	defer conn.Close()
 
 	// send a valid msg-protocol frame: version=1, session=0, endpoint=0x42, data={0xaa,0xbb}
 	payload := msg.Pack("ohob", uint8(1), uint16(0), uint8(0x42), []byte{0xaa, 0xbb})
 	err = conn.WriteMessage(websocket.BinaryMessage, append([]byte{version, cmdMsg}, payload...))
-	if err != nil {
-		t.Fatalf("failed to write valid frame: %v", err)
-	}
+	assert.NoError(t, err)
 
 	select {
 	case m := <-payloads:
-		if string(m.Build()) != string(payload) {
-			t.Fatalf("unexpected payload: %v", m)
-		}
+		assert.Equal(t, payload, m.Build())
 	case <-time.After(time.Second):
-		t.Fatal("timed out waiting for payload")
+		assert.Fail(t, "timed out waiting for payload")
 	}
 
 	err = conn.WriteMessage(websocket.BinaryMessage, []byte{0xff, cmdMsg, 0x01})
-	if err != nil {
-		t.Fatalf("failed to write invalid frame: %v", err)
-	}
+	assert.NoError(t, err)
 
 	select {
 	case <-done:
 	case <-time.After(time.Second):
-		t.Fatal("timed out waiting for channel shutdown")
+		assert.Fail(t, "timed out waiting for channel shutdown")
 	}
 
 	_, _, err = conn.ReadMessage()
-	if err == nil {
-		t.Fatal("expected client connection to close after protocol error")
-	}
+	assert.Error(t, err)
 
 	select {
 	case err := <-serverErrs:
-		if err != nil {
-			t.Fatalf("server handler failed: %v", err)
-		}
+		assert.NoError(t, err)
 	default:
 	}
 }
@@ -99,19 +90,14 @@ func TestWebSocketUpgraderFallback(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	conn, err := upgrader.Upgrade(rec, req)
-	if err != nil {
-		t.Fatalf("unexpected upgrade error: %v", err)
-	}
-	if conn != nil {
-		t.Fatal("expected no websocket connection for fallback request")
-	}
-	if rec.Code != http.StatusNoContent {
-		t.Fatalf("unexpected fallback status: got %d want %d", rec.Code, http.StatusNoContent)
-	}
+	assert.NoError(t, err)
+	assert.Nil(t, conn)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+
 	select {
 	case <-called:
 	default:
-		t.Fatal("expected fallback handler to be called")
+		assert.Fail(t, "expected fallback handler to be called")
 	}
 }
 
@@ -122,66 +108,46 @@ func TestServerTokenAuthorization(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/list", nil)
 	rec := httptest.NewRecorder()
 	server.ServeHTTP(rec, req)
-	if rec.Code != http.StatusUnauthorized {
-		t.Fatalf("unexpected status without token: got %d want %d", rec.Code, http.StatusUnauthorized)
-	}
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 
 	req = httptest.NewRequest(http.MethodGet, "/list?token=secret", nil)
 	rec = httptest.NewRecorder()
 	server.ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("unexpected status with query token: got %d want %d", rec.Code, http.StatusOK)
-	}
+	assert.Equal(t, http.StatusOK, rec.Code)
 
 	req = httptest.NewRequest(http.MethodGet, "/list", nil)
 	req.Header.Set("Authorization", "Bearer secret")
 	rec = httptest.NewRecorder()
 	server.ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("unexpected status with bearer token: got %d want %d", rec.Code, http.StatusOK)
-	}
+	assert.Equal(t, http.StatusOK, rec.Code)
 
 	req = httptest.NewRequest(http.MethodGet, "/list", nil)
 	req.Header.Set("Authorization", "secret")
 	rec = httptest.NewRecorder()
 	server.ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("unexpected status with raw token: got %d want %d", rec.Code, http.StatusOK)
-	}
+	assert.Equal(t, http.StatusOK, rec.Code)
 }
 
 func TestList(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/list" {
-			t.Fatalf("unexpected path: %q", r.URL.Path)
-		}
-		if got := r.Header.Get("Authorization"); got != "Bearer secret" {
-			t.Fatalf("unexpected authorization header: %q", got)
-		}
+		assert.Equal(t, "/list", r.URL.Path)
+		assert.Equal(t, "Bearer secret", r.Header.Get("Authorization"))
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"devices":[{"uuid":"device-1","device_id":"device-1","connected":"2026-04-11T12:00:00Z","attach_url":"wss://example.com/attach/1","attach_token":"attach-secret"}]}`))
 	}))
 	defer server.Close()
 
 	devices, err := List(server.URL+"/list", "secret")
-	if err != nil {
-		t.Fatalf("list failed: %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
-	if len(devices) != 1 {
-		t.Fatalf("unexpected devices: %v", devices)
+	if !assert.Len(t, devices, 1) {
+		return
 	}
-	if devices[0].DeviceID != "device-1" {
-		t.Fatalf("unexpected device id: %q", devices[0].DeviceID)
-	}
-	if devices[0].UUID != "device-1" {
-		t.Fatalf("unexpected uuid: %q", devices[0].UUID)
-	}
-	if devices[0].AttachURL != "wss://example.com/attach/1" {
-		t.Fatalf("unexpected attach url: %q", devices[0].AttachURL)
-	}
-	if devices[0].AttachToken != "attach-secret" {
-		t.Fatalf("unexpected attach token: %q", devices[0].AttachToken)
-	}
+	assert.Equal(t, "device-1", devices[0].DeviceID)
+	assert.Equal(t, "device-1", devices[0].UUID)
+	assert.Equal(t, "wss://example.com/attach/1", devices[0].AttachURL)
+	assert.Equal(t, "attach-secret", devices[0].AttachToken)
 }
 
 func TestServerListEmptyDevices(t *testing.T) {
@@ -191,59 +157,46 @@ func TestServerListEmptyDevices(t *testing.T) {
 	rec := httptest.NewRecorder()
 	server.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("unexpected status: got %d want %d", rec.Code, http.StatusOK)
-	}
+	assert.Equal(t, http.StatusOK, rec.Code)
 
 	var out struct {
 		Devices []Description `json:"devices"`
 	}
-	if err := json.NewDecoder(rec.Body).Decode(&out); err != nil {
-		t.Fatalf("decode failed: %v", err)
-	}
-	if out.Devices == nil {
-		t.Fatal("expected devices to be encoded as [] instead of null")
-	}
-	if len(out.Devices) != 0 {
-		t.Fatalf("unexpected devices: %v", out.Devices)
-	}
+	err := json.NewDecoder(rec.Body).Decode(&out)
+	assert.NoError(t, err)
+	assert.NotNil(t, out.Devices)
+	assert.Empty(t, out.Devices)
 }
 
 func TestDeviceOpenUsesAttach(t *testing.T) {
 	done := make(chan struct{})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if got := r.Header.Get("Authorization"); got != "Bearer attach-secret" {
-			t.Fatalf("unexpected authorization header: %q", got)
-		}
+		assert.Equal(t, "Bearer attach-secret", r.Header.Get("Authorization"))
 
 		upgrader := websocket.Upgrader{
 			Subprotocols: []string{"naos"},
 			CheckOrigin:  func(*http.Request) bool { return true },
 		}
 		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			t.Fatalf("upgrade failed: %v", err)
-		}
+		assert.NoError(t, err)
 		close(done)
 		_ = conn.Close()
 	}))
 	defer server.Close()
 
-	wsURL := "ws" + server.URL[len("http"):]
+	wsURL := strings.Replace(server.URL, "http:", "ws:", 1)
 	dev := NewDevice(wsURL, "attach-secret")
-	if got := dev.ID(); got != "connect/"+wsURL {
-		t.Fatalf("unexpected device id: %q", got)
-	}
+	assert.Equal(t, "connect/"+strings.TrimPrefix(wsURL, "ws://"), dev.ID())
 
 	ch, err := dev.Open()
-	if err != nil {
-		t.Fatalf("open failed: %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 	defer ch.Close()
 
 	select {
 	case <-done:
 	case <-time.After(time.Second):
-		t.Fatal("timed out waiting for attach")
+		assert.Fail(t, "timed out waiting for attach")
 	}
 }

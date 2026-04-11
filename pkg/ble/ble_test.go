@@ -3,6 +3,8 @@ package ble
 import (
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestChannelCloseAllowsLateNotification(t *testing.T) {
@@ -27,6 +29,6 @@ func TestChannelCloseAllowsLateNotification(t *testing.T) {
 	select {
 	case <-done:
 	case <-time.After(time.Second):
-		t.Fatal("read did not return after close")
+		assert.Fail(t, "read did not return after close")
 	}
 }

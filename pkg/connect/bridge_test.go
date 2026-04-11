@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/256dpi/naos/pkg/msg"
 )
 
@@ -57,7 +59,7 @@ func TestBridge(t *testing.T) {
 	expectFrame(t, clientBConn.writes, dataB)
 	expectNoFrame(t, clientAConn.writes)
 
-	// client→device session data
+	// client->device session data
 	clientDataA := rawMessage(11, 0x30, []byte("from-client-a"))
 	sendFrame(t, clientAConn.reads, clientDataA)
 	expectFrame(t, deviceConn.writes, clientDataA)
@@ -73,11 +75,11 @@ func TestBridge(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		select {
 		case err := <-errs:
-			if err != nil && err != io.EOF {
-				t.Fatalf("unexpected bridge error: %v", err)
+			if err != nil {
+				assert.ErrorIs(t, err, io.EOF)
 			}
 		case <-time.After(time.Second):
-			t.Fatal("timed out waiting for bridge shutdown")
+			assert.Fail(t, "timed out waiting for bridge shutdown")
 		}
 	}
 }
@@ -155,7 +157,7 @@ func sendFrame(t *testing.T, ch chan<- []byte, payload []byte) {
 	select {
 	case ch <- frame:
 	case <-time.After(time.Second):
-		t.Fatal("timed out sending frame")
+		assert.Fail(t, "timed out sending frame")
 	}
 }
 
@@ -165,11 +167,9 @@ func expectFrame(t *testing.T, ch <-chan []byte, payload []byte) {
 	select {
 	case frame := <-ch:
 		want := append([]byte{version, cmdMsg}, payload...)
-		if string(frame) != string(want) {
-			t.Fatalf("unexpected frame: got %v want %v", frame, want)
-		}
+		assert.Equal(t, want, frame)
 	case <-time.After(time.Second):
-		t.Fatal("timed out waiting for frame")
+		assert.Fail(t, "timed out waiting for frame")
 	}
 }
 
@@ -178,7 +178,7 @@ func expectNoFrame(t *testing.T, ch <-chan []byte) {
 
 	select {
 	case frame := <-ch:
-		t.Fatalf("unexpected frame: %v", frame)
+		assert.Failf(t, "unexpected frame", "%v", frame)
 	case <-time.After(50 * time.Millisecond):
 	}
 }

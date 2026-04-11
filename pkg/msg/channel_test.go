@@ -97,7 +97,7 @@ func TestChannelWaitsBrieflyForOwnedQueueBackpressure(t *testing.T) {
 	select {
 	case <-done:
 	case <-time.After(time.Second):
-		t.Fatal("timed out waiting for dispatch")
+		assert.Fail(t, "timed out waiting for dispatch")
 	}
 }
 
@@ -177,7 +177,7 @@ func expectQueueMsg(t *testing.T, queue Queue, want Message) {
 	case got := <-queue:
 		assert.Equal(t, want, got)
 	case <-time.After(time.Second):
-		t.Fatal("timed out waiting for queue message")
+		assert.Fail(t, "timed out waiting for queue message")
 	}
 }
 
@@ -186,7 +186,7 @@ func expectNoQueueMsg(t *testing.T, queue Queue) {
 
 	select {
 	case got := <-queue:
-		t.Fatalf("unexpected queue message: %v", got)
+		assert.Failf(t, "unexpected queue message", "%v", got)
 	case <-time.After(10 * time.Millisecond):
 	}
 }

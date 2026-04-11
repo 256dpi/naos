@@ -3,6 +3,8 @@ package mqtt
 import (
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestChannelCloseAllowsLateCallback(t *testing.T) {
@@ -26,6 +28,6 @@ func TestChannelCloseAllowsLateCallback(t *testing.T) {
 	select {
 	case <-done:
 	case <-time.After(time.Second):
-		t.Fatal("read did not return after close")
+		assert.Fail(t, "read did not return after close")
 	}
 }

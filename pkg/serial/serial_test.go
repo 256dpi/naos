@@ -7,6 +7,8 @@ import (
 	"io"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTransportReadParsesFrames(t *testing.T) {
@@ -23,12 +25,8 @@ func TestTransportReadParsesFrames(t *testing.T) {
 	go pw.Write([]byte("some debug log\n" + line))
 
 	data, err := ch.Read()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if string(data) != string(payload) {
-		t.Fatalf("unexpected data: %v", data)
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, payload, data)
 }
 
 func TestTransportWriteFramesMessage(t *testing.T) {
@@ -41,14 +39,10 @@ func TestTransportWriteFramesMessage(t *testing.T) {
 
 	payload := []byte{0x01, 0x02, 0x03}
 	err := ch.Write(payload)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	assert.NoError(t, err)
 
 	want := "\nNAOS!" + base64.StdEncoding.EncodeToString(payload) + "\n"
-	if buf.String() != want {
-		t.Fatalf("unexpected frame: %q want %q", buf.String(), want)
-	}
+	assert.Equal(t, want, buf.String())
 }
 
 func TestTransportReadReturnsOnClose(t *testing.T) {
@@ -62,9 +56,7 @@ func TestTransportReadReturnsOnClose(t *testing.T) {
 	done := make(chan struct{})
 	go func() {
 		_, err := ch.Read()
-		if err == nil {
-			t.Error("expected error after close")
-		}
+		assert.Error(t, err)
 		close(done)
 	}()
 
@@ -73,7 +65,7 @@ func TestTransportReadReturnsOnClose(t *testing.T) {
 	select {
 	case <-done:
 	case <-time.After(time.Second):
-		t.Fatal("read did not return after close")
+		assert.Fail(t, "read did not return after close")
 	}
 
 	_ = pw

@@ -94,7 +94,7 @@ func runScript(t *testing.T, tr *scriptTransport, session uint16, messages []tes
 	}
 	open, ok := Parse(data)
 	if !ok || open.Session != 0 || open.Endpoint != 0x0 {
-		t.Errorf("test device: expected valid session open")
+		assert.Fail(t, "test device: expected valid session open")
 		tr.Close()
 		return
 	}
@@ -116,7 +116,7 @@ func runScript(t *testing.T, tr *scriptTransport, session uint16, messages []tes
 			}
 			got, ok := Parse(data)
 			if !ok {
-				t.Errorf("test device: message %d: failed to parse", i)
+				assert.Failf(t, "test device: failed to parse", "message %d", i)
 				tr.Close()
 				return
 			}
@@ -133,7 +133,7 @@ func runScript(t *testing.T, tr *scriptTransport, session uint16, messages []tes
 	}
 	end, ok := Parse(data)
 	if !ok || end.Session != session || end.Endpoint != 0xFF {
-		t.Errorf("test device: expected valid session close")
+		assert.Fail(t, "test device: expected valid session close")
 		tr.Close()
 		return
 	}
