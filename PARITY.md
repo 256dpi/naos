@@ -2,15 +2,15 @@
 
 This document tracks the parity of features among the Go, TS, and Swift NAOS drivers, as well as the availability of features in the CLI tools and Swift desktop application.
 
-## Channels
+## Transports
 
 | Name    | Securable  | Go  | TS  | Swift | 
 |---------|------------|-----|-----|-------|
-| BLE     | Yes        | Yes | Yes | Yes   |
-| HTTP    | Yes (TLS)  | Yes | Yes | Yes   |
-| MQTT    | Yes (TLS)  | Yes |     |       |
-| Serial  | No (Wired) | Yes | Yes | Yes   |
-| Connect | Yes (TLS)  | Yes |     |       |
+| BLE     | Yes - Bond | Yes | Yes | Yes   |
+| HTTP    | Yes - TLS  | Yes | Yes | Yes   |
+| MQTT    | Yes - TLS  | Yes |     |       |
+| Connect | Yes - TLS  | Yes |     |       |
+| Serial  | No - Wired | Yes | Yes | Yes   |
 
 ## Endpoints
 
@@ -24,8 +24,7 @@ This document tracks the parity of features among the Go, TS, and Swift NAOS dri
 | Auth    |      | Done |       |          |         |       |
 | Debug   | Done | Done |       | Started  |         | Done  |
 
-## Notes and Todos
+## TOOD
 
-- Use Go's Channel design in TS and Swift
-- Decouple Swift Messaging
-- Align Swift Managed Device
+- Increase test coverage
+- Refactor and align params/metrics service
