@@ -142,7 +142,7 @@ func runUI(state *state) {
 	table := tview.NewTable().
 		SetSelectable(true, false)
 	table.SetBorder(true).
-		SetTitle("Devices")
+		SetTitle(" Devices ")
 
 	// prepare log view
 	log := tview.NewTextView().
@@ -150,7 +150,7 @@ func runUI(state *state) {
 		SetScrollable(true).
 		SetWrap(false)
 	log.SetBorder(true).
-		SetTitle("Logs (l to focus)")
+		SetTitle(" Logs (l to focus) ")
 
 	// prepare container
 	container := tview.NewFlex().SetDirection(tview.FlexRow)

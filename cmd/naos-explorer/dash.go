@@ -81,20 +81,20 @@ func (d *dashboard) buildUI() {
 	d.infoView = tview.NewTextView().
 		SetDynamicColors(true)
 	d.infoView.SetBorder(true).
-		SetTitle("Device")
+		SetTitle(" Device ")
 
 	// create status view
 	d.statusView = tview.NewTextView().
 		SetDynamicColors(true).
 		SetText("(Tab) Switch  (F) Reload Dir  (U) Firmware  (C) Coredump  (D) Del Coredump  (L) Log  (Esc) Close")
 	d.statusView.SetBorder(true).
-		SetTitle("Status")
+		SetTitle(" Status ")
 
 	// create parameter table
 	d.paramTable = tview.NewTable().
 		SetSelectable(true, false)
 	d.paramTable.SetBorder(true).
-		SetTitle("Parameters")
+		SetTitle(" Parameters ")
 	d.paramTable.SetSelectedFunc(func(row, _ int) {
 		d.editParam(row - 1)
 	})
@@ -103,7 +103,7 @@ func (d *dashboard) buildUI() {
 	d.metricTable = tview.NewTable().
 		SetSelectable(true, false)
 	d.metricTable.SetBorder(true).
-		SetTitle("Metrics")
+		SetTitle(" Metrics ")
 	d.metricTable.SetSelectedFunc(func(row, _ int) {
 		d.showMetricDetails(row - 1)
 	})
@@ -111,7 +111,7 @@ func (d *dashboard) buildUI() {
 	// create FS tree view
 	d.fsTree = tview.NewTreeView()
 	d.fsTree.SetBorder(true).
-		SetTitle("File System")
+		SetTitle(" File System ")
 	d.fsTree.SetSelectedFunc(func(node *tview.TreeNode) {
 		d.handleTreeSelect(node)
 	})
@@ -120,7 +120,7 @@ func (d *dashboard) buildUI() {
 	d.fsPreview = tview.NewTextView().
 		SetDynamicColors(true)
 	d.fsPreview.SetBorder(true).
-		SetTitle("Preview")
+		SetTitle(" Preview ")
 	d.fsPreview.SetWrap(true)
 
 	// prepare log view
@@ -444,7 +444,7 @@ func (d *dashboard) editParam(row int) {
 		d.pages.RemovePage("param-editor")
 	})
 	form.SetBorder(true).
-		SetTitle(fmt.Sprintf("Set %s (%s)", info.Name, paramTypeString(info.Type)))
+		SetTitle(fmt.Sprintf(" Set %s (%s) ", info.Name, paramTypeString(info.Type)))
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
 			d.pages.RemovePage("param-editor")
@@ -482,7 +482,7 @@ func (d *dashboard) showMetricDetails(row int) {
 	}
 	metric := d.metricRows[row]
 	modal := tview.NewTextView().SetDynamicColors(true)
-	modal.SetBorder(true).SetTitle(metric.info.Name)
+	modal.SetBorder(true).SetTitle(" " + metric.info.Name + " ")
 	_, _ = fmt.Fprintf(modal, "Kind: %s\n", metricKindString(metric.info.Kind))
 	_, _ = fmt.Fprintf(modal, "Type: %s\n", metricTypeString(metric.info.Type))
 	_, _ = fmt.Fprintf(modal, "Values: %s\n", metric.value)
@@ -623,7 +623,7 @@ func (d *dashboard) promptFirmwareUpdate() {
 	form.AddButton("Cancel", func() {
 		d.pages.RemovePage("fw-update")
 	})
-	form.SetBorder(true).SetTitle("Firmware Update")
+	form.SetBorder(true).SetTitle(" Firmware Update ")
 	d.pages.AddPage("fw-update", centered(70, 7, form), true, true)
 	d.app.SetFocus(form)
 }
@@ -731,7 +731,7 @@ func (d *dashboard) downloadCoredump() {
 	form.AddButton("Cancel", func() {
 		d.pages.RemovePage("coredump-download")
 	})
-	form.SetBorder(true).SetTitle(fmt.Sprintf("Download Coredump (%d bytes)", d.coredumpSize))
+	form.SetBorder(true).SetTitle(fmt.Sprintf(" Download Coredump (%d bytes) ", d.coredumpSize))
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
 			d.pages.RemovePage("coredump-download")
