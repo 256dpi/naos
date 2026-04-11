@@ -7,8 +7,8 @@ import (
 	"github.com/256dpi/gomqtt/packet"
 )
 
-// The Description of a MQTT device.
-type Description struct {
+// The Descriptor of a MQTT device.
+type Descriptor struct {
 	AppName    string
 	AppVersion string
 	DeviceName string
@@ -16,7 +16,7 @@ type Description struct {
 }
 
 // Discover uses the provided Router to discover connected MQTT devices.
-func Discover(r *Router, stop chan struct{}, handle func(Description)) error {
+func Discover(r *Router, stop chan struct{}, cb func(Descriptor)) error {
 	// prepare callback
 	callback := func(m *packet.Message, err error) {
 		// check for error or empty message
@@ -39,7 +39,7 @@ func Discover(r *Router, stop chan struct{}, handle func(Description)) error {
 		}
 
 		// handle device
-		go handle(Description{
+		go cb(Descriptor{
 			AppName:    fields[0],
 			AppVersion: fields[1],
 			DeviceName: fields[2],
@@ -80,17 +80,17 @@ func Discover(r *Router, stop chan struct{}, handle func(Description)) error {
 }
 
 // Collect uses the provided Router to collect connected MQTT devices.
-func Collect(r *Router, timeout time.Duration) ([]Description, error) {
+func Collect(r *Router, duration time.Duration) ([]Descriptor, error) {
 	// create context
 	stop := make(chan struct{})
 	go func() {
-		time.Sleep(timeout)
+		time.Sleep(duration)
 		close(stop)
 	}()
 
 	// collect devices
-	var list []Description
-	err := Discover(r, stop, func(d Description) {
+	var list []Descriptor
+	err := Discover(r, stop, func(d Descriptor) {
 		list = append(list, d)
 	})
 

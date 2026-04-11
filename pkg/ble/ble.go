@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/samber/lo"
 	"tinygo.org/x/bluetooth"
@@ -16,8 +17,8 @@ var adapter = bluetooth.DefaultAdapter
 var serviceUUID = lo.Must(bluetooth.ParseUUID("632FBA1B-4861-4E4F-8103-FFEE9D5033B5"))
 var msgUUID = lo.Must(bluetooth.ParseUUID("0360744B-A61B-00AD-C945-37F3634130F3"))
 
-// The Description of a BLE device.
-type Description struct {
+// The Descriptor of a BLE device.
+type Descriptor struct {
 	Address bluetooth.Address
 	RSSI    int
 	Name    string
@@ -25,7 +26,7 @@ type Description struct {
 
 // Discover scans for BLE devices and calls the provided callback for each
 // discovered device.
-func Discover(stop chan struct{}, cb func(device Description)) error {
+func Discover(stop chan struct{}, cb func(Descriptor)) error {
 	// enable BLE adapter
 	err := adapter.Enable()
 	if err != nil && !strings.Contains(err.Error(), "already calling Enable function") {
@@ -46,7 +47,7 @@ func Discover(stop chan struct{}, cb func(device Description)) error {
 		}
 
 		// yield device
-		go cb(Description{
+		go cb(Descriptor{
 			Address: result.Address,
 			RSSI:    int(result.RSSI),
 			Name:    result.LocalName(),
@@ -54,6 +55,25 @@ func Discover(stop chan struct{}, cb func(device Description)) error {
 	})
 
 	return nil
+}
+
+// Collect scans for BLE devices for the specified duration and returns the
+// results.
+func Collect(duration time.Duration) ([]Descriptor, error) {
+	// create stop channel
+	stop := make(chan struct{})
+	go func() {
+		time.Sleep(duration)
+		close(stop)
+	}()
+
+	// collect devices
+	var list []Descriptor
+	err := Discover(stop, func(d Descriptor) {
+		list = append(list, d)
+	})
+
+	return list, err
 }
 
 type device struct {

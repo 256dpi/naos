@@ -33,7 +33,7 @@ func main() {
 	// start BLE discovery
 	go func() {
 		for {
-			err := ble.Discover(nil, func(d ble.Description) {
+			err := ble.Discover(nil, func(d ble.Descriptor) {
 				state.registerWithMeta(ble.NewDevice(d.Address), d.Name, "", "")
 			})
 			if err != nil {
@@ -45,15 +45,12 @@ func main() {
 	// start mDNS discovery
 	go func() {
 		for {
-			locs, err := mdns.Discover(time.Second)
+			err := mdns.Discover(nil, func(d mdns.Descriptor) {
+				state.register(http.NewDevice(d.Hostname))
+			})
 			if err != nil {
 				state.log("[red]mDNS discover error[-]: %v", err)
-			} else {
-				for _, loc := range locs {
-					state.register(http.NewDevice(loc.Hostname))
-				}
 			}
-			time.Sleep(5 * time.Second)
 		}
 	}()
 
@@ -88,7 +85,7 @@ func main() {
 					time.Sleep(5 * time.Second)
 					continue
 				}
-				err = mqtt.Discover(router, nil, func(d mqtt.Description) {
+				err = mqtt.Discover(router, nil, func(d mqtt.Descriptor) {
 					state.registerWithMeta(mqtt.NewDevice(router, d.BaseTopic), d.DeviceName, d.AppName, d.AppVersion)
 				})
 				if err != nil {

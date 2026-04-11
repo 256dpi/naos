@@ -9,14 +9,14 @@ import (
 
 // TODO: Resolve dependency on real device.
 
-func TestDiscover(t *testing.T) {
+func TestCollect(t *testing.T) {
 	if testing.Short() {
 		return
 	}
 
-	locations, err := Discover(time.Second)
+	locations, err := Collect(time.Second)
 	assert.NoError(t, err)
-	assert.Equal(t, []Location{
+	assert.Equal(t, []Descriptor{
 		{
 			Hostname: "test1234.local.",
 			Address:  "10.0.1.7",
