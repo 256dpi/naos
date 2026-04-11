@@ -13,23 +13,54 @@
     </header>
     <div class="toolbar">
       <span class="label">Connect</span>
-      <button class="connect" onclick="_ble()">BLE</button>
-      <button class="connect" onclick="_serial()">Serial</button>
-      <button class="connect" onclick="_http()">HTTP</button>
-      <button class="connect" onclick="_disconnect()">Disconnect</button>
+      <button onclick="_ble()">BLE</button>
+      <button onclick="_serial()">Serial</button>
+      <button onclick="_http()">HTTP</button>
+      <button class="device-connected" onclick="_disconnect()" disabled>
+        Disconnect
+      </button>
+      <div class="sep"></div>
+      <span class="label">Session</span>
+      <button
+        class="device-connected"
+        id="activate-btn"
+        onclick="_activate()"
+        disabled
+      >
+        Activate
+      </button>
+      <button class="device-active" onclick="_unlock()" disabled>Unlock</button>
+      <button class="device-unlocked" onclick="_password()" disabled>
+        Password
+      </button>
       <div class="sep"></div>
       <span class="label">Test</span>
-      <button onclick="_params()">Params</button>
-      <button onclick="_fs()">FS</button>
-      <button onclick="_metrics()">Metrics</button>
-      <button onclick="_relay()">Relay</button>
-      <button onclick="_auth()">Auth</button>
-      <button onclick="_debug()">Debug</button>
-      <button onclick="_throughput()">Throughput</button>
-      <button onclick="_transfer()">Transfer</button>
-      <button onclick="_memory()">Memory</button>
+      <button class="device-unlocked" onclick="_params()" disabled>
+        Params
+      </button>
+      <button class="device-unlocked" onclick="_fs()" disabled>FS</button>
+      <button class="device-unlocked" onclick="_metrics()" disabled>
+        Metrics
+      </button>
+      <button class="device-unlocked" onclick="_relay()" disabled>Relay</button>
+      <button class="device-unlocked" onclick="_auth()" disabled>Auth</button>
+      <button class="device-unlocked" onclick="_debug()" disabled>Debug</button>
+      <button class="device-unlocked" onclick="_throughput()" disabled>
+        Throughput
+      </button>
+      <button class="device-unlocked" onclick="_transfer()" disabled>
+        Transfer
+      </button>
+      <button class="device-unlocked" onclick="_memory()" disabled>
+        Memory
+      </button>
       <div class="sep"></div>
-      <input type="file" onchange="_flash(this)" />
+      <input
+        class="device-unlocked"
+        type="file"
+        onchange="_flash(this)"
+        disabled
+      />
     </div>
     <div id="log"></div>
     <footer>

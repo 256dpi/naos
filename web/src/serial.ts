@@ -125,10 +125,18 @@ export class SerialDevice implements Device {
         );
       },
       close: async () => {
-        try { await writer.abort(); } catch {}
-        try { writer.releaseLock(); } catch {}
-        try { await reader.cancel(); } catch {}
-        try { reader.releaseLock(); } catch {}
+        try {
+          await writer.abort();
+        } catch {}
+        try {
+          writer.releaseLock();
+        } catch {}
+        try {
+          await reader.cancel();
+        } catch {}
+        try {
+          reader.releaseLock();
+        } catch {}
         await this.port.close().catch(() => {});
       },
     };
