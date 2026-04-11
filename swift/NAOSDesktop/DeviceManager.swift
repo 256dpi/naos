@@ -210,14 +210,14 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 
 	// NAOSBLEManagerDelegate
 
-	func naosBLEManagerDidDiscoverDevice(manager _: NAOSBLEManager, device: NAOSManagedDevice) {
+	func naosBLEManagerDidDiscoverDevice(manager: NAOSBLEManager, descriptor: NAOSBLEDescriptor) {
 		// add device
-		addDevice(device: device)
+		addDevice(device: NAOSManagedDevice(device: manager.makeDevice(descriptor: descriptor)))
 	}
 
 	func naosBLEManagerDidReset(manager _: NAOSBLEManager) {
 		// find BLE devices
-		let bleDevices = devices.keys.filter { $0.device is NAOSBLEDevice }
+		let bleDevices = devices.keys.filter { $0.device.type() == "BLE" }
 
 		// remove BLE devices
 		for device in bleDevices {

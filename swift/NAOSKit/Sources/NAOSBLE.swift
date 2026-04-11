@@ -11,8 +11,183 @@ import Foundation
 let bleService = CBUUID(string: "632FBA1B-4861-4E4F-8103-FFEE9D5033B5")
 let bleCharacteristic = CBUUID(string: "0360744B-A61B-00AD-C945-37f3634130F3")
 
-/// The NAOS BLE specific errors.
-public enum NAOSBLEError: LocalizedError {
+/// A discovered BLE device descriptor.
+public struct NAOSBLEDescriptor: Hashable, @unchecked Sendable {
+	public let identifier: UUID
+	public let name: String
+	public let advertisementData: [String: Any]
+	public let rssi: NSNumber
+	let peripheral: Peripheral
+
+	init(peripheral: Peripheral, advertisementData: [String: Any], rssi: NSNumber) {
+		self.identifier = peripheral.identifier
+		self.name = peripheral.name ?? "Unnamed"
+		self.advertisementData = advertisementData
+		self.rssi = rssi
+		self.peripheral = peripheral
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(identifier)
+	}
+
+	public static func == (lhs: NAOSBLEDescriptor, rhs: NAOSBLEDescriptor) -> Bool {
+		lhs.identifier == rhs.identifier
+	}
+}
+
+/// The delegate protocol to be implemented to handle NAOSManager events.
+public protocol NAOSBLEManagerDelegate {
+	/// The manager discovered a new device.
+	func naosBLEManagerDidDiscoverDevice(manager: NAOSBLEManager, descriptor: NAOSBLEDescriptor)
+
+	/// The manager did reset either because of a Bluetooth availability change or a manual reset().
+	func naosBLEManagerDidReset(manager: NAOSBLEManager)
+}
+
+/// The main class that handles NAOS device discovery and handling.
+public class NAOSBLEManager: NSObject {
+	var delegate: NAOSBLEManagerDelegate?
+	var centralManager: CentralManager!
+	private var descriptors: [UUID: NAOSBLEDescriptor]
+	private var subscription: AnyCancellable?
+	private var queue = DispatchQueue(label: "devices", attributes: .concurrent)
+
+	/// Initializes the manager and sets the specified class as the delegate.
+	public init(delegate: NAOSBLEManagerDelegate?) {
+		// set delegate
+		self.delegate = delegate
+
+		// initialize devices
+		descriptors = [:]
+
+		// finish init
+		super.init()
+
+		// create central manager
+		centralManager = CentralManager()
+
+		// disable logging
+		AsyncBluetoothLogging.setEnabled(false)
+
+		// start scanning
+		Task { try await self.start() }
+	}
+
+	private func start() async throws {
+		// subscribe events
+		subscription = await centralManager.eventPublisher.sink(receiveValue: { event in
+			switch event {
+			case .didUpdateState(let state):
+				switch state {
+				case .poweredOn:
+					// ignore
+					break
+				case .poweredOff:
+					// stop running scan
+					Task {
+						await self.centralManager.stopScan()
+					}
+				default:
+					break
+				}
+			case .didDisconnectPeripheral:
+				break
+			default:
+				break
+			}
+		})
+
+		// scan forever
+		Task {
+			while true {
+				do {
+					try await self.scan()
+				} catch {
+					print("error while scanning: ", error.localizedDescription)
+					try? await Task.sleep(for: .seconds(2))
+				}
+			}
+		}
+	}
+
+	/// Reset discovered devices.
+	public func reset() {
+		// clear devices
+		queue.sync(flags: .barrier) {
+			descriptors.removeAll()
+		}
+
+		// call callback if present
+		if let d = delegate {
+			DispatchQueue.main.async {
+				d.naosBLEManagerDidReset(manager: self)
+			}
+		}
+	}
+
+	private func scan() async throws {
+		// check if powered on
+		while centralManager.bluetoothState != .poweredOn {
+			try? await Task.sleep(for: .seconds(1))
+		}
+
+		// wait until ready
+		try await centralManager.waitUntilReady()
+
+		// create scan stream
+		let stream = try await centralManager.scanForPeripherals(withServices: [bleService])
+
+		// handle discovered peripherals
+		for await scanData in stream {
+			let descriptor = NAOSBLEDescriptor(
+				peripheral: scanData.peripheral,
+				advertisementData: scanData.advertisementData,
+				rssi: scanData.rssi
+			)
+
+			// update existing descriptor if already known
+			if hasDescriptor(peripheral: scanData.peripheral) {
+				queue.sync(flags: .barrier) {
+					descriptors[descriptor.identifier] = descriptor
+				}
+				continue
+			}
+
+			// otherwise, add descriptor
+			queue.sync(flags: .barrier) {
+				descriptors[descriptor.identifier] = descriptor
+			}
+
+			// call callback if present
+			if let d = delegate {
+				DispatchQueue.main.async {
+					d.naosBLEManagerDidDiscoverDevice(manager: self, descriptor: descriptor)
+				}
+			}
+		}
+	}
+
+	public func makeDevice(descriptor: NAOSBLEDescriptor) -> NAOSDevice {
+		NAOSBLEDevice(
+			manager: centralManager,
+			peripheral: descriptor.peripheral
+		)
+	}
+
+	// Helpers
+
+	private func hasDescriptor(peripheral: Peripheral) -> Bool {
+		var found = false
+		queue.sync {
+			found = descriptors[peripheral.identifier] != nil
+		}
+		return found
+	}
+}
+
+
+enum NAOSBLEError: LocalizedError {
 	case serviceNotFound
 	case characteristicNotFound
 
@@ -26,30 +201,18 @@ public enum NAOSBLEError: LocalizedError {
 	}
 }
 
-public class NAOSBLEDevice: NAOSDevice {
+class NAOSBLEDevice: NAOSDevice {
 	private let manager: CentralManager
-	public let peripheral: Peripheral
-	private var _advertisementData: [String: Any]
-	private var _rssi: NSNumber
+	private let peripheral: Peripheral
 	private let lock = NSLock()
 	private var service: Service?
 	private var characteristic: Characteristic?
 	private var streamSubscription: AnyCancellable?
 	private var eventSubscription: AnyCancellable?
 
-	public var advertisementData: [String: Any] {
-		lock.withLock { _advertisementData }
-	}
-
-	public var rssi: NSNumber {
-		lock.withLock { _rssi }
-	}
-
-	init(manager: CentralManager, peripheral: Peripheral, advertisementData: [String: Any], rssi: NSNumber) {
+	init(manager: CentralManager, peripheral: Peripheral) {
 		self.manager = manager
 		self.peripheral = peripheral
-		self._advertisementData = advertisementData
-		self._rssi = rssi
 
 		// watch for BLE disconnects to end the transport stream
 		Task { [weak self] in
@@ -63,13 +226,6 @@ public class NAOSBLEDevice: NAOSDevice {
 				}
 				self.handleDisconnect()
 			})
-		}
-	}
-
-	func update(advertisementData: [String: Any], rssi: NSNumber) {
-		lock.withLock {
-			_advertisementData = advertisementData
-			_rssi = rssi
 		}
 	}
 
@@ -144,7 +300,6 @@ public class NAOSBLEDevice: NAOSDevice {
 		)
 	}
 
-	/// Ends the transport stream so the channel detects the loss.
 	func handleDisconnect() {
 		let sub = lock.withLock { () -> AnyCancellable? in
 			let s = streamSubscription
