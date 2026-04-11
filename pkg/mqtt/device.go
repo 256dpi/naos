@@ -26,6 +26,14 @@ func (d *device) ID() string {
 	return "mqtt/" + d.baseTopic
 }
 
+func (d *device) Type() string {
+	return "MQTT"
+}
+
+func (d *device) Name() string {
+	return d.baseTopic
+}
+
 func (d *device) Open() (*msg.Channel, error) {
 	// prepare topics
 	inbox := d.baseTopic + "/naos/inbox"

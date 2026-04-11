@@ -24,6 +24,14 @@ func (d *device) ID() string {
 	return "http/" + d.host
 }
 
+func (d *device) Type() string {
+	return "HTTP"
+}
+
+func (d *device) Name() string {
+	return "Unnamed"
+}
+
 func (d *device) Open() (*msg.Channel, error) {
 	// create context
 	var ok bool

@@ -28,6 +28,14 @@ func (d *device) ID() string {
 	return "connect/" + url
 }
 
+func (d *device) Type() string {
+	return "Connect"
+}
+
+func (d *device) Name() string {
+	return "Unnamed"
+}
+
 func (d *device) Open() (*msg.Channel, error) {
 	// check attach URL
 	if d.url == "" {

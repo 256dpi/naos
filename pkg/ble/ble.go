@@ -73,6 +73,14 @@ func (d *device) ID() string {
 	return fmt.Sprintf("ble/%s", d.addr.String())
 }
 
+func (d *device) Type() string {
+	return "BLE"
+}
+
+func (d *device) Name() string {
+	return d.addr.String()
+}
+
 func (d *device) Open() (*msg.Channel, error) {
 	// acquire mutex
 	d.mutex.Lock()

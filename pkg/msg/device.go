@@ -13,6 +13,12 @@ type Device interface {
 	// ID returns a stable identifier for the device.
 	ID() string
 
+	// Type returns the device transport type.
+	Type() string
+
+	// Name returns a user-facing device name.
+	Name() string
+
 	// Open opens a channel to the device. An opened channel must fail or be
 	// closed before another channel can be opened.
 	Open() (*Channel, error)

@@ -75,6 +75,14 @@ func (d *device) ID() string {
 	return fmt.Sprintf("serial/%s", filepath.Base(d.path))
 }
 
+func (d *device) Type() string {
+	return "Serial"
+}
+
+func (d *device) Name() string {
+	return filepath.Base(d.path)
+}
+
 func (d *device) Open() (*msg.Channel, error) {
 	// acquire mutex
 	d.mutex.Lock()

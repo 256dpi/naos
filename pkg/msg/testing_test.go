@@ -38,6 +38,14 @@ func (d *testDevice) ID() string {
 	return "test"
 }
 
+func (d *testDevice) Type() string {
+	return "Test"
+}
+
+func (d *testDevice) Name() string {
+	return "test"
+}
+
 func (d *testDevice) Open() (*Channel, error) {
 	return d.channel, nil
 }
