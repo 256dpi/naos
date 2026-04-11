@@ -86,7 +86,7 @@ public class NAOSManagedDevice: NSObject {
 	var maxAge: UInt64 = 0
 
 	public var delegate: NAOSManagedDeviceDelegate?
-	public private(set) var connected: Bool = false
+	public private(set) var active: Bool = false
 	public private(set) var canUpdate: Bool = false
 	public private(set) var canFS: Bool = false
 	public private(set) var canRelay: Bool = false
@@ -201,8 +201,8 @@ public class NAOSManagedDevice: NSObject {
 		}
 	}
 
-	/// Connect will initiate a connection to a device.
-	public func connect() async throws {
+	/// Activate will initiate a connection to a device.
+	public func activate() async throws {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }
@@ -211,7 +211,7 @@ public class NAOSManagedDevice: NSObject {
 		if stopped {
 			throw NAOSManagedError.stopped
 		}
-		if connected {
+		if active {
 			return
 		}
 
@@ -220,7 +220,7 @@ public class NAOSManagedDevice: NSObject {
 		channel = ch
 
 		// set flag
-		connected = true
+		active = true
 
 		// read lock status
 		try await withSession { session in
@@ -248,7 +248,7 @@ public class NAOSManagedDevice: NSObject {
 		defer { mutex.signal() }
 
 		// check state
-		if !connected {
+		if !active {
 			throw NAOSManagedError.notConnected
 		}
 
@@ -310,7 +310,7 @@ public class NAOSManagedDevice: NSObject {
 		defer { mutex.signal() }
 
 		// check state
-		if !connected {
+		if !active {
 			throw NAOSManagedError.notConnected
 		}
 
@@ -334,7 +334,7 @@ public class NAOSManagedDevice: NSObject {
 		defer { mutex.signal() }
 
 		// check state
-		if !connected {
+		if !active {
 			throw NAOSManagedError.notConnected
 		}
 
@@ -362,7 +362,7 @@ public class NAOSManagedDevice: NSObject {
 		defer { mutex.signal() }
 
 		// check state
-		if !connected {
+		if !active {
 			throw NAOSManagedError.notConnected
 		}
 
@@ -390,7 +390,7 @@ public class NAOSManagedDevice: NSObject {
 		if stopped {
 			throw NAOSManagedError.stopped
 		}
-		if !connected {
+		if !active {
 			throw NAOSManagedError.notConnected
 		}
 
@@ -408,7 +408,7 @@ public class NAOSManagedDevice: NSObject {
 		if stopped {
 			throw NAOSManagedError.stopped
 		}
-		if !connected {
+		if !active {
 			throw NAOSManagedError.notConnected
 		}
 
@@ -416,14 +416,14 @@ public class NAOSManagedDevice: NSObject {
 		try await withSession(callback: callback)
 	}
 
-	/// Disconnect will close the connection to the device.
-	public func disconnect() async throws {
+	/// Deactivate will close the connection to the device.
+	public func deactivate() async throws {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }
 
 		// check state
-		if !connected {
+		if !active {
 			return
 		}
 
@@ -436,13 +436,13 @@ public class NAOSManagedDevice: NSObject {
 		channel = nil
 
 		// set flag
-		connected = false
+		active = false
 	}
 
-	/// Stop will disconnect and permanently disable the device.
+	/// Stop will deactivate and permanently disable the device.
 	public func stop() async {
-		// disconnect
-		try? await disconnect()
+		// deactivate
+		try? await deactivate()
 
 		// cancel updater
 		updaterTask?.cancel()
@@ -499,7 +499,7 @@ public class NAOSManagedDevice: NSObject {
 		defer { mutex.signal() }
 
 		// check state
-		if !connected {
+		if !active {
 			return
 		}
 
@@ -512,7 +512,7 @@ public class NAOSManagedDevice: NSObject {
 		channel = nil
 
 		// set flag
-		connected = false
+		active = false
 
 		// emit disconnected
 		emitEvent(.disconnected)

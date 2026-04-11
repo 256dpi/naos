@@ -49,7 +49,7 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 			}
 		}
 
-		// connect
+		// activate
 		connect()
 	}
 
@@ -58,7 +58,7 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 			// retry until connected
 			while !Task.isCancelled {
 				do {
-					try await device.connect()
+					try await device.activate()
 					break
 				} catch {
 					try? await Task.sleep(for: .seconds(1))
@@ -71,11 +71,11 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 	}
 
 	func connect() {
-		// connect to device
+		// activate device
 		Task {
-			// perform connect
+			// perform activate
 			do {
-				try await device.connect()
+				try await device.activate()
 			} catch {
 				showError(error: error)
 				return
@@ -137,10 +137,10 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 		eventsTask?.cancel()
 		eventsTask = nil
 
-		// disconnect device
+		// deactivate device
 		Task {
 			do {
-				try await device.disconnect()
+				try await device.deactivate()
 			} catch {
 				showError(error: error)
 			}
