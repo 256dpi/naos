@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="24506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24128"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24506"/>
         <capability name="Combo buttons" minToolsVersion="14.0" minSystemVersion="13.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -1011,17 +1011,17 @@ Gw
                                 </textFieldCell>
                             </textField>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sl6-1t-1bN">
-                                <rect key="frame" x="479" y="457" width="66" height="32"/>
-                                <buttonCell key="cell" type="push" title="Flash" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="A7N-ff-ceo">
+                                <rect key="frame" x="466" y="457" width="79" height="32"/>
+                                <buttonCell key="cell" type="push" title="Update" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="A7N-ff-ceo">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
                                 <connections>
-                                    <action selector="flash:" target="c3R-v8-FCu" id="gle-Sj-M05"/>
+                                    <action selector="update:" target="c3R-v8-FCu" id="gle-Sj-M05"/>
                                 </connections>
                             </button>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zuP-Z1-Oyq">
-                                <rect key="frame" x="419" y="457" width="62" height="32"/>
+                                <rect key="frame" x="406" y="457" width="62" height="32"/>
                                 <buttonCell key="cell" type="push" title="Files" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="XH7-wH-yVn">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -1031,7 +1031,7 @@ Gw
                                 </connections>
                             </button>
                             <comboButton verticalHuggingPriority="750" baseWritingDirection="leftToRight" alignment="center" title="Relay" imageScaling="proportionallyDown" style="unified" translatesAutoresizingMaskIntoConstraints="NO" id="2on-EL-sqI">
-                                <rect key="frame" x="358" y="462" width="61" height="24"/>
+                                <rect key="frame" x="345" y="462" width="61" height="24"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="55" id="Ake-mt-qQD"/>
                                 </constraints>
@@ -1043,7 +1043,7 @@ Gw
                                 </menu>
                             </comboButton>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ofa-lq-Z0v">
-                                <rect key="frame" x="278" y="457" width="80" height="32"/>
+                                <rect key="frame" x="265" y="457" width="80" height="32"/>
                                 <buttonCell key="cell" type="push" title="Metrics" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="7Tn-cj-SaH">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -1081,12 +1081,12 @@ Gw
                     </view>
                     <connections>
                         <outlet property="filesButton" destination="zuP-Z1-Oyq" id="pjZ-2T-0fY"/>
-                        <outlet property="flashButton" destination="sl6-1t-1bN" id="y6R-nN-bsJ"/>
                         <outlet property="infoLabel" destination="7H1-hN-Zhm" id="9VL-OP-fxA"/>
                         <outlet property="metricsButton" destination="ofa-lq-Z0v" id="I7K-nc-a0b"/>
                         <outlet property="parameterTableView" destination="R4Z-Qg-sbl" id="aBH-DO-Ddq"/>
                         <outlet property="relayButton" destination="2on-EL-sqI" id="11J-AE-jx0"/>
                         <outlet property="statusLabel" destination="gGv-bI-ktK" id="GQO-S8-Ikh"/>
+                        <outlet property="updateButton" destination="sl6-1t-1bN" id="y6R-nN-bsJ"/>
                     </connections>
                 </viewController>
                 <customObject id="iOt-wM-IIl" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>

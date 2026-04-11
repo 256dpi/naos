@@ -10,7 +10,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 	SettingsParameterValueDelegate
 {
 	@IBOutlet var statusLabel: NSTextField!
-	@IBOutlet var flashButton: NSButton!
+	@IBOutlet var updateButton: NSButton!
 	@IBOutlet var filesButton: NSButton!
 	@IBOutlet var relayButton: NSComboButton!
 	@IBOutlet var metricsButton: NSButton!
@@ -42,7 +42,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 						.capitalized
 
 				// update buttons
-				self.flashButton.isEnabled = self.device.canUpdate
+				self.updateButton.isEnabled = self.device.canUpdate
 				self.filesButton.isEnabled = self.device.canFS
 				self.relayButton.isEnabled = self.device.canRelay
 				self.metricsButton.isEnabled = self.device.hasMetrics
@@ -71,16 +71,16 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 		}
 	}
 
-	@IBAction func flash(_: AnyObject) {
+	@IBAction func update(_: AnyObject) {
 		Task {
 			// open file
 			let (_, image) = try await openFile()
 
-			await process(title: "Flashing...") { session, progress in
+			await process(title: "Updating...") { session, progress in
 				// get time
 				let start = Date()
 
-				// perform flash
+				// perform update
 				try await NAOSUpdate.run(session: session, image: image) { done in
 					// calculate delta
 					let delta = Date().timeIntervalSince(start)
