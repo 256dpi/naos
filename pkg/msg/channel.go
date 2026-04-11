@@ -152,7 +152,7 @@ func (c *Channel) write(from Queue, msg Message) error {
 		owner := c.sessions[msg.Session]
 		c.mu.Unlock()
 		if owner != nil && owner != from {
-			return SessionWrongOwner
+			return ErrSessionWrongOwner
 		}
 	}
 

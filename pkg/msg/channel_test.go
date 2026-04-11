@@ -122,7 +122,7 @@ func TestChannelRejectsWrongOwnerWrites(t *testing.T) {
 
 	openOwnedSession(t, channel, tr, q1, "open-owner", 9)
 
-	assert.ErrorIs(t, channel.Write(q2, Message{Session: 9, Endpoint: 0x42, Data: []byte("payload")}), SessionWrongOwner)
+	assert.ErrorIs(t, channel.Write(q2, Message{Session: 9, Endpoint: 0x42, Data: []byte("payload")}), ErrSessionWrongOwner)
 }
 
 func TestChannelRoutesMultipleSessions(t *testing.T) {

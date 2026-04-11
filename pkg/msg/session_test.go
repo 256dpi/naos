@@ -69,7 +69,6 @@ func TestStatus(t *testing.T) {
 func TestUnlock(t *testing.T) {
 	dev := newTestDevice(t, 42, []testMessage{
 		receive(Message{Endpoint: SystemEndpoint, Data: Pack("os", uint8(1), "secret")}),
-		ack(),
 		send(Message{Endpoint: SystemEndpoint, Data: []byte{1}}),
 	})
 

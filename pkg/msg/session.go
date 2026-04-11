@@ -21,12 +21,12 @@ const (
 
 // The available session errors.
 var (
-	SessionInvalidMessage = errors.New("invalid message")
-	SessionUnknownMessage = errors.New("unknown message")
-	SessionEndpointError  = errors.New("endpoint error")
-	SessionLockedError    = errors.New("session locked")
-	SessionWrongOwner     = errors.New("wrong owner")
-	SessionExpectedAck    = errors.New("expected ack")
+	ErrSessionInvalidMessage = errors.New("invalid message")
+	ErrSessionUnknownMessage = errors.New("unknown message")
+	ErrSessionEndpointError  = errors.New("endpoint error")
+	ErrSessionLockedError    = errors.New("session locked")
+	ErrSessionWrongOwner     = errors.New("wrong owner")
+	ErrSessionExpectedAck    = errors.New("expected ack")
 )
 
 // Session represents a communication session with a NAOS device.
@@ -368,14 +368,14 @@ func (s *Session) read(timeout time.Duration) (Message, error) {
 func parseError(num uint8) error {
 	switch num {
 	case 2:
-		return SessionInvalidMessage
+		return ErrSessionInvalidMessage
 	case 3:
-		return SessionUnknownMessage
+		return ErrSessionUnknownMessage
 	case 4:
-		return SessionEndpointError
+		return ErrSessionEndpointError
 	case 5:
-		return SessionLockedError
+		return ErrSessionLockedError
 	default:
-		return SessionExpectedAck
+		return ErrSessionExpectedAck
 	}
 }
