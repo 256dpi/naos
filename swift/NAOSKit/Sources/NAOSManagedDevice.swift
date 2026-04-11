@@ -92,11 +92,26 @@ public class NAOSManagedDevice: NSObject {
 	public private(set) var canRelay: Bool = false
 	public private(set) var hasMetrics: Bool = false
 	public private(set) var locked: Bool = false
-	public private(set) var availableParameters: [NAOSParameter] = []
-	public var parameters: [NAOSParameter: String] = [:]
-	private var password: String = ""
-	public private(set) var relayDevices: [NAOSDevice] = []
 	public private(set) var mtu: UInt16 = 0
+
+	private var password: String = ""
+	private let stateLock = NSLock()
+	private var _availableParameters: [NAOSParameter] = []
+	private var _parameters: [NAOSParameter: String] = [:]
+	private var _relayDevices: [NAOSDevice] = []
+
+	public private(set) var availableParameters: [NAOSParameter] {
+		get { stateLock.withLock { _availableParameters } }
+		set { stateLock.withLock { _availableParameters = newValue } }
+	}
+	public var parameters: [NAOSParameter: String] {
+		get { stateLock.withLock { _parameters } }
+		set { stateLock.withLock { _parameters = newValue } }
+	}
+	public private(set) var relayDevices: [NAOSDevice] {
+		get { stateLock.withLock { _relayDevices } }
+		set { stateLock.withLock { _relayDevices = newValue } }
+	}
 
 	public init(device: NAOSDevice) {
 		// initialize instance
