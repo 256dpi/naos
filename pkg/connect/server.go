@@ -58,11 +58,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// route request
 	switch {
-	case r.Method == http.MethodGet && r.URL.Path == "/":
+	case r.Method == http.MethodGet && r.URL.Path == "/list":
 		s.handleList(w, r)
 	case r.URL.Path == "/connect":
 		s.handleConnect(w, r)
-	case strings.HasPrefix(r.URL.Path, "/device/"):
+	case strings.HasPrefix(r.URL.Path, "/attach/"):
 		s.handleDevice(w, r)
 	default:
 		http.NotFound(w, r)
@@ -171,7 +171,7 @@ func (s *Server) handleDevice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// determine device ID
-	id, err := url.PathUnescape(strings.TrimPrefix(r.URL.Path, "/device/"))
+	id, err := url.PathUnescape(strings.TrimPrefix(r.URL.Path, "/attach/"))
 	if err != nil {
 		http.Error(w, "invalid device id", http.StatusBadRequest)
 		return
@@ -310,6 +310,6 @@ func (s *Server) attachURL(r *http.Request, id string) string {
 	return (&url.URL{
 		Scheme: scheme,
 		Host:   r.Host,
-		Path:   "/device/" + url.PathEscape(id),
+		Path:   "/attach/" + url.PathEscape(id),
 	}).String()
 }

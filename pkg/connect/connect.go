@@ -11,7 +11,7 @@ import (
 type Attach struct {
 	URL   string    `json:"url"`
 	Token string    `json:"token,omitempty"`
-	Until time.Time `json:"until,omitempty"`
+	Until time.Time `json:"until,omitzero"`
 }
 
 // Description describes a remotely connected device.
@@ -30,9 +30,9 @@ type listResponse struct {
 }
 
 // List fetches the currently connected devices from a NAOS Connect server.
-func List(baseURL string, token string) ([]Description, error) {
+func List(url string, token string) ([]Description, error) {
 	// prepare request
-	req, err := http.NewRequest(http.MethodGet, baseURL, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}

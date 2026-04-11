@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -101,8 +102,13 @@ func main() {
 	// start hub discovery
 	if *hubURL != "" {
 		go func() {
+			listURL, err := url.JoinPath(*hubURL, "/list")
+			if err != nil {
+				state.log("[red]Hub URL error[-]: %v", err)
+				return
+			}
 			for {
-				devices, err := connect.List(*hubURL, *hubToken)
+				devices, err := connect.List(listURL, *hubToken)
 				if err != nil {
 					state.log("[red]Hub discover error[-]: %v", err)
 				} else {

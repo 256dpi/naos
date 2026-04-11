@@ -118,21 +118,21 @@ func TestServerTokenAuthorization(t *testing.T) {
 	server := NewServer()
 	server.SetToken("secret")
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequest(http.MethodGet, "/list", nil)
 	rec := httptest.NewRecorder()
 	server.ServeHTTP(rec, req)
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("unexpected status without token: got %d want %d", rec.Code, http.StatusUnauthorized)
 	}
 
-	req = httptest.NewRequest(http.MethodGet, "/?token=secret", nil)
+	req = httptest.NewRequest(http.MethodGet, "/list?token=secret", nil)
 	rec = httptest.NewRecorder()
 	server.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("unexpected status with query token: got %d want %d", rec.Code, http.StatusOK)
 	}
 
-	req = httptest.NewRequest(http.MethodGet, "/", nil)
+	req = httptest.NewRequest(http.MethodGet, "/list", nil)
 	req.Header.Set("Authorization", "Bearer secret")
 	rec = httptest.NewRecorder()
 	server.ServeHTTP(rec, req)
@@ -140,7 +140,7 @@ func TestServerTokenAuthorization(t *testing.T) {
 		t.Fatalf("unexpected status with bearer token: got %d want %d", rec.Code, http.StatusOK)
 	}
 
-	req = httptest.NewRequest(http.MethodGet, "/", nil)
+	req = httptest.NewRequest(http.MethodGet, "/list", nil)
 	req.Header.Set("Authorization", "secret")
 	rec = httptest.NewRecorder()
 	server.ServeHTTP(rec, req)
@@ -151,15 +151,18 @@ func TestServerTokenAuthorization(t *testing.T) {
 
 func TestList(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/list" {
+			t.Fatalf("unexpected path: %q", r.URL.Path)
+		}
 		if got := r.Header.Get("Authorization"); got != "Bearer secret" {
 			t.Fatalf("unexpected authorization header: %q", got)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"devices":[{"uuid":"uuid-1","device_id":"device-1","connected":"2026-04-11T12:00:00Z","attach":{"url":"wss://example.com/device/1","token":"attach-secret"}}]}`))
+		_, _ = w.Write([]byte(`{"devices":[{"uuid":"uuid-1","device_id":"device-1","connected":"2026-04-11T12:00:00Z","attach":{"url":"wss://example.com/attach/1","token":"attach-secret"}}]}`))
 	}))
 	defer server.Close()
 
-	devices, err := List(server.URL, "secret")
+	devices, err := List(server.URL+"/list", "secret")
 	if err != nil {
 		t.Fatalf("list failed: %v", err)
 	}
@@ -172,7 +175,7 @@ func TestList(t *testing.T) {
 	if devices[0].UUID != "uuid-1" {
 		t.Fatalf("unexpected uuid: %q", devices[0].UUID)
 	}
-	if devices[0].Attach.URL != "wss://example.com/device/1" {
+	if devices[0].Attach.URL != "wss://example.com/attach/1" {
 		t.Fatalf("unexpected attach url: %q", devices[0].Attach.URL)
 	}
 	if devices[0].Attach.Token != "attach-secret" {
