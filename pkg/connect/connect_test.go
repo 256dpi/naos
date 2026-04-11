@@ -155,7 +155,7 @@ func TestList(t *testing.T) {
 			t.Fatalf("unexpected authorization header: %q", got)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`[]`))
+		_, _ = w.Write([]byte(`[{"uuid":"uuid-1","device_id":"device-1","connected":"2026-04-11T12:00:00Z","attach":{"url":"wss://example.com/device/1","token":"attach-secret"}}]`))
 	}))
 	defer server.Close()
 
@@ -163,7 +163,58 @@ func TestList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list failed: %v", err)
 	}
-	if len(devices) != 0 {
+	if len(devices) != 1 {
 		t.Fatalf("unexpected devices: %v", devices)
+	}
+	if devices[0].DeviceID != "device-1" {
+		t.Fatalf("unexpected device id: %q", devices[0].DeviceID)
+	}
+	if devices[0].UUID != "uuid-1" {
+		t.Fatalf("unexpected uuid: %q", devices[0].UUID)
+	}
+	if devices[0].Attach.URL != "wss://example.com/device/1" {
+		t.Fatalf("unexpected attach url: %q", devices[0].Attach.URL)
+	}
+	if devices[0].Attach.Token != "attach-secret" {
+		t.Fatalf("unexpected attach token: %q", devices[0].Attach.Token)
+	}
+}
+
+func TestDeviceOpenUsesAttach(t *testing.T) {
+	done := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "Bearer attach-secret" {
+			t.Fatalf("unexpected authorization header: %q", got)
+		}
+
+		upgrader := websocket.Upgrader{
+			Subprotocols: []string{"naos"},
+			CheckOrigin:  func(*http.Request) bool { return true },
+		}
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			t.Fatalf("upgrade failed: %v", err)
+		}
+		close(done)
+		_ = conn.Close()
+	}))
+	defer server.Close()
+
+	wsURL := "ws" + server.URL[len("http"):]
+	dev := NewDevice(wsURL, "attach-secret", "uuid-1")
+	if got := dev.ID(); got != "connect/uuid-1" {
+		t.Fatalf("unexpected device id: %q", got)
+	}
+
+	ch, err := dev.Open()
+	if err != nil {
+		t.Fatalf("open failed: %v", err)
+	}
+	defer ch.Close()
+
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for attach")
 	}
 }

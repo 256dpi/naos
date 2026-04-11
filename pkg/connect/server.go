@@ -91,17 +91,24 @@ func (s *Server) authorized(r *http.Request) bool {
 	return false
 }
 
-func (s *Server) handleList(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	// collect descriptions
 	var descriptions []Description
 	for _, d := range s.devices.Range {
 		dev := d.(*connectedDevice)
-		descriptions = append(descriptions, dev.desc)
+		desc := dev.desc
+		desc.Attach = Attach{
+			URL: s.attachURL(r, dev.desc.UUID),
+		}
+		if s.token != "" {
+			desc.Attach.Token = s.token
+		}
+		descriptions = append(descriptions, desc)
 	}
 
 	// sort descriptions
 	slices.SortFunc(descriptions, func(a, b Description) int {
-		return strings.Compare(a.UUID, b.UUID)
+		return strings.Compare(a.DeviceID, b.DeviceID)
 	})
 
 	// encode descriptions
@@ -282,4 +289,25 @@ func (s *Server) logf(format string, args ...any) {
 	if s.logger != nil {
 		s.logger(format, args...)
 	}
+}
+
+func (s *Server) attachURL(r *http.Request, id string) string {
+	scheme := "ws"
+	if r.TLS != nil {
+		scheme = "wss"
+	}
+	if forwarded := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto")); forwarded != "" {
+		switch strings.ToLower(forwarded) {
+		case "http", "ws":
+			scheme = "ws"
+		case "https", "wss":
+			scheme = "wss"
+		}
+	}
+
+	return (&url.URL{
+		Scheme: scheme,
+		Host:   r.Host,
+		Path:   "/device/" + url.PathEscape(id),
+	}).String()
 }

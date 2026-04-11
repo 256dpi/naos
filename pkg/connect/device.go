@@ -2,7 +2,6 @@ package connect
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/gorilla/websocket"
 
@@ -10,17 +9,17 @@ import (
 )
 
 type device struct {
-	baseURL string
-	token   string
-	uuid    string
+	url   string
+	token string
+	uuid  string
 }
 
 // NewDevice returns a msg.Device that connects through a Connect server.
-func NewDevice(baseURL string, token string, uuid string) msg.Device {
+func NewDevice(url string, token string, uuid string) msg.Device {
 	return &device{
-		baseURL: baseURL,
-		token:   token,
-		uuid:    uuid,
+		url:   url,
+		token: token,
+		uuid:  uuid,
 	}
 }
 
@@ -29,9 +28,10 @@ func (d *device) ID() string {
 }
 
 func (d *device) Open() (*msg.Channel, error) {
-	// get device URL
-	baseURL := strings.Replace(d.baseURL, "http://", "ws://", 1)
-	target := strings.Join([]string{baseURL, d.uuid}, "/device/")
+	// check attach URL
+	if d.url == "" {
+		return nil, fmt.Errorf("missing attach url")
+	}
 
 	// prepare dialer
 	dialer := *websocket.DefaultDialer
@@ -46,10 +46,10 @@ func (d *device) Open() (*msg.Channel, error) {
 	}
 
 	// dial server
-	conn, resp, err := dialer.Dial(target, header)
+	conn, resp, err := dialer.Dial(d.url, header)
 	if err != nil {
 		if resp != nil {
-			return nil, fmt.Errorf("dial %s failed: %s", target, resp.Status)
+			return nil, fmt.Errorf("dial %s failed: %s", d.url, resp.Status)
 		}
 		return nil, err
 	}

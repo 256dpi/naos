@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+// Attach describes how a client can attach to a remotely connected device.
+type Attach struct {
+	URL   string    `json:"url"`
+	Token string    `json:"token,omitempty"`
+	Until time.Time `json:"until,omitempty"`
+}
+
 // Description describes a remotely connected device.
 type Description struct {
 	UUID       string    `json:"uuid"`
@@ -15,6 +22,7 @@ type Description struct {
 	AppName    string    `json:"app_name,omitempty"`
 	AppVersion string    `json:"app_version,omitempty"`
 	Connected  time.Time `json:"connected"`
+	Attach     Attach    `json:"attach"`
 }
 
 // List fetches the currently connected devices from a NAOS Connect server.
