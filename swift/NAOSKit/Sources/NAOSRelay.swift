@@ -4,7 +4,6 @@
 //
 
 import Foundation
-import Semaphore
 
 /// The NAOS relay endpoint.
 public class NAOSRelay {
@@ -48,15 +47,15 @@ public class NAOSRelay {
 	
 	/// Send a message to a downstream device.
 	public static func send(session: NAOSSession, device: UInt8, data: Data) async throws {
-		// send command
+		// write directly for performance
 		let cmd = pack(fmt: "oob", args: [UInt8(2), device, data])
-		try await session.send(endpoint: endpoint, data: cmd, ackTimeout: 0)
+		try await session.write(msg: NAOSMessage(session: session.id, endpoint: endpoint, data: cmd))
 	}
 	
 	/// Receive a message from a downstream device.
 	public static func receive(session: NAOSSession, timeout: TimeInterval = 5) async throws -> Data? {
-		// read message
-		return (try await session.read(timeout: timeout)).data
+		// read directly for performance
+		try await session.read(timeout: timeout).data
 	}
 }
 
@@ -81,77 +80,43 @@ public class NAOSRelayDevice: NAOSDevice {
 		return "Relay: \(device)"
 	}
 	
-	public func open() async throws -> any NAOSChannel {
-		return try await NAOSRelayChannel.open(host: host, device: device)
+	public func open() async throws -> NAOSChannel {
+		let session = try await host.newSession()
+		try await NAOSRelay.link(session: session, device: device)
+		return NAOSChannel(
+			transport: relayTransport(session: session, device: device),
+			device: self,
+			width: session.channel.width()
+		)
 	}
 }
 
-public class NAOSRelayChannel: NAOSChannel {
-	private var session: NAOSSession
-	private var device: UInt8
-	private let lock = NSLock()
-	private var queues: [NAOSQueue] = []
-
-	public func width() -> Int {
-		return session.channel.width()
-	}
-
-	public static func open(host: NAOSManagedDevice, device: UInt8) async throws -> NAOSRelayChannel {
-		// open session
-		let session = try await host.newSession()
-
-		// link device
-		try await NAOSRelay.link(session: session, device: device)
-
-		// create channel
-		return NAOSRelayChannel(session: session, device: device)
-	}
+final class relayTransport: NAOSTransport {
+	private let session: NAOSSession
+	private let device: UInt8
 
 	init(session: NAOSSession, device: UInt8) {
-		// set state
 		self.session = session
 		self.device = device
+	}
 
-		// run forwarder
-		Task { [weak self] in
-			while !Task.isCancelled {
-				guard let self else { break }
-
-				// receive message
-				let data = try? await NAOSRelay.receive(session: session, timeout: 1)
-
-				// forward message, if present
-				if let data = data {
-					let targets = self.lock.withLock { self.queues }
-					for queue in targets {
-						queue.send(value: data)
-					}
+	func read() async throws -> Data {
+		while true {
+			do {
+				if let data = try await NAOSRelay.receive(session: session, timeout: 1) {
+					return data
 				}
+			} catch is TimedOutError {
+				continue
 			}
 		}
 	}
 
-	public func subscribe(queue: NAOSQueue) {
-		lock.withLock {
-			if queues.first(where: { $0 === queue }) == nil {
-				queues.append(queue)
-			}
-		}
-	}
-
-	public func unsubscribe(queue: NAOSQueue) {
-		lock.withLock {
-			queues.removeAll { $0 === queue }
-		}
-	}
-	
-	public func write(data: Data) async throws {
-		// forward message
+	func write(data: Data) async throws {
 		try await NAOSRelay.send(session: session, device: device, data: data)
 	}
-	
-	public func close() {
-		// clean up session
+
+	func close() {
 		session.cleanup()
 	}
 }

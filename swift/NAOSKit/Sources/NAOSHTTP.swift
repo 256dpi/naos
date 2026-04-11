@@ -64,84 +64,35 @@ public class NAOSHTTPDevice: NAOSDevice {
 			throw URLError(.badURL)
 		}
 		let webSocketTask = urlSession.webSocketTask(with: url)
-
-		return await httpChannel.create(task: webSocketTask)
+		webSocketTask.resume()
+		return NAOSChannel(transport: httpTransport(task: webSocketTask), device: self, width: 10)
 	}
 }
 
-class httpChannel: NAOSChannel {
-	private var task: URLSessionWebSocketTask
-	private let lock = NSLock()
-	private var queues: [NAOSQueue] = []
-
-	public func width() -> Int {
-		return 10
-	}
-
-	static func create(task: URLSessionWebSocketTask) async -> httpChannel {
-		// resume task
-		task.resume()
-
-		// create channel
-		let ch = httpChannel(task: task)
-
-		// run forwarder
-		Task { [weak ch] in
-			while true {
-				guard let ch else { break }
-				do {
-					let msg = try await task.receive()
-					let targets = ch.lock.withLock { ch.queues }
-					switch msg {
-					case .data(let data):
-						for queue in targets {
-							queue.send(value: data)
-						}
-					case .string(let text):
-						if let data = text.data(using: .utf8) {
-							for queue in targets {
-								queue.send(value: data)
-							}
-						}
-					@unknown default:
-						break
-					}
-				} catch {
-					ch.close()
-					break
-				}
-			}
-		}
-
-		return ch
-	}
+final class httpTransport: NAOSTransport {
+	private let task: URLSessionWebSocketTask
 
 	init(task: URLSessionWebSocketTask) {
-		// set fields
 		self.task = task
 	}
 
-	public func subscribe(queue: NAOSQueue) {
-		lock.withLock {
-			if queues.first(where: { $0 === queue }) == nil {
-				queues.append(queue)
-			}
+	func read() async throws -> Data {
+		let msg = try await task.receive()
+		switch msg {
+		case .data(let data):
+			return data
+		case .string(let text):
+			return Data(text.utf8)
+		@unknown default:
+			throw NAOSTransportError.closed
 		}
 	}
 
-	public func unsubscribe(queue: NAOSQueue) {
-		lock.withLock {
-			queues.removeAll { $0 === queue }
-		}
-	}
-
-	public func write(data: Data) async throws {
-		// write message
+	func write(data: Data) async throws {
 		try await task.send(.data(data))
 	}
 
-	public func close() {
-		// cancel task
+	func close() {
 		task.cancel()
 	}
 }

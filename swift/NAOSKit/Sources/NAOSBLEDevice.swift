@@ -81,31 +81,40 @@ public class NAOSBLEDevice: NAOSDevice {
 			// find service
 			for s in self.peripheral.discoveredServices ?? [] {
 				if s.uuid == bleService {
-					self.service = s
+					self.lock.withLock {
+						self.service = s
+					}
 				}
 			}
-			if self.service == nil {
+			guard let service = self.lock.withLock({ self.service }) else {
 				throw NAOSBLEError.serviceNotFound
 			}
 
 			// discover characteristics
-			try await self.peripheral.discoverCharacteristics(nil, for: self.service!)
+			try await self.peripheral.discoverCharacteristics(nil, for: service)
 
 			// find characteristic
-			for c in self.service!.discoveredCharacteristics ?? [] {
+			for c in service.discoveredCharacteristics ?? [] {
 				if c.uuid == bleCharacteristic {
-					self.characteristic = c
+					self.lock.withLock {
+						self.characteristic = c
+					}
 				}
 			}
-			if self.characteristic == nil {
+			guard let characteristic = self.lock.withLock({ self.characteristic }) else {
 				throw NAOSBLEError.characteristicNotFound
 			}
 
 			// enable indication notifications
-			try await self.peripheral.setNotifyValue(true, for: self.characteristic!)
+			try await self.peripheral.setNotifyValue(true, for: characteristic)
 		}
 
-		return await bleChannel.create(peripheral: self)
+		let (stream, subscription) = await stream()
+		return NAOSChannel(
+			transport: bleTransport(peripheral: self, stream: stream, subscription: subscription),
+			device: self,
+			width: 10
+		)
 	}
 
 	func stream() async -> (AsyncStream<Data>, AnyCancellable) {
@@ -141,85 +150,86 @@ public class NAOSBLEDevice: NAOSDevice {
 	}
 
 	func write(data: Data) async throws {
+		let activeCharacteristic = try lock.withLock { () throws -> Characteristic in
+			guard let characteristic = self.characteristic else {
+				throw NAOSBLEError.characteristicNotFound
+			}
+			return characteristic
+		}
+
 		// read value
 		try await withTimeout(seconds: 2) {
-			try await self.peripheral.writeValue(data, for: self.characteristic!, type: .withoutResponse)
+			try await self.peripheral.writeValue(data, for: activeCharacteristic, type: .withoutResponse)
 		}
 	}
 
 	func close() async throws {
+		lock.withLock {
+			service = nil
+			characteristic = nil
+		}
+
 		// disconnect
 		try await manager.cancelPeripheralConnection(peripheral)
-
-		// clear state
-		service = nil
-		characteristic = nil
 	}
 }
 
-class bleChannel: NAOSChannel {
-	private var peripheral: NAOSBLEDevice
-	private var subscription: AnyCancellable
+private actor dataStreamReader {
+	private var iterator: AsyncStream<Data>.Iterator
+
+	init(stream: AsyncStream<Data>) {
+		self.iterator = stream.makeAsyncIterator()
+	}
+
+	func next() async -> Data? {
+		var iterator = self.iterator
+		let value = await iterator.next()
+		self.iterator = iterator
+		return value
+	}
+}
+
+final class bleTransport: NAOSTransport {
+	private let peripheral: NAOSBLEDevice
+	private let subscription: AnyCancellable
+	private let reader: dataStreamReader
 	private let lock = NSLock()
-	private var queues: [NAOSQueue] = []
+	private var closed = false
 
-	public func width() -> Int {
-		return 10
-	}
-
-	static func create(peripheral: NAOSBLEDevice) async -> bleChannel {
-		// open stream
-		let (stream, subscription) = await peripheral.stream()
-
-		// create channel
-		let ch = bleChannel(peripheral: peripheral, subscription: subscription)
-
-		// run forwarder
-		Task {
-			for await data in stream {
-				let targets = ch.lock.withLock { ch.queues }
-				for queue in targets {
-					queue.send(value: data)
-				}
-			}
-		}
-
-		return ch
-	}
-
-	init(peripheral: NAOSBLEDevice, subscription: AnyCancellable) {
-		// set fields
+	init(peripheral: NAOSBLEDevice, stream: AsyncStream<Data>, subscription: AnyCancellable) {
 		self.peripheral = peripheral
 		self.subscription = subscription
+		self.reader = dataStreamReader(stream: stream)
 	}
 
-	public func subscribe(queue: NAOSQueue) {
-		lock.withLock {
-			if queues.first(where: { $0 === queue }) == nil {
-				queues.append(queue)
-			}
+	func read() async throws -> Data {
+		guard let data = await reader.next() else {
+			throw NAOSTransportError.closed
 		}
+		return data
 	}
 
-	public func unsubscribe(queue: NAOSQueue) {
-		lock.withLock {
-			queues.removeAll { $0 === queue }
-		}
-	}
-
-	public func write(data: Data) async throws {
-		// write message
+	func write(data: Data) async throws {
 		try await peripheral.write(data: data)
 	}
 
-	public func close() {
-		// cancel subscription
-		subscription.cancel()
+	func close() {
+		let shouldClose = lock.withLock {
+			if closed {
+				return false
+			}
+			closed = true
+			return true
+		}
 
-		// close connection
+		if !shouldClose {
+			return
+		}
+
+		subscription.cancel()
 		Task {
 			do {
-				try await peripheral.close()
+				try await self.peripheral.close()
 			} catch {
 				print("error closing BLE connection: \(error.localizedDescription)")
 			}

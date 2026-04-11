@@ -47,7 +47,7 @@ public class NAOSSerialDevice: NAOSDevice {
 	private let displayName: String?
 	private let baudRate: Int
 	private let lock = NSLock()
-	private weak var channel: serialChannel?
+	private weak var channel: NAOSChannel?
 
 	public init(path: String, name: String? = nil, baudRate: Int = 115_200) {
 		self.path = path
@@ -73,35 +73,49 @@ public class NAOSSerialDevice: NAOSDevice {
 				throw NAOSSerialError.channelAlreadyOpen
 			}
 
-			let ch = try serialChannel(path: path, baudRate: baudRate, device: self)
+			let transport = try serialTransport(path: path, baudRate: baudRate)
+			let ch = NAOSChannel(transport: transport, device: self, width: 1) { [weak self] in
+				self?.didClose()
+			}
 			channel = ch
 			return ch
 		}
 	}
 
-	fileprivate func didClose(channel: serialChannel) {
+	fileprivate func didClose() {
 		lock.lock()
 		defer { lock.unlock() }
 
-		if self.channel === channel {
-			self.channel = nil
-		}
+		self.channel = nil
 	}
 }
 
-private final class serialChannel: NAOSChannel {
-	private weak var device: NAOSSerialDevice?
+private actor serialStreamReader {
+	private var iterator: AsyncThrowingStream<Data, Error>.Iterator
+
+	init(stream: AsyncThrowingStream<Data, Error>) {
+		self.iterator = stream.makeAsyncIterator()
+	}
+
+	func next() async throws -> Data? {
+		var iterator = self.iterator
+		let value = try await iterator.next()
+		self.iterator = iterator
+		return value
+	}
+}
+
+private final class serialTransport: NAOSTransport {
 	private let fd: Int32
 	private let readSource: DispatchSourceRead
 	private let writeQueue: DispatchQueue
+	private let streamContinuation: AsyncThrowingStream<Data, Error>.Continuation
+	private let reader: serialStreamReader
 	private let stateLock = NSLock()
 	private var buffers = Data()
-	private var queues: [NAOSQueue] = []
 	private var closed = false
 
-	init(path: String, baudRate: Int, device: NAOSSerialDevice) throws {
-		self.device = device
-
+	init(path: String, baudRate: Int) throws {
 		let descriptor = path.withCString { ptr -> Int32 in
 			return Darwin.open(ptr, O_RDWR | O_NOCTTY | O_NONBLOCK)
 		}
@@ -122,6 +136,10 @@ private final class serialChannel: NAOSChannel {
 
 		writeQueue = DispatchQueue(label: "naos.serial.write.\(UUID().uuidString)")
 		readSource = DispatchSource.makeReadSource(fileDescriptor: fd, queue: DispatchQueue(label: "naos.serial.read.\(UUID().uuidString)"))
+		var continuation: AsyncThrowingStream<Data, Error>.Continuation?
+		let stream = AsyncThrowingStream<Data, Error> { continuation = $0 }
+		self.streamContinuation = continuation!
+		self.reader = serialStreamReader(stream: stream)
 
 		readSource.setEventHandler { [weak self] in
 			self?.handleRead()
@@ -134,30 +152,17 @@ private final class serialChannel: NAOSChannel {
 		readSource.resume()
 	}
 
-	public func width() -> Int {
-		return 1
-	}
-
-	public func subscribe(queue: NAOSQueue) {
-		stateLock.lock()
-		defer { stateLock.unlock() }
-
-		if queues.first(where: { $0 === queue }) == nil {
-			queues.append(queue)
+	func read() async throws -> Data {
+		guard let data = try await reader.next() else {
+			throw NAOSTransportError.closed
 		}
+		return data
 	}
 
-	public func unsubscribe(queue: NAOSQueue) {
-		stateLock.lock()
-		defer { stateLock.unlock() }
-
-		queues.removeAll { $0 === queue }
-	}
-
-	public func write(data: Data) async throws {
+	func write(data: Data) async throws {
 		let payload = preparePayload(data: data)
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-			writeQueue.async { [weak self] in
+			self.writeQueue.async { [weak self] in
 				guard let self else {
 					continuation.resume(throwing: NAOSSerialError.closed)
 					return
@@ -173,19 +178,18 @@ private final class serialChannel: NAOSChannel {
 		}
 	}
 
-	public func close() {
+	func close() {
 		var shouldCancel = false
 		stateLock.lock()
 		if !closed {
 			closed = true
 			shouldCancel = true
-			queues.removeAll()
 		}
 		stateLock.unlock()
 
 		if shouldCancel {
+			streamContinuation.finish()
 			readSource.cancel()
-			device?.didClose(channel: self)
 		}
 	}
 
@@ -282,18 +286,8 @@ private final class serialChannel: NAOSChannel {
 
 			let base64Data = content.dropFirst(serialLinePrefix.count)
 			if let message = Data(base64Encoded: Data(base64Data), options: .ignoreUnknownCharacters) {
-				deliver(data: message)
+				streamContinuation.yield(message)
 			}
-		}
-	}
-
-	private func deliver(data: Data) {
-		stateLock.lock()
-		let targets = queues
-		stateLock.unlock()
-
-		for queue in targets {
-			queue.send(value: data)
 		}
 	}
 

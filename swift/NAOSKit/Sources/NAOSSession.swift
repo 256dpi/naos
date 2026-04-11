@@ -62,6 +62,10 @@ public enum NAOSSessionError: LocalizedError {
 }
 
 /// A session to communicate with endpoints.
+///
+/// Individual operations are serialized internally, but a session should still
+/// be driven by a single caller at a time. Multi-step request/response
+/// exchanges must not be interleaved across concurrent tasks.
 public class NAOSSession {
 	public private(set) var id: UInt16
 	public private(set) var channel: NAOSChannel
@@ -70,6 +74,8 @@ public class NAOSSession {
 	private var mutex = AsyncSemaphore(value: 1)
 	private var mtu: UInt16 = 0
 
+	/// Opens a new session on the specified channel and waits for the initial
+	/// session reply.
 	public static func open(channel: NAOSChannel, timeout: TimeInterval) async throws -> NAOSSession {
 		// create queue
 		let queue = NAOSQueue()
@@ -89,12 +95,12 @@ public class NAOSSession {
 		let outHandle = randomString(length: 16).data(using: .utf8)!
 
 		// send "begin" command
-		try await NAOSWrite(channel: channel, msg: NAOSMessage(session: 0, endpoint: 0, data: outHandle))
+		try await channel.write(queue: queue, msg: NAOSMessage(session: 0, endpoint: 0, data: outHandle))
 
 		// await response
 		var sid: UInt16 = 0
 		while true {
-			let msg = try await NAOSRead(queue: queue, timeout: timeout)
+			let msg = try await queue.receive(timeout: timeout)
 			if msg.endpoint == 0 && msg.data == outHandle {
 				sid = msg.session
 				break
@@ -117,7 +123,7 @@ public class NAOSSession {
 		self.queue = queue
 	}
 
-	/// Ping will check the session and keep it alive.
+	/// Verifies and keeps the session alive.
 	public func ping(timeout: TimeInterval = 5) async throws {
 		// acquire mutex
 		await mutex.wait()
@@ -137,7 +143,7 @@ public class NAOSSession {
 		}
 	}
 
-	/// Query will check an endpoints existence.
+	/// Tests whether the specified endpoint exists.
 	public func query(endpoint: UInt8, timeout: TimeInterval = 5) async throws -> Bool {
 		// acquire mutex
 		await mutex.wait()
@@ -158,7 +164,10 @@ public class NAOSSession {
 		return msg.data[0] == 1
 	}
 
-	/// Wait and receive the next message for the specified endpoint with reply handling.
+	/// Waits for the next message on the specified endpoint.
+	///
+	/// This method must not be interleaved with other session operations from a
+	/// different task.
 	public func receive(endpoint: UInt8, expectAck: Bool, timeout: TimeInterval = 5) async throws
 		-> Data?
 	{
@@ -196,7 +205,10 @@ public class NAOSSession {
 		return msg.data
 	}
 
-	/// Send a message with optionally waiting for an acknowledgement.
+	/// Sends a message and optionally waits for an acknowledgement.
+	///
+	/// This method must not be interleaved with other session operations from a
+	/// different task.
 	public func send(endpoint: UInt8, data: Data, ackTimeout: TimeInterval) async throws {
 		// acquire mutex
 		await mutex.wait()
@@ -271,7 +283,7 @@ public class NAOSSession {
 		try await send(endpoint: 0xFD, data: Data([2]), ackTimeout: 0)
 
 		// await reply
-		let reply = try await receive(endpoint: 0xFD, expectAck: false)!
+		let reply = try await receive(endpoint: 0xFD, expectAck: false, timeout: timeout)!
 
 		// verify reply
 		if reply.count != 2 {
@@ -284,7 +296,8 @@ public class NAOSSession {
 		return mtu
 	}
 
-	/// End the session.
+	/// Closes the session and unsubscribes its queue from the underlying
+	/// channel.
 	public func end(timeout: TimeInterval = 5) async throws {
 		// acquire mutex
 		await mutex.wait()
@@ -310,7 +323,8 @@ public class NAOSSession {
 		}
 	}
 
-	/// Clean up the session.
+	/// Best-effort asynchronous cleanup for callers that are discarding the
+	/// session and do not need to wait for the close reply.
 	public func cleanup() {
 		// end session in background
 		Task { try? await end(timeout: 0) }
@@ -319,17 +333,16 @@ public class NAOSSession {
 	// Helpers
 
 	/// Write a message directly to the sessions underlying channel.
-	public func write(msg: NAOSMessage) async throws {
-		try await NAOSWrite(channel: channel, msg: msg)
+	internal func write(msg: NAOSMessage) async throws {
+		try await channel.write(queue: queue, msg: msg)
 	}
 
 	/// Read a message directly from the sessions underlying queue.
-	public func read(timeout: TimeInterval) async throws -> NAOSMessage {
-		while true {
-			let msg = try await NAOSRead(queue: queue, timeout: timeout)
-			if msg.session == id {
-				return msg
-			}
+	internal func read(timeout: TimeInterval) async throws -> NAOSMessage {
+		let msg = try await queue.receive(timeout: timeout)
+		if msg.session != id {
+			throw NAOSSessionError.invalidMessage
 		}
+		return msg
 	}
 }
