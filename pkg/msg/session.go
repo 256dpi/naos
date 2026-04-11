@@ -265,7 +265,7 @@ func (s *Session) Unlock(password string, timeout time.Duration) (bool, error) {
 
 	// write command
 	cmd := Pack("os", uint8(1), password)
-	err := s.Send(SystemEndpoint, cmd, timeout)
+	err := s.Send(SystemEndpoint, cmd, 0)
 	if err != nil {
 		return false, err
 	}

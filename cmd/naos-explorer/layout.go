@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -37,6 +38,40 @@ func showErrorModal(app *tview.Application, pages *tview.Pages, message string) 
 	// show modal
 	pages.AddPage("error", modal, true, true)
 	app.SetFocus(modal)
+}
+
+func showUnlockPrompt(app *tview.Application, pages *tview.Pages, device *device, onResult func(ok bool, err error)) {
+	form := tview.NewForm()
+	input := tview.NewInputField().SetLabel("Password").SetFieldWidth(30).SetMaskCharacter('*')
+	form.AddFormItem(input)
+	form.AddButton("Unlock", func() {
+		pw := input.GetText()
+		if pw == "" {
+			return
+		}
+		go func() {
+			ok, err := device.Unlock(pw)
+			app.QueueUpdateDraw(func() {
+				pages.RemovePage("unlock")
+				onResult(ok, err)
+			})
+		}()
+	})
+	form.AddButton("Cancel", func() {
+		pages.RemovePage("unlock")
+		onResult(false, nil)
+	})
+	form.SetBorder(true).SetTitle(" Unlock Device ")
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			pages.RemovePage("unlock")
+			onResult(false, nil)
+			return nil
+		}
+		return event
+	})
+	pages.AddPage("unlock", centered(50, 7, form), true, true)
+	app.SetFocus(form)
 }
 
 func showProgressModal(app *tview.Application, pages *tview.Pages, text string) func() {

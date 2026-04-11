@@ -89,6 +89,14 @@ func (d *device) Active() bool {
 	return d.md.Active()
 }
 
+func (d *device) Locked() bool {
+	return d.md.Locked()
+}
+
+func (d *device) Unlock(password string) (bool, error) {
+	return d.md.Unlock(password)
+}
+
 func (d *device) Events() (<-chan msg.ManagedEvent, func()) {
 	return d.md.Events()
 }
@@ -125,7 +133,16 @@ func (d *device) Activate() error {
 		return fmt.Errorf("failed to activate device: %w", err)
 	}
 
+	return nil
+}
+
+func (d *device) Setup() error {
+	// lock mutex
+	d.mut.Lock()
+	defer d.mut.Unlock()
+
 	// create params service
+	var err error
 	d.pss, err = d.md.NewSession()
 	if err != nil {
 		return fmt.Errorf("failed to create param session: %w", err)

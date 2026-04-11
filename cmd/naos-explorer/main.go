@@ -286,23 +286,63 @@ func runUI(state *state) {
 				// log success
 				state.log("Activated %s", device.ID())
 
-				// open dashboard
-				pageName := fmt.Sprintf("device-%s", device.ID())
-				dash := newDashboard(app, pages, device, func() {
-					// deactivate device
-					device.Deactivate()
+				// prepare setup and dashboard opener
+				setupAndOpen := func() {
+					go func() {
+						// setup services
+						err := device.Setup()
 
-					// remove page and return to main
-					app.QueueUpdateDraw(func() {
-						pages.RemovePage(pageName)
-						pages.SwitchToPage("main")
-						app.SetFocus(table)
+						app.QueueUpdateDraw(func() {
+							if err != nil {
+								state.log("[red]Setup failed for %s[-]: %v", device.ID(), err)
+								device.Deactivate()
+								showErrorModal(app, pages, fmt.Sprintf("Setup failed: %v", err))
+								app.SetFocus(table)
+								return
+							}
+
+							// open dashboard
+							pageName := fmt.Sprintf("device-%s", device.ID())
+							dash := newDashboard(app, pages, device, func() {
+								// deactivate device
+								device.Deactivate()
+
+								// remove page and return to main
+								app.QueueUpdateDraw(func() {
+									pages.RemovePage(pageName)
+									pages.SwitchToPage("main")
+									app.SetFocus(table)
+								})
+							})
+
+							// show dashboard
+							pages.AddPage(pageName, dash.Root(), true, true)
+							app.SetFocus(dash.DefaultFocus())
+						})
+					}()
+				}
+
+				// check if locked
+				if device.Locked() {
+					showUnlockPrompt(app, pages, device, func(ok bool, err error) {
+						if err != nil {
+							state.log("[red]Unlock failed for %s[-]: %v", device.ID(), err)
+							device.Deactivate()
+							showErrorModal(app, pages, fmt.Sprintf("Unlock failed: %v", err))
+							app.SetFocus(table)
+							return
+						}
+						if !ok {
+							state.log("[red]Unlock cancelled for %s[-]", device.ID())
+							device.Deactivate()
+							app.SetFocus(table)
+							return
+						}
+						setupAndOpen()
 					})
-				})
-
-				// show dashboard
-				pages.AddPage(pageName, dash.Root(), true, true)
-				app.SetFocus(dash.DefaultFocus())
+				} else {
+					setupAndOpen()
+				}
 			})
 		}()
 	})

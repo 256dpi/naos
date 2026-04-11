@@ -910,6 +910,34 @@ func (d *dashboard) handleDisconnect() {
 			continue
 		}
 
+		// handle locked device
+		if d.device.Locked() {
+			unlocked := make(chan bool, 1)
+			d.queue(func() {
+				d.pages.RemovePage("reconnecting")
+				showUnlockPrompt(d.app, d.pages, d.device, func(ok bool, err error) {
+					if err != nil {
+						d.log("[red]Unlock failed[-]: %v", err)
+					}
+					unlocked <- ok
+				})
+			})
+
+			// wait for unlock result
+			if !<-unlocked {
+				d.device.Deactivate()
+				continue
+			}
+		}
+
+		// setup services
+		reconnectErr = d.device.Setup()
+		if reconnectErr != nil {
+			d.log("[red]Reconnect setup failed[-]: %v", reconnectErr)
+			d.device.Deactivate()
+			continue
+		}
+
 		// abort if dashboard was closed during reconnect
 		select {
 		case <-d.done:

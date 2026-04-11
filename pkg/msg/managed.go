@@ -32,6 +32,7 @@ type ManagedDevice struct {
 	channel  *Channel
 	session  *Session
 	password string
+	locked   bool
 	subs     map[uint64]chan ManagedEvent
 	nextSub  uint64
 	stopped  bool
@@ -116,6 +117,15 @@ func (d *ManagedDevice) Activate() error {
 	// set channel
 	d.channel = ch
 
+	// read lock status
+	session, err := d.openSession()
+	if err != nil {
+		d.channel.Close()
+		d.channel = nil
+		return err
+	}
+	_ = session.End(time.Second)
+
 	// emit connected
 	d.emit(ManagedEvent{Type: ManagedConnected})
 
@@ -143,13 +153,55 @@ func (d *ManagedDevice) HasSession() bool {
 	return d.session != nil
 }
 
-// SetPassword sets the password used for auto-unlock.
-func (d *ManagedDevice) SetPassword(password string) {
+// Locked returns whether the device is locked. The value is determined during
+// session opening and may not reflect the current state.
+func (d *ManagedDevice) Locked() bool {
 	// acquire mutex
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	d.password = password
+	return d.locked
+}
+
+// Unlock will attempt to unlock the device and returns its success. The
+// password is stored for auto-unlock on success.
+func (d *ManagedDevice) Unlock(password string) (bool, error) {
+	// acquire mutex
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	// check state
+	if d.stopped {
+		return false, ErrManagedStopped
+	}
+	if d.channel == nil {
+		return false, fmt.Errorf("device not active")
+	}
+
+	// ensure session
+	if d.session == nil {
+		session, err := d.openSession()
+		if err != nil {
+			return false, err
+		}
+		d.session = session
+	}
+
+	// unlock
+	ok, err := d.session.Unlock(password, time.Second)
+	if err != nil {
+		_ = d.session.End(time.Second)
+		d.session = nil
+		return false, err
+	}
+
+	// store password and update locked state on success
+	if ok {
+		d.password = password
+		d.locked = false
+	}
+
+	return ok, nil
 }
 
 // NewSession creates a new session.
@@ -218,11 +270,17 @@ func (d *ManagedDevice) openSession() (*Session, error) {
 		return nil, err
 	}
 
+	// update locked state
+	d.locked = status&StatusLocked != 0
+
 	// try to unlock if password is available and locked
-	if d.password != "" && status&StatusLocked != 0 {
-		_, err := session.Unlock(d.password, time.Second)
+	if d.password != "" && d.locked {
+		ok, err := session.Unlock(d.password, time.Second)
 		if err != nil {
 			return nil, err
+		}
+		if ok {
+			d.locked = false
 		}
 	}
 
