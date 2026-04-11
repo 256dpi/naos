@@ -1,4 +1,4 @@
-import { Channel, Device, Queue, QueueList } from "./device";
+import { Channel, Device, Message, Transport } from "./device";
 import { concat, fromBase64, toBase64, toBuffer, toString } from "./utils";
 
 export async function serialRequest(baudRate = 115200): Promise<Device | null> {
@@ -53,17 +53,14 @@ export class SerialDevice implements Device {
       });
     }
 
-    // create list
-    const subscribers = new QueueList();
-
     // create reader
     const reader = this.port.readable.getReader();
 
-    // track reader state
-    let alive = true;
-
     // read data
-    const read = async () => {
+    const read = async (
+      onData: (msg: Message) => void,
+      onClose: () => void
+    ) => {
       try {
         let buffer = "";
 
@@ -85,7 +82,10 @@ export class SerialDevice implements Device {
             const line = lines[i].replace(/\r$/, "");
             if (line.startsWith("NAOS!")) {
               try {
-                subscribers.dispatch(fromBase64(line.slice(5)));
+                const msg = Message.parse(fromBase64(line.slice(5)));
+                if (msg) {
+                  onData(msg);
+                }
               } catch (err) {
                 console.error("Error decoding message:", err);
               }
@@ -98,35 +98,21 @@ export class SerialDevice implements Device {
       } catch (err) {
         console.error("Error reading stream:", err);
       } finally {
-        alive = false;
+        onClose();
         reader.releaseLock();
       }
     };
 
-    // start reading
-    read().catch(() => {});
-
     // create writer
     const writer = this.port.writable.getWriter();
 
-    // create channel
-    this.ch = {
-      name: () => "serial",
-      valid() {
-        return alive;
+    const transport: Transport = {
+      start: (onData, onClose) => {
+        read(onData, onClose).catch(() => {});
       },
-      width() {
-        return 1;
-      },
-      subscribe: (q: Queue) => {
-        subscribers.add(q);
-      },
-      unsubscribe(queue: Queue) {
-        subscribers.drop(queue);
-      },
-      write: async (data: Uint8Array) => {
+      write: async (msg: Message) => {
         await writer.write(
-          concat(toBuffer("\nNAOS!"), toBase64(data), toBuffer("\n"))
+          concat(toBuffer("\nNAOS!"), toBase64(msg.build()), toBuffer("\n"))
         );
       },
       close: async () => {
@@ -134,10 +120,12 @@ export class SerialDevice implements Device {
         writer.releaseLock();
         await reader.cancel();
         // lock released by reader
-        this.ch = null;
       },
     };
 
+    this.ch = new Channel(transport, 1, () => {
+      this.ch = null;
+    });
     return this.ch;
   }
 }

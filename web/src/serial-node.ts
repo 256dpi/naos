@@ -1,6 +1,6 @@
 import { SerialPort } from "serialport";
 import ReadlineParser from "@serialport/parser-readline";
-import { Channel, Device, Queue, QueueList } from "./device";
+import { Channel, Device, Message, Transport } from "./device";
 import { concat, toBase64, toBuffer } from "./utils";
 
 const knownPrefixes = ["tty.SLAB", "tty.usbserial", "tty.usbmodem", "ttyUSB"];
@@ -55,49 +55,40 @@ export class NodeSerialDevice implements Device {
       );
     });
 
-    // create list
-    const subscribers = new QueueList();
-
-    // parse lines and dispatch NAOS frames
-    const parser = this.port.pipe(new ReadlineParser({ delimiter: "\n" }));
-    parser.on("data", (line: string) => {
-      if (line.startsWith("NAOS!")) {
-        const data = line.slice(5);
-        subscribers.dispatch(
-          Uint8Array.from(atob(data), (c) => c.charCodeAt(0))
-        );
-      }
-    });
-
     // prepare flag
     let closed = false;
 
-    // handle close
-    this.port.on("close", () => {
-      closed = true;
-      if (this.ch) {
-        this.ch = null;
-      }
-    });
-
     // capture port ref for channel
     const port = this.port;
+    const parser = this.port.pipe(new ReadlineParser({ delimiter: "\n" }));
+    let onLine: ((line: string) => void) | null = null;
+    let onPortClose: (() => void) | null = null;
 
-    // create channel
-    this.ch = {
-      name: () => "serial",
-      valid: () => !closed,
-      width: () => 1,
-      subscribe: (q: Queue) => {
-        subscribers.add(q);
+    const transport: Transport = {
+      start: (onData, onClose) => {
+        onLine = (line: string) => {
+          if (line.startsWith("NAOS!")) {
+            const data = line.slice(5);
+            const msg = Message.parse(
+              Uint8Array.from(atob(data), (c) => c.charCodeAt(0))
+            );
+            if (msg) {
+              onData(msg);
+            }
+          }
+        };
+        onPortClose = () => {
+          closed = true;
+          onClose();
+        };
+
+        parser.on("data", onLine);
+        port.on("close", onPortClose);
       },
-      unsubscribe: (queue: Queue) => {
-        subscribers.drop(queue);
-      },
-      write: async (data: Uint8Array) => {
+      write: async (msg: Message) => {
         const frame = concat(
           toBuffer("\nNAOS!"),
-          toBase64(data),
+          toBase64(msg.build()),
           toBuffer("\n")
         );
         await new Promise<void>((resolve, reject) => {
@@ -112,7 +103,12 @@ export class NodeSerialDevice implements Device {
       },
       close: async () => {
         closed = true;
-        this.ch = null;
+        if (onLine) {
+          parser.off("data", onLine);
+        }
+        if (onPortClose) {
+          port.off("close", onPortClose);
+        }
         await new Promise<void>((resolve, reject) => {
           port.close((err) => {
             if (err) {
@@ -125,6 +121,9 @@ export class NodeSerialDevice implements Device {
       },
     };
 
+    this.ch = new Channel(transport, 1, () => {
+      this.ch = null;
+    });
     return this.ch;
   }
 }

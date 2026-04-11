@@ -1,6 +1,6 @@
 import { Session } from "./session";
 import { pack, unpack } from "./utils";
-import { Channel, Device, Queue, QueueList } from "./device";
+import { Channel, Device, Message, Transport } from "./device";
 import { ManagedDevice } from "./managed";
 
 const relayEndpoint = 0x04;
@@ -92,48 +92,33 @@ export class RelayDevice implements Device {
     // link device
     await linkRelay(session, this.device);
 
-    // create list
-    const subscribers = new QueueList();
-
-    // prepare flag
     let closed = false;
 
-    // run receiver
-    (async () => {
-      while (!closed) {
-        try {
-          const data = await receiveRelay(session);
-          subscribers.dispatch(data);
-        } catch (e) {
-          if (!closed) {
-            console.error(e);
+    const transport: Transport = {
+      start: (onData, onClose) => {
+        (async () => {
+          while (!closed) {
+            try {
+              const msg = Message.parse(await receiveRelay(session));
+              if (msg) {
+                onData(msg);
+              }
+            } catch (e) {
+              if (!closed) {
+                console.error(e);
+              }
+              closed = true;
+              onClose();
+              break;
+            }
           }
-          break;
-        }
-      }
-    })().catch(() => {});
-
-    // create channel
-    this.ch = {
-      name: () => "relay",
-      valid() {
-        return !closed;
+        })().catch(() => {});
       },
-      width() {
-        return 10;
-      },
-      subscribe: (q: Queue) => {
-        subscribers.add(q);
-      },
-      unsubscribe(queue: Queue) {
-        subscribers.drop(queue);
-      },
-      write: async (data: Uint8Array) => {
-        await sendRelay(session, this.device, data);
+      write: async (msg: Message) => {
+        await sendRelay(session, this.device, msg.build());
       },
       close: async () => {
         closed = true;
-        this.ch = null;
         try {
           await session.end(1000);
         } catch (e) {
@@ -142,6 +127,9 @@ export class RelayDevice implements Device {
       },
     };
 
+    this.ch = new Channel(transport, 10, () => {
+      this.ch = null;
+    });
     return this.ch;
   }
 }

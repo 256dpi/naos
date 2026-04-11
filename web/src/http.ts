@@ -1,4 +1,4 @@
-import { Channel, Device, Queue, QueueList } from "./device";
+import { Channel, Device, Message, Transport } from "./device";
 
 export function makeHTTPDevice(addr: string): Device {
   return new HTTPDevice(addr);
@@ -32,39 +32,32 @@ export class HTTPDevice implements Device {
       socket.onerror = reject;
     });
 
-    // create list
-    const subscribers = new QueueList();
-
-    // handle messages
-    socket.onmessage = async (msg) => {
-      const data = new Uint8Array(await msg.data.arrayBuffer());
-      subscribers.dispatch(data);
-    };
-
-    // create channel
-    this.ch = {
-      name: () => "http",
-      valid() {
-        return socket.readyState === WebSocket.OPEN;
+    const transport: Transport = {
+      start: (onData, onClose) => {
+        socket.onmessage = async (msg) => {
+          const frame = Message.parse(new Uint8Array(await msg.data.arrayBuffer()));
+          if (frame) {
+            onData(frame);
+          }
+        };
+        socket.onclose = () => {
+          onClose();
+        };
+        socket.onerror = () => {
+          onClose();
+        };
       },
-      width() {
-        return 10;
-      },
-      subscribe: (q: Queue) => {
-        subscribers.add(q);
-      },
-      unsubscribe(queue: Queue) {
-        subscribers.drop(queue);
-      },
-      write: async (data: Uint8Array) => {
-        socket.send(data);
+      write: async (msg: Message) => {
+        socket.send(msg.build());
       },
       close: async () => {
         socket.close();
-        this.ch = null;
       },
     };
 
+    this.ch = new Channel(transport, 10, () => {
+      this.ch = null;
+    });
     return this.ch;
   }
 }

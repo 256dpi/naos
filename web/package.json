@@ -26,6 +26,8 @@
     "build": "parcel build",
     "typecheck": "tsc --noEmit",
     "fmt": "prettier --write .",
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "test:watch": "node --import tsx --test --watch test/**/*.test.ts",
     "test-node": "tsx test-node.ts"
   },
   "dependencies": {

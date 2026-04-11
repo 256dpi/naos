@@ -1,4 +1,4 @@
-import { Device, Channel, Queue, QueueList } from "./device";
+import { Device, Channel, Message, Transport } from "./device";
 
 const svcUUID = "632fba1b-4861-4e4f-8103-ffee9d5033b5";
 const charUUID = "0360744b-a61b-00ad-c945-37f3634130f3";
@@ -68,54 +68,50 @@ export class BLEDevice implements Device {
       }
     }
 
-    // create list
-    const subscribers = new QueueList();
+    let handler: (() => void) | null = null;
+    let disconnect: (() => void) | null = null;
 
-    // prepare handler
-    const handler = () => {
-      const value = this.char.value;
-      const data = new Uint8Array(
-        value.buffer.slice(
-          value.byteOffset,
-          value.byteOffset + value.byteLength
-        )
-      );
-      subscribers.dispatch(data);
-    };
+    const transport: Transport = {
+      start: async (onData, onClose) => {
+        handler = () => {
+          const value = this.char.value;
+          const msg = Message.parse(
+            new Uint8Array(
+              value.buffer.slice(
+                value.byteOffset,
+                value.byteOffset + value.byteLength
+              )
+            )
+          );
+          if (msg) {
+            onData(msg);
+          }
+        };
+        disconnect = () => {
+          onClose();
+        };
 
-    // subscribe to messages
-    this.char.addEventListener("characteristicvaluechanged", handler);
-    await this.char.startNotifications();
-
-    // prepare flag
-    let closed = false;
-
-    // create channel
-    this.ch = {
-      name: () => "ble",
-      valid: () => {
-        return this.dev.gatt.connected && !closed;
+        this.char.addEventListener("characteristicvaluechanged", handler);
+        this.dev.addEventListener("gattserverdisconnected", disconnect);
+        await this.char.startNotifications();
       },
-      width() {
-        return 10;
-      },
-      subscribe: (q: Queue) => {
-        subscribers.add(q);
-      },
-      unsubscribe(queue: Queue) {
-        subscribers.drop(queue);
-      },
-      write: async (data: Uint8Array) => {
-        await this.char.writeValueWithoutResponse(data as BufferSource);
+      write: async (msg: Message) => {
+        await this.char.writeValueWithoutResponse(msg.build() as BufferSource);
       },
       close: async () => {
-        closed = true;
-        this.char.removeEventListener("characteristicvaluechanged", handler);
+        if (handler) {
+          this.char.removeEventListener("characteristicvaluechanged", handler);
+        }
+        if (disconnect) {
+          this.dev.removeEventListener("gattserverdisconnected", disconnect);
+        }
         await this.char.stopNotifications();
-        this.ch = null;
       },
     };
 
+    this.ch = new Channel(transport, 10, () => {
+      this.ch = null;
+    });
     return this.ch;
   }
 }

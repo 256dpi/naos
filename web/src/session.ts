@@ -1,4 +1,4 @@
-import { Channel, Message, Queue, read, write } from "./device";
+import { Channel, Message, Queue, read } from "./device";
 import { pack, random, toBuffer, toString, unpack } from "./utils";
 
 export enum Status {
@@ -18,28 +18,36 @@ export class Session {
     // subscribe to channel
     ch.subscribe(queue);
 
-    // prepare handle
-    let handle = random(16);
+    let ok = false;
+    try {
+      // prepare handle
+      const handle = random(16);
 
-    // begin session
-    await write(ch, new Message(0, 0, toBuffer(handle)));
+      // begin session
+      await ch.write(queue, new Message(0, 0, toBuffer(handle)));
 
-    // await reply
-    let sid;
-    const deadline = Date.now() + 10 * 1000;
-    for (;;) {
-      const remaining = deadline - Date.now();
-      if (remaining <= 0) {
-        throw new Error("timeout");
+      // await reply
+      let sid;
+      const deadline = Date.now() + 10 * 1000;
+      for (;;) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) {
+          throw new Error("timeout");
+        }
+        const reply = await read(queue, remaining);
+        if (reply.endpoint === 0 && toString(reply.data) === handle) {
+          sid = reply.session;
+          break;
+        }
       }
-      const reply = await read(queue, remaining);
-      if (reply.endpoint === 0 && toString(reply.data) === handle) {
-        sid = reply.session;
-        break;
+
+      ok = true;
+      return new Session(sid, ch, queue);
+    } finally {
+      if (!ok) {
+        ch.unsubscribe(queue);
       }
     }
-
-    return new Session(sid, ch, queue);
   }
 
   constructor(id: number, ch: Channel, qu: Queue) {
@@ -54,7 +62,7 @@ export class Session {
 
   async ping(timeout: number = 5000) {
     // write command
-    await write(this.ch, new Message(this.id, 0xfe, null));
+    await this.write(new Message(this.id, 0xfe, null));
 
     // read reply
     const msg = await this.read(timeout);
@@ -69,7 +77,7 @@ export class Session {
 
   async query(endpoint: number, timeout: number = 5000) {
     // write command
-    await write(this.ch, new Message(this.id, endpoint, null));
+    await this.write(new Message(this.id, endpoint, null));
 
     // read reply
     const msg = await this.read(timeout);
@@ -119,7 +127,7 @@ export class Session {
 
   async send(endpoint: number, data: Uint8Array, ackTimeout: number) {
     // write message
-    await write(this.ch, new Message(this.id, endpoint, data));
+    await this.write(new Message(this.id, endpoint, data));
 
     // return if timeout is zero
     if (ackTimeout === 0) {
@@ -197,33 +205,38 @@ export class Session {
   }
 
   async end(timeout: number = 5000) {
-    // write command
-    await write(this.ch, new Message(this.id, 0xff, null));
+    try {
+      // write command
+      await this.write(new Message(this.id, 0xff, null));
 
-    // read reply
-    const msg = await this.read(timeout);
+      // return if timeout is zero
+      if (timeout === 0) {
+        return;
+      }
 
-    // verify reply
-    if (msg.endpoint !== 0xff || msg.size() > 0) {
-      throw new Error("invalid reply");
+      // read reply
+      const msg = await this.read(timeout);
+
+      // verify reply
+      if (msg.endpoint !== 0xff || msg.size() > 0) {
+        throw new Error("invalid reply");
+      }
+    } finally {
+      // unsubscribe from channel
+      this.ch.unsubscribe(this.qu);
     }
-
-    // unsubscribe from channel
-    this.ch.unsubscribe(this.qu);
   }
 
   async read(timeout: number): Promise<Message> {
-    const deadline = Date.now() + timeout;
-    for (;;) {
-      const remaining = deadline - Date.now();
-      if (remaining <= 0) {
-        throw new Error("timeout");
-      }
-      const msg = await read(this.qu, remaining);
-      if (msg.session === this.id) {
-        return msg;
-      }
+    const msg = await read(this.qu, timeout);
+    if (msg.session !== this.id) {
+      throw new Error("invalid message");
     }
+    return msg;
+  }
+
+  private async write(msg: Message) {
+    await this.ch.write(this.qu, msg);
   }
 }
 
