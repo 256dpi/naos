@@ -27,16 +27,19 @@ export class ManagedDevice {
 
     // start pinger
     this.pinger = setInterval(async () => {
-      if (this.active()) {
+      if (this.session) {
         try {
-          await this.useSession(async (session) => {
-            await session.ping(5000);
-          });
+          await this.session.ping(5000);
         } catch (e) {
-          // ignore ping errors
+          try {
+            await this.session.end(1000);
+          } catch (e) {
+            // ignore
+          }
+          this.session = null;
         }
       }
-    }, 1000);
+    }, 5000);
   }
 
   device(): Device | null {
@@ -120,11 +123,12 @@ export class ManagedDevice {
     this.channel = ch;
 
     // read lock status
-    const session = await this.newSession();
     try {
-      await session.end(1000);
+      this.session = await this.newSession();
     } catch (e) {
-      // ignore
+      await ch.close();
+      this.channel = null;
+      throw e;
     }
 
     // emit connected

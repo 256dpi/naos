@@ -39,6 +39,14 @@ open class NAOSManagedDevice: NSObject {
 	public private(set) var device: NAOSDevice
 	public private(set) var active: Bool = false
 	public private(set) var locked: Bool = false
+	
+	public var hasSession: Bool {
+		get async {
+			await mutex.wait()
+			defer { mutex.signal() }
+			return session != nil
+		}
+	}
 
 	public init(device: NAOSDevice) {
 		// set device
@@ -50,7 +58,7 @@ open class NAOSManagedDevice: NSObject {
 		// run pinger
 		pingerTask = Task { [weak self] in
 			while !Task.isCancelled {
-				try? await Task.sleep(for: .seconds(1))
+				try? await Task.sleep(for: .seconds(5))
 				if Task.isCancelled { break }
 				guard let self else { break }
 
@@ -113,8 +121,15 @@ open class NAOSManagedDevice: NSObject {
 		active = true
 
 		// read lock status
-		try await withSession { session in
-			self.locked = try await session.status().contains(.locked)
+		do {
+			try await withSession { _ in }
+		} catch {
+			session?.cleanup()
+			session = nil
+			channel?.close()
+			channel = nil
+			active = false
+			throw error
 		}
 
 		// emit connected
@@ -237,12 +252,16 @@ open class NAOSManagedDevice: NSObject {
 		// open session
 		let session = try await NAOSSession.open(channel: channel!, timeout: timeout)
 
-		// try to unlock if locked
-		if !password.isEmpty {
-			if try (await session.status()).contains(.locked) {
-				if try await session.unlock(password: password) {
-					locked = false
-				}
+		// get status
+		let status = try await session.status()
+
+		// update locked state
+		locked = status.contains(.locked)
+
+		// try to unlock if password is available and locked
+		if !password.isEmpty && locked {
+			if try await session.unlock(password: password) {
+				locked = false
 			}
 		}
 

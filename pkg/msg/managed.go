@@ -118,13 +118,12 @@ func (d *ManagedDevice) Activate() error {
 	d.channel = ch
 
 	// read lock status
-	session, err := d.openSession()
+	d.session, err = d.openSession()
 	if err != nil {
 		d.channel.Close()
 		d.channel = nil
 		return err
 	}
-	_ = session.End(time.Second)
 
 	// emit connected
 	d.emit(ManagedEvent{Type: ManagedConnected})
@@ -377,7 +376,7 @@ func (d *ManagedDevice) watcher(ch *Channel) {
 func (d *ManagedDevice) pinger() {
 	for {
 		// sleep
-		time.Sleep(time.Second)
+		time.Sleep(5 * time.Second)
 
 		// acquire mutex
 		d.mutex.Lock()
