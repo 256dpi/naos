@@ -62,15 +62,8 @@ public class NAOSBLEManager: NSObject {
 				default:
 					break
 				}
-			case .didDisconnectPeripheral(let peripheral, _, let error):
-				// forward disconnect error to device
-				if error != nil {
-					if let device = self.findDevice(peripheral: peripheral) {
-						Task {
-							await device.didDisconnect(error: error!)
-						}
-					}
-				}
+			case .didDisconnectPeripheral:
+				break
 			default:
 				break
 			}

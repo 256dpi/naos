@@ -34,6 +34,8 @@ public class NAOSBLEDevice: NAOSDevice {
 	private let lock = NSLock()
 	private var service: Service?
 	private var characteristic: Characteristic?
+	private var streamSubscription: AnyCancellable?
+	private var eventSubscription: AnyCancellable?
 
 	public var advertisementData: [String: Any] {
 		lock.withLock { _advertisementData }
@@ -48,6 +50,20 @@ public class NAOSBLEDevice: NAOSDevice {
 		self.peripheral = peripheral
 		self._advertisementData = advertisementData
 		self._rssi = rssi
+
+		// watch for BLE disconnects to end the transport stream
+		Task { [weak self] in
+			guard let self else { return }
+			self.eventSubscription = await self.manager.eventPublisher.sink(receiveValue: { event in
+				guard case .didDisconnectPeripheral(let peripheral, _, _) = event else {
+					return
+				}
+				guard peripheral.identifier == self.peripheral.identifier else {
+					return
+				}
+				self.handleDisconnect()
+			})
+		}
 	}
 
 	func update(advertisementData: [String: Any], rssi: NSNumber) {
@@ -110,11 +126,32 @@ public class NAOSBLEDevice: NAOSDevice {
 		}
 
 		let (stream, subscription) = await stream()
+
+		// store subscription to cancel on disconnect
+		lock.withLock {
+			streamSubscription = subscription
+		}
+
 		return NAOSChannel(
 			transport: bleTransport(peripheral: self, stream: stream, subscription: subscription),
 			device: self,
-			width: 10
+			width: 10,
+			onClose: { [weak self] in
+				self?.lock.withLock {
+					self?.streamSubscription = nil
+				}
+			}
 		)
+	}
+
+	/// Ends the transport stream so the channel detects the loss.
+	func handleDisconnect() {
+		let sub = lock.withLock { () -> AnyCancellable? in
+			let s = streamSubscription
+			streamSubscription = nil
+			return s
+		}
+		sub?.cancel()
 	}
 
 	func stream() async -> (AsyncStream<Data>, AnyCancellable) {
@@ -167,10 +204,13 @@ public class NAOSBLEDevice: NAOSDevice {
 		lock.withLock {
 			service = nil
 			characteristic = nil
+			streamSubscription = nil
 		}
 
-		// disconnect
-		try await manager.cancelPeripheralConnection(peripheral)
+		// disconnect if still connected
+		if peripheral.state == .connected || peripheral.state == .connecting {
+			try await manager.cancelPeripheralConnection(peripheral)
+		}
 	}
 }
 

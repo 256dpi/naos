@@ -50,16 +50,24 @@ public struct NAOSParameter: Hashable {
 /// The delegate implemented by objects
 public protocol NAOSManagedDeviceDelegate {
 	func naosDeviceDidUpdate(device: NAOSManagedDevice, parameter: NAOSParameter)
-	func naosDeviceDidDisconnect(device: NAOSManagedDevice, error: Error)
+}
+
+/// A lifecycle event emitted by a managed device.
+public enum NAOSManagedDeviceEvent {
+	case connected
+	case disconnected
 }
 
 public enum NAOSManagedError: LocalizedError {
 	case notConnected
+	case stopped
 
 	public var errorDescription: String? {
 		switch self {
 		case .notConnected:
 			return "Device not connected."
+		case .stopped:
+			return "Device has been stopped."
 		}
 	}
 }
@@ -68,6 +76,9 @@ public class NAOSManagedDevice: NSObject {
 	private var mutex = AsyncSemaphore(value: 1)
 	private var session: NAOSSession?
 	private var updaterTask: Task<Void, Never>?
+	private var eventSubs: [UUID: AsyncStream<NAOSManagedDeviceEvent>.Continuation] = [:]
+	private var eventSubsLock = NSLock()
+	private var stopped = false
 
 	public private(set) var device: NAOSDevice
 	public private(set) var channel: NAOSChannel? = nil
@@ -145,6 +156,34 @@ public class NAOSManagedDevice: NSObject {
 
 	deinit {
 		updaterTask?.cancel()
+		stopped = true
+	}
+
+	/// Returns a new subscription stream for lifecycle events. The stream is
+	/// buffered (4) and drops events if the consumer is too slow. It ends when
+	/// the managed device is deallocated.
+	public func events() -> AsyncStream<NAOSManagedDeviceEvent> {
+		let id = UUID()
+		return AsyncStream(bufferingPolicy: .bufferingNewest(4)) { continuation in
+			self.eventSubsLock.lock()
+			self.eventSubs[id] = continuation
+			self.eventSubsLock.unlock()
+
+			continuation.onTermination = { @Sendable _ in
+				self.eventSubsLock.lock()
+				self.eventSubs.removeValue(forKey: id)
+				self.eventSubsLock.unlock()
+			}
+		}
+	}
+
+	private func emitEvent(_ event: NAOSManagedDeviceEvent) {
+		eventSubsLock.lock()
+		let subs = Array(eventSubs.values)
+		eventSubsLock.unlock()
+		for cont in subs {
+			cont.yield(event)
+		}
 	}
 
 	/// Connect will initiate a connection to a device.
@@ -154,12 +193,16 @@ public class NAOSManagedDevice: NSObject {
 		defer { mutex.signal() }
 
 		// check state
+		if stopped {
+			throw NAOSManagedError.stopped
+		}
 		if connected {
 			return
 		}
 
 		// open channel
-		channel = try await device.open()
+		let ch = try await device.open()
+		channel = ch
 
 		// set flag
 		connected = true
@@ -171,6 +214,16 @@ public class NAOSManagedDevice: NSObject {
 
 		// reset max age
 		maxAge = 0
+
+		// emit connected
+		emitEvent(.connected)
+
+		// watch for transport loss
+		Task { [weak self] in
+			await ch.done
+			guard let self else { return }
+			await self.didDisconnect(error: nil)
+		}
 	}
 
 	/// Refresh will perform a full device refresh and update all parameters.
@@ -319,6 +372,9 @@ public class NAOSManagedDevice: NSObject {
 		defer { mutex.signal() }
 
 		// check state
+		if stopped {
+			throw NAOSManagedError.stopped
+		}
 		if !connected {
 			throw NAOSManagedError.notConnected
 		}
@@ -334,6 +390,9 @@ public class NAOSManagedDevice: NSObject {
 		defer { mutex.signal() }
 
 		// check state
+		if stopped {
+			throw NAOSManagedError.stopped
+		}
 		if !connected {
 			throw NAOSManagedError.notConnected
 		}
@@ -363,6 +422,28 @@ public class NAOSManagedDevice: NSObject {
 
 		// set flag
 		connected = false
+	}
+
+	/// Stop will disconnect and permanently disable the device.
+	public func stop() async {
+		// disconnect
+		try? await disconnect()
+
+		// cancel updater
+		updaterTask?.cancel()
+		updaterTask = nil
+
+		// finish all event streams
+		eventSubsLock.lock()
+		let subs = eventSubs
+		eventSubs = [:]
+		eventSubsLock.unlock()
+		for (_, cont) in subs {
+			cont.finish()
+		}
+
+		// set flag
+		stopped = true
 	}
 
 	// Helpers
@@ -397,12 +478,15 @@ public class NAOSManagedDevice: NSObject {
 		}
 	}
 
-	// NAOSManager
-
-	func didDisconnect(error: Error) async {
+	private func didDisconnect(error: Error?) async {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }
+
+		// check state
+		if !connected {
+			return
+		}
 
 		// clear session
 		session?.cleanup()
@@ -415,11 +499,7 @@ public class NAOSManagedDevice: NSObject {
 		// set flag
 		connected = false
 
-		// call delegate if available
-		if let d = delegate {
-			DispatchQueue.main.async {
-				d.naosDeviceDidDisconnect(device: self, error: error)
-			}
-		}
+		// emit disconnected
+		emitEvent(.disconnected)
 	}
 }

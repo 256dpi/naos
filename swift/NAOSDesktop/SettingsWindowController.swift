@@ -11,6 +11,7 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 	private var lvc: LoadingViewController!
 	private var uvc: UnlockViewController?
 	private var svc: SettingsViewController?
+	private var eventsTask: Task<Void, Never>?
 
 	override func windowDidLoad() {
 		super.windowDidLoad()
@@ -32,8 +33,41 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 			self.close()
 		}
 
+		// watch for lifecycle events
+		eventsTask = Task { @MainActor in
+			for await event in device.events() {
+				switch event {
+				case .disconnected:
+					// show connecting view
+					contentViewController = lvc
+					svc = nil
+					// reconnect silently
+					reconnect()
+				case .connected:
+					break
+				}
+			}
+		}
+
 		// connect
 		connect()
+	}
+
+	func reconnect() {
+		Task {
+			// retry until connected
+			while !Task.isCancelled {
+				do {
+					try await device.connect()
+					break
+				} catch {
+					try? await Task.sleep(for: .seconds(1))
+				}
+			}
+
+			// show device
+			showDevice()
+		}
 	}
 
 	func connect() {
@@ -47,22 +81,27 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 				return
 			}
 
-			// check if locked
-			if device.locked {
-				// show unlock view
-				uvc = loadVC("UnlockViewController") as? UnlockViewController
-				uvc!.device = device
-				uvc!.swc = self
-				contentViewController = uvc
-			} else {
-				// show settings view
-				svc = loadVC("SettingsViewController") as? SettingsViewController
-				svc!.device = device
-				contentViewController = svc
+			// show device
+			showDevice()
+		}
+	}
 
-				// trigger refresh
-				svc?.refresh(self)
-			}
+	private func showDevice() {
+		// check if locked
+		if device.locked {
+			// show unlock view
+			uvc = loadVC("UnlockViewController") as? UnlockViewController
+			uvc!.device = device
+			uvc!.swc = self
+			contentViewController = uvc
+		} else {
+			// show settings view
+			svc = loadVC("SettingsViewController") as? SettingsViewController
+			svc!.device = device
+			contentViewController = svc
+
+			// trigger refresh
+			svc?.refresh(self)
 		}
 	}
 
@@ -88,20 +127,15 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 		}
 	}
 
-	func naosDeviceDidDisconnect(device _: NAOSManagedDevice, error _: Error) {
-		// show connecting view
-		contentViewController = lvc
-		svc = nil
-
-		// reconnect
-		connect()
-	}
-
 	// NSWindowDelegate
 
 	func windowShouldClose(_: NSWindow) -> Bool {
 		// let manager close window
 		DeviceManager.shared.closeDevice(device: device)
+
+		// cancel events task
+		eventsTask?.cancel()
+		eventsTask = nil
 
 		// disconnect device
 		Task {
