@@ -44,6 +44,14 @@ public struct NAOSParamMode: OptionSet {
 	public static let system = NAOSParamMode(rawValue: 1 << 1)
 	public static let application = NAOSParamMode(rawValue: 1 << 2)
 	public static let locked = NAOSParamMode(rawValue: 1 << 4)
+
+	public func valid() -> Bool {
+		let mask = NAOSParamMode.volatile.rawValue
+			| NAOSParamMode.system.rawValue
+			| NAOSParamMode.application.rawValue
+			| NAOSParamMode.locked.rawValue
+		return rawValue & ~mask == 0
+	}
 }
 
 /// A parameter description.
@@ -121,6 +129,9 @@ public class NAOSParams {
 				throw NAOSSessionError.invalidMessage
 			}
 			let mode = NAOSParamMode(rawValue: reply[2])
+			guard mode.valid() else {
+				throw NAOSSessionError.invalidMessage
+			}
 			guard let name = String(data: Data(reply[3...]), encoding: .utf8) else {
 				throw NAOSSessionError.invalidMessage
 			}
@@ -163,6 +174,9 @@ public class NAOSParams {
 		if refs != nil {
 			map = UInt64(0)
 			for ref in refs! {
+				if ref >= 64 {
+					throw NAOSSessionError.invalidMessage
+				}
 				map |= (1 << ref)
 			}
 		}

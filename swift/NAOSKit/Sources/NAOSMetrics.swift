@@ -165,6 +165,9 @@ public class NAOSMetrics {
 	public static func readLong(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> [Int32] {
 		// receive value
 		let reply = try await read(session: session, ref: ref, timeout: timeout)
+		if reply.count % 4 != 0 {
+			throw NAOSSessionError.invalidMessage
+		}
 
 		// convert reply
 		var list = [Int32]()
@@ -180,6 +183,9 @@ public class NAOSMetrics {
 	public static func readFloat(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> [Float] {
 		// receive value
 		let reply = try await read(session: session, ref: ref, timeout: timeout)
+		if reply.count % 4 != 0 {
+			throw NAOSSessionError.invalidMessage
+		}
 
 		// convert reply
 		var list = [Float]()
@@ -195,6 +201,9 @@ public class NAOSMetrics {
 	public static func readDouble(session: NAOSSession, ref: UInt8, timeout: TimeInterval = 5) async throws -> [Double] {
 		// receive value
 		let reply = try await read(session: session, ref: ref, timeout: timeout)
+		if reply.count % 8 != 0 {
+			throw NAOSSessionError.invalidMessage
+		}
 
 		// convert reply
 		var list = [Double]()
