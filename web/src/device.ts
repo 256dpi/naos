@@ -11,6 +11,16 @@ export interface Device {
   id(): string;
 
   /**
+   * Returns the device transport type.
+   */
+  type(): string;
+
+  /**
+   * Returns a user-facing device name.
+   */
+  name(): string;
+
+  /**
    * Open opens a channel to the device. An opened channel must fail or be
    * closed before another channel can be opened.
    */
@@ -87,6 +97,7 @@ export class Message {
  */
 export class Channel {
   private readonly tr: Transport;
+  private readonly dev: Device | null;
   private readonly widthValue: number;
   private readonly onClose?: () => void;
   private closed = false;
@@ -95,8 +106,14 @@ export class Channel {
   private readonly sessions = new Map<number, Queue>();
   private readonly closing = new Map<number, Queue>();
 
-  constructor(tr: Transport, width: number, onClose?: () => void) {
+  constructor(
+    tr: Transport,
+    device: Device | null,
+    width: number,
+    onClose?: () => void
+  ) {
     this.tr = tr;
+    this.dev = device;
     this.widthValue = width;
     this.onClose = onClose;
     const start = this.tr.start(
@@ -120,6 +137,10 @@ export class Channel {
 
   width(): number {
     return this.widthValue;
+  }
+
+  device(): Device | null {
+    return this.dev;
   }
 
   subscribe(queue: Queue) {

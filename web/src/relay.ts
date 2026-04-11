@@ -80,6 +80,14 @@ export class RelayDevice implements Device {
     return `${this.host.device.id()}/${this.device}`;
   }
 
+  type() {
+    return "Relay";
+  }
+
+  name() {
+    return `Relay: ${this.device}`;
+  }
+
   async open(): Promise<Channel> {
     // check channel
     if (this.ch) {
@@ -127,7 +135,7 @@ export class RelayDevice implements Device {
       },
     };
 
-    this.ch = new Channel(transport, 10, () => {
+    this.ch = new Channel(transport, this, 10, () => {
       this.ch = null;
     });
     return this.ch;

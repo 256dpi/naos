@@ -48,6 +48,14 @@ export class BLEDevice implements Device {
     return "ble/" + this.dev.id;
   }
 
+  type() {
+    return "BLE";
+  }
+
+  name() {
+    return this.dev.name || "Unnamed";
+  }
+
   async open(): Promise<Channel> {
     // check channel
     if (this.ch) {
@@ -109,7 +117,7 @@ export class BLEDevice implements Device {
       },
     };
 
-    this.ch = new Channel(transport, 10, () => {
+    this.ch = new Channel(transport, this, 10, () => {
       this.ch = null;
     });
     return this.ch;

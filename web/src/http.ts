@@ -17,6 +17,14 @@ export class HTTPDevice implements Device {
     return "http/" + this.address;
   }
 
+  type() {
+    return "HTTP";
+  }
+
+  name() {
+    return "Unnamed";
+  }
+
   async open(): Promise<Channel> {
     // check channel
     if (this.ch) {
@@ -57,7 +65,7 @@ export class HTTPDevice implements Device {
       },
     };
 
-    this.ch = new Channel(transport, 10, () => {
+    this.ch = new Channel(transport, this, 10, () => {
       this.ch = null;
     });
     return this.ch;

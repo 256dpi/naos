@@ -1,5 +1,6 @@
 import { SerialPort } from "serialport";
 import ReadlineParser from "@serialport/parser-readline";
+import * as path from "node:path";
 import { Channel, Device, Message, Transport } from "./device";
 import { concat, toBase64, toBuffer } from "./utils";
 
@@ -33,6 +34,14 @@ export class NodeSerialDevice implements Device {
 
   id() {
     return `serial/${this.path}`;
+  }
+
+  type() {
+    return "Serial";
+  }
+
+  name() {
+    return path.basename(this.path);
   }
 
   async open(): Promise<Channel> {
@@ -121,7 +130,7 @@ export class NodeSerialDevice implements Device {
       },
     };
 
-    this.ch = new Channel(transport, 1, () => {
+    this.ch = new Channel(transport, this, 1, () => {
       this.ch = null;
     });
     return this.ch;

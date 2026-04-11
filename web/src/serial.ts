@@ -40,6 +40,15 @@ export class SerialDevice implements Device {
     return `serial/${info.usbProductId ?? "unknown"}`;
   }
 
+  type() {
+    return "Serial";
+  }
+
+  name() {
+    const info = this.port.getInfo();
+    return `${info.usbProductId ?? "unknown"}`;
+  }
+
   async open(): Promise<Channel> {
     // check channel
     if (this.ch) {
@@ -123,7 +132,7 @@ export class SerialDevice implements Device {
       },
     };
 
-    this.ch = new Channel(transport, 1, () => {
+    this.ch = new Channel(transport, this, 1, () => {
       this.ch = null;
     });
     return this.ch;

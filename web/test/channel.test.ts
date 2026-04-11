@@ -41,7 +41,7 @@ class MockTransport implements Transport {
 
 test("routes owned session traffic", async () => {
   const transport = new MockTransport();
-  const channel = new Channel(transport, 10);
+  const channel = new Channel(transport, null, 10);
   const queue = new Queue();
   channel.subscribe(queue);
 
@@ -67,7 +67,7 @@ test("routes owned session traffic", async () => {
 
 test("rejects wrong-owner writes", async () => {
   const transport = new MockTransport();
-  const channel = new Channel(transport, 10);
+  const channel = new Channel(transport, null, 10);
   const owner = new Queue();
   const other = new Queue();
   channel.subscribe(owner);
@@ -86,7 +86,7 @@ test("rejects wrong-owner writes", async () => {
 
 test("registers pending open before write returns", async () => {
   const transport = new MockTransport();
-  const channel = new Channel(transport, 10);
+  const channel = new Channel(transport, null, 10);
   const queue = new Queue();
   channel.subscribe(queue);
 
@@ -107,7 +107,7 @@ test("registers pending open before write returns", async () => {
 test("transport close closes channel once", async () => {
   const transport = new MockTransport();
   let closes = 0;
-  const channel = new Channel(transport, 10, () => {
+  const channel = new Channel(transport, null, 10, () => {
     closes += 1;
   });
 
@@ -120,4 +120,23 @@ test("transport close closes channel once", async () => {
   await channel.close();
   assert.equal(transport.closes, 1);
   assert.equal(closes, 1);
+});
+
+test("exposes originating device metadata", () => {
+  const transport = new MockTransport();
+  const device = {
+    id: () => "test/device",
+    type: () => "Test",
+    name: () => "Test Device",
+    open: async () => {
+      throw new Error("not implemented");
+    },
+  };
+
+  const channel = new Channel(transport, device, 10);
+
+  assert.equal(channel.device(), device);
+  assert.equal(channel.device()?.id(), "test/device");
+  assert.equal(channel.device()?.type(), "Test");
+  assert.equal(channel.device()?.name(), "Test Device");
 });
