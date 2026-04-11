@@ -24,6 +24,7 @@
 		52BD19E22561EB48006D3507 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52BD19E12561EB48006D3507 /* CoreBluetooth.framework */; };
 		52CD4FA82A7A46530088252A /* FilesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CD4FA72A7A46530088252A /* FilesViewController.swift */; };
 		52F8D09E2909D89700F8A59C /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F8D09D2909D89700F8A59C /* Utils.swift */; };
+		52DD00012ECA100000000001 /* DesktopDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52DD00022ECA100000000002 /* DesktopDevice.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +48,7 @@
 		52BD19E12561EB48006D3507 /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = System/Library/Frameworks/CoreBluetooth.framework; sourceTree = SDKROOT; };
 		52CD4FA72A7A46530088252A /* FilesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesViewController.swift; sourceTree = "<group>"; };
 		52F8D09D2909D89700F8A59C /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
+		52DD00022ECA100000000002 /* DesktopDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopDevice.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -100,6 +102,7 @@
 			children = (
 				52BD19B82561EA93006D3507 /* AppDelegate.swift */,
 				52BD19C82561EB20006D3507 /* DeviceManager.swift */,
+				52DD00022ECA100000000002 /* DesktopDevice.swift */,
 				52BD19CA2561EB27006D3507 /* LoadingViewController.swift */,
 				52BD19D32561EB2D006D3507 /* UnlockViewController.swift */,
 				52BD19D42561EB2D006D3507 /* SettingsParameterValue.swift */,
@@ -254,6 +257,7 @@
 				52BD19D92561EB2E006D3507 /* SettingsWindowController.swift in Sources */,
 				52CD4FA82A7A46530088252A /* FilesViewController.swift in Sources */,
 				52BD19CB2561EB27006D3507 /* LoadingViewController.swift in Sources */,
+				52DD00012ECA100000000001 /* DesktopDevice.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

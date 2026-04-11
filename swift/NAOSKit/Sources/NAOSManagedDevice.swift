@@ -6,52 +6,6 @@
 import Foundation
 import Semaphore
 
-/// The object representing a single NAOS parameter.
-public struct NAOSParameter: Hashable {
-	public var name: String
-	public var type: NAOSParamType = .raw
-	public var mode: NAOSParamMode = .init(rawValue: 0)
-	public var ref: UInt8 = 0
-
-	public func hash(into hasher: inout Hasher) {
-		hasher.combine(name)
-	}
-
-	public static func == (lhs: NAOSParameter, rhs: NAOSParameter) -> Bool {
-		return lhs.name == rhs.name
-	}
-
-	public static let deviceID = NAOSParameter(name: "device-id")
-	public static let deviceName = NAOSParameter(name: "device-name")
-	public static let appType = NAOSParameter(name: "app-name")
-	public static let appVersion = NAOSParameter(name: "app-version")
-	public static let connectionStatus = NAOSParameter(name: "connection-status")
-	public static let battery = NAOSParameter(name: "battery")
-	public static let uptime = NAOSParameter(name: "uptime")
-
-	public func format(value: String) -> String {
-		let num = Double(value) ?? 0
-		switch self {
-		case .connectionStatus:
-			return value.capitalized
-		case .battery:
-			return String(format: "%.0f%%", num * 100)
-		case .uptime:
-			let formatter = DateComponentsFormatter()
-			formatter.allowedUnits = [.hour, .minute, .second]
-			formatter.unitsStyle = .abbreviated
-			return formatter.string(from: num / 1000) ?? ""
-		default:
-			return value
-		}
-	}
-}
-
-/// The delegate implemented by objects
-public protocol NAOSManagedDeviceDelegate {
-	func naosDeviceDidUpdate(device: NAOSManagedDevice, parameter: NAOSParameter)
-}
-
 /// A lifecycle event emitted by a managed device.
 public enum NAOSManagedDeviceEvent {
 	case connected
@@ -72,105 +26,50 @@ public enum NAOSManagedError: LocalizedError {
 	}
 }
 
-public class NAOSManagedDevice: NSObject {
+open class NAOSManagedDevice: NSObject {
 	private var mutex = AsyncSemaphore(value: 1)
 	private var session: NAOSSession?
-	private var updaterTask: Task<Void, Never>?
+	private var channel: NAOSChannel?
+	private var pingerTask: Task<Void, Never>?
 	private var eventSubs: [UUID: AsyncStream<NAOSManagedDeviceEvent>.Continuation] = [:]
 	private var eventSubsLock = NSLock()
 	private var stopped = false
+	private var password: String = ""
 
 	public private(set) var device: NAOSDevice
-	public private(set) var channel: NAOSChannel? = nil
-	var updatable: Set<NAOSParameter> = Set()
-	var maxAge: UInt64 = 0
-
-	public var delegate: NAOSManagedDeviceDelegate?
 	public private(set) var active: Bool = false
-	public private(set) var canUpdate: Bool = false
-	public private(set) var canFS: Bool = false
-	public private(set) var canRelay: Bool = false
-	public private(set) var hasMetrics: Bool = false
 	public private(set) var locked: Bool = false
-	public private(set) var mtu: UInt16 = 0
-
-	private var password: String = ""
-	private let stateLock = NSLock()
-	private var _availableParameters: [NAOSParameter] = []
-	private var _parameters: [NAOSParameter: String] = [:]
-	private var _relayDevices: [NAOSDevice] = []
-
-	public private(set) var availableParameters: [NAOSParameter] {
-		get { stateLock.withLock { _availableParameters } }
-		set { stateLock.withLock { _availableParameters = newValue } }
-	}
-	public var parameters: [NAOSParameter: String] {
-		get { stateLock.withLock { _parameters } }
-		set { stateLock.withLock { _parameters = newValue } }
-	}
-	public private(set) var relayDevices: [NAOSDevice] {
-		get { stateLock.withLock { _relayDevices } }
-		set { stateLock.withLock { _relayDevices = newValue } }
-	}
 
 	public init(device: NAOSDevice) {
-		// initialize instance
+		// set device
 		self.device = device
 
 		// finish init
 		super.init()
 
-		// initialize device name and type
-		parameters[.deviceName] = device.name()
-		parameters[.appType] = "unknown"
-
-		// run updater
-		updaterTask = Task { [weak self] in
+		// run pinger
+		pingerTask = Task { [weak self] in
 			while !Task.isCancelled {
-				// wait a second
 				try? await Task.sleep(for: .seconds(1))
 				if Task.isCancelled { break }
-
-				// get strong reference for this iteration
 				guard let self else { break }
 
-				// collect updates
-				var updates = [NAOSParamUpdate]()
-				try? await self.useSession { session in
-					updates = try await NAOSParams.collect(session: session, refs: nil, since: self.maxAge)
-				}
-
-				// apply updates
 				await self.mutex.wait()
-				for update in updates {
-					if let param = (self.availableParameters.first { p in p.ref == update.ref }) {
-						self.parameters[param] = String(data: update.value, encoding: .utf8) ?? ""
-						self.maxAge = max(self.maxAge, update.age)
+				if self.session != nil {
+					do {
+						try await self.session!.ping(timeout: 5)
+					} catch {
+						self.session?.cleanup()
+						self.session = nil
 					}
 				}
 				self.mutex.signal()
-
-				// call delegate if present
-				if let d = self.delegate {
-					for update in updates {
-						DispatchQueue.main.async {
-							if let param =
-								(self.availableParameters.first { p in
-									p.ref == update.ref
-								})
-							{
-								d.naosDeviceDidUpdate(
-									device: self, parameter: param)
-							}
-						}
-					}
-				}
 			}
 		}
 	}
 
 	deinit {
-		updaterTask?.cancel()
+		pingerTask?.cancel()
 		stopped = true
 	}
 
@@ -189,15 +88,6 @@ public class NAOSManagedDevice: NSObject {
 				self.eventSubs.removeValue(forKey: id)
 				self.eventSubsLock.unlock()
 			}
-		}
-	}
-
-	private func emitEvent(_ event: NAOSManagedDeviceEvent) {
-		eventSubsLock.lock()
-		let subs = Array(eventSubs.values)
-		eventSubsLock.unlock()
-		for cont in subs {
-			cont.yield(event)
 		}
 	}
 
@@ -224,11 +114,8 @@ public class NAOSManagedDevice: NSObject {
 
 		// read lock status
 		try await withSession { session in
-			locked = try await session.status().contains(.locked)
+			self.locked = try await session.status().contains(.locked)
 		}
-
-		// reset max age
-		maxAge = 0
 
 		// emit connected
 		emitEvent(.connected)
@@ -237,70 +124,8 @@ public class NAOSManagedDevice: NSObject {
 		Task { [weak self] in
 			await ch.done
 			guard let self else { return }
-			await self.didDisconnect(error: nil)
+			await self.didDisconnect()
 		}
-	}
-
-	/// Refresh will perform a full device refresh and update all parameters.
-	public func refresh() async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
-		// check state
-		if !active {
-			throw NAOSManagedError.notConnected
-		}
-
-		// use session
-		try await withSession { session in
-			// check endpoint existence
-			self.canUpdate = try await session.query(endpoint: NAOSUpdate.endpoint)
-			self.canFS = try await session.query(endpoint: NAOSFS.endpoint)
-			self.canRelay = try await session.query(endpoint: NAOSRelay.endpoint)
-			self.hasMetrics = try await session.query(endpoint: NAOSMetrics.endpoint)
-
-			// list parameters
-			let list = try await NAOSParams.list(session: session)
-
-			// save parameters
-			availableParameters = []
-			for info in list {
-				availableParameters.append(
-					NAOSParameter(
-						name: info.name, type: info.type, mode: info.mode,
-						ref: info.ref))
-			}
-
-			// prepare map
-			let map = availableParameters.filter { p in p.type != .action }.map { p in p.ref }
-
-			// refresh parameters
-			for update in try await NAOSParams.collect(session: session, refs: map, since: 0) {
-				if let param = availableParameters.first(where: { p in p.ref == update.ref }) {
-					parameters[param] = String(data: update.value, encoding: .utf8) ?? ""
-					maxAge = max(maxAge, update.age)
-				}
-			}
-
-			// scan relay devices
-			if self.canRelay {
-				self.relayDevices = try (await NAOSRelay.scan(session: session)).map { device in
-					NAOSRelayDevice(host: self, device: device)
-				}
-			}
-			
-			// get MTU
-			self.mtu = try await session.getMTU()
-		}
-	}
-
-	/// Returns the title of the device.
-	public func title() -> String {
-		// TODO: Precompute during refresh and updates?
-		
-		// format title
-		return device.type() + ": " + (parameters[.deviceName] ?? "") + " (" + (parameters[.appType] ?? "") + ")"
 	}
 
 	/// Unlock will attempt to unlock the device and returns its success.
@@ -318,64 +143,11 @@ public class NAOSManagedDevice: NSObject {
 		try await withSession { session in
 			if try await session.unlock(password: password) {
 				self.password = password
-				locked = false
+				self.locked = false
 			}
 		}
 
 		return !locked
-	}
-
-	/// Read will read the specified parameter. The result is placed into the parameters dictionary.
-	public func read(parameter: NAOSParameter) async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
-		// check state
-		if !active {
-			throw NAOSManagedError.notConnected
-		}
-
-		// use session
-		try await withSession { session in
-			// read value
-			let value = try await NAOSParams.read(session: session, ref: parameter.ref)
-
-			// write parameter
-			parameters[parameter] = String(data: value, encoding: String.Encoding.utf8)
-		}
-
-		// call delegate if present
-		if let d = delegate {
-			DispatchQueue.main.async {
-				d.naosDeviceDidUpdate(device: self, parameter: parameter)
-			}
-		}
-	}
-
-	/// Write will write the specified parameter. The value is taken from the parameters dictionary.
-	public func write(parameter: NAOSParameter) async throws {
-		// acquire mutex
-		await mutex.wait()
-		defer { mutex.signal() }
-
-		// check state
-		if !active {
-			throw NAOSManagedError.notConnected
-		}
-
-		// write parameter
-		try await withSession { session in
-			let value = (parameters[parameter] ?? "").data(using: .utf8) ?? Data()
-			try await NAOSParams.write(session: session, ref: parameter.ref, value: value)
-		}
-
-		// call delegate if present
-		if let d = delegate {
-			DispatchQueue.main.async {
-				d.naosDeviceDidUpdate(device: self, parameter: parameter)
-			}
-		}
 	}
 
 	/// NewSession will create a new session and return it.
@@ -442,9 +214,9 @@ public class NAOSManagedDevice: NSObject {
 		// deactivate
 		try? await deactivate()
 
-		// cancel updater
-		updaterTask?.cancel()
-		updaterTask = nil
+		// cancel pinger
+		pingerTask?.cancel()
+		pingerTask = nil
 
 		// finish all event streams
 		eventSubsLock.lock()
@@ -493,7 +265,7 @@ public class NAOSManagedDevice: NSObject {
 		}
 	}
 
-	private func didDisconnect(error: Error?) async {
+	private func didDisconnect() async {
 		// acquire mutex
 		await mutex.wait()
 		defer { mutex.signal() }
@@ -516,5 +288,14 @@ public class NAOSManagedDevice: NSObject {
 
 		// emit disconnected
 		emitEvent(.disconnected)
+	}
+
+	private func emitEvent(_ event: NAOSManagedDeviceEvent) {
+		eventSubsLock.lock()
+		let subs = Array(eventSubs.values)
+		eventSubsLock.unlock()
+		for cont in subs {
+			cont.yield(event)
+		}
 	}
 }

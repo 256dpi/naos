@@ -14,10 +14,10 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 	private var bleManager: NAOSBLEManager!
 	private var httpDiscover: Cancellable!
 	private var serialTask: Task<Void, Never>?
-	private var serialDevices: [NAOSSerialDescriptor: NAOSManagedDevice] = [:]
+	private var serialDevices: [NAOSSerialDescriptor: DesktopDevice] = [:]
 	
-	private var devices: [NAOSManagedDevice: NSMenuItem] = [:]
-	private var controllers: [NAOSManagedDevice: SettingsWindowController] = [:]
+	private var devices: [DesktopDevice: NSMenuItem] = [:]
+	private var controllers: [DesktopDevice: SettingsWindowController] = [:]
 
 	static var shared: DeviceManager!
 
@@ -35,7 +35,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 		httpDiscover = NAOSHTTPDiscover{ descriptor in
 			// add device
 			Task { @MainActor in
-				self.addDevice(device: NAOSManagedDevice(device: NAOSHTTPDevice(host: descriptor.host)))
+				self.addDevice(device: DesktopDevice(device: NAOSHTTPDevice(host: descriptor.host)))
 			}
 		}
 
@@ -49,7 +49,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 
 				// handle added ports
 				for descriptor in ports.subtracting(known) {
-					let device = NAOSManagedDevice(device: NAOSSerialDevice(path: descriptor.path))
+					let device = DesktopDevice(device: NAOSSerialDevice(path: descriptor.path))
 					self.serialDevices[descriptor] = device
 					await MainActor.run {
 						self.addDevice(device: device)
@@ -99,7 +99,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 		serialTask?.cancel()
 	}
 	
-	func addDevice(device: NAOSManagedDevice) {
+	func addDevice(device: DesktopDevice) {
 		// add menu item for new device
 		let item = NSMenuItem()
 		item.title = device.title()
@@ -119,7 +119,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 		}
 	}
 
-	func removeDevice(device: NAOSManagedDevice) {
+	func removeDevice(device: DesktopDevice) {
 		// drop menu item
 		if let item = devices.removeValue(forKey: device) {
 			devicesMenu.removeItem(item)
@@ -136,7 +136,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 		closeDevice(device: device)
 	}
 
-	func openDevice(device: NAOSManagedDevice) {
+	func openDevice(device: DesktopDevice) {
 		Task { @MainActor in
 			// check if a controller already exists
 			for (d, c) in controllers {
@@ -174,7 +174,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 		}
 	}
 
-	func closeDevice(device: NAOSManagedDevice) {
+	func closeDevice(device: DesktopDevice) {
 		Task { @MainActor in
 			// close window
 			for (d, c) in controllers {
@@ -197,7 +197,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 
 	@objc func open(_ menuItem: NSMenuItem) {
 		// get associated device
-		let device = menuItem.representedObject as! NAOSManagedDevice
+		let device = menuItem.representedObject as! DesktopDevice
 
 		// open device
 		openDevice(device: device)
@@ -212,7 +212,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 
 	func naosBLEManagerDidDiscoverDevice(manager: NAOSBLEManager, descriptor: NAOSBLEDescriptor) {
 		// add device
-		addDevice(device: NAOSManagedDevice(device: NAOSBLEDevice(descriptor: descriptor)))
+		addDevice(device: DesktopDevice(device: NAOSBLEDevice(descriptor: descriptor)))
 	}
 
 	func naosBLEManagerDidReset(manager _: NAOSBLEManager) {

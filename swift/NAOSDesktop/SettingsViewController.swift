@@ -110,7 +110,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 		let relayDevice = a.representedObject as! NAOSDevice
 
 		// prepare managed device and open it
-		let managedDevice = NAOSManagedDevice(device: relayDevice)
+		let managedDevice = DesktopDevice(device: relayDevice)
 		DeviceManager.shared.openDevice(device: managedDevice)
 	}
 
@@ -240,7 +240,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 
 	// SettingsWindowController
 
-	func didUpdateParameter(parameter: NAOSParameter) {
+	func didUpdateParameter(parameter: Parameter) {
 		// update connection status
 		if parameter == .connectionStatus {
 			statusLabel.stringValue =
@@ -259,7 +259,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 
 	// SettingsParameterValueDelegate
 
-	func didChangeTextField(parameter: NAOSParameter, value: String) {
+	func didChangeTextField(parameter: Parameter, value: String) {
 		// update parameter
 		device.parameters[parameter] = value
 
@@ -283,7 +283,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 		}
 	}
 
-	func didClickCheckbox(parameter: NAOSParameter, value: Bool) {
+	func didClickCheckbox(parameter: Parameter, value: Bool) {
 		// update parameter
 		device.parameters[parameter] = value ? "1" : "0"
 
@@ -297,7 +297,7 @@ class SettingsViewController: SessionViewController, NSTableViewDataSource, NSTa
 		}
 	}
 
-	func didClickButton(parameter: NAOSParameter) {
+	func didClickButton(parameter: Parameter) {
 		// update parameter
 		device.parameters[parameter] = ""
 

@@ -7,15 +7,15 @@ import Cocoa
 import NAOSKit
 
 public protocol SettingsParameterValueDelegate {
-	func didChangeTextField(parameter: NAOSParameter, value: String)
-	func didClickCheckbox(parameter: NAOSParameter, value: Bool)
-	func didClickButton(parameter: NAOSParameter)
+	func didChangeTextField(parameter: Parameter, value: String)
+	func didClickCheckbox(parameter: Parameter, value: Bool)
+	func didClickButton(parameter: Parameter)
 }
 
 class SettingsParameterValue: NSTableCellView {
 	@IBOutlet var checkbox: NSButton!
 	@IBOutlet var button: NSButton!
-	public var parameter: NAOSParameter?
+	public var parameter: Parameter?
 	public var delegate: SettingsParameterValueDelegate?
 
 	@IBAction func didChange(sender: NSTextField) {

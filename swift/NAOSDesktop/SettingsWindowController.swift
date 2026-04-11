@@ -6,8 +6,8 @@
 import Cocoa
 import NAOSKit
 
-class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManagedDeviceDelegate {
-	private var device: NAOSManagedDevice!
+class SettingsWindowController: NSWindowController, NSWindowDelegate, DesktopDeviceDelegate {
+	private var device: DesktopDevice!
 	private var lvc: LoadingViewController!
 	private var uvc: UnlockViewController?
 	private var svc: SettingsViewController?
@@ -20,7 +20,7 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 		window!.delegate = self
 	}
 
-	func configure(device: NAOSManagedDevice) {
+	func configure(device: DesktopDevice) {
 		// save device
 		self.device = device
 		device.delegate = self
@@ -118,9 +118,9 @@ class SettingsWindowController: NSWindowController, NSWindowDelegate, NAOSManage
 		svc!.refresh(self)
 	}
 
-	// NAOSManagedDeviceDelegate
+	// DesktopDeviceDelegate
 
-	func naosDeviceDidUpdate(device _: NAOSManagedDevice, parameter: NAOSParameter) {
+	func naosDeviceDidUpdate(device _: DesktopDevice, parameter: Parameter) {
 		// forward parameter update
 		if let svc = svc {
 			svc.didUpdateParameter(parameter: parameter)
