@@ -156,6 +156,9 @@ export async function readLongMetrics(
 ): Promise<number[]> {
   // receive value
   const reply = await readMetrics(s, ref, timeout);
+  if (reply.length % 4 !== 0) {
+    throw new Error(`invalid metric payload length: ${reply.length}`);
+  }
 
   // convert reply
   let list: number[] = [];
@@ -174,6 +177,9 @@ export async function readFloatMetrics(
 ): Promise<number[]> {
   // receive value
   const reply = await readMetrics(s, ref, timeout);
+  if (reply.length % 4 !== 0) {
+    throw new Error(`invalid metric payload length: ${reply.length}`);
+  }
 
   // convert reply
   let list: number[] = [];
@@ -192,6 +198,9 @@ export async function readDoubleMetrics(
 ): Promise<number[]> {
   // receive value
   const reply = await readMetrics(s, ref, timeout);
+  if (reply.length % 8 !== 0) {
+    throw new Error(`invalid metric payload length: ${reply.length}`);
+  }
 
   // convert reply
   let list: number[] = [];

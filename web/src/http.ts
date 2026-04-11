@@ -35,7 +35,9 @@ export class HTTPDevice implements Device {
     const transport: Transport = {
       start: (onData, onClose) => {
         socket.onmessage = async (msg) => {
-          const frame = Message.parse(new Uint8Array(await msg.data.arrayBuffer()));
+          const frame = Message.parse(
+            new Uint8Array(await msg.data.arrayBuffer())
+          );
           if (frame) {
             onData(frame);
           }

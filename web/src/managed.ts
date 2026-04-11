@@ -78,14 +78,14 @@ export class ManagedDevice {
     return unlocked;
   }
 
-  async newSession(): Promise<Session> {
+  async newSession(timeout: number = 5000): Promise<Session> {
     // check state
     if (!this.active()) {
       throw new Error("device not active");
     }
 
     // open new session
-    const session = await Session.open(this.channel);
+    const session = await Session.open(this.channel, timeout);
 
     // get session status
     let status = await session.status(1000);

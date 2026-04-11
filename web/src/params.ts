@@ -19,6 +19,26 @@ export enum ParamMode {
   locked = 1 << 4,
 }
 
+function validParamType(type: number): type is ParamType {
+  return (
+    type === ParamType.raw ||
+    type === ParamType.string ||
+    type === ParamType.bool ||
+    type === ParamType.long ||
+    type === ParamType.double ||
+    type === ParamType.action
+  );
+}
+
+function validParamMode(mode: number): mode is ParamMode {
+  const mask =
+    ParamMode.volatile |
+    ParamMode.system |
+    ParamMode.application |
+    ParamMode.locked;
+  return (mode & ~mask) === 0;
+}
+
 export interface ParamInfo {
   ref: number;
   type: ParamType;
@@ -90,7 +110,10 @@ export async function listParams(
     const mode = reply[2];
     const name = toString(reply.slice(3));
 
-    // TODO: Check type and mode.
+    // check type and mode
+    if (!validParamType(type) || !validParamMode(mode)) {
+      throw new Error("invalid type or mode");
+    }
 
     // append info
     list.push({ ref, type, mode, name });
@@ -137,6 +160,9 @@ export async function collectParams(
   if (refs.length > 0) {
     map = BigInt(0);
     for (const ref of refs) {
+      if (ref >= 64) {
+        throw new Error(`ref ${ref} exceeds bitmap capacity`);
+      }
       map |= BigInt(1) << BigInt(ref);
     }
   }

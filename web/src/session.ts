@@ -6,12 +6,12 @@ export enum Status {
 }
 
 export class Session {
-  private readonly id: number;
+  private readonly sid: number;
   private readonly ch: Channel;
   private readonly qu: Queue;
   private mtu: number = 0;
 
-  static async open(ch: Channel): Promise<Session> {
+  static async open(ch: Channel, timeout: number = 5000): Promise<Session> {
     // prepare queue
     const queue = new Queue();
 
@@ -28,7 +28,7 @@ export class Session {
 
       // await reply
       let sid;
-      const deadline = Date.now() + 10 * 1000;
+      const deadline = Date.now() + timeout;
       for (;;) {
         const remaining = deadline - Date.now();
         if (remaining <= 0) {
@@ -51,9 +51,13 @@ export class Session {
   }
 
   constructor(id: number, ch: Channel, qu: Queue) {
-    this.id = id;
+    this.sid = id;
     this.ch = ch;
     this.qu = qu;
+  }
+
+  id(): number {
+    return this.sid;
   }
 
   channel(): Channel {
@@ -62,7 +66,7 @@ export class Session {
 
   async ping(timeout: number = 5000) {
     // write command
-    await this.write(new Message(this.id, 0xfe, null));
+    await this.write(new Message(this.sid, 0xfe, null));
 
     // read reply
     const msg = await this.read(timeout);
@@ -77,7 +81,7 @@ export class Session {
 
   async query(endpoint: number, timeout: number = 5000) {
     // write command
-    await this.write(new Message(this.id, endpoint, null));
+    await this.write(new Message(this.sid, endpoint, null));
 
     // read reply
     const msg = await this.read(timeout);
@@ -127,7 +131,7 @@ export class Session {
 
   async send(endpoint: number, data: Uint8Array, ackTimeout: number) {
     // write message
-    await this.write(new Message(this.id, endpoint, data));
+    await this.write(new Message(this.sid, endpoint, data));
 
     // return if timeout is zero
     if (ackTimeout === 0) {
@@ -207,7 +211,7 @@ export class Session {
   async end(timeout: number = 5000) {
     try {
       // write command
-      await this.write(new Message(this.id, 0xff, null));
+      await this.write(new Message(this.sid, 0xff, null));
 
       // return if timeout is zero
       if (timeout === 0) {
@@ -229,7 +233,7 @@ export class Session {
 
   async read(timeout: number): Promise<Message> {
     const msg = await read(this.qu, timeout);
-    if (msg.session !== this.id) {
+    if (msg.session !== this.sid) {
       throw new Error("invalid message");
     }
     return msg;
