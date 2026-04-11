@@ -1,9 +1,5 @@
 import { Channel, Device, Message, Transport } from "./device";
 
-export function makeHTTPDevice(addr: string): Device {
-  return new HTTPDevice(addr);
-}
-
 export class HTTPDevice implements Device {
   private readonly address: string;
   private ch: Channel | null = null;

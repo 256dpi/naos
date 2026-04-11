@@ -3,7 +3,7 @@ import {
   collectParams,
   listDir,
   listParams,
-  makeHTTPDevice,
+  HTTPDevice,
   makePath,
   ManagedDevice,
   random,
@@ -25,7 +25,7 @@ import {
   readFloatMetrics,
   readLongMetrics,
   RelayDevice,
-  scanRelay,
+  relayCollect,
   authStatus,
   authProvision,
   authDescribe,
@@ -217,7 +217,7 @@ async function http() {
   const addr = prompt("Address", "192.168.1.1");
   if (!addr) return;
 
-  device = new ManagedDevice(makeHTTPDevice(addr));
+  device = new ManagedDevice(new HTTPDevice(addr));
   watchEvents();
   log("HTTP device acquired", "success");
   updateUI();
@@ -465,7 +465,7 @@ async function relay() {
   log("Relay", "heading");
 
   await device.useSession(async (session) => {
-    const devices = await scanRelay(session);
+    const devices = await relayCollect(session);
     log(
       `Found ${devices.length} relay device(s): ${devices.join(", ") || "none"}`
     );

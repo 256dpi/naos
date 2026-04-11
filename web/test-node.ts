@@ -21,7 +21,7 @@ import {
   readDoubleMetrics,
   MetricType,
 } from "./src";
-import { listSerialPorts, NodeSerialDevice } from "./src/serial-node";
+import { serialList, NodeSerialDevice } from "./src/serial-node";
 
 const tests: Record<string, (device: ManagedDevice) => Promise<void>> = {
   async params(device) {
@@ -111,7 +111,7 @@ async function main() {
       process.exit(1);
     }
   } else {
-    const ports = await listSerialPorts();
+    const ports = await serialList();
     if (ports.length === 0) {
       console.error("No serial ports found.");
       process.exit(1);

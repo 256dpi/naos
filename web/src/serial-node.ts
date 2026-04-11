@@ -6,7 +6,7 @@ import { concat, toBase64, toBuffer } from "./utils";
 
 const knownPrefixes = ["tty.SLAB", "tty.usbserial", "tty.usbmodem", "ttyUSB"];
 
-export async function listSerialPorts(): Promise<string[]> {
+export async function serialList(): Promise<string[]> {
   const ports = await SerialPort.list();
 
   // get paths, sort reverse to list combined ports with serial port first

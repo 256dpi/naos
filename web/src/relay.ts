@@ -5,7 +5,7 @@ import { ManagedDevice } from "./managed";
 
 const relayEndpoint = 0x04;
 
-export async function scanRelay(
+export async function relayCollect(
   s: Session,
   timeout: number = 5000
 ): Promise<number[]> {
@@ -35,7 +35,7 @@ export async function scanRelay(
   return list;
 }
 
-export async function linkRelay(
+export async function relayLink(
   s: Session,
   device: number,
   timeout: number = 5000
@@ -45,7 +45,7 @@ export async function linkRelay(
   await s.send(relayEndpoint, cmd, timeout);
 }
 
-export async function sendRelay(
+export async function relaySend(
   s: Session,
   device: number,
   data: Uint8Array
@@ -55,7 +55,7 @@ export async function sendRelay(
   await s.send(relayEndpoint, cmd, 0);
 }
 
-export async function receiveRelay(
+export async function relayReceive(
   s: Session,
   timeout: number = 5000
 ): Promise<Uint8Array> {
@@ -102,7 +102,7 @@ export class RelayDevice implements Device {
     const session = await this.host.newSession();
 
     // link device
-    await linkRelay(session, this.device);
+    await relayLink(session, this.device);
 
     let closed = false;
 
@@ -111,7 +111,7 @@ export class RelayDevice implements Device {
         (async () => {
           while (!closed) {
             try {
-              const msg = Message.parse(await receiveRelay(session));
+              const msg = Message.parse(await relayReceive(session));
               if (msg) {
                 onData(msg);
               }
@@ -127,7 +127,7 @@ export class RelayDevice implements Device {
         })().catch(() => {});
       },
       write: async (msg: Message) => {
-        await sendRelay(session, this.device, msg.build());
+        await relaySend(session, this.device, msg.build());
       },
       close: async () => {
         closed = true;
