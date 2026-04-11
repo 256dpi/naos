@@ -101,6 +101,8 @@ export class Channel {
   private readonly widthValue: number;
   private readonly onClose?: () => void;
   private closed = false;
+  private doneResolve: (() => void) | null = null;
+  readonly done: Promise<void>;
   private readonly queues = new Set<Queue>();
   private readonly opening = new Map<string, Queue>();
   private readonly sessions = new Map<number, Queue>();
@@ -116,6 +118,9 @@ export class Channel {
     this.dev = device;
     this.widthValue = width;
     this.onClose = onClose;
+    this.done = new Promise((resolve) => {
+      this.doneResolve = resolve;
+    });
     const start = this.tr.start(
       (msg) => {
         for (const queue of this.route(msg)) {
@@ -220,6 +225,7 @@ export class Channel {
       await this.tr.close();
     } finally {
       this.onClose?.();
+      this.doneResolve?.();
     }
   }
 

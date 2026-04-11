@@ -104,8 +104,8 @@ export class SerialDevice implements Device {
           // Save the last incomplete line back to the buffer
           buffer = lines[lines.length - 1];
         }
-      } catch (err) {
-        console.error("Error reading stream:", err);
+      } catch {
+        // device disconnected
       } finally {
         onClose();
         reader.releaseLock();
@@ -125,10 +125,11 @@ export class SerialDevice implements Device {
         );
       },
       close: async () => {
-        await writer.close();
-        writer.releaseLock();
-        await reader.cancel();
-        // lock released by reader
+        try { await writer.abort(); } catch {}
+        try { writer.releaseLock(); } catch {}
+        try { await reader.cancel(); } catch {}
+        try { reader.releaseLock(); } catch {}
+        await this.port.close().catch(() => {});
       },
     };
 

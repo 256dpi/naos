@@ -35,8 +35,10 @@ export class BLEDevice implements Device {
     // store device
     this.dev = dev;
 
-    // close open channel if disconnected
+    // close open channel and clear stale GATT state if disconnected
     this.dev.addEventListener("gattserverdisconnected", () => {
+      this.svc = null;
+      this.char = null;
       if (this.ch) {
         this.ch.close().catch(() => {});
         this.ch = null;
@@ -113,7 +115,9 @@ export class BLEDevice implements Device {
         if (disconnect) {
           this.dev.removeEventListener("gattserverdisconnected", disconnect);
         }
-        await this.char.stopNotifications();
+        if (this.char) {
+          await this.char.stopNotifications().catch(() => {});
+        }
       },
     };
 

@@ -3,6 +3,15 @@ import { Queue } from "async-await-queue";
 import { Channel, Device } from "./device";
 import { Session, Status } from "./session";
 
+export type ManagedEvent =
+  | { type: "connected" }
+  | { type: "disconnected" };
+
+interface EventSub {
+  push(event: ManagedEvent): void;
+  close(): void;
+}
+
 export class ManagedDevice {
   private dev: Device | null;
   private pinger: ReturnType<typeof setInterval>;
@@ -10,6 +19,8 @@ export class ManagedDevice {
   private session: Session | null;
   private password: string | null = null;
   private queue = new Queue();
+  private subs: EventSub[] = [];
+  private stopped = false;
 
   constructor(device: Device) {
     // set device
@@ -33,14 +44,90 @@ export class ManagedDevice {
     return this.dev;
   }
 
+  events(): AsyncIterable<ManagedEvent> {
+    const buffer: ManagedEvent[] = [];
+    let resolve: ((value: IteratorResult<ManagedEvent>) => void) | null = null;
+    let done = this.stopped;
+
+    const sub: EventSub = {
+      push: (event: ManagedEvent) => {
+        if (done) return;
+        if (resolve) {
+          const r = resolve;
+          resolve = null;
+          r({ value: event, done: false });
+        } else if (buffer.length < 4) {
+          buffer.push(event);
+        }
+      },
+      close: () => {
+        done = true;
+        if (resolve) {
+          const r = resolve;
+          resolve = null;
+          r({ value: undefined as unknown as ManagedEvent, done: true });
+        }
+      },
+    };
+
+    if (!done) {
+      this.subs.push(sub);
+    }
+
+    const subs = this.subs;
+
+    return {
+      [Symbol.asyncIterator]() {
+        return {
+          next(): Promise<IteratorResult<ManagedEvent>> {
+            if (done && buffer.length === 0) {
+              return Promise.resolve({
+                value: undefined as unknown as ManagedEvent,
+                done: true,
+              });
+            }
+            if (buffer.length > 0) {
+              return Promise.resolve({ value: buffer.shift()!, done: false });
+            }
+            return new Promise((r) => {
+              resolve = r;
+            });
+          },
+          return(): Promise<IteratorResult<ManagedEvent>> {
+            const idx = subs.indexOf(sub);
+            if (idx >= 0) subs.splice(idx, 1);
+            done = true;
+            return Promise.resolve({
+              value: undefined as unknown as ManagedEvent,
+              done: true,
+            });
+          },
+        };
+      },
+    };
+  }
+
   async activate() {
     // check state
     if (this.active()) {
       return;
     }
+    if (this.stopped) {
+      throw new Error("managed device stopped");
+    }
 
     // open channel
-    this.channel = await this.dev.open();
+    const ch = await this.dev.open();
+    this.channel = ch;
+
+    // emit connected
+    this.emit({ type: "connected" });
+
+    // watch for transport loss
+    ch.done.then(() => {
+      if (this.channel !== ch) return;
+      void this.handleDisconnect();
+    });
   }
 
   active(): boolean {
@@ -92,6 +179,9 @@ export class ManagedDevice {
 
   async newSession(timeout: number = 5000): Promise<Session> {
     // check state
+    if (this.stopped) {
+      throw new Error("managed device stopped");
+    }
     if (!this.active()) {
       throw new Error("device not active");
     }
@@ -113,6 +203,9 @@ export class ManagedDevice {
   async useSession(fn: (session: Session) => Promise<void>) {
     await this.queue.run(async () => {
       // check state
+      if (this.stopped) {
+        throw new Error("managed device stopped");
+      }
       if (!this.active()) {
         throw new Error("device not active");
       }
@@ -174,8 +267,39 @@ export class ManagedDevice {
     // stop pinger
     clearInterval(this.pinger);
 
+    // close all subscriber streams
+    for (const sub of this.subs) {
+      sub.close();
+    }
+    this.subs = [];
+    this.stopped = true;
+
     // clear device
     this.dev = null;
     this.password = null;
+  }
+
+  private emit(event: ManagedEvent) {
+    for (const sub of this.subs) {
+      sub.push(event);
+    }
+  }
+
+  private async handleDisconnect() {
+    const channel = this.channel;
+    if (!channel) {
+      return;
+    }
+
+    this.session = null;
+    this.channel = null;
+
+    try {
+      await channel.close();
+    } catch {
+      // ignore
+    }
+
+    this.emit({ type: "disconnected" });
   }
 }

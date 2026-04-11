@@ -113,6 +113,38 @@ let device: ManagedDevice | null = null;
 
 // --- Connection ---
 
+function watchEvents(label: string, reconnect: boolean) {
+  const dev = device;
+  (async () => {
+    for await (const event of dev.events()) {
+      if (event.type === "disconnected") {
+        log("Device disconnected", "error");
+        if (!reconnect) {
+          await dev.stop();
+          if (device === dev) device = null;
+          setStatus("No device", false);
+          return;
+        }
+        setStatus("Reconnecting...", false);
+        // reconnect loop
+        for (;;) {
+          await new Promise((r) => setTimeout(r, 1000));
+          if (device !== dev) return;
+          try {
+            await dev.activate();
+            break;
+          } catch (e) {
+            log(`Reconnect failed: ${e}`, "error");
+          }
+        }
+        if (device !== dev) return;
+        log("Reconnected", "success");
+        setStatus(label, true);
+      }
+    }
+  })();
+}
+
 async function ble() {
   if (device) {
     await device.stop();
@@ -134,6 +166,7 @@ async function ble() {
     check(ok, "Unlock");
   }
 
+  watchEvents("BLE connected", true);
   setStatus("BLE connected", true);
   log("Ready!", "success");
 }
@@ -159,6 +192,7 @@ async function serial() {
     check(ok, "Unlock");
   }
 
+  watchEvents("Serial connected", false);
   setStatus("Serial connected", true);
   log("Ready!", "success");
 }
@@ -172,6 +206,8 @@ async function http() {
   const addr = prompt("Address", "192.168.1.1");
   if (!addr) return;
 
+  log("HTTP device acquired", "success");
+
   device = new ManagedDevice(makeHTTPDevice(addr));
   await device.activate();
 
@@ -180,8 +216,21 @@ async function http() {
     check(ok, "Unlock");
   }
 
+  watchEvents(`HTTP ${addr}`, true);
   setStatus(`HTTP ${addr}`, true);
   log("Ready!", "success");
+}
+
+async function disconnect() {
+  if (!device) {
+    return;
+  }
+
+  await device.stop();
+  device = null;
+
+  setStatus("No device", false);
+  log("Disconnected", "info");
 }
 
 // --- Tests ---
@@ -206,8 +255,6 @@ function decodeParamValue(value: Uint8Array): string {
 async function params() {
   log("Params", "heading");
 
-  await device.activate();
-
   await device.useSession(async (session) => {
     const params = await listParams(session);
 
@@ -227,7 +274,6 @@ async function params() {
     }
   });
 
-  await device.deactivate();
   log("Done!", "success");
 }
 
@@ -241,7 +287,6 @@ async function flash(input: HTMLInputElement) {
   const data = new Uint8Array(await requestFile(input.files[0]));
   log(`Firmware size: ${data.length} bytes`);
 
-  await device.activate();
   const session = await device.newSession();
 
   const setProgress = addProgress(100);
@@ -250,7 +295,6 @@ async function flash(input: HTMLInputElement) {
   });
 
   await session.end(1000);
-  await device.deactivate();
 
   log("Done!", "success");
 }
@@ -621,6 +665,7 @@ async function transfer() {
 window["_ble"] = ble;
 window["_serial"] = serial;
 window["_http"] = http;
+window["_disconnect"] = disconnect;
 window["_params"] = params;
 window["_flash"] = flash;
 window["_fs"] = fs;
