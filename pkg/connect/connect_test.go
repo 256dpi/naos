@@ -230,8 +230,8 @@ func TestDeviceOpenUsesAttach(t *testing.T) {
 	defer server.Close()
 
 	wsURL := "ws" + server.URL[len("http"):]
-	dev := NewDevice(wsURL, "attach-secret", "uuid-1")
-	if got := dev.ID(); got != "connect/uuid-1" {
+	dev := NewDevice(wsURL, "attach-secret")
+	if got := dev.ID(); got != "connect/"+wsURL {
 		t.Fatalf("unexpected device id: %q", got)
 	}
 

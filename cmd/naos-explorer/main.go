@@ -117,7 +117,7 @@ func main() {
 						if token == "" {
 							token = *hubToken
 						}
-						state.registerWithMeta(connect.NewDevice(d.AttachURL, token, d.UUID), d.DeviceName, d.AppName, d.AppVersion)
+						state.registerWithMeta(connect.NewDevice(d.AttachURL, token), d.DeviceName, d.AppName, d.AppVersion)
 					}
 				}
 				time.Sleep(5 * time.Second)

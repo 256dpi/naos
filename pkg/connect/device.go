@@ -2,6 +2,7 @@ package connect
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gorilla/websocket"
 
@@ -11,20 +12,20 @@ import (
 type device struct {
 	url   string
 	token string
-	uuid  string
 }
 
 // NewDevice returns a msg.Device that connects through a Connect server.
-func NewDevice(url string, token string, uuid string) msg.Device {
+func NewDevice(url string, token string) msg.Device {
 	return &device{
 		url:   url,
 		token: token,
-		uuid:  uuid,
 	}
 }
 
 func (d *device) ID() string {
-	return "connect/" + d.uuid
+	url := strings.TrimPrefix(d.url, "ws://")
+	url = strings.TrimPrefix(url, "wss://")
+	return "connect/" + url
 }
 
 func (d *device) Open() (*msg.Channel, error) {
