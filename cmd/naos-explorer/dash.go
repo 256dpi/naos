@@ -154,7 +154,7 @@ func (d *dashboard) buildUI() {
 	// create root container
 	d.root = tview.NewFlex().
 		SetDirection(tview.FlexRow)
-	d.root.AddItem(top, 7, 0, false)
+	d.root.AddItem(top, 5, 0, false)
 	d.root.AddItem(body, 0, 1, true)
 	d.root.AddItem(log, 10, 0, false)
 
@@ -195,6 +195,7 @@ func (d *dashboard) start() {
 	go d.loopMetrics()
 	go d.loopCoredump()
 	go d.loadDirectory(d.fsTree.GetRoot(), true)
+	go d.watchEvents()
 }
 
 func (d *dashboard) capture(event *tcell.EventKey) *tcell.EventKey {
@@ -663,8 +664,7 @@ func (d *dashboard) updateInfo() {
 		logStatus = "[green]Streaming[-]"
 	}
 
-	text := fmt.Sprintf("[yellow]ID:[-] %s\n[yellow]Parameters:[-] %d\n[yellow]Metrics:[-] %d\n[yellow]Coredump:[-] %s\n[yellow]Log:[-] %s",
-		d.device.ID(), len(d.paramRows), len(d.metricRows), coredumpStatus, logStatus)
+	text := fmt.Sprintf("[yellow]ID:[-] %s\n[yellow]Coredump:[-] %s\n[yellow]Log:[-] %s", d.device.ID(), coredumpStatus, logStatus)
 	d.infoView.SetText(text)
 }
 
@@ -849,5 +849,83 @@ func (d *dashboard) loopLogReceive(logDone chan struct{}) {
 func (d *dashboard) stopLogStreaming() {
 	if d.logDone != nil {
 		close(d.logDone)
+	}
+}
+
+func (d *dashboard) watchEvents() {
+	events, cancel := d.device.Events()
+	defer cancel()
+	for {
+		select {
+		case <-d.done:
+			return
+		case event, ok := <-events:
+			if !ok {
+				return
+			}
+			if event.Type == msg.ManagedDisconnected {
+				d.handleDisconnect()
+			}
+		}
+	}
+}
+
+func (d *dashboard) handleDisconnect() {
+	// log disconnect
+	d.log("[red]Device disconnected[-]")
+
+	// stop log streaming
+	d.stopLogStreaming()
+
+	// show reconnecting modal
+	d.queue(func() {
+		modal := tview.NewModal().SetText("Reconnecting...")
+		modal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			if event.Key() == tcell.KeyEscape {
+				d.close()
+				return nil
+			}
+			return event
+		})
+		d.pages.AddPage("reconnecting", modal, true, true)
+		d.app.SetFocus(modal)
+	})
+
+	// reconnect loop
+	for {
+		// wait before retry
+		select {
+		case <-d.done:
+			d.queue(func() {
+				d.pages.RemovePage("reconnecting")
+			})
+			return
+		case <-time.After(time.Second):
+		}
+
+		// attempt reconnect
+		reconnectErr := d.device.Activate()
+		if reconnectErr != nil {
+			d.log("[red]Reconnect failed[-]: %v", reconnectErr)
+			continue
+		}
+
+		// abort if dashboard was closed during reconnect
+		select {
+		case <-d.done:
+			d.device.Deactivate()
+			d.queue(func() {
+				d.pages.RemovePage("reconnecting")
+			})
+			return
+		default:
+		}
+
+		// success
+		d.log("Reconnected")
+		d.queue(func() {
+			d.pages.RemovePage("reconnecting")
+		})
+		return
 	}
 }

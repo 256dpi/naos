@@ -89,6 +89,10 @@ func (d *device) Active() bool {
 	return d.md.Active()
 }
 
+func (d *device) Events() (<-chan msg.ManagedEvent, func()) {
+	return d.md.Events()
+}
+
 func (d *device) ParamsService() *msg.ParamsService {
 	// acquire mutex
 	d.mut.Lock()
