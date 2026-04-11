@@ -314,12 +314,10 @@ public class NAOSManagedDevice: NSObject {
 			throw NAOSManagedError.notConnected
 		}
 
-		// save password
-		self.password = password
-
-		// read lock status
+		// unlock
 		try await withSession { session in
 			if try await session.unlock(password: password) {
+				self.password = password
 				locked = false
 			}
 		}
@@ -470,7 +468,9 @@ public class NAOSManagedDevice: NSObject {
 		// try to unlock if locked
 		if !password.isEmpty {
 			if try (await session.status()).contains(.locked) {
-				_ = try await session.unlock(password: password)
+				if try await session.unlock(password: password) {
+					locked = false
+				}
 			}
 		}
 
