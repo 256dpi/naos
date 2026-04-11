@@ -7,7 +7,24 @@ import Combine
 import Foundation
 import Network
 
-public func NAOSHTTPDiscover(_ callback: @escaping @Sendable (_ device: NAOSDevice) -> Void) -> Cancellable {
+/// A discovered HTTP device descriptor.
+public struct NAOSHTTPDescriptor: Hashable, Sendable {
+	public let host: String
+
+	init(host: String) {
+		self.host = host
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(host)
+	}
+
+	public static func == (lhs: NAOSHTTPDescriptor, rhs: NAOSHTTPDescriptor) -> Bool {
+		lhs.host == rhs.host
+	}
+}
+
+public func NAOSHTTPDiscover(_ callback: @escaping @Sendable (_ descriptor: NAOSHTTPDescriptor) -> Void) -> Cancellable {
 	// prepare parameters
 	let params = NWParameters()
 	params.includePeerToPeer = true
@@ -22,7 +39,7 @@ public func NAOSHTTPDiscover(_ callback: @escaping @Sendable (_ device: NAOSDevi
 			case .added(let result):
 				Task {
 					let addr = try await resolveService(endpoint: result.endpoint)
-					callback(NAOSHTTPDevice(host: addr))
+					callback(NAOSHTTPDescriptor(host: addr))
 				}
 			default:
 				break
@@ -32,7 +49,7 @@ public func NAOSHTTPDiscover(_ callback: @escaping @Sendable (_ device: NAOSDevi
 
 	// run browser
 	browser.start(queue: .main)
-	
+
 	return AnyCancellable {
 		browser.cancel()
 	}
@@ -41,7 +58,7 @@ public func NAOSHTTPDiscover(_ callback: @escaping @Sendable (_ device: NAOSDevi
 public class NAOSHTTPDevice: NAOSDevice {
 	private let host: String
 
-	init(host: String) {
+	public init(host: String) {
 		self.host = host
 	}
 	

@@ -14,7 +14,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 	private var bleManager: NAOSBLEManager!
 	private var httpDiscover: Cancellable!
 	private var serialTask: Task<Void, Never>?
-	private var serialDevices: [String: NAOSManagedDevice] = [:]
+	private var serialDevices: [NAOSSerialDescriptor: NAOSManagedDevice] = [:]
 	
 	private var devices: [NAOSManagedDevice: NSMenuItem] = [:]
 	private var controllers: [NAOSManagedDevice: SettingsWindowController] = [:]
@@ -32,33 +32,33 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 		bleManager = NAOSBLEManager(delegate: self)
 		
 		// run HTTP discovery
-		httpDiscover = NAOSHTTPDiscover{ device in
+		httpDiscover = NAOSHTTPDiscover{ descriptor in
 			// add device
 			Task { @MainActor in
-				self.addDevice(device: NAOSManagedDevice(device: device))
+				self.addDevice(device: NAOSManagedDevice(device: NAOSHTTPDevice(host: descriptor.host)))
 			}
 		}
 
 		// run serial discovery
 		serialTask = Task {
 			// prepare state
-			var known = Set<String>()
+			var known = Set<NAOSSerialDescriptor>()
 
 			while !Task.isCancelled {
 				let ports = Set(NAOSSerialListPorts())
 
 				// handle added ports
-				for path in ports.subtracting(known) {
-					let device = NAOSManagedDevice(device: NAOSSerialDevice(path: path))
-					self.serialDevices[path] = device
+				for descriptor in ports.subtracting(known) {
+					let device = NAOSManagedDevice(device: NAOSSerialDevice(path: descriptor.path))
+					self.serialDevices[descriptor] = device
 					await MainActor.run {
 						self.addDevice(device: device)
 					}
 				}
 
 				// handle removed ports
-				for path in known.subtracting(ports) {
-					if let device = self.serialDevices.removeValue(forKey: path) {
+				for descriptor in known.subtracting(ports) {
+					if let device = self.serialDevices.removeValue(forKey: descriptor) {
 						await MainActor.run {
 							self.removeDevice(device: device)
 						}
@@ -212,7 +212,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 
 	func naosBLEManagerDidDiscoverDevice(manager: NAOSBLEManager, descriptor: NAOSBLEDescriptor) {
 		// add device
-		addDevice(device: NAOSManagedDevice(device: manager.makeDevice(descriptor: descriptor)))
+		addDevice(device: NAOSManagedDevice(device: NAOSBLEDevice(descriptor: descriptor)))
 	}
 
 	func naosBLEManagerDidReset(manager _: NAOSBLEManager) {

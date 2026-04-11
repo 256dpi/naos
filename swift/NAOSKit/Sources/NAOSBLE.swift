@@ -17,9 +17,11 @@ public struct NAOSBLEDescriptor: Hashable, @unchecked Sendable {
 	public let name: String
 	public let advertisementData: [String: Any]
 	public let rssi: NSNumber
+	let manager: CentralManager
 	let peripheral: Peripheral
 
-	init(peripheral: Peripheral, advertisementData: [String: Any], rssi: NSNumber) {
+	init(manager: CentralManager, peripheral: Peripheral, advertisementData: [String: Any], rssi: NSNumber) {
+		self.manager = manager
 		self.identifier = peripheral.identifier
 		self.name = peripheral.name ?? "Unnamed"
 		self.advertisementData = advertisementData
@@ -141,6 +143,7 @@ public class NAOSBLEManager: NSObject {
 		// handle discovered peripherals
 		for await scanData in stream {
 			let descriptor = NAOSBLEDescriptor(
+				manager: centralManager,
 				peripheral: scanData.peripheral,
 				advertisementData: scanData.advertisementData,
 				rssi: scanData.rssi
@@ -166,13 +169,6 @@ public class NAOSBLEManager: NSObject {
 				}
 			}
 		}
-	}
-
-	public func makeDevice(descriptor: NAOSBLEDescriptor) -> NAOSDevice {
-		NAOSBLEDevice(
-			manager: centralManager,
-			peripheral: descriptor.peripheral
-		)
 	}
 
 	// Helpers
@@ -201,7 +197,7 @@ enum NAOSBLEError: LocalizedError {
 	}
 }
 
-class NAOSBLEDevice: NAOSDevice {
+public class NAOSBLEDevice: NAOSDevice {
 	private let manager: CentralManager
 	private let peripheral: Peripheral
 	private let lock = NSLock()
@@ -210,9 +206,9 @@ class NAOSBLEDevice: NAOSDevice {
 	private var streamSubscription: AnyCancellable?
 	private var eventSubscription: AnyCancellable?
 
-	init(manager: CentralManager, peripheral: Peripheral) {
-		self.manager = manager
-		self.peripheral = peripheral
+	public init(descriptor: NAOSBLEDescriptor) {
+		self.manager = descriptor.manager
+		self.peripheral = descriptor.peripheral
 
 		// watch for BLE disconnects to end the transport stream
 		Task { [weak self] in

@@ -22,8 +22,27 @@ public enum NAOSSerialError: LocalizedError {
 	}
 }
 
+/// A discovered serial device descriptor.
+public struct NAOSSerialDescriptor: Hashable, Sendable {
+	public let path: String
+	public let name: String
+
+	init(path: String) {
+		self.path = path
+		self.name = URL(fileURLWithPath: path).lastPathComponent
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(path)
+	}
+
+	public static func == (lhs: NAOSSerialDescriptor, rhs: NAOSSerialDescriptor) -> Bool {
+		lhs.path == rhs.path
+	}
+}
+
 /// List all known serial ports on Darwin based systems.
-public func NAOSSerialListPorts() -> [String] {
+public func NAOSSerialListPorts() -> [NAOSSerialDescriptor] {
 	let devPath = "/dev"
 	guard let entries = try? FileManager.default.contentsOfDirectory(atPath: devPath) else {
 		return []
@@ -38,20 +57,17 @@ public func NAOSSerialListPorts() -> [String] {
 		return false
 	}.sorted(by: >)
 
-	return filtered.map { devPath + "/" + $0 }
+	return filtered.map { NAOSSerialDescriptor(path: devPath + "/" + $0) }
 }
 
-/// A serial NAOS device.
 public class NAOSSerialDevice: NAOSDevice {
 	private let path: String
-	private let displayName: String?
 	private let baudRate: Int
 	private let lock = NSLock()
 	private weak var channel: NAOSChannel?
 
-	public init(path: String, name: String? = nil, baudRate: Int = 115_200) {
+	public init(path: String, baudRate: Int = 115_200) {
 		self.path = path
-		self.displayName = name
 		self.baudRate = baudRate
 	}
 	
@@ -64,7 +80,7 @@ public class NAOSSerialDevice: NAOSDevice {
 	}
 
 	public func name() -> String {
-		return displayName ?? URL(fileURLWithPath: path).lastPathComponent
+		return URL(fileURLWithPath: path).lastPathComponent
 	}
 
 	public func open() async throws -> NAOSChannel {
