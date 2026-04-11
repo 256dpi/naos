@@ -98,8 +98,11 @@ func (c *Channel) Write(queue Queue, msg Message) error {
 
 // Close closes the channel and the underlying transport.
 func (c *Channel) Close() {
-	c.closeDone()
-	c.tr.Close()
+	// close done and transport
+	c.once.Do(func() {
+		close(c.done)
+		c.tr.Close()
+	})
 }
 
 // Done is closed when the underlying transport reader exits.
@@ -107,19 +110,14 @@ func (c *Channel) Done() <-chan struct{} {
 	return c.done
 }
 
-func (c *Channel) closeDone() {
-	c.once.Do(func() {
-		close(c.done)
-	})
-}
-
 func (c *Channel) reader() {
-	defer c.closeDone()
-
 	for {
 		// read data
 		data, err := c.tr.Read()
 		if err != nil {
+			// signal close
+			c.Close()
+
 			return
 		}
 
@@ -171,6 +169,9 @@ func (c *Channel) write(from Queue, msg Message) error {
 	// write message
 	err := c.tr.Write(msg.Build())
 	if err != nil {
+		// sigal close
+		c.Close()
+
 		// revert registrations (session opens and closes)
 		c.mu.Lock()
 		if msg.Session == 0 && msg.Endpoint == 0x0 && c.opening[string(msg.Data)] == from {
