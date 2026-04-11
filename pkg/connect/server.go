@@ -12,8 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/256dpi/naos/pkg/msg"
 )
 
@@ -97,7 +95,7 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	for _, d := range s.devices.Range {
 		dev := d.(*connectedDevice)
 		desc := dev.desc
-		desc.AttachURL = s.attachURL(r, dev.desc.UUID)
+		desc.AttachURL = s.attachURL(r, dev.desc.DeviceID)
 		descriptions = append(descriptions, desc)
 	}
 
@@ -127,35 +125,40 @@ func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 	dev := &connectedDevice{
 		channel: channel,
 		desc: Description{
-			UUID:      uuid.New().String(),
 			Connected: time.Now(),
 		},
 	}
 
 	// log
-	s.logf("[%s] connected: %s", dev.desc.UUID, conn.RemoteAddr())
+	s.logf("[%s] connected", conn.RemoteAddr())
 
 	// identify device
 	if !s.retryIdentify(dev) {
-		s.logf("[%s] identification failed", dev.desc.UUID)
+		s.logf("[%s] identification failed", conn.RemoteAddr())
 		channel.Close()
 		return
 	}
 
-	// log
-	s.logf("[%s] id=%q name=%q app=%q version=%q", dev.desc.UUID, dev.desc.DeviceID, dev.desc.DeviceName, dev.desc.AppName, dev.desc.AppVersion)
+	// set UUID to device ID
+	dev.desc.UUID = dev.desc.DeviceID
 
-	// add device
-	s.devices.Store(dev.desc.UUID, dev)
+	// log
+	s.logf("[%s] id=%q name=%q app=%q version=%q", dev.desc.DeviceID, dev.desc.DeviceID, dev.desc.DeviceName, dev.desc.AppName, dev.desc.AppVersion)
+
+	// close and replace stale device with same ID
+	if old, loaded := s.devices.Swap(dev.desc.DeviceID, dev); loaded {
+		old.(*connectedDevice).channel.Close()
+		s.logf("[%s] replaced stale connection", dev.desc.DeviceID)
+	}
 
 	// await disconnect
 	<-channel.Done()
 
-	// remove device
-	s.devices.Delete(dev.desc.UUID)
+	// remove device only if it is still this instance
+	s.devices.CompareAndDelete(dev.desc.DeviceID, dev)
 
 	// log
-	s.logf("[%s] device disconnected", dev.desc.UUID)
+	s.logf("[%s] device disconnected", dev.desc.DeviceID)
 }
 
 func (s *Server) handleDevice(w http.ResponseWriter, r *http.Request) {
@@ -190,16 +193,16 @@ func (s *Server) handleDevice(w http.ResponseWriter, r *http.Request) {
 	client := NewTransport(conn)
 
 	// log
-	s.logf("[%s] client attached: %s", dev.desc.UUID, conn.RemoteAddr().String())
+	s.logf("[%s] client attached: %s", dev.desc.DeviceID, conn.RemoteAddr().String())
 
 	// bridge transport
 	err = Bridge(client, dev.channel)
 	if err != nil && !errors.Is(err, io.EOF) {
-		s.logf("[%s] bridge error: %v", dev.desc.UUID, err)
+		s.logf("[%s] bridge error: %v", dev.desc.DeviceID, err)
 	}
 
 	// log
-	s.logf("[%s] client detached: %s", dev.desc.UUID, conn.RemoteAddr().String())
+	s.logf("[%s] client detached: %s", dev.desc.DeviceID, conn.RemoteAddr().String())
 }
 
 func (s *Server) retryIdentify(dev *connectedDevice) bool {

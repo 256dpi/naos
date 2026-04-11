@@ -9,7 +9,6 @@ require (
 	github.com/creack/pty v1.1.18
 	github.com/docopt/docopt-go v0.0.0-20160216232012-784ddc588536
 	github.com/gdamore/tcell/v2 v2.9.0
-	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/grandcat/zeroconf v1.0.0
 	github.com/rivo/tview v0.42.0
