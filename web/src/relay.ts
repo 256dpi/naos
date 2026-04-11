@@ -77,7 +77,11 @@ export class RelayDevice implements Device {
   }
 
   id() {
-    return `${this.host.device.id()}/${this.device}`;
+    const host = this.host.device();
+    if (!host) {
+      throw new Error("device not available");
+    }
+    return `${host.id()}/${this.device}`;
   }
 
   type() {

@@ -4,7 +4,7 @@ import { Channel, Device } from "./device";
 import { Session, Status } from "./session";
 
 export class ManagedDevice {
-  public device: Device | null;
+  private dev: Device | null;
   private pinger: ReturnType<typeof setInterval>;
   private channel: Channel | null;
   private session: Session | null;
@@ -13,20 +13,24 @@ export class ManagedDevice {
 
   constructor(device: Device) {
     // set device
-    this.device = device;
+    this.dev = device;
 
     // start pinger
     this.pinger = setInterval(async () => {
       if (this.active()) {
         try {
           await this.useSession(async (session) => {
-            await session.ping(1000);
+            await session.ping(5000);
           });
         } catch (e) {
           // ignore ping errors
         }
       }
-    }, 5000);
+    }, 1000);
+  }
+
+  device(): Device | null {
+    return this.dev;
   }
 
   async activate() {
@@ -36,11 +40,19 @@ export class ManagedDevice {
     }
 
     // open channel
-    this.channel = await this.device.open();
+    this.channel = await this.dev.open();
   }
 
   active(): boolean {
     return this.channel != null;
+  }
+
+  hasSession(): boolean {
+    return this.session != null;
+  }
+
+  setPassword(password: string) {
+    this.password = password;
   }
 
   async locked(): Promise<boolean> {
@@ -163,6 +175,7 @@ export class ManagedDevice {
     clearInterval(this.pinger);
 
     // clear device
-    this.device = null;
+    this.dev = null;
+    this.password = null;
   }
 }
