@@ -1,23 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>NAOS</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NAOS Test</title>
+    <link rel="stylesheet" href="test.scss" />
   </head>
   <body>
+    <header>
+      <h1>NAOS</h1>
+      <span id="status">No device</span>
+    </header>
+    <div class="toolbar">
+      <span class="label">Connect</span>
+      <button class="connect" onclick="_ble()">BLE</button>
+      <button class="connect" onclick="_serial()">Serial</button>
+      <button class="connect" onclick="_http()">HTTP</button>
+      <div class="sep"></div>
+      <span class="label">Test</span>
+      <button onclick="_params()">Params</button>
+      <button onclick="_fs()">FS</button>
+      <button onclick="_metrics()">Metrics</button>
+      <button onclick="_relay()">Relay</button>
+      <button onclick="_auth()">Auth</button>
+      <button onclick="_debug()">Debug</button>
+      <button onclick="_throughput()">Throughput</button>
+      <button onclick="_transfer()">Transfer</button>
+      <button onclick="_memory()">Memory</button>
+      <div class="sep"></div>
+      <input type="file" onchange="_flash(this)" />
+    </div>
+    <div id="log"></div>
+    <footer>
+      <button onclick="_clearLog()">Clear Log</button>
+      <span id="memory-display"></span>
+    </footer>
     <script type="module" src="test.ts"></script>
-    <button type="button" onclick="_ble()">BLE</button>
-    <button type="button" onclick="_serial()">Serial</button>
-    <button type="button" onclick="_http()">HTTP</button>
-    <button type="button" onclick="_params()">Params</button>
-    <input type="file" onchange="_flash(this)" />
-    <button type="button" onclick="_fs()">FS</button>
-    <button type="button" onclick="_metrics()">Metrics</button>
-    <button type="button" onclick="_relay()">Relay</button>
-    <button type="button" onclick="_auth()">Auth</button>
-    <button type="button" onclick="_debug()">Debug</button>
-    <button type="button" onclick="_throughput()">Throughput</button>
-    <button type="button" onclick="_transfer()">Transfer</button>
-    <button type="button" onclick="_memory()">Memory</button>
-    <span id="memory"></span>
   </body>
 </html>

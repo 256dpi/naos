@@ -36,112 +36,199 @@ import {
   readCoredump,
   deleteCoredump,
   streamLog,
+  ParamType,
+  ParamMode,
+  MetricKind,
 } from "./src";
+
+// --- UI helpers ---
+
+const logEl = document.getElementById("log")!;
+const statusEl = document.getElementById("status")!;
+const memoryEl = document.getElementById("memory-display")!;
+
+function ts(): string {
+  const d = new Date();
+  return (
+    String(d.getHours()).padStart(2, "0") +
+    ":" +
+    String(d.getMinutes()).padStart(2, "0") +
+    ":" +
+    String(d.getSeconds()).padStart(2, "0")
+  );
+}
+
+type LogKind = "info" | "success" | "error" | "heading" | "data";
+
+function log(msg: string, kind: LogKind = "info") {
+  const el = document.createElement("div");
+  el.className = `entry ${kind}`;
+  const stamp = document.createElement("span");
+  stamp.className = "timestamp";
+  stamp.textContent = ts();
+  el.appendChild(stamp);
+  el.appendChild(document.createTextNode(msg));
+  logEl.appendChild(el);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function logData(label: string, value: unknown) {
+  const text =
+    typeof value === "object" ? JSON.stringify(value, null, 2) : String(value);
+  log(`${label}: ${text}`, "data");
+}
+
+function check(condition: boolean, label: string) {
+  if (condition) {
+    log(`\u2713 ${label}`, "success");
+  } else {
+    log(`\u2717 ${label}`, "error");
+  }
+}
+
+function setStatus(text: string, connected: boolean) {
+  statusEl.textContent = text;
+  statusEl.className = connected ? "connected" : "";
+}
+
+function clearLog() {
+  logEl.innerHTML = "";
+}
+
+function addProgress(max: number): (value: number) => void {
+  const bar = document.createElement("progress");
+  bar.max = max;
+  bar.value = 0;
+  logEl.appendChild(bar);
+  logEl.scrollTop = logEl.scrollHeight;
+  return (value: number) => {
+    bar.value = value;
+    logEl.scrollTop = logEl.scrollHeight;
+  };
+}
+
+// --- State ---
 
 let device: ManagedDevice | null = null;
 
+// --- Connection ---
+
 async function ble() {
-  // stop device
   if (device) {
     await device.stop();
     device = null;
   }
 
-  // request device
   let dev = await bleRequest();
   if (!dev) {
     return;
   }
 
-  console.log("Got Device:", dev);
+  log("BLE device acquired", "success");
 
-  // create device
   device = new ManagedDevice(dev);
-
-  // activate device
   await device.activate();
 
-  // unlock locked device
   if (await device.locked()) {
-    console.log("Unlock", await device.unlock(prompt("Password")));
+    const ok = await device.unlock(prompt("Password"));
+    check(ok, "Unlock");
   }
 
-  console.log("Ready!");
+  setStatus("BLE connected", true);
+  log("Ready!", "success");
 }
 
 async function serial() {
-  // stop device
   if (device) {
     await device.stop();
     device = null;
   }
 
-  // request device
   let dev = await serialRequest();
   if (!dev) {
     return;
   }
 
-  console.log("Got Device:", dev);
+  log("Serial device acquired", "success");
 
-  // create device
   device = new ManagedDevice(dev);
-
-  // activate device
   await device.activate();
 
-  // unlock locked device
   if (await device.locked()) {
-    console.log("Unlock", await device.unlock(prompt("Password")));
+    const ok = await device.unlock(prompt("Password"));
+    check(ok, "Unlock");
   }
 
-  console.log("Ready!");
+  setStatus("Serial connected", true);
+  log("Ready!", "success");
 }
 
 async function http() {
-  // stop device
   if (device) {
     await device.stop();
     device = null;
   }
 
-  // request address
   const addr = prompt("Address", "192.168.1.1");
+  if (!addr) return;
 
-  // create device
   device = new ManagedDevice(makeHTTPDevice(addr));
-
-  // activate device
   await device.activate();
 
-  // unlock locked device
   if (await device.locked()) {
-    console.log("Unlock", await device.unlock(prompt("Password")));
+    const ok = await device.unlock(prompt("Password"));
+    check(ok, "Unlock");
   }
 
-  console.log("Ready!");
+  setStatus(`HTTP ${addr}`, true);
+  log("Ready!", "success");
+}
+
+// --- Tests ---
+
+function paramTypeName(t: ParamType): string {
+  return ParamType[t] || `unknown(${t})`;
+}
+
+function paramModeFlags(m: ParamMode): string {
+  const flags: string[] = [];
+  if (m & ParamMode.volatile) flags.push("volatile");
+  if (m & ParamMode.system) flags.push("system");
+  if (m & ParamMode.application) flags.push("application");
+  if (m & ParamMode.locked) flags.push("locked");
+  return flags.join(", ") || "none";
+}
+
+function decodeParamValue(value: Uint8Array): string {
+  return toString(value);
 }
 
 async function params() {
-  console.log("Testing Params...");
+  log("Params", "heading");
 
   await device.activate();
 
   await device.useSession(async (session) => {
     const params = await listParams(session);
-    console.log(params);
 
     const updates = await collectParams(
       session,
       params.map((p) => p.ref),
       BigInt(0)
     );
-    console.log(updates);
+
+    for (const p of params) {
+      const u = updates.find((u) => u.ref === p.ref);
+      const value = u ? `"${decodeParamValue(u.value)}"` : "n/a";
+      logData(
+        p.name,
+        `${value}  [${paramTypeName(p.type)}, ${paramModeFlags(p.mode)}]`
+      );
+    }
   });
 
   await device.deactivate();
-
-  console.log("Done!");
+  log("Done!", "success");
 }
 
 async function flash(input: HTMLInputElement) {
@@ -149,151 +236,180 @@ async function flash(input: HTMLInputElement) {
     return;
   }
 
-  console.log("Flashing...");
+  log("Flash", "heading");
 
   const data = new Uint8Array(await requestFile(input.files[0]));
+  log(`Firmware size: ${data.length} bytes`);
 
   await device.activate();
   const session = await device.newSession();
 
+  const setProgress = addProgress(100);
   await update(session, data, (progress) => {
-    console.log((progress / data.length) * 100);
+    setProgress(Math.round((progress / data.length) * 100));
   });
 
   await session.end(1000);
   await device.deactivate();
 
-  console.log("Done!");
+  log("Done!", "success");
 }
 
 async function fs() {
-  console.log("Testing FS...");
+  log("FS", "heading");
 
   await device.activate();
 
   await device.useSession(async (session) => {
-    // create directory
     await makePath(session, "/TEST");
     const dirStat = await statPath(session, "/TEST");
-    console.assert(dirStat.isDir, "expected directory");
-    console.log("makePath: OK");
+    check(dirStat.isDir, "makePath");
 
-    // write file
     const content = random(64);
     await writeFile(session, "/TEST/TEST.TXT", toBuffer(content));
-    console.log("writeFile: OK");
+    check(true, "writeFile");
 
-    // stat file
     const fileStat = await statPath(session, "/TEST/TEST.TXT");
-    console.assert(!fileStat.isDir, "expected file");
-    console.assert(
+    check(!fileStat.isDir, "statPath (is file)");
+    check(
       fileStat.size === toBuffer(content).byteLength,
-      "size mismatch"
+      "statPath (size match)"
     );
-    console.log("statPath: OK");
 
-    // read file and verify content
     const readBack = toString(await readFile(session, "/TEST/TEST.TXT"));
-    console.assert(readBack === content, "content mismatch");
-    console.log("readFile: OK");
+    check(readBack === content, "readFile (content match)");
 
-    // list directory
     const entries = await listDir(session, "/TEST");
-    console.assert(entries.length === 1, "expected 1 entry");
-    console.assert(entries[0].name === "TEST.TXT", "unexpected entry name");
-    console.log("listDir: OK");
+    check(entries.length === 1, "listDir (1 entry)");
+    check(entries[0].name === "TEST.TXT", "listDir (name match)");
 
-    // hash file
     const hash = await sha256File(session, "/TEST/TEST.TXT");
-    console.assert(hash.byteLength === 32, "expected 32 byte hash");
-    console.log("sha256File: OK");
+    check(hash.byteLength === 32, "sha256File (32 bytes)");
 
-    // rename file
     await renamePath(session, "/TEST/TEST.TXT", "/TEST/RENAMED.TXT");
     const renamedStat = await statPath(session, "/TEST/RENAMED.TXT");
-    console.assert(
-      renamedStat.size === fileStat.size,
-      "size changed after rename"
-    );
-    console.log("renamePath: OK");
+    check(renamedStat.size === fileStat.size, "renamePath (size preserved)");
 
-    // remove file and directory
     await removePath(session, "/TEST/RENAMED.TXT");
     await removePath(session, "/TEST");
-    console.log("removePath: OK");
+    check(true, "removePath");
   });
 
-  console.log("Done!");
+  log("Done!", "success");
 }
 
 async function metrics() {
-  console.log("Testing Metrics...");
+  log("Metrics", "heading");
 
   await device.activate();
 
   await device.useSession(async (session) => {
-    let metrics = await listMetrics(session);
-    console.log(metrics);
+    const metrics = await listMetrics(session);
 
-    for (let metric of metrics) {
-      console.log(await describeMetric(session, metric.ref));
-    }
-
-    for (let metric of metrics) {
-      switch (metric.type) {
+    for (const m of metrics) {
+      // read layout and values
+      const layout = await describeMetric(session, m.ref);
+      let values: number[];
+      switch (m.type) {
         case MetricType.long:
-          console.log(await readLongMetrics(session, metric.ref));
+          values = await readLongMetrics(session, m.ref);
           break;
         case MetricType.float:
-          console.log(await readFloatMetrics(session, metric.ref));
+          values = await readFloatMetrics(session, m.ref);
           break;
         case MetricType.double:
-          console.log(await readDoubleMetrics(session, metric.ref));
+          values = await readDoubleMetrics(session, m.ref);
           break;
+      }
+
+      // format header
+      const kind = MetricKind[m.kind] || `kind(${m.kind})`;
+      const type = MetricType[m.type] || `type(${m.type})`;
+      log(`${m.name}  [${kind}, ${type}]`, "info");
+
+      // format values with labels
+      if (layout.keys.length > 0 && values.length > 0) {
+        // build label combinations for each value slot
+        let idx = 0;
+        const formatValues = (keyIdx: number, prefix: string[]) => {
+          if (keyIdx >= layout.keys.length) {
+            const label = "- " + prefix.join(", ");
+            const v = idx < values.length ? values[idx] : 0;
+            logData(label, v);
+            idx++;
+            return;
+          }
+          for (const val of layout.values[keyIdx]) {
+            formatValues(keyIdx + 1, [
+              ...prefix,
+              `${layout.keys[keyIdx]}=${val}`,
+            ]);
+          }
+        };
+        formatValues(0, []);
+      } else {
+        // flat values without labels
+        for (const v of values) {
+          logData("- value", v);
+        }
       }
     }
   });
 
-  console.log("Done!");
+  log("Done!", "success");
 }
 
 async function relay() {
-  console.log("Testing Relay...");
+  log("Relay", "heading");
 
   await device.activate();
 
   await device.useSession(async (session) => {
-    let devices = await scanRelay(session);
-    console.log(devices);
+    const devices = await scanRelay(session);
+    log(
+      `Found ${devices.length} relay device(s): ${devices.join(", ") || "none"}`
+    );
 
     if (devices.length === 0) {
       return;
     }
 
-    const sub = new ManagedDevice(new RelayDevice(device, devices[0]));
+    for (const id of devices) {
+      log(`Device #${id}`, "info");
 
-    await sub.activate();
+      const sub = new ManagedDevice(new RelayDevice(device, devices[0]));
+      await sub.activate();
 
-    await sub.useSession(async (session) => {
-      console.log(await listParams(session));
-    });
-
-    console.log("Done!");
+      await sub.useSession(async (subSession) => {
+        const params = await listParams(subSession);
+        const updates = await collectParams(
+          subSession,
+          params.map((p) => p.ref),
+          BigInt(0)
+        );
+        for (const p of params) {
+          const u = updates.find((u) => u.ref === p.ref);
+          const value = u ? `"${decodeParamValue(u.value)}"` : "n/a";
+          logData(
+            `- ${p.name}`,
+            `${value}  [${paramTypeName(p.type)}, ${paramModeFlags(p.mode)}]`
+          );
+        }
+      });
+    }
   });
 
-  console.log("Done!");
+  log("Done!", "success");
 }
 
 async function auth() {
-  console.log("Testing Auth...");
+  log("Auth", "heading");
 
   await device.activate();
 
   await device.useSession(async (session) => {
     let provisioned = await authStatus(session);
-    if (provisioned) {
-      console.log("Device already provisioned");
-    }
+    log(provisioned ? "Device already provisioned" : "Device not provisioned");
 
     const key = toBuffer("0123456789abcdef0123456789abcdef");
     if (!provisioned) {
@@ -304,172 +420,152 @@ async function auth() {
         batch: 3,
         date: Date.now() / 1000,
       });
+      log("Provisioned device");
     }
 
     provisioned = await authStatus(session);
     if (!provisioned) {
-      console.log("Failed to provision device");
+      log("Failed to provision device", "error");
       return;
     }
 
     const data = await authDescribe(session, key);
-    if (
-      toString(data.uuid) !== "ABCDEF0123456789" ||
-      data.product !== 1 ||
-      data.revision !== 2 ||
-      data.batch !== 3
-    ) {
-      console.log("Failed to describe device");
-      return;
-    }
+    check(
+      toString(data.uuid) === "ABCDEF0123456789" &&
+        data.product === 1 &&
+        data.revision === 2 &&
+        data.batch === 3,
+      "authDescribe"
+    );
 
     const challenge = toBuffer(random(24));
     const result = await authAttest(session, challenge);
     const expected = await hmac256(key, challenge);
-    if (result.length !== 32 || !compare(result, expected)) {
-      console.log("Failed to attest device");
-      return;
-    }
+    check(
+      result.length === 32 && compare(result, expected),
+      "authAttest (HMAC match)"
+    );
 
-    console.log("Authentication successful!");
+    log("Authentication successful!", "success");
   });
 }
 
 async function debug() {
-  console.log("Testing Debug...");
+  log("Debug", "heading");
 
   await device.activate();
 
   await device.useSession(async (session) => {
-    // check coredump
     const [size, reason] = await checkCoredump(session);
-    console.log("Coredump size:", size, "reason:", reason);
+    logData("Coredump size", size);
+    logData("Coredump reason", reason);
 
-    // read coredump if available
     if (size > 0) {
       const data = await readCoredump(session, 0, size);
-      console.log("Coredump data:", data.length, "bytes");
+      logData("Coredump data", `${data.length} bytes`);
 
-      // delete coredump
       await deleteCoredump(session);
-      console.log("Coredump deleted");
+      log("Coredump deleted", "success");
     }
 
-    // stream log for 10 seconds
-    console.log("Streaming log for 10s...");
+    log("Streaming log for 10s...");
     const ac = new AbortController();
     setTimeout(() => ac.abort(), 10000);
     await streamLog(session, ac.signal, (msg) => {
-      console.log("Log:", msg);
+      log(msg, "data");
     });
-    console.log("Log streaming stopped");
+    log("Log streaming stopped");
   });
 
-  console.log("Done!");
+  log("Done!", "success");
 }
 
 const ECHO_ENDPOINT = 0x08;
 
 async function throughput() {
-  console.log("Testing Throughput...");
+  log("Throughput", "heading");
 
   await device.activate();
 
   const session = await device.newSession();
 
-  // get MTU
   const mtu = await session.getMTU();
-  console.log("MTU:", mtu);
+  logData("MTU", mtu);
 
-  // prepare payload (fill with endpoint overhead subtracted)
-  const payloadSize = mtu - 4; // subtract message framing
+  const payloadSize = mtu - 4;
   const payload = new Uint8Array(payloadSize);
   for (let i = 0; i < payloadSize; i++) {
     payload[i] = i & 0xff;
   }
 
-  // create progress bar
-  const bar = document.createElement("progress");
-  bar.max = 100;
-  bar.value = 0;
-  bar.style.display = "block";
-  document.body.appendChild(bar);
-
-  // run echo rounds
   const rounds = 100;
   let totalBytes = 0;
   let errors = 0;
 
+  const setProgress = addProgress(rounds);
+
   const start = performance.now();
 
   for (let i = 0; i < rounds; i++) {
-    // send echo request (no ACK expected from handler)
     await session.send(ECHO_ENDPOINT, payload, 0);
 
-    // receive echo response
     const [data] = await session.receive(ECHO_ENDPOINT, false, 5000);
     if (!data || data.length !== payload.length || !compare(payload, data)) {
       errors++;
-      console.error(
-        `Round ${i}: size mismatch (got ${data?.length}, expected ${payload.length})`
+      log(
+        `Round ${i}: size mismatch (got ${data?.length}, expected ${payload.length})`,
+        "error"
       );
-      bar.value = i + 1;
+      setProgress(i + 1);
       continue;
     }
 
     totalBytes += data.length;
-    bar.value = i + 1;
+    setProgress(i + 1);
   }
 
   const elapsed = performance.now() - start;
   const throughputKBs = totalBytes / 1024 / (elapsed / 1000);
 
-  console.log(`Rounds: ${rounds}, Errors: ${errors}`);
-  console.log(`Total: ${totalBytes} bytes in ${(elapsed / 1000).toFixed(2)}s`);
-  console.log(`Throughput: ${throughputKBs.toFixed(2)} KB/s`);
-  console.log(`Avg round-trip: ${(elapsed / rounds).toFixed(2)} ms`);
-
-  // remove progress bar
-  bar.remove();
+  logData("Rounds", `${rounds}, Errors: ${errors}`);
+  logData("Total", `${totalBytes} bytes in ${(elapsed / 1000).toFixed(2)}s`);
+  logData("Throughput", `${throughputKBs.toFixed(2)} KB/s`);
+  logData("Avg round-trip", `${(elapsed / rounds).toFixed(2)} ms`);
 
   await session.end(1000);
 
-  console.log("Done!");
+  log("Done!", "success");
 }
 
 async function memory() {
-  console.log("Reading Memory...");
+  log("Memory", "heading");
 
   await device.activate();
 
-  // find memory metric
   const session = await device.newSession();
   const metrics = await listMetrics(session);
   const mem = metrics.find((m) => m.name === "free-memory");
   if (!mem) {
     await session.end(1000);
-    console.error("Memory metric not found");
+    log("Memory metric not found", "error");
     return;
   }
 
-  // read continuously
   const spinner = ["|", "/", "-", "\\"];
   let tick = 0;
   for (;;) {
     const values = await readLongMetrics(session, mem.ref);
-    const el = document.getElementById("memory");
-    el.textContent =
+    memoryEl.textContent =
       spinner[tick++ % 4] +
-      " " +
+      " Free: " +
       values.map((v) => `${(v / 1024).toFixed(0)} KB`).join(" / ");
     await new Promise((r) => setTimeout(r, 1000));
   }
 }
 
 async function transfer() {
-  console.log("Testing Transfer...");
+  log("Transfer", "heading");
 
-  // prompt for size
   const kb = parseInt(prompt("Size in KB", "64"));
   if (!kb) return;
   const size = kb * 1024;
@@ -477,51 +573,49 @@ async function transfer() {
   for (let i = 0; i < size; i++) {
     original[i] = i & 0xff;
   }
-  console.log(`Generated ${size} bytes`);
+  logData("Generated", `${size} bytes`);
 
   await device.activate();
 
   await device.useSession(async (session) => {
-    // upload
-    console.log("Uploading...");
+    log("Uploading...");
+    const uploadProgress = addProgress(size);
     const t1 = performance.now();
-    await writeFile(session, "/transfer.bin", original);
+    await writeFile(session, "/transfer.bin", original, (count) => {
+      uploadProgress(count);
+    });
     const uploadTime = performance.now() - t1;
-    console.log(
-      `Uploaded ${size} bytes in ${(uploadTime / 1000).toFixed(2)}s (${(
+    logData(
+      "Upload",
+      `${size} bytes in ${(uploadTime / 1000).toFixed(2)}s (${(
         size /
         1024 /
         (uploadTime / 1000)
       ).toFixed(2)} KB/s)`
     );
 
-    // download
-    console.log("Downloading...");
+    log("Downloading...");
+    const downloadProgress = addProgress(size);
     const t2 = performance.now();
-    const downloaded = await readFile(session, "/transfer.bin");
+    const downloaded = await readFile(session, "/transfer.bin", (count) => {
+      downloadProgress(count);
+    });
     const downloadTime = performance.now() - t2;
-    console.log(
-      `Downloaded ${downloaded.length} bytes in ${(downloadTime / 1000).toFixed(
-        2
-      )}s (${(downloaded.length / 1024 / (downloadTime / 1000)).toFixed(
-        2
-      )} KB/s)`
+    logData(
+      "Download",
+      `${downloaded.length} bytes in ${(downloadTime / 1000).toFixed(2)}s (${(
+        downloaded.length /
+        1024 /
+        (downloadTime / 1000)
+      ).toFixed(2)} KB/s)`
     );
 
-    // compare
-    if (compare(original, downloaded)) {
-      console.log("Data matches!");
-    } else {
-      console.error(
-        `Data mismatch! original=${original.length} downloaded=${downloaded.length}`
-      );
-    }
+    check(compare(original, downloaded), "Data integrity");
 
-    // cleanup
     await removePath(session, "/transfer.bin");
   });
 
-  console.log("Done!");
+  log("Done!", "success");
 }
 
 window["_ble"] = ble;
@@ -537,6 +631,7 @@ window["_debug"] = debug;
 window["_throughput"] = throughput;
 window["_transfer"] = transfer;
 window["_memory"] = memory;
+window["_clearLog"] = clearLog;
 
 // redirect to localhost from '0.0.0.0'
 if (location.hostname === "0.0.0.0") {

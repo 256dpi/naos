@@ -31,18 +31,19 @@
     "test-node": "tsx test-node.ts"
   },
   "dependencies": {
+    "@serialport/parser-readline": "^1.0.0",
     "async-await-queue": "^2.1.2",
-    "serialport": "^12.0.0",
-    "@serialport/parser-readline": "^1.0.0"
+    "serialport": "^12.0.0"
   },
   "devDependencies": {
+    "@parcel/transformer-sass": "2.8.3",
     "@types/node": "^25.2.3",
     "@types/w3c-web-serial": "^1.0.7",
     "@types/web-bluetooth": "^0.0.20",
-    "typescript": "^5.8.0",
     "parcel": "^2.8.3",
     "prettier": "^2.8.4",
     "tsx": "^4.0.0",
+    "typescript": "^5.8.0",
     "webbluetooth": "^3.0.0"
   }
 }

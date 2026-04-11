@@ -1,0 +1,245 @@
+// Colors
+$bg-primary: #ffffff;
+$bg-surface: #f5f5f5;
+$border: #ddd;
+$text: #222;
+$text-muted: #999;
+$text-dim: #bbb;
+$accent: #333;
+$success: #555;
+$data: #666;
+$font: "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
+
+// Reset
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+// Layout
+body {
+  font-family: $font;
+  font-size: 13px;
+  background: $bg-primary;
+  color: $text;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// Header
+header {
+  padding: 16px 20px;
+  background: $bg-surface;
+  border-bottom: 1px solid $border;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+
+  h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: $accent;
+    letter-spacing: 2px;
+  }
+}
+
+#status {
+  font-size: 11px;
+  color: $text-muted;
+
+  &.connected {
+    color: $success;
+  }
+}
+
+// Toolbar
+.toolbar {
+  padding: 12px 20px;
+  background: $bg-surface;
+  border-bottom: 1px solid $border;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+
+  .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: $text-muted;
+    margin-right: 4px;
+  }
+
+  .sep {
+    width: 1px;
+    height: 24px;
+    background: $border;
+    margin: 0 4px;
+  }
+}
+
+// Buttons
+button {
+  font-family: $font;
+  font-size: 12px;
+  padding: 6px 14px;
+  border: 1px solid $border;
+  border-radius: 4px;
+  background: $bg-primary;
+  color: $text;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: $border;
+    border-color: $accent;
+  }
+
+  &:active {
+    background: $accent;
+    color: $bg-primary;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &.connect {
+    border-color: $success;
+    color: $success;
+
+    &:hover {
+      background: rgba($success, 0.15);
+    }
+  }
+}
+
+// File input
+input[type="file"] {
+  font-family: $font;
+  font-size: 12px;
+  color: $text;
+
+  &::file-selector-button {
+    font-family: $font;
+    font-size: 12px;
+    padding: 6px 14px;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $bg-primary;
+    color: $text;
+    cursor: pointer;
+    margin-right: 8px;
+
+    &:hover {
+      background: $border;
+      border-color: $accent;
+    }
+  }
+}
+
+// Log panel
+#log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+
+  &:empty::before {
+    content: "Ready. Connect a device to begin.";
+    color: $text-dim;
+    font-style: italic;
+  }
+
+  progress {
+    width: 200px;
+    height: 16px;
+    margin: 4px 0 4px 8px;
+    appearance: none;
+
+    &::-webkit-progress-bar {
+      background: $border;
+      border-radius: 3px;
+    }
+
+    &::-webkit-progress-value {
+      background: $success;
+      border-radius: 3px;
+      transition: width 0.2s;
+    }
+  }
+}
+
+// Log entries
+.entry {
+  padding: 3px 8px;
+  border-radius: 3px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.5;
+
+  .timestamp {
+    color: $text-dim;
+    margin-right: 8px;
+    user-select: none;
+  }
+
+  &.info {
+    color: #666;
+  }
+
+  &.success {
+    color: $success;
+  }
+
+  &.error {
+    color: $accent;
+    background: rgba($accent, 0.08);
+  }
+
+  &.heading {
+    color: $text;
+    font-weight: 600;
+    margin-top: 8px;
+    border-bottom: 1px solid $border;
+    padding-bottom: 4px;
+  }
+
+  &.data {
+    color: $data;
+  }
+}
+
+// Footer
+footer {
+  padding: 8px 20px;
+  background: $bg-surface;
+  border-top: 1px solid $border;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+
+  button {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-color: $border;
+    color: $text-muted;
+  }
+}
+
+#memory-display {
+  font-size: 12px;
+  color: $data;
+  white-space: nowrap;
+}
