@@ -10,15 +10,9 @@ import (
 	"github.com/256dpi/naos/pkg/msg"
 )
 
-func TestBridgeRoutesOwnedSessions(t *testing.T) {
-	server := NewServer()
-
+func TestBridge(t *testing.T) {
 	deviceConn := newMemoryConn()
-	deviceChannel := msg.NewChannel(NewTransport(deviceConn), nil, 10)
-	device := &connectedDevice{
-		id:      "dev-1",
-		channel: deviceChannel,
-	}
+	channel := msg.NewChannel(NewTransport(deviceConn), nil, 10)
 
 	clientAConn := newMemoryConn()
 	clientA := NewTransport(clientAConn)
@@ -27,10 +21,10 @@ func TestBridgeRoutesOwnedSessions(t *testing.T) {
 
 	errs := make(chan error, 2)
 	go func() {
-		errs <- server.bridge(device, clientA, "client-a")
+		errs <- Bridge(clientA, channel)
 	}()
 	go func() {
-		errs <- server.bridge(device, clientB, "client-b")
+		errs <- Bridge(clientB, channel)
 	}()
 
 	time.Sleep(50 * time.Millisecond)
@@ -74,7 +68,7 @@ func TestBridgeRoutesOwnedSessions(t *testing.T) {
 
 	clientA.Close()
 	clientB.Close()
-	deviceChannel.Close()
+	channel.Close()
 
 	for i := 0; i < 2; i++ {
 		select {

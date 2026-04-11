@@ -2,7 +2,7 @@ package connect
 
 import (
 	"fmt"
-	"net/url"
+	"strings"
 
 	"github.com/gorilla/websocket"
 
@@ -12,36 +12,26 @@ import (
 type device struct {
 	baseURL string
 	token   string
-	id      string
-	label   string
+	uuid    string
 }
 
 // NewDevice returns a msg.Device that connects through a Connect server.
-func NewDevice(baseURL string, token string, id string) msg.Device {
-	// determine label
-	label := id
-	if parsed, err := url.Parse(baseURL); err == nil && parsed.Host != "" {
-		label = parsed.Host + "/" + id
-	}
-
+func NewDevice(baseURL string, token string, uuid string) msg.Device {
 	return &device{
 		baseURL: baseURL,
 		token:   token,
-		id:      id,
-		label:   label,
+		uuid:    uuid,
 	}
 }
 
 func (d *device) ID() string {
-	return "connect/" + d.label
+	return "connect/" + d.uuid
 }
 
 func (d *device) Open() (*msg.Channel, error) {
 	// get device URL
-	target, err := deviceWebSocketURL(d.baseURL, d.id)
-	if err != nil {
-		return nil, err
-	}
+	baseURL := strings.Replace(d.baseURL, "http://", "ws://", 1)
+	target := strings.Join([]string{baseURL, d.uuid}, "/device/")
 
 	// prepare dialer
 	dialer := *websocket.DefaultDialer

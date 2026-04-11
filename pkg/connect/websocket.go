@@ -36,11 +36,6 @@ func (c *WebSocketConn) RemoteAddr() net.Addr {
 	return c.conn.RemoteAddr()
 }
 
-// UnderlyingConn returns the wrapped Gorilla websocket connection.
-func (c *WebSocketConn) UnderlyingConn() *websocket.Conn {
-	return c.conn
-}
-
 // SetReadDeadline forwards the read deadline to the websocket connection.
 func (c *WebSocketConn) SetReadDeadline(t time.Time) error {
 	return c.conn.SetReadDeadline(t)
@@ -48,14 +43,16 @@ func (c *WebSocketConn) SetReadDeadline(t time.Time) error {
 
 // Read returns the next binary websocket message.
 func (c *WebSocketConn) Read() ([]byte, error) {
+	// read next message
 	messageType, buf, err := c.conn.ReadMessage()
 	var closeErr *websocket.CloseError
 	if errors.As(err, &closeErr) {
 		return nil, io.EOF
-	}
-	if err != nil {
+	} else if err != nil {
 		return nil, err
 	}
+
+	// check message type
 	if messageType != websocket.BinaryMessage {
 		return nil, ErrNotBinary
 	}
@@ -68,16 +65,19 @@ func (c *WebSocketConn) Write(buf []byte) (int, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// get writer
 	writer, err := c.conn.NextWriter(websocket.BinaryMessage)
 	if err != nil {
 		return 0, err
 	}
 
+	// write buffer
 	n, err := writer.Write(buf)
 	if err != nil {
 		return n, err
 	}
 
+	// close writer
 	err = writer.Close()
 	if err != nil {
 		return n, err

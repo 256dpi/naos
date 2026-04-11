@@ -30,6 +30,7 @@ func NewWebSocketUpgrader(fallback http.Handler) *WebSocketUpgrader {
 
 // Upgrade upgrades a websocket request or forwards to the fallback handler.
 func (u *WebSocketUpgrader) Upgrade(w http.ResponseWriter, r *http.Request) (*WebSocketConn, error) {
+	// check if request is an upgrade
 	if !websocket.IsWebSocketUpgrade(r) {
 		if u.fallback == nil {
 			http.Error(w, "websocket upgrade required", http.StatusUpgradeRequired)
@@ -39,15 +40,11 @@ func (u *WebSocketUpgrader) Upgrade(w http.ResponseWriter, r *http.Request) (*We
 		return nil, nil
 	}
 
+	// upgrade request
 	conn, err := u.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	return NewWebSocketConn(conn), nil
-}
-
-// UnderlyingUpgrader returns the wrapped Gorilla websocket upgrader.
-func (u *WebSocketUpgrader) UnderlyingUpgrader() *websocket.Upgrader {
-	return u.upgrader
 }

@@ -4,14 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strings"
 	"time"
 )
 
 // Description describes a remotely connected device.
 type Description struct {
-	ID         string    `json:"id"`
+	UUID       string    `json:"uuid"`
 	DeviceID   string    `json:"device_id,omitempty"`
 	DeviceName string    `json:"device_name,omitempty"`
 	AppName    string    `json:"app_name,omitempty"`
@@ -20,13 +18,9 @@ type Description struct {
 }
 
 // List fetches the currently connected devices from a NAOS Connect server.
-func List(rawURL string, token string) ([]Description, error) {
-	base, err := normalizeBaseURL(rawURL)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodGet, base, nil)
+func List(baseURL string, token string) ([]Description, error) {
+	// prepare request
+	req, err := http.NewRequest(http.MethodGet, baseURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -34,16 +28,19 @@ func List(rawURL string, token string) ([]Description, error) {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
+	// perform request
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
+	// check status code
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
+	// parse descriptions
 	var devices []Description
 	err = json.NewDecoder(resp.Body).Decode(&devices)
 	if err != nil {
@@ -51,59 +48,4 @@ func List(rawURL string, token string) ([]Description, error) {
 	}
 
 	return devices, nil
-}
-
-func normalizeBaseURL(rawURL string) (string, error) {
-	if !strings.Contains(rawURL, "://") {
-		rawURL = "http://" + rawURL
-	}
-
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return "", err
-	}
-	if u.Scheme == "" {
-		u.Scheme = "http"
-	}
-	if u.Host == "" && u.Path != "" {
-		u.Host = u.Path
-		u.Path = ""
-	}
-	if u.Host == "" {
-		return "", fmt.Errorf("invalid connect URL")
-	}
-
-	u.Path = strings.TrimRight(u.Path, "/")
-	if u.Path == "" {
-		u.Path = "/"
-	}
-	u.RawQuery = ""
-	u.Fragment = ""
-
-	return u.String(), nil
-}
-
-func deviceWebSocketURL(baseURL string, id string) (string, error) {
-	base, err := normalizeBaseURL(baseURL)
-	if err != nil {
-		return "", err
-	}
-
-	u, err := url.Parse(base)
-	if err != nil {
-		return "", err
-	}
-
-	switch u.Scheme {
-	case "http":
-		u.Scheme = "ws"
-	case "https":
-		u.Scheme = "wss"
-	default:
-		return "", fmt.Errorf("unsupported connect scheme: %s", u.Scheme)
-	}
-
-	u.Path = strings.TrimRight(u.Path, "/") + "/device/" + url.PathEscape(id)
-
-	return u.String(), nil
 }

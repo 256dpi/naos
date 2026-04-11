@@ -9,6 +9,8 @@ require (
 	github.com/creack/pty v1.1.18
 	github.com/docopt/docopt-go v0.0.0-20160216232012-784ddc588536
 	github.com/gdamore/tcell/v2 v2.9.0
+	github.com/google/uuid v1.6.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/grandcat/zeroconf v1.0.0
 	github.com/rivo/tview v0.42.0
 	github.com/ryanuber/go-glob v0.0.0-20170128012129-256dc444b735
@@ -28,7 +30,6 @@ require (
 	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/jpillora/backoff v0.0.0-20170918002102-8eab2debe79d // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
