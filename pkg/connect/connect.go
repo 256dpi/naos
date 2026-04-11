@@ -7,22 +7,16 @@ import (
 	"time"
 )
 
-// Attach describes how a client can attach to a remotely connected device.
-type Attach struct {
-	URL   string    `json:"url"`
-	Token string    `json:"token,omitempty"`
-	Until time.Time `json:"until,omitzero"`
-}
-
 // Description describes a remotely connected device.
 type Description struct {
-	UUID       string    `json:"uuid"`
-	DeviceID   string    `json:"device_id,omitempty"`
-	DeviceName string    `json:"device_name,omitempty"`
-	AppName    string    `json:"app_name,omitempty"`
-	AppVersion string    `json:"app_version,omitempty"`
-	Connected  time.Time `json:"connected"`
-	Attach     Attach    `json:"attach"`
+	UUID        string    `json:"uuid"`
+	Connected   time.Time `json:"connected"`
+	DeviceID    string    `json:"device_id,omitempty"`
+	DeviceName  string    `json:"device_name,omitempty"`
+	AppName     string    `json:"app_name,omitempty"`
+	AppVersion  string    `json:"app_version,omitempty"`
+	AttachURL   string    `json:"attach_url"`
+	AttachToken string    `json:"attach_token,omitempty"`
 }
 
 type listResponse struct {

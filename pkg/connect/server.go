@@ -93,16 +93,11 @@ func (s *Server) authorized(r *http.Request) bool {
 
 func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	// collect descriptions
-	var descriptions []Description
+	descriptions := make([]Description, 0)
 	for _, d := range s.devices.Range {
 		dev := d.(*connectedDevice)
 		desc := dev.desc
-		desc.Attach = Attach{
-			URL: s.attachURL(r, dev.desc.UUID),
-		}
-		if s.token != "" {
-			desc.Attach.Token = s.token
-		}
+		desc.AttachURL = s.attachURL(r, dev.desc.UUID)
 		descriptions = append(descriptions, desc)
 	}
 

@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -158,7 +159,7 @@ func TestList(t *testing.T) {
 			t.Fatalf("unexpected authorization header: %q", got)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"devices":[{"uuid":"uuid-1","device_id":"device-1","connected":"2026-04-11T12:00:00Z","attach":{"url":"wss://example.com/attach/1","token":"attach-secret"}}]}`))
+		_, _ = w.Write([]byte(`{"devices":[{"uuid":"uuid-1","device_id":"device-1","connected":"2026-04-11T12:00:00Z","attach_url":"wss://example.com/attach/1","attach_token":"attach-secret"}]}`))
 	}))
 	defer server.Close()
 
@@ -175,11 +176,36 @@ func TestList(t *testing.T) {
 	if devices[0].UUID != "uuid-1" {
 		t.Fatalf("unexpected uuid: %q", devices[0].UUID)
 	}
-	if devices[0].Attach.URL != "wss://example.com/attach/1" {
-		t.Fatalf("unexpected attach url: %q", devices[0].Attach.URL)
+	if devices[0].AttachURL != "wss://example.com/attach/1" {
+		t.Fatalf("unexpected attach url: %q", devices[0].AttachURL)
 	}
-	if devices[0].Attach.Token != "attach-secret" {
-		t.Fatalf("unexpected attach token: %q", devices[0].Attach.Token)
+	if devices[0].AttachToken != "attach-secret" {
+		t.Fatalf("unexpected attach token: %q", devices[0].AttachToken)
+	}
+}
+
+func TestServerListEmptyDevices(t *testing.T) {
+	server := NewServer()
+
+	req := httptest.NewRequest(http.MethodGet, "/list", nil)
+	rec := httptest.NewRecorder()
+	server.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("unexpected status: got %d want %d", rec.Code, http.StatusOK)
+	}
+
+	var out struct {
+		Devices []Description `json:"devices"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&out); err != nil {
+		t.Fatalf("decode failed: %v", err)
+	}
+	if out.Devices == nil {
+		t.Fatal("expected devices to be encoded as [] instead of null")
+	}
+	if len(out.Devices) != 0 {
+		t.Fatalf("unexpected devices: %v", out.Devices)
 	}
 }
 

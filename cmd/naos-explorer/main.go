@@ -113,7 +113,11 @@ func main() {
 					state.log("[red]Hub discover error[-]: %v", err)
 				} else {
 					for _, d := range devices {
-						state.registerWithMeta(connect.NewDevice(d.Attach.URL, d.Attach.Token, d.UUID), d.DeviceName, d.AppName, d.AppVersion)
+						token := d.AttachToken
+						if token == "" {
+							token = *hubToken
+						}
+						state.registerWithMeta(connect.NewDevice(d.AttachURL, token, d.UUID), d.DeviceName, d.AppName, d.AppVersion)
 					}
 				}
 				time.Sleep(5 * time.Second)
