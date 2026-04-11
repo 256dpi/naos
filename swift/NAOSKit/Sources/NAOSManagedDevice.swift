@@ -12,7 +12,7 @@ public enum NAOSManagedDeviceEvent {
 	case disconnected
 }
 
-public enum NAOSManagedError: LocalizedError {
+public enum NAOSManagedDeviceError: LocalizedError {
 	case notConnected
 	case stopped
 
@@ -99,7 +99,7 @@ open class NAOSManagedDevice: NSObject {
 
 		// check state
 		if stopped {
-			throw NAOSManagedError.stopped
+			throw NAOSManagedDeviceError.stopped
 		}
 		if active {
 			return
@@ -136,7 +136,7 @@ open class NAOSManagedDevice: NSObject {
 
 		// check state
 		if !active {
-			throw NAOSManagedError.notConnected
+			throw NAOSManagedDeviceError.notConnected
 		}
 
 		// unlock
@@ -158,10 +158,10 @@ open class NAOSManagedDevice: NSObject {
 
 		// check state
 		if stopped {
-			throw NAOSManagedError.stopped
+			throw NAOSManagedDeviceError.stopped
 		}
 		if !active {
-			throw NAOSManagedError.notConnected
+			throw NAOSManagedDeviceError.notConnected
 		}
 
 		// open new session
@@ -176,10 +176,10 @@ open class NAOSManagedDevice: NSObject {
 
 		// check state
 		if stopped {
-			throw NAOSManagedError.stopped
+			throw NAOSManagedDeviceError.stopped
 		}
 		if !active {
-			throw NAOSManagedError.notConnected
+			throw NAOSManagedDeviceError.notConnected
 		}
 
 		// yield session

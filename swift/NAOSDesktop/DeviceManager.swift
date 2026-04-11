@@ -45,7 +45,7 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 			var known = Set<NAOSSerialDescriptor>()
 
 			while !Task.isCancelled {
-				let ports = Set(NAOSSerialListPorts())
+				let ports = Set(NAOSSerialList())
 
 				// handle added ports
 				for descriptor in ports.subtracting(known) {

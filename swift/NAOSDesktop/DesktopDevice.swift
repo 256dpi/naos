@@ -140,7 +140,7 @@ public class DesktopDevice: NAOSManagedDevice {
 	public func refresh() async throws {
 		// check state
 		if !active {
-			throw NAOSManagedError.notConnected
+			throw NAOSManagedDeviceError.notConnected
 		}
 
 		// reset max age
@@ -198,7 +198,7 @@ public class DesktopDevice: NAOSManagedDevice {
 	public func read(parameter: Parameter) async throws {
 		// check state
 		if !active {
-			throw NAOSManagedError.notConnected
+			throw NAOSManagedDeviceError.notConnected
 		}
 
 		// use session
@@ -222,7 +222,7 @@ public class DesktopDevice: NAOSManagedDevice {
 	public func write(parameter: Parameter) async throws {
 		// check state
 		if !active {
-			throw NAOSManagedError.notConnected
+			throw NAOSManagedDeviceError.notConnected
 		}
 
 		// write parameter

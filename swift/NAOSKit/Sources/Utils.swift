@@ -6,7 +6,7 @@
 import Foundation
 import Semaphore
 
-struct TimedOutError: LocalizedError, Equatable {
+struct NAOSTimedOutError: LocalizedError, Equatable {
 	public var errorDescription: String? {
 		return "Operation timed out."
 	}
@@ -30,7 +30,7 @@ func withTimeout<R>(
 				try await Task.sleep(for: .seconds(interval))
 			}
 			try Task.checkCancellation()
-			throw TimedOutError()
+			throw NAOSTimedOutError()
 		}
 
 		// get first result
@@ -134,6 +134,21 @@ public class Channel<T> {
 	}
 }
 
+actor StreamReader {
+	private var iterator: AsyncThrowingStream<Data, Error>.Iterator
+
+	init(stream: AsyncThrowingStream<Data, Error>) {
+		self.iterator = stream.makeAsyncIterator()
+	}
+
+	func next() async throws -> Data? {
+		var iterator = self.iterator
+		let value = try await iterator.next()
+		self.iterator = iterator
+		return value
+	}
+}
+
 public func pack(fmt: String, args: [Any]) -> Data {
 	var buffer = Data()
 
@@ -165,7 +180,7 @@ public func pack(fmt: String, args: [Any]) -> Data {
 	return buffer
 }
 
-struct UnpackError: LocalizedError, Equatable {
+struct NAOSUnpackError: LocalizedError, Equatable {
 	public var errorDescription: String? {
 		return "Not enough data to unpack."
 	}
@@ -179,7 +194,7 @@ public func unpack(fmt: String, data: Data, start: Int = 0) throws -> [Any] {
 		switch code {
 		case "s":
 			if offset > data.count {
-				throw UnpackError()
+				throw NAOSUnpackError()
 			}
 			if let end = data[offset...].firstIndex(of: 0) {
 				let stringData = data[offset..<end]
@@ -194,34 +209,34 @@ public func unpack(fmt: String, data: Data, start: Int = 0) throws -> [Any] {
 			}
 		case "b":
 			if offset > data.count {
-				throw UnpackError()
+				throw NAOSUnpackError()
 			}
 			let value = Data(data[offset...])
 			results.append(value)
 			offset += value.count
 		case "o":
 			if offset + 1 > data.count {
-				throw UnpackError()
+				throw NAOSUnpackError()
 			}
 			results.append(data[offset])
 			offset += 1
 		case "h":
 			if offset + 2 > data.count {
-				throw UnpackError()
+				throw NAOSUnpackError()
 			}
 			let value = readUint16(data: Data(data[offset..<offset + 2]))
 			results.append(value)
 			offset += 2
 		case "i":
 			if offset + 4 > data.count {
-				throw UnpackError()
+				throw NAOSUnpackError()
 			}
 			let value = readUint32(data: Data(data[offset..<offset + 4]))
 			results.append(value)
 			offset += 4
 		case "q":
 			if offset + 8 > data.count {
-				throw UnpackError()
+				throw NAOSUnpackError()
 			}
 			let value = readUint64(data: Data(data[offset..<offset + 8]))
 			results.append(value)

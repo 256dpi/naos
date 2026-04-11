@@ -42,7 +42,7 @@ public struct NAOSSerialDescriptor: Hashable, Sendable {
 }
 
 /// List all known serial ports on Darwin based systems.
-public func NAOSSerialListPorts() -> [NAOSSerialDescriptor] {
+public func NAOSSerialList() -> [NAOSSerialDescriptor] {
 	let devPath = "/dev"
 	guard let entries = try? FileManager.default.contentsOfDirectory(atPath: devPath) else {
 		return []
@@ -89,7 +89,7 @@ public class NAOSSerialDevice: NAOSDevice {
 				throw NAOSSerialError.channelAlreadyOpen
 			}
 
-			let transport = try serialTransport(path: path, baudRate: baudRate)
+			let transport = try SerialTransport(path: path, baudRate: baudRate)
 			let ch = NAOSChannel(transport: transport, device: self, width: 1) { [weak self] in
 				self?.didClose()
 			}
@@ -106,27 +106,12 @@ public class NAOSSerialDevice: NAOSDevice {
 	}
 }
 
-private actor serialStreamReader {
-	private var iterator: AsyncThrowingStream<Data, Error>.Iterator
-
-	init(stream: AsyncThrowingStream<Data, Error>) {
-		self.iterator = stream.makeAsyncIterator()
-	}
-
-	func next() async throws -> Data? {
-		var iterator = self.iterator
-		let value = try await iterator.next()
-		self.iterator = iterator
-		return value
-	}
-}
-
-private final class serialTransport: NAOSTransport {
+private final class SerialTransport: NAOSTransport {
 	private let fd: Int32
 	private let readSource: DispatchSourceRead
 	private let writeQueue: DispatchQueue
 	private let streamContinuation: AsyncThrowingStream<Data, Error>.Continuation
-	private let reader: serialStreamReader
+	private let reader: StreamReader
 	private let stateLock = NSLock()
 	private var buffers = Data()
 	private var closed = false
@@ -155,7 +140,7 @@ private final class serialTransport: NAOSTransport {
 		var continuation: AsyncThrowingStream<Data, Error>.Continuation?
 		let stream = AsyncThrowingStream<Data, Error> { continuation = $0 }
 		self.streamContinuation = continuation!
-		self.reader = serialStreamReader(stream: stream)
+		self.reader = StreamReader(stream: stream)
 
 		readSource.setEventHandler { [weak self] in
 			self?.handleRead()

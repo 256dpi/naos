@@ -285,7 +285,7 @@ public class NAOSBLEDevice: NAOSDevice {
 		}
 
 		return NAOSChannel(
-			transport: bleTransport(peripheral: self, stream: stream, subscription: subscription),
+			transport: BLETransport(peripheral: self, stream: stream, subscription: subscription),
 			device: self,
 			width: 10,
 			onClose: { [weak self] in
@@ -305,10 +305,10 @@ public class NAOSBLEDevice: NAOSDevice {
 		sub?.cancel()
 	}
 
-	func stream() async -> (AsyncStream<Data>, AnyCancellable) {
+	func stream() async -> (AsyncThrowingStream<Data, Error>, AnyCancellable) {
 		// prepare stream
-		var continuation: AsyncStream<Data>.Continuation?
-		let stream = AsyncStream<Data> { c in
+		var continuation: AsyncThrowingStream<Data, Error>.Continuation?
+		let stream = AsyncThrowingStream<Data, Error> { c in
 			continuation = c
 		}
 
@@ -365,36 +365,21 @@ public class NAOSBLEDevice: NAOSDevice {
 	}
 }
 
-private actor dataStreamReader {
-	private var iterator: AsyncStream<Data>.Iterator
-
-	init(stream: AsyncStream<Data>) {
-		self.iterator = stream.makeAsyncIterator()
-	}
-
-	func next() async -> Data? {
-		var iterator = self.iterator
-		let value = await iterator.next()
-		self.iterator = iterator
-		return value
-	}
-}
-
-final class bleTransport: NAOSTransport {
+final class BLETransport: NAOSTransport {
 	private let peripheral: NAOSBLEDevice
 	private let subscription: AnyCancellable
-	private let reader: dataStreamReader
+	private let reader: StreamReader
 	private let lock = NSLock()
 	private var closed = false
 
-	init(peripheral: NAOSBLEDevice, stream: AsyncStream<Data>, subscription: AnyCancellable) {
+	init(peripheral: NAOSBLEDevice, stream: AsyncThrowingStream<Data, Error>, subscription: AnyCancellable) {
 		self.peripheral = peripheral
 		self.subscription = subscription
-		self.reader = dataStreamReader(stream: stream)
+		self.reader = StreamReader(stream: stream)
 	}
 
 	func read() async throws -> Data {
-		guard let data = await reader.next() else {
+		guard let data = try await reader.next() else {
 			throw NAOSTransportError.closed
 		}
 		return data

@@ -84,14 +84,14 @@ public class NAOSRelayDevice: NAOSDevice {
 		let session = try await host.newSession()
 		try await NAOSRelay.link(session: session, device: device)
 		return NAOSChannel(
-			transport: relayTransport(session: session, device: device),
+			transport: RelayTransport(session: session, device: device),
 			device: self,
 			width: session.channel.width()
 		)
 	}
 }
 
-final class relayTransport: NAOSTransport {
+final class RelayTransport: NAOSTransport {
 	private let session: NAOSSession
 	private let device: UInt8
 
@@ -106,7 +106,7 @@ final class relayTransport: NAOSTransport {
 				if let data = try await NAOSRelay.receive(session: session, timeout: 1) {
 					return data
 				}
-			} catch is TimedOutError {
+			} catch is NAOSTimedOutError {
 				continue
 			}
 		}

@@ -82,11 +82,11 @@ public class NAOSHTTPDevice: NAOSDevice {
 		}
 		let webSocketTask = urlSession.webSocketTask(with: url)
 		webSocketTask.resume()
-		return NAOSChannel(transport: httpTransport(task: webSocketTask), device: self, width: 10)
+		return NAOSChannel(transport: HTTPTransport(task: webSocketTask), device: self, width: 10)
 	}
 }
 
-final class httpTransport: NAOSTransport {
+final class HTTPTransport: NAOSTransport {
 	private let task: URLSessionWebSocketTask
 
 	init(task: URLSessionWebSocketTask) {
