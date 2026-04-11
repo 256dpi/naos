@@ -113,7 +113,9 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 
 	// encode descriptions
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(descriptions)
+	_ = json.NewEncoder(w).Encode(listResponse{
+		Devices: descriptions,
+	})
 }
 
 func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {

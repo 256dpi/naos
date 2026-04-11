@@ -155,7 +155,7 @@ func TestList(t *testing.T) {
 			t.Fatalf("unexpected authorization header: %q", got)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`[{"uuid":"uuid-1","device_id":"device-1","connected":"2026-04-11T12:00:00Z","attach":{"url":"wss://example.com/device/1","token":"attach-secret"}}]`))
+		_, _ = w.Write([]byte(`{"devices":[{"uuid":"uuid-1","device_id":"device-1","connected":"2026-04-11T12:00:00Z","attach":{"url":"wss://example.com/device/1","token":"attach-secret"}}]}`))
 	}))
 	defer server.Close()
 

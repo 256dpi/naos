@@ -25,6 +25,10 @@ type Description struct {
 	Attach     Attach    `json:"attach"`
 }
 
+type listResponse struct {
+	Devices []Description `json:"devices"`
+}
+
 // List fetches the currently connected devices from a NAOS Connect server.
 func List(baseURL string, token string) ([]Description, error) {
 	// prepare request
@@ -49,11 +53,11 @@ func List(baseURL string, token string) ([]Description, error) {
 	}
 
 	// parse descriptions
-	var devices []Description
-	err = json.NewDecoder(resp.Body).Decode(&devices)
+	var out listResponse
+	err = json.NewDecoder(resp.Body).Decode(&out)
 	if err != nil {
 		return nil, err
 	}
 
-	return devices, nil
+	return out.Devices, nil
 }
