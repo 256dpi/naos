@@ -1,10 +1,30 @@
 package msg
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 )
+
+// ErrManagedStopped is returned when using a stopped managed device.
+var ErrManagedStopped = errors.New("managed device stopped")
+
+// ManagedEventType represents the type of a managed device event.
+type ManagedEventType int
+
+const (
+	// ManagedConnected is emitted after a successful activate transition.
+	ManagedConnected ManagedEventType = iota
+
+	// ManagedDisconnected is emitted on unexpected transport loss.
+	ManagedDisconnected
+)
+
+// ManagedEvent represents a lifecycle event from a managed device.
+type ManagedEvent struct {
+	Type ManagedEventType
+}
 
 // ManagedDevice represents a managed device.
 type ManagedDevice struct {
@@ -12,6 +32,9 @@ type ManagedDevice struct {
 	channel  *Channel
 	session  *Session
 	password string
+	subs     map[uint64]chan ManagedEvent
+	nextSub  uint64
+	stopped  bool
 	mutex    sync.Mutex
 }
 
@@ -20,6 +43,7 @@ func NewManagedDevice(dev Device) *ManagedDevice {
 	// create active device
 	ad := &ManagedDevice{
 		device: dev,
+		subs:   make(map[uint64]chan ManagedEvent),
 	}
 
 	// run pinger
@@ -33,6 +57,42 @@ func (d *ManagedDevice) Device() Device {
 	return d.device
 }
 
+// Events returns a new event channel and a cancel function. The channel is
+// buffered (4) and drops events if the consumer is too slow. Call cancel to
+// unsubscribe and close the channel.
+func (d *ManagedDevice) Events() (<-chan ManagedEvent, func()) {
+	// acquire mutex
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	// create channel
+	ch := make(chan ManagedEvent, 4)
+
+	// close immediately if stopped
+	if d.stopped {
+		close(ch)
+		return ch, func() {}
+	}
+
+	// add subscriber
+	id := d.nextSub
+	d.nextSub++
+	d.subs[id] = ch
+
+	return ch, func() {
+		d.mutex.Lock()
+		defer d.mutex.Unlock()
+
+		sub, ok := d.subs[id]
+		if !ok {
+			return
+		}
+
+		delete(d.subs, id)
+		close(sub)
+	}
+}
+
 // Activate activates the device.
 func (d *ManagedDevice) Activate() error {
 	// acquire mutex
@@ -43,6 +103,9 @@ func (d *ManagedDevice) Activate() error {
 	if d.channel != nil {
 		return nil
 	}
+	if d.stopped {
+		return ErrManagedStopped
+	}
 
 	// open channel
 	ch, err := d.device.Open()
@@ -52,6 +115,12 @@ func (d *ManagedDevice) Activate() error {
 
 	// set channel
 	d.channel = ch
+
+	// emit connected
+	d.emit(ManagedEvent{Type: ManagedConnected})
+
+	// watch for transport loss
+	go d.watcher(ch)
 
 	return nil
 }
@@ -90,6 +159,9 @@ func (d *ManagedDevice) NewSession() (*Session, error) {
 	defer d.mutex.Unlock()
 
 	// check state
+	if d.stopped {
+		return nil, ErrManagedStopped
+	}
 	if d.channel == nil {
 		return nil, fmt.Errorf("device not active")
 	}
@@ -104,6 +176,9 @@ func (d *ManagedDevice) UseSession(fn func(*Session) error) error {
 	defer d.mutex.Unlock()
 
 	// check state
+	if d.stopped {
+		return ErrManagedStopped
+	}
 	if d.channel == nil {
 		return fmt.Errorf("device not active")
 	}
@@ -194,9 +269,51 @@ func (d *ManagedDevice) Stop() {
 		d.channel = nil
 	}
 
+	// close all subscriber channels
+	for _, ch := range d.subs {
+		close(ch)
+	}
+	d.subs = nil
+	d.stopped = true
+
 	// clear state
 	d.device = nil
 	d.password = ""
+}
+
+func (d *ManagedDevice) emit(event ManagedEvent) {
+	for _, ch := range d.subs {
+		select {
+		case ch <- event:
+		default:
+		}
+	}
+}
+
+func (d *ManagedDevice) watcher(ch *Channel) {
+	// wait for channel close
+	<-ch.Done()
+
+	// acquire mutex
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	// skip if channel was replaced (intentional deactivate)
+	if d.channel != ch {
+		return
+	}
+
+	// clear session
+	if d.session != nil {
+		_ = d.session.End(time.Second)
+		d.session = nil
+	}
+
+	// clear channel
+	d.channel = nil
+
+	// emit disconnected
+	d.emit(ManagedEvent{Type: ManagedDisconnected})
 }
 
 func (d *ManagedDevice) pinger() {
