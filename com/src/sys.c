@@ -1,4 +1,5 @@
 #include <naos/sys.h>
+#include <naos/trace.h>
 
 #include <esp_log.h>
 #include <esp_timer.h>
@@ -85,9 +86,24 @@ void naos_kill(naos_task_t task) {
   vTaskDelete(task);
 }
 
+static void naos_repeat_call(TimerHandle_t timer) {
+  // get name and callback
+  const char *name = pcTimerGetName(timer);
+  naos_func_t func = (naos_func_t)pvTimerGetTimerID(timer);
+
+  // trace begin
+  int span = naos_trace_begin("repeat", name, 0);
+
+  // call callback
+  func();
+
+  // trace end
+  naos_trace_end(span);
+}
+
 void naos_repeat(const char *name, uint32_t period_ms, naos_func_t func) {
   // create and start timer
-  TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(period_ms), pdTRUE, 0, func);
+  TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(period_ms), pdTRUE, (void *)func, naos_repeat_call);
   if (timer == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
@@ -96,18 +112,39 @@ void naos_repeat(const char *name, uint32_t period_ms, naos_func_t func) {
 }
 
 static void naos_defer_call(TimerHandle_t timer) {
+  // get name and callback
+  const char *name = pcTimerGetName(timer);
+  naos_func_t func = pvTimerGetTimerID(timer);
+
+  // trace begin
+  int span = naos_trace_begin("defer", name, 0);
+
   // call callback
-  ((naos_func_t)pvTimerGetTimerID(timer))();
+  func();
+
+  // trace end
+  naos_trace_end(span);
 
   // delete timer
   while (xTimerDelete(timer, portMAX_DELAY) != pdPASS) {
   }
 }
 
+static void naos_defer_pend(void *arg, uint32_t name) {
+  // trace begin
+  int span = naos_trace_begin("defer", (const char *)name, 0);
+
+  // call callback
+  ((naos_func_t)arg)();
+
+  // trace end
+  naos_trace_end(span);
+}
+
 void naos_defer(const char *name, uint32_t delay_ms, naos_func_t func) {
   // pend function call
   if (delay_ms == 0) {
-    while (xTimerPendFunctionCall(func, NULL, 0, portMAX_DELAY) != pdPASS) {
+    while (xTimerPendFunctionCall(naos_defer_pend, func, (uint32_t)name, portMAX_DELAY) != pdPASS) {
     }
     return;
   }

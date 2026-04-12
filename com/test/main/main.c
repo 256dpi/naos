@@ -348,6 +348,19 @@ static naos_metric_t gauge_metric = {
     .values = {"a1", "a2", NULL, "b1", "b2"},
 };
 
+static void trace_deferred() {
+  // random busy work
+  naos_delay(1 + (esp_random() % 3));
+}
+
+static void trace_repeat() {
+  // random busy work
+  naos_delay(1 + (esp_random() % 5));
+
+  // schedule deferred call
+  naos_defer("trace-defer", 100, trace_deferred);
+}
+
 static void trace_task() {
   static const char *names[] = {"alpha", "beta", "gamma", "delta"};
   int32_t sawtooth = 0;
@@ -498,7 +511,8 @@ void app_main() {
   // initialize tracing
   if (TRACE) {
     naos_trace_install();
-    naos_run("trace", 4096, 1, trace_task);
+    naos_run("trace-task", 4096, 1, trace_task);
+    naos_repeat("trace-repeat", 500, trace_repeat);
   }
 
   // install echo endpoint
