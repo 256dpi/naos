@@ -70,6 +70,20 @@ static uint16_t naos_msg_get_session_id() {
   return 0;
 }
 
+static void naos_msg_break(uint16_t id) {
+  // acquire mutex
+  naos_lock(naos_msg_mutex);
+
+  // mark session as broken if it still exists
+  naos_msg_session_t* session = naos_msg_find(id);
+  if (session != NULL) {
+    session->broken = true;
+  }
+
+  // release mutex
+  naos_unlock(naos_msg_mutex);
+}
+
 static void naos_msg_cleanup() {
   // acquire mutex
   naos_lock(naos_msg_mutex);
@@ -416,7 +430,9 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     session->locked = strlen(naos_get_s("device-password")) > 0;
 
     // prepare reply
-    memcpy(data + 1, &session->id, 2);
+    uint16_t session_id = session->id;
+    void* session_ctx = session->context;
+    memcpy(data + 1, &session_id, 2);
 
     // release mutex
     naos_unlock(naos_msg_mutex);
@@ -427,9 +443,9 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 #endif
 
     // send reply
-    if (!naos_msg_channels[channel].send(data, len, session->context)) {
+    if (!naos_msg_channels[channel].send(data, len, session_ctx)) {
       ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: failed to send reply (%s)", name);
-      // TODO: Mark session as broken?
+      naos_msg_break(session_id);
     }
 
     return true;
@@ -462,12 +478,16 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     // update last message
     session->last_msg = naos_millis();
 
+    // capture session info
+    uint16_t session_id = session->id;
+    void* session_ctx = session->context;
+
     // release mutex
     naos_unlock(naos_msg_mutex);
 
     // prepare reply
     uint8_t reply[] = {1, 0, 0, 0xFE, NAOS_MSG_ACK};
-    memcpy(reply + 1, &session->id, 2);
+    memcpy(reply + 1, &session_id, 2);
 
 #if NAOS_MSG_DEBUG
     // log message
@@ -476,9 +496,9 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 #endif
 
     // send reply
-    if (!naos_msg_channels[channel].send(reply, 5, session->context)) {
+    if (!naos_msg_channels[channel].send(reply, 5, session_ctx)) {
       ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: failed to send reply (%s)", name);
-      // TODO: Mark session as broken?
+      naos_msg_break(session_id);
     }
 
     return true;
@@ -522,6 +542,10 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     // update last message
     session->last_msg = naos_millis();
 
+    // capture session info
+    uint16_t session_id = session->id;
+    void* session_ctx = session->context;
+
     // find endpoint
     bool found = false;
     for (size_t i = 0; i < naos_msg_endpoint_count; i++) {
@@ -536,7 +560,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 
     // prepare reply
     uint8_t reply[] = {1, 0, 0, 0xFE, found ? NAOS_MSG_ACK : NAOS_MSG_UNKNOWN};
-    memcpy(reply + 1, &session->id, 2);
+    memcpy(reply + 1, &session_id, 2);
 
 #if NAOS_MSG_DEBUG
     // log message
@@ -545,9 +569,9 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 #endif
 
     // send reply
-    if (!naos_msg_channels[channel].send(reply, 5, session->context)) {
+    if (!naos_msg_channels[channel].send(reply, 5, session_ctx)) {
       ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: failed to send reply (%s)", name);
-      // TODO: Mark session as broken?
+      naos_msg_break(session_id);
     }
 
     return true;
