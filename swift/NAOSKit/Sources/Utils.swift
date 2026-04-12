@@ -12,6 +12,50 @@ struct NAOSTimedOutError: LocalizedError, Equatable {
 	}
 }
 
+final class NAOSDoneSignal {
+	private var resolved = false
+	private var continuations: [CheckedContinuation<Void, Never>] = []
+
+	func wait(lock: NSLock) async {
+		let alreadyResolved = lock.withLock { resolved }
+		if alreadyResolved {
+			return
+		}
+
+		await withCheckedContinuation { continuation in
+			let shouldResumeImmediately = lock.withLock { () -> Bool in
+				if resolved {
+					return true
+				}
+
+				continuations.append(continuation)
+				return false
+			}
+
+			if shouldResumeImmediately {
+				continuation.resume()
+			}
+		}
+	}
+
+	func resolve(lock: NSLock) {
+		let resumptions = lock.withLock { () -> [CheckedContinuation<Void, Never>] in
+			if resolved {
+				return []
+			}
+
+			resolved = true
+			let resumptions = continuations
+			continuations.removeAll()
+			return resumptions
+		}
+
+		for continuation in resumptions {
+			continuation.resume()
+		}
+	}
+}
+
 func withTimeout<R>(
 	seconds: TimeInterval, operation: @escaping @Sendable () async throws -> R
 ) async throws -> R {

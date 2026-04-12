@@ -96,24 +96,13 @@ public final class NAOSChannel {
 	private let widthValue: Int
 	private let lock = NSLock()
 	private var closed = false
-	private var doneContinuation: CheckedContinuation<Void, Never>?
+	private let doneSignal = NAOSDoneSignal()
 
 	/// Resolves when the channel is closed, whether by transport loss or
 	/// explicit close. Analogous to the web `ch.done` promise.
 	public var done: Void {
 		get async {
-			let alreadyClosed = lock.withLock { closed }
-			if alreadyClosed { return }
-			await withCheckedContinuation { continuation in
-				let finish = lock.withLock { () -> Bool in
-					if closed { return true }
-					doneContinuation = continuation
-					return false
-				}
-				if finish {
-					continuation.resume()
-				}
-			}
+			await doneSignal.wait(lock: lock)
 		}
 	}
 	private var readerTask: Task<Void, Never>?
@@ -251,12 +240,7 @@ public final class NAOSChannel {
 		readerTask = nil
 		transport.close()
 		onClose?()
-		let cont = lock.withLock { () -> CheckedContinuation<Void, Never>? in
-			let c = doneContinuation
-			doneContinuation = nil
-			return c
-		}
-		cont?.resume()
+		doneSignal.resolve(lock: lock)
 	}
 
 	deinit {
