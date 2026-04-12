@@ -46,7 +46,7 @@ func main() {
 	go func() {
 		for {
 			err := mdns.Discover(nil, func(d mdns.Descriptor) {
-				state.register(http.NewDevice(d.Hostname))
+				state.register(http.NewDevice(d.Address))
 			})
 			if err != nil {
 				state.log("[red]mDNS discover error[-]: %v", err)
