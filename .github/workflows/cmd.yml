@@ -13,7 +13,7 @@ jobs:
       - name: Install
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24.7"
+          go-version: "1.25.0"
 
       - name: Prepare (Linux)
         run: |
