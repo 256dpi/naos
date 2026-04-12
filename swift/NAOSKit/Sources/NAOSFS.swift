@@ -35,8 +35,9 @@ public class NAOSFS {
 		let args = try unpack(fmt: "oi", data: reply, start: 1)
 		let isDir = args[0] as! UInt8 == 1
 		let size = args[1] as! UInt32
+		let name = URL(fileURLWithPath: path).lastPathComponent
 
-		return NAOSFSInfo(name: "", isDir: isDir, size: size)
+		return NAOSFSInfo(name: name, isDir: isDir, size: size)
 	}
 
 	/// List a files and directories.
