@@ -83,10 +83,24 @@ func (d *dashboard) buildUI() {
 	d.infoView.SetBorder(true).
 		SetTitle(" Device ")
 
+	// build status text based on available endpoints
+	var statusParts []string
+	statusParts = append(statusParts, "(Tab) Switch")
+	if d.device.HasFS() {
+		statusParts = append(statusParts, "(F) Reload Dir")
+	}
+	if d.device.HasUpdate() {
+		statusParts = append(statusParts, "(U) Firmware")
+	}
+	if d.device.HasDebug() {
+		statusParts = append(statusParts, "(C) Coredump", "(D) Del Coredump", "(L) Log")
+	}
+	statusParts = append(statusParts, "(Esc) Close")
+
 	// create status view
 	d.statusView = tview.NewTextView().
 		SetDynamicColors(true).
-		SetText("(Tab) Switch  (F) Reload Dir  (U) Firmware  (C) Coredump  (D) Del Coredump  (L) Log  (Esc) Close")
+		SetText(strings.Join(statusParts, "  "))
 	d.statusView.SetBorder(true).
 		SetTitle(" Status ")
 
@@ -110,11 +124,16 @@ func (d *dashboard) buildUI() {
 
 	// create FS tree view
 	d.fsTree = tview.NewTreeView()
-	d.fsTree.SetBorder(true).
-		SetTitle(" File System ")
-	d.fsTree.SetSelectedFunc(func(node *tview.TreeNode) {
-		d.handleTreeSelect(node)
-	})
+	if d.device.HasFS() {
+		d.fsTree.SetBorder(true).
+			SetTitle(" File System ")
+		d.fsTree.SetSelectedFunc(func(node *tview.TreeNode) {
+			d.handleTreeSelect(node)
+		})
+	} else {
+		d.fsTree.SetBorder(true).
+			SetTitle(" File System (N/A) ")
+	}
 
 	// create FS preview
 	d.fsPreview = tview.NewTextView().
@@ -158,8 +177,11 @@ func (d *dashboard) buildUI() {
 	d.root.AddItem(body, 0, 1, true)
 	d.root.AddItem(log, 10, 0, false)
 
-	// create focusable
-	d.focusable = []tview.Primitive{d.paramTable, d.metricTable, d.fsTree}
+	// create focusable list based on availability
+	d.focusable = []tview.Primitive{d.paramTable, d.metricTable}
+	if d.device.HasFS() {
+		d.focusable = append(d.focusable, d.fsTree)
+	}
 	d.focusIndex = 0
 
 	// handle input
@@ -193,8 +215,12 @@ func (d *dashboard) start() {
 	// run background loops
 	go d.loopParams()
 	go d.loopMetrics()
-	go d.loopCoredump()
-	go d.loadDirectory(d.fsTree.GetRoot(), true)
+	if d.device.HasDebug() {
+		go d.loopCoredump()
+	}
+	if d.device.HasFS() {
+		go d.loadDirectory(d.fsTree.GetRoot(), true)
+	}
 	go d.watchEvents()
 }
 
@@ -214,19 +240,29 @@ func (d *dashboard) capture(event *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyRune:
 		switch event.Rune() {
 		case 'f':
-			d.reloadCurrentDir()
+			if d.device.HasFS() {
+				d.reloadCurrentDir()
+			}
 			return nil
 		case 'u':
-			d.promptFirmwareUpdate()
+			if d.device.HasUpdate() {
+				d.promptFirmwareUpdate()
+			}
 			return nil
 		case 'c':
-			d.downloadCoredump()
+			if d.device.HasDebug() {
+				d.downloadCoredump()
+			}
 			return nil
 		case 'd':
-			d.deleteCoredump()
+			if d.device.HasDebug() {
+				d.deleteCoredump()
+			}
 			return nil
 		case 'l':
-			d.toggleLogStreaming()
+			if d.device.HasDebug() {
+				d.toggleLogStreaming()
+			}
 			return nil
 		}
 	default:
@@ -278,6 +314,9 @@ func (d *dashboard) loopParams() {
 func (d *dashboard) refreshParams() {
 	// get param service
 	ps := d.device.ParamsService()
+	if ps == nil {
+		return
+	}
 
 	// collect params
 	err := ps.Collect()
@@ -650,18 +689,24 @@ func (d *dashboard) performFirmwareUpdate(path string) {
 
 func (d *dashboard) updateInfo() {
 	// format coredump status
-	coredumpStatus := "None"
-	if d.coredumpSize > 0 {
-		coredumpStatus = fmt.Sprintf("%d bytes", d.coredumpSize)
-		if d.coredumpReason != "" {
-			coredumpStatus += fmt.Sprintf(" (%s)", d.coredumpReason)
+	coredumpStatus := "N/A"
+	if d.device.HasDebug() {
+		coredumpStatus = "None"
+		if d.coredumpSize > 0 {
+			coredumpStatus = fmt.Sprintf("%d bytes", d.coredumpSize)
+			if d.coredumpReason != "" {
+				coredumpStatus += fmt.Sprintf(" (%s)", d.coredumpReason)
+			}
 		}
 	}
 
 	// format log status
-	logStatus := "Off"
-	if d.logDone != nil {
-		logStatus = "[green]Streaming[-]"
+	logStatus := "N/A"
+	if d.device.HasDebug() {
+		logStatus = "Off"
+		if d.logDone != nil {
+			logStatus = "[green]Streaming[-]"
+		}
 	}
 
 	text := fmt.Sprintf("[yellow]ID:[-] %s\n[yellow]Coredump:[-] %s\n[yellow]Log:[-] %s", d.device.ID(), coredumpStatus, logStatus)

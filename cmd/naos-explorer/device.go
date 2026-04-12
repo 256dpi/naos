@@ -20,6 +20,11 @@ type device struct {
 	deviceName string
 	appName    string
 	appVersion string
+
+	// endpoint availability
+	hasFS     bool
+	hasUpdate bool
+	hasDebug  bool
 }
 
 func newDevice(dev msg.Device, deviceName, appName, appVersion string) *device {
@@ -136,37 +141,60 @@ func (d *device) Activate() error {
 	return nil
 }
 
+func (d *device) HasFS() bool {
+	d.mut.Lock()
+	defer d.mut.Unlock()
+	return d.hasFS
+}
+
+func (d *device) HasUpdate() bool {
+	d.mut.Lock()
+	defer d.mut.Unlock()
+	return d.hasUpdate
+}
+
+func (d *device) HasDebug() bool {
+	d.mut.Lock()
+	defer d.mut.Unlock()
+	return d.hasDebug
+}
+
 func (d *device) Setup() error {
 	// lock mutex
 	d.mut.Lock()
 	defer d.mut.Unlock()
 
-	// create params service
-	var err error
+	// create query session
+	qs, err := d.md.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create query session: %w", err)
+	}
+
+	// query endpoint availability
+	d.hasFS, _ = qs.Query(0x3, 5*time.Second)
+	d.hasUpdate, _ = qs.Query(0x2, 5*time.Second)
+	d.hasDebug, _ = qs.Query(0x7, 5*time.Second)
+
+	// end query session
+	_ = qs.End(time.Second)
+
+	// create params session and service
 	d.pss, err = d.md.NewSession()
 	if err != nil {
 		return fmt.Errorf("failed to create param session: %w", err)
 	}
-
-	// set up params service
 	d.ps = msg.NewParamsService(d.pss)
-
-	// list params
 	err = d.ps.List()
 	if err != nil {
 		return fmt.Errorf("failed to list params: %w", err)
 	}
 
-	// create metrics service
+	// create metrics session and service
 	d.mss, err = d.md.NewSession()
 	if err != nil {
 		return fmt.Errorf("failed to create metric session: %w", err)
 	}
-
-	// set up metrics service
 	d.ms = msg.NewMetricsService(d.mss)
-
-	// list metrics
 	err = d.ms.List()
 	if err != nil {
 		return fmt.Errorf("failed to list metrics: %w", err)
@@ -193,6 +221,11 @@ func (d *device) Deactivate() {
 		d.mss = nil
 	}
 	d.ms = nil
+
+	// reset endpoint availability
+	d.hasFS = false
+	d.hasUpdate = false
+	d.hasDebug = false
 
 	// deactivate device
 	d.md.Deactivate()
