@@ -25,6 +25,7 @@ type device struct {
 	hasFS     bool
 	hasUpdate bool
 	hasDebug  bool
+	hasTrace  bool
 }
 
 func newDevice(dev msg.Device, deviceName, appName, appVersion string) *device {
@@ -159,6 +160,12 @@ func (d *device) HasDebug() bool {
 	return d.hasDebug
 }
 
+func (d *device) HasTrace() bool {
+	d.mut.Lock()
+	defer d.mut.Unlock()
+	return d.hasTrace
+}
+
 func (d *device) Setup() error {
 	// lock mutex
 	d.mut.Lock()
@@ -174,6 +181,7 @@ func (d *device) Setup() error {
 	d.hasFS, _ = qs.Query(0x3, 5*time.Second)
 	d.hasUpdate, _ = qs.Query(0x2, 5*time.Second)
 	d.hasDebug, _ = qs.Query(0x7, 5*time.Second)
+	d.hasTrace, _ = qs.Query(0x8, 5*time.Second)
 
 	// end query session
 	_ = qs.End(time.Second)
@@ -226,6 +234,7 @@ func (d *device) Deactivate() {
 	d.hasFS = false
 	d.hasUpdate = false
 	d.hasDebug = false
+	d.hasTrace = false
 
 	// deactivate device
 	d.md.Deactivate()

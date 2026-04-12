@@ -95,6 +95,9 @@ func (d *dashboard) buildUI() {
 	if d.device.HasDebug() {
 		statusParts = append(statusParts, "(C) Coredump", "(D) Del Coredump", "(L) Log")
 	}
+	if d.device.HasTrace() {
+		statusParts = append(statusParts, "(T) Trace")
+	}
 	statusParts = append(statusParts, "(Esc) Close")
 
 	// create status view
@@ -257,6 +260,11 @@ func (d *dashboard) capture(event *tcell.EventKey) *tcell.EventKey {
 		case 'd':
 			if d.device.HasDebug() {
 				d.deleteCoredump()
+			}
+			return nil
+		case 't':
+			if d.device.HasTrace() {
+				d.performTrace()
 			}
 			return nil
 		case 'l':
@@ -834,6 +842,138 @@ func (d *dashboard) deleteCoredump() {
 		d.coredumpSize = 0
 		d.queue(func() {
 			d.updateInfo()
+		})
+	}()
+}
+
+func (d *dashboard) performTrace() {
+	// signal to stop recording
+	stop := make(chan struct{})
+
+	// show modal
+	view := tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignCenter)
+	view.SetText("\nStarting trace...")
+	view.SetBorder(true).SetTitle(" Recording Trace ")
+	view.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape || event.Key() == tcell.KeyEnter {
+			select {
+			case <-stop:
+			default:
+				close(stop)
+			}
+			return nil
+		}
+		return event
+	})
+	d.pages.AddPage("trace", centered(50, 8, view), true, true)
+	d.app.SetFocus(view)
+
+	go func() {
+		err := func() error {
+			// create dedicated session
+			s, err := d.device.NewSession()
+			if err != nil {
+				return fmt.Errorf("session: %w", err)
+			}
+			defer s.End(time.Second)
+
+			// start trace
+			err = msg.StartTrace(s, 5*time.Second)
+			if err != nil {
+				return fmt.Errorf("start: %w", err)
+			}
+
+			// collect events by polling the buffer during recording
+			var allEvents []msg.TraceEvent
+			taskNames := map[uint8]string{}
+			labels := map[uint8]string{}
+			started := time.Now()
+
+			// update modal text
+			update := func() {
+				elapsed := time.Since(started).Truncate(time.Second)
+				text := fmt.Sprintf("\n[yellow]Duration:[-] %s\n[yellow]Events:[-] %d\n\nPress Enter or Escape to stop.", elapsed, len(allEvents))
+				d.queue(func() {
+					view.SetText(text)
+				})
+			}
+
+			ticker := time.NewTicker(100 * time.Millisecond)
+			defer ticker.Stop()
+
+		loop:
+			for {
+				select {
+				case <-d.done:
+					_ = msg.StopTrace(s, time.Second)
+					return fmt.Errorf("dashboard closed")
+				case <-stop:
+					break loop
+				case <-ticker.C:
+					data, err := msg.ReadTrace(s, 5*time.Second)
+					if err != nil {
+						continue
+					}
+					for _, t := range data.Tasks {
+						taskNames[t.ID] = t.Name
+					}
+					for _, l := range data.Labels {
+						labels[l.ID] = l.Text
+					}
+					allEvents = append(allEvents, data.Events...)
+					update()
+				}
+			}
+
+			// stop trace
+			err = msg.StopTrace(s, 5*time.Second)
+			if err != nil {
+				return fmt.Errorf("stop: %w", err)
+			}
+
+			// final read to drain remaining events
+			data, err := msg.ReadTrace(s, 10*time.Second)
+			if err != nil {
+				return fmt.Errorf("final read: %w", err)
+			}
+			for _, t := range data.Tasks {
+				taskNames[t.ID] = t.Name
+			}
+			for _, l := range data.Labels {
+				labels[l.ID] = l.Text
+			}
+			allEvents = append(allEvents, data.Events...)
+
+			// get status for dropped count
+			var dropped uint32
+			status, err := msg.GetTraceStatus(s, 5*time.Second)
+			if err == nil {
+				dropped = status.Dropped
+			}
+
+			// generate Perfetto JSON
+			jsonData, err := msg.GeneratePerfetto(taskNames, labels, allEvents)
+			if err != nil {
+				return fmt.Errorf("generate json: %w", err)
+			}
+
+			// write file
+			safeID := strings.ReplaceAll(d.device.ID(), "/", "-")
+			filename := fmt.Sprintf("trace-%s-%s.json", safeID, time.Now().Format("20060102-150405"))
+			err = os.WriteFile(filename, jsonData, 0644)
+			if err != nil {
+				return fmt.Errorf("write file: %w", err)
+			}
+
+			d.log("Trace saved to %s (%d events, %d dropped)", filename, len(allEvents), dropped)
+			return nil
+		}()
+		if err != nil {
+			d.log("[red]Trace failed[-]: %v", err)
+		}
+
+		d.queue(func() {
+			d.pages.RemovePage("trace")
 		})
 	}()
 }
