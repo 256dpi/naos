@@ -6,6 +6,8 @@
 #include <esp_err.h>
 #include <string.h>
 
+#include <naos/trace.h>
+
 #include "utils.h"
 
 #define NAOS_MSG_DEBUG CONFIG_NAOS_MSG_DEBUG
@@ -42,6 +44,7 @@ static naos_msg_endpoint_t naos_msg_endpoints[NAOS_MSG_MAX_ENDPOINTS] = {0};
 static size_t naos_msg_endpoint_count = 0;
 static naos_msg_session_t naos_msg_session[NAOS_MSG_MAX_SESSIONS] = {0};
 static uint16_t naos_msg_next_session = 1;
+static int32_t naos_msg_session_count = 0;
 
 static naos_msg_session_t* naos_msg_find(uint16_t id) {
   // find matching and active session
@@ -111,6 +114,8 @@ static void naos_msg_cleanup() {
     } else {
       ESP_LOGE(NAOS_LOG_TAG, "naos_msg_cleanup: session %d timed out", session->id);
     }
+    naos_msg_session_count--;
+    naos_trace_value("naos-msg", "sessions", naos_msg_session_count);
 
     // collect session id
     stale[stale_count++] = session->id;
@@ -176,7 +181,9 @@ static void naos_msg_worker() {
     // most likely calls back into us to send a message to the session
 
     // handle message
+    int trace_id = naos_trace_begin("naos-msg", endpoint->name, 0);
     naos_msg_reply_t reply = endpoint->handle(msg);
+    naos_trace_end(trace_id);
 
     // send non-ok replies
     if (reply != NAOS_MSG_OK) {
@@ -414,6 +421,10 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
       return false;
     }
 
+    // trace session open
+    naos_msg_session_count++;
+    naos_trace_value("naos-msg", "sessions", naos_msg_session_count);
+
     // set channel
     session->channel = channel;
 
@@ -512,6 +523,10 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 
     // clear session
     *session = (naos_msg_session_t){0};
+
+    // trace session close
+    naos_msg_session_count--;
+    naos_trace_value("naos-msg", "sessions", naos_msg_session_count);
 
     // release mutex
     naos_unlock(naos_msg_mutex);
