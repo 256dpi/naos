@@ -34,7 +34,7 @@
 #define BLE_PAIRING false
 #define BLE_BONDING false
 
-#define NAOS_ECHO_ENDPOINT 0x08
+#define NAOS_ECHO_ENDPOINT 0x80
 
 static naos_msg_reply_t naos_echo_handle(naos_msg_t msg) {
   // echo data back

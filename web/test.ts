@@ -576,7 +576,7 @@ async function debug() {
   log("Done!", "success");
 }
 
-const ECHO_ENDPOINT = 0x08;
+const ECHO_ENDPOINT = 0x80;
 
 async function throughput() {
   log("Throughput", "heading");
