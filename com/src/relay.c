@@ -136,7 +136,8 @@ static naos_msg_reply_t naos_relay_handle(naos_msg_t msg) {
     return NAOS_MSG_INVALID;
   }
 
-  // we do not check the lock status
+  // we do not check the lock status. downstream devices ma define their
+  // own locking
 
   // pluck command
   naos_relay_cmd_t cmd = msg.data[0];
