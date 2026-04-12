@@ -189,7 +189,7 @@ func (d *ManagedDevice) Unlock(password string) (bool, error) {
 	// unlock
 	ok, err := d.session.Unlock(password, time.Second)
 	if err != nil {
-		_ = d.session.End(time.Second)
+		_ = d.session.End(0)
 		d.session = nil
 		return false, err
 	}
@@ -250,7 +250,7 @@ func (d *ManagedDevice) UseSession(fn func(*Session) error) error {
 	}
 
 	// close session
-	_ = d.session.End(time.Second)
+	_ = d.session.End(0)
 	d.session = nil
 
 	return err
@@ -390,7 +390,7 @@ func (d *ManagedDevice) pinger() {
 		// ping session if available
 		if d.session != nil {
 			if err := d.session.Ping(5 * time.Second); err != nil {
-				_ = d.session.End(time.Second)
+				_ = d.session.End(0)
 				d.session = nil
 			}
 		}

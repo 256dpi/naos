@@ -26,19 +26,26 @@ export class ManagedDevice {
     this.dev = device;
 
     // start pinger
-    this.pinger = setInterval(async () => {
-      if (this.session) {
-        try {
-          await this.session.ping(5000);
-        } catch (e) {
+    this.pinger = setInterval(() => {
+      void this.queue
+        .run(async () => {
+          if (!this.session) {
+            return;
+          }
           try {
-            await this.session.end(1000);
+            await this.session.ping(5000);
+          } catch (e) {
+          try {
+            await this.session.end(0);
           } catch (e) {
             // ignore
           }
           this.session = null;
-        }
-      }
+          }
+        })
+        .catch(() => {
+          // ignore after stop/deactivate races
+        });
     }, 5000);
   }
 
@@ -223,7 +230,7 @@ export class ManagedDevice {
       } catch (e) {
         // close session
         try {
-          await this.session.end(1000);
+          await this.session.end(0);
         } catch (e) {
           // ignore
         }

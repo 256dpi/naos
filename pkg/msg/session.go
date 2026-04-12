@@ -330,10 +330,20 @@ func (s *Session) End(timeout time.Duration) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// always unsubscribe when ending the session, even if the caller does not
+	// wait for the close reply or the close handshake fails.
+	defer s.ch.Unsubscribe(s.qu)
+
 	// write command
 	err := s.ch.Write(s.qu, Message{Session: s.id, Endpoint: 0xFF, Data: nil})
 	if err != nil {
 		return err
+	}
+
+	// return immediately if the caller does not want to wait for the close
+	// reply.
+	if timeout == 0 {
+		return nil
 	}
 
 	// read reply
@@ -346,9 +356,6 @@ func (s *Session) End(timeout time.Duration) error {
 	if msg.Endpoint != 0xFF || msg.Size() > 0 {
 		return fmt.Errorf("invalid message: end reply")
 	}
-
-	// unsubscribe from channel
-	s.ch.Unsubscribe(s.qu)
 
 	return nil
 }
