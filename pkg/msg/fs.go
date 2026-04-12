@@ -337,7 +337,10 @@ func fsReceive(s *Session, expectAck bool, timeout time.Duration) ([]byte, error
 
 	// handle errors
 	if reply[0] == 0 {
-		return nil, fmt.Errorf("posix error: %s", reply[1:])
+		if len(reply) < 2 {
+			return nil, fmt.Errorf("invalid message: fs error reply")
+		}
+		return nil, fmt.Errorf("posix error: %d", reply[1])
 	}
 
 	return reply, nil
@@ -345,9 +348,18 @@ func fsReceive(s *Session, expectAck bool, timeout time.Duration) ([]byte, error
 
 func fsSend(s *Session, data []byte, awaitAck bool, timeout time.Duration) error {
 	// send data
-	if awaitAck {
-		return s.Send(fsEndpoint, data, timeout)
-	} else {
-		return s.Send(fsEndpoint, data, 0)
+	err := s.Send(fsEndpoint, data, 0)
+	if err != nil {
+		return err
 	}
+
+	// await ack
+	if awaitAck {
+		_, err = fsReceive(s, true, timeout)
+		if err != nil && !errors.Is(err, Ack) {
+			return err
+		}
+	}
+
+	return nil
 }

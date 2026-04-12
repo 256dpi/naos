@@ -272,6 +272,11 @@ public class NAOSFS {
 
 	static func send(session: NAOSSession, cmd: Data, ack: Bool, timeout: TimeInterval) async throws {
 		// send command
-		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: ack ? timeout : 0)
+		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: 0)
+
+		// await ack
+		if ack {
+			_ = try await receive(session: session, expectAck: true, timeout: timeout)
+		}
 	}
 }

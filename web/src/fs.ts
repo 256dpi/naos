@@ -295,5 +295,10 @@ async function send(
   timeout = 5000
 ) {
   // send command
-  await session.send(fsEndpoint, data, awaitAck ? timeout : 0);
+  await session.send(fsEndpoint, data, 0);
+
+  // await ack
+  if (awaitAck) {
+    await receive(session, true, timeout);
+  }
 }
