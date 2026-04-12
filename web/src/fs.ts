@@ -232,10 +232,7 @@ export async function writeFile(
 export async function renamePath(session: Session, from: string, to: string) {
   // send command
   let cmd = pack("osos", 6, from, 0, to);
-  await send(session, cmd, false);
-
-  // await reply
-  await receive(session, true);
+  await send(session, cmd, true);
 }
 
 export async function removePath(session: Session, path: string) {
