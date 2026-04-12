@@ -117,9 +117,14 @@ public class NAOSMetrics {
 				let num = args[0] as! UInt8
 				let name = args[1] as! String
 
+				// require dense, ordered key indices so malformed payloads throw
+				guard Int(num) == keys.count else {
+					throw NAOSSessionError.invalidMessage
+				}
+
 				// add key
-				keys.insert(name, at: Int(num))
-				values.insert([String](), at: Int(num))
+				keys.append(name)
+				values.append([String]())
 
 				continue
 			}
@@ -139,8 +144,16 @@ public class NAOSMetrics {
 				let numValue = args[1] as! UInt8
 				let name = args[2] as! String
 
+				// require a known key and dense, ordered value indices
+				guard Int(numKey) < values.count else {
+					throw NAOSSessionError.invalidMessage
+				}
+				guard Int(numValue) == values[Int(numKey)].count else {
+					throw NAOSSessionError.invalidMessage
+				}
+
 				// add value
-				values[Int(numKey)].insert(name, at: Int(numValue))
+				values[Int(numKey)].append(name)
 
 				continue
 			}
