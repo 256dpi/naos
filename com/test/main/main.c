@@ -36,6 +36,7 @@
 #define CONNECT false
 #define BLE_PAIRING false
 #define BLE_BONDING false
+#define TRACE true
 
 #define NAOS_ECHO_ENDPOINT 0x80
 
