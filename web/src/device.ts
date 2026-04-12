@@ -211,6 +211,8 @@ export class Channel {
         this.closing.delete(msg.session);
       }
 
+      await this.close();
+
       throw err;
     }
   }

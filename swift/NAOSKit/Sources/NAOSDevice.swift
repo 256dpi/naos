@@ -215,6 +215,8 @@ public final class NAOSChannel {
 				}
 			}
 
+			close()
+
 			throw error
 		}
 	}
