@@ -644,6 +644,10 @@ bool naos_msg_send(naos_msg_t msg) {
 
   // re-frame message
   uint8_t* frame = malloc(4 + msg.len);
+  if (frame == NULL) {
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: allocation failed (%s)", channel.name);
+    return false;
+  }
   frame[0] = 1;  // version
   memcpy(&frame[1], &msg.session, 2);
   frame[3] = msg.endpoint;
