@@ -2,6 +2,8 @@
 #include <string.h>
 #include <math.h>
 
+#include <esp_random.h>
+
 #include <naos.h>
 #include <naos/ble.h>
 #include <naos/cpu.h>
@@ -21,6 +23,7 @@
 #include <naos/debug.h>
 #include <naos/sys.h>
 #include <naos/msg.h>
+#include <naos/trace.h>
 
 #define WIFI true
 #define MQTT true
@@ -344,6 +347,50 @@ static naos_metric_t gauge_metric = {
     .values = {"a1", "a2", NULL, "b1", "b2"},
 };
 
+static void trace_task() {
+  static const char *names[] = {"alpha", "beta", "gamma", "delta"};
+  int32_t sawtooth = 0;
+  for (;;) {
+    // random delay 1-20ms
+    uint32_t delay = 1 + (esp_random() % 20);
+    naos_delay(delay);
+
+    // emit sawtooth value
+    sawtooth = (sawtooth + 1) % 100;
+    naos_trace_value("test", "sawtooth", sawtooth);
+
+    // pick random action
+    uint32_t action = esp_random() % 3;
+    switch (action) {
+      case 0: {
+        // emit event
+        uint32_t idx = esp_random() % 4;
+        naos_trace_event("test", names[idx], (uint16_t)(esp_random() % 1000));
+        break;
+      }
+      case 1: {
+        // short span 1-5ms
+        uint32_t idx = esp_random() % 4;
+        int id = naos_trace_begin("test", names[idx], 0);
+        naos_delay(1 + (esp_random() % 5));
+        naos_trace_end(id);
+        break;
+      }
+      case 2: {
+        // nested spans
+        int outer = naos_trace_begin("test", "outer", 0);
+        naos_delay(1 + (esp_random() % 3));
+        int inner = naos_trace_begin("test", "inner", 0);
+        naos_delay(1 + (esp_random() % 3));
+        naos_trace_end(inner);
+        naos_delay(1 + (esp_random() % 2));
+        naos_trace_end(outer);
+        break;
+      }
+    }
+  }
+}
+
 static void gauge_task() {
   for (;;) {
     for (int i = 0; i < 10; i++) {
@@ -446,6 +493,12 @@ void app_main() {
 
   // initialize debug
   naos_debug_install();
+
+  // initialize tracing
+  if (TRACE) {
+    naos_trace_install();
+    naos_run("trace", 4096, 1, trace_task);
+  }
 
   // install echo endpoint
   naos_msg_install((naos_msg_endpoint_t){
