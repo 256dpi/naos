@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	code.cloudfoundry.org/bytefmt v0.68.0
+	github.com/256dpi/bluetooth v0.14.1-0.20260412130024-5d322e65b61f
 	github.com/256dpi/gomqtt v0.14.4
 	github.com/coder/websocket v1.8.14
 	github.com/creack/pty v1.1.24
@@ -18,7 +19,6 @@ require (
 	go.bug.st/serial v1.6.4
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	tinygo.org/x/bluetooth v0.14.0
 )
 
 require (

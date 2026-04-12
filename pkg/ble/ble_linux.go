@@ -3,7 +3,7 @@ package ble
 import (
 	"time"
 
-	"tinygo.org/x/bluetooth"
+	"github.com/256dpi/bluetooth"
 )
 
 func write(characteristic bluetooth.DeviceCharacteristic, value []byte) error {

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/samber/lo"
-	"tinygo.org/x/bluetooth"
+	"github.com/256dpi/bluetooth"
 
 	"github.com/256dpi/naos/pkg/msg"
 )
