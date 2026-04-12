@@ -182,6 +182,9 @@ static uint16_t naos_http_msg_mtu() { return 4096; }
 static bool naos_http_msg_send(const uint8_t *data, size_t len, void *ctx) {
   // prepare message
   naos_http_msg_t *msg = malloc(sizeof(naos_http_msg_t) + len);
+  if (msg == NULL) {
+    return false;
+  }
   msg->payload = (void *)msg + sizeof(naos_http_msg_t);
   msg->len = len;
   msg->ctx = ctx;

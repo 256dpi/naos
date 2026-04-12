@@ -579,6 +579,11 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 
   // copy data
   uint8_t* copy = malloc(len - 4 + 1);
+  if (copy == NULL) {
+    naos_unlock(naos_msg_mutex);
+    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: allocation failed (%s)", name);
+    return false;
+  }
   memcpy(copy, data + 4, len - 4);
   copy[len - 4] = 0;
 
