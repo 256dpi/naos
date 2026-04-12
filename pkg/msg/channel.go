@@ -26,8 +26,6 @@ type Channel struct {
 	closing  map[uint16]Queue
 }
 
-const dispatchTimeout = time.Second
-
 // NewChannel wraps the provided transport in a session-aware channel.
 func NewChannel(tr Transport, dev Device, width int) *Channel {
 	ch := &Channel{
@@ -134,7 +132,8 @@ func (c *Channel) reader() {
 		for _, queue := range targets {
 			select {
 			case queue <- msg:
-			case <-time.After(dispatchTimeout):
+			case <-time.After(time.Second):
+				// drop message if queue consumer is too slow
 			}
 		}
 	}
