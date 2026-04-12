@@ -24,6 +24,7 @@ Out-of-the-box NAOS supports the following features:
 - Password Protection
 - Coredump Extraction
 - Live Log Tailing
+- Kernel + App Tracing
 
 These features are provided by a messaging system exposed through various connectivity layers:
 
