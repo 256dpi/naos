@@ -177,10 +177,10 @@ public class NAOSFS {
 			let chunkData = data.subdata(in: offset ..< offset + chunkSize)
 
 			// determine mode
-			let acked = num % width == 0
+			let acked = num % width == 0 || offset + chunkSize >= data.count
 
-			// prepare "write" command (acked or silent & sequential)
-			cmd = pack(fmt: "ooib", args: [UInt8(4), UInt8(acked ? 0 : 1 << 0 | 1 << 1), UInt32(offset), chunkData])
+			// prepare "write" command (sequential or silent & sequential)
+			cmd = pack(fmt: "ooib", args: [UInt8(4), UInt8(acked ? 1 << 1 : 1 << 0 | 1 << 1), UInt32(offset), chunkData])
 
 			// send "write" command
 			try await send(session: session, cmd: cmd, ack: false, timeout: timeout)

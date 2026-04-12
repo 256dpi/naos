@@ -225,10 +225,10 @@ func WriteFile(s *Session, file string, data []byte, report func(uint32), timeou
 		chunkData := data[offset : offset+chunkSize]
 
 		// determine mode
-		acked := num%width == 0
+		acked := num%width == 0 || offset+chunkSize >= len(data)
 
-		// prepare "write" command (acked or silent & sequential)
-		cmd := Pack("ooib", uint8(4), b2v(acked, uint8(0), uint8(1<<0|1<<1)), uint32(offset), chunkData)
+		// prepare "write" command (sequential or silent & sequential)
+		cmd := Pack("ooib", uint8(4), b2v(acked, uint8(1<<1), uint8(1<<0|1<<1)), uint32(offset), chunkData)
 
 		// send "write" command
 		err = fsSend(s, cmd, false, 0)
