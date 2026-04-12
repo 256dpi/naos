@@ -28,4 +28,8 @@ config NAOS_SERIAL_BUFFER_SIZE
     int "The serial buffer sizes"
     default 2048
 
+config NAOS_TRACE_BUF_SIZE
+    int "The trace buffer size in bytes"
+    default 16384
+
 endmenu

@@ -6,6 +6,10 @@ IF(DEFINED ENV{IDF_PATH})
         # Note: Managed components are added automatically
         REQUIRES nvs_flash efuse bt espcoredump esp_eth esp_http_server esp-mqtt esp-osc app_update fatfs esp_driver_uart esp_driver_usb_serial_jtag wpa_supplicant
     )
+
+    # Force-include the FreeRTOS trace hooks header globally so that the
+    # trace macros are defined when the FreeRTOS kernel itself is compiled.
+    idf_build_set_property(COMPILE_OPTIONS "-include${CMAKE_CURRENT_LIST_DIR}/src/trace_hooks.h" APPEND)
 ELSE()
     # CLion compatible development setup
     cmake_minimum_required(VERSION 3.7)
