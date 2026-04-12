@@ -28,7 +28,7 @@ export class HTTPDevice implements Device {
     }
 
     // create socket
-    const socket = new WebSocket("ws://" + this.address);
+    const socket = new WebSocket("ws://" + this.address, "naos");
 
     // await connections
     await new Promise((resolve, reject) => {
