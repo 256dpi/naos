@@ -38,27 +38,20 @@ public struct NAOSBLEDescriptor: Hashable, @unchecked Sendable {
 	}
 }
 
-/// The delegate protocol to be implemented to handle NAOSManager events.
-public protocol NAOSBLEManagerDelegate {
-	/// The manager discovered a new device.
-	func naosBLEManagerDidDiscoverDevice(manager: NAOSBLEManager, descriptor: NAOSBLEDescriptor)
-
-	/// The manager did reset either because of a Bluetooth availability change or a manual reset().
-	func naosBLEManagerDidReset(manager: NAOSBLEManager)
-}
-
 /// The main class that handles NAOS device discovery and handling.
 public class NAOSBLEManager: NSObject {
-	var delegate: NAOSBLEManagerDelegate?
+	private let onDiscover: (NAOSBLEDescriptor) -> Void
+	private let onReset: () -> Void
 	var centralManager: CentralManager!
 	private var descriptors: [UUID: NAOSBLEDescriptor]
 	private var subscription: AnyCancellable?
 	private var queue = DispatchQueue(label: "devices", attributes: .concurrent)
 
-	/// Initializes the manager and sets the specified class as the delegate.
-	public init(delegate: NAOSBLEManagerDelegate?) {
-		// set delegate
-		self.delegate = delegate
+	/// Initializes the manager with callbacks for device discovery and reset events.
+	public init(onDiscover: @escaping (NAOSBLEDescriptor) -> Void, onReset: @escaping () -> Void) {
+		// set callbacks
+		self.onDiscover = onDiscover
+		self.onReset = onReset
 
 		// initialize devices
 		descriptors = [:]
@@ -120,11 +113,9 @@ public class NAOSBLEManager: NSObject {
 			descriptors.removeAll()
 		}
 
-		// call callback if present
-		if let d = delegate {
-			DispatchQueue.main.async {
-				d.naosBLEManagerDidReset(manager: self)
-			}
+		// call callback
+		DispatchQueue.main.async {
+			self.onReset()
 		}
 	}
 
@@ -162,11 +153,9 @@ public class NAOSBLEManager: NSObject {
 				descriptors[descriptor.identifier] = descriptor
 			}
 
-			// call callback if present
-			if let d = delegate {
-				DispatchQueue.main.async {
-					d.naosBLEManagerDidDiscoverDevice(manager: self, descriptor: descriptor)
-				}
+			// call callback
+			DispatchQueue.main.async {
+				self.onDiscover(descriptor)
 			}
 		}
 	}

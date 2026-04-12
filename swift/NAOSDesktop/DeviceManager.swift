@@ -7,7 +7,7 @@ import Cocoa
 import Combine
 import NAOSKit
 
-class DeviceManager: NSObject, NAOSBLEManagerDelegate {
+class DeviceManager: NSObject {
 	@IBOutlet private var devicesMenuItem: NSMenuItem!
 	@IBOutlet private var devicesMenu: NSMenu!
 
@@ -29,7 +29,17 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 		NSApp.setActivationPolicy(.accessory)
 
 		// create BLE manager
-		bleManager = NAOSBLEManager(delegate: self)
+		bleManager = NAOSBLEManager(
+			onDiscover: { descriptor in
+				self.addDevice(device: DesktopDevice(device: NAOSBLEDevice(descriptor: descriptor)))
+			},
+			onReset: {
+				let bleDevices = self.devices.keys.filter { $0.device.type() == "BLE" }
+				for device in bleDevices {
+					self.removeDevice(device: device)
+				}
+			}
+		)
 		
 		// run HTTP discovery
 		httpDiscover = NAOSHTTPDiscover{ descriptor in
@@ -208,20 +218,4 @@ class DeviceManager: NSObject, NAOSBLEManagerDelegate {
 		bleManager.reset()
 	}
 
-	// NAOSBLEManagerDelegate
-
-	func naosBLEManagerDidDiscoverDevice(manager: NAOSBLEManager, descriptor: NAOSBLEDescriptor) {
-		// add device
-		addDevice(device: DesktopDevice(device: NAOSBLEDevice(descriptor: descriptor)))
-	}
-
-	func naosBLEManagerDidReset(manager _: NAOSBLEManager) {
-		// find BLE devices
-		let bleDevices = devices.keys.filter { $0.device.type() == "BLE" }
-
-		// remove BLE devices
-		for device in bleDevices {
-			removeDevice(device: device)
-		}
-	}
 }
