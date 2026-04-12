@@ -577,9 +577,6 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     return true;
   }
 
-  // TODO: Pre-check endpoint?
-  //  Return error if endpoint is missing?
-
   // copy data
   uint8_t* copy = malloc(len - 4 + 1);
   memcpy(copy, data + 4, len - 4);

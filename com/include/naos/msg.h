@@ -40,7 +40,7 @@
  *
  * > Command: Session=ID, Endpoint=1, Data=Any(*)
  * < Command: Session=ID, Endpoint=1, Data=Any(*)
- * < Reply: Session=ID, Endpoint=0xFE, Data=[ACK|INVALID|UNKNOWN|ERROR]
+ * < Reply: Session=ID, Endpoint=0xFE, Data=[ACK|INVALID|ERROR]
  *
  * > End: Session=ID, Endpoint=0xFF
  * < End: Session=ID, Endpoint=0xFF
