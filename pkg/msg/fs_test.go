@@ -94,13 +94,14 @@ func TestWriteFile(t *testing.T) {
 		// GetMTU
 		receive(Message{Endpoint: SystemEndpoint, Data: Pack("o", uint8(2))}),
 		send(Message{Endpoint: SystemEndpoint, Data: Pack("h", uint16(30))}),
-		// chunk 0: 24 bytes, acked (mode=0)
-		receive(Message{Endpoint: fsEndpoint, Data: Pack("ooib", uint8(4), uint8(0), uint32(0), testData[0:24])}),
+		// chunk 0: 24 bytes, acked (mode=2, sequential)
+		receive(Message{Endpoint: fsEndpoint, Data: Pack("ooib", uint8(4), uint8(2), uint32(0), testData[0:24])}),
 		ack(),
-		// chunk 1: 24 bytes, not acked (mode=3)
+		// chunk 1: 24 bytes, not acked (mode=3, silent & sequential)
 		receive(Message{Endpoint: fsEndpoint, Data: Pack("ooib", uint8(4), uint8(3), uint32(24), testData[24:48])}),
-		// chunk 2: 2 bytes, not acked (mode=3)
-		receive(Message{Endpoint: fsEndpoint, Data: Pack("ooib", uint8(4), uint8(3), uint32(48), testData[48:50])}),
+		// chunk 2: 2 bytes, acked as last chunk (mode=2, sequential)
+		receive(Message{Endpoint: fsEndpoint, Data: Pack("ooib", uint8(4), uint8(2), uint32(48), testData[48:50])}),
+		ack(),
 		// close
 		receive(Message{Endpoint: fsEndpoint, Data: Pack("o", uint8(5))}),
 		ack(),
