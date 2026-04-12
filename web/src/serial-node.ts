@@ -1,5 +1,5 @@
 import { SerialPort } from "serialport";
-import ReadlineParser from "@serialport/parser-readline";
+import { ReadlineParser } from "@serialport/parser-readline";
 import * as path from "node:path";
 import { Channel, Device, Message, Transport } from "./device";
 import { concat, toBase64, toBuffer } from "./utils";
@@ -33,7 +33,7 @@ export class NodeSerialDevice implements Device {
   }
 
   id() {
-    return `serial/${this.path}`;
+    return `serial/${path.basename(this.path)}`;
   }
 
   type() {
