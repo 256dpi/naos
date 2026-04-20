@@ -9,7 +9,15 @@
 #include <freertos/timers.h>
 #include <freertos/event_groups.h>
 
+#include "sys.h"
 #include "utils.h"
+
+typedef struct {
+  const char *name;
+  naos_func_t func;
+} naos_defer_item_t;
+
+static QueueHandle_t naos_defer_queue = NULL;
 
 static void naos_backtrace_print(TaskHandle_t task, int depth) {
   // handle current task
@@ -111,46 +119,66 @@ void naos_repeat(const char *name, uint32_t period_ms, naos_func_t func) {
   }
 }
 
-static void naos_defer_call(TimerHandle_t timer) {
+static void naos_defer_task(void *arg) {
+  for (;;) {
+    // wait for item
+    naos_defer_item_t item;
+    if (xQueueReceive(naos_defer_queue, &item, portMAX_DELAY) != pdPASS) {
+      continue;
+    }
+
+    // trace begin
+    int span = naos_trace_begin("defer", item.name != NULL ? item.name : "", 0);
+
+    // call callback
+    item.func();
+
+    // trace end
+    naos_trace_end(span);
+  }
+}
+
+void naos_sys_init() {
+  // create queue
+  naos_defer_queue = xQueueCreate(CONFIG_NAOS_DEFER_QUEUE_LENGTH, sizeof(naos_defer_item_t));
+  if (naos_defer_queue == NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  // create task
+  if (xTaskCreatePinnedToCore(naos_defer_task, "naos-defer", CONFIG_NAOS_DEFER_STACK_SIZE, NULL, 2, NULL,
+                              tskNO_AFFINITY) != pdPASS) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+}
+
+static void naos_defer_timer(TimerHandle_t timer) {
   // get name and callback
-  const char *name = pcTimerGetName(timer);
-  naos_func_t func = pvTimerGetTimerID(timer);
-
-  // trace begin
-  int span = naos_trace_begin("defer", name, 0);
-
-  // call callback
-  func();
-
-  // trace end
-  naos_trace_end(span);
+  naos_defer_item_t item = {
+      .name = pcTimerGetName(timer),
+      .func = pvTimerGetTimerID(timer),
+  };
 
   // delete timer
   while (xTimerDelete(timer, portMAX_DELAY) != pdPASS) {
   }
-}
 
-static void naos_defer_pend(void *arg, uint32_t name) {
-  // trace begin
-  int span = naos_trace_begin("defer", (const char *)name, 0);
-
-  // call callback
-  ((naos_func_t)arg)();
-
-  // trace end
-  naos_trace_end(span);
+  // enqueue item
+  while (xQueueSend(naos_defer_queue, &item, portMAX_DELAY) != pdPASS) {
+  }
 }
 
 void naos_defer(const char *name, uint32_t delay_ms, naos_func_t func) {
-  // pend function call
+  // enqueue directly if no delay
   if (delay_ms == 0) {
-    while (xTimerPendFunctionCall(naos_defer_pend, func, (uint32_t)name, portMAX_DELAY) != pdPASS) {
+    naos_defer_item_t item = {.name = name, .func = func};
+    while (xQueueSend(naos_defer_queue, &item, portMAX_DELAY) != pdPASS) {
     }
     return;
   }
 
   // create timer
-  TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(delay_ms), pdFALSE, func, naos_defer_call);
+  TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(delay_ms), pdFALSE, func, naos_defer_timer);
   if (timer == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
@@ -162,8 +190,9 @@ void naos_defer(const char *name, uint32_t delay_ms, naos_func_t func) {
 }
 
 bool naos_defer_isr(naos_func_t func) {
-  // pend function call
-  return xTimerPendFunctionCallFromISR(func, NULL, 0, NULL) == pdPASS;
+  // enqueue item
+  naos_defer_item_t item = {.name = NULL, .func = func};
+  return xQueueSendFromISR(naos_defer_queue, &item, NULL) == pdTRUE;
 }
 
 naos_mutex_t naos_mutex() {

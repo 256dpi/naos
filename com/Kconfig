@@ -32,4 +32,12 @@ config NAOS_TRACE_BUF_SIZE
     int "The trace buffer size in bytes"
     default 16384
 
+config NAOS_DEFER_QUEUE_LENGTH
+    int "The length of the defer task work queue"
+    default 16
+
+config NAOS_DEFER_STACK_SIZE
+    int "The stack size of the defer task in bytes"
+    default 4096
+
 endmenu

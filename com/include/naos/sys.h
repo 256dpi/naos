@@ -50,7 +50,9 @@ naos_task_t naos_run(const char *name, uint16_t stack, int core, naos_func_t fun
 void naos_kill(naos_task_t task);
 
 /**
- * Runs a periodic task using the specified name and period.
+ * Runs a periodic function using the specified name and period. The callback is
+ * executed by the timer service; keep it short and use naos_defer for
+ * long-running work to not delay others.
  *
  * @param name The name.
  * @param period_ms The period in milliseconds.
@@ -59,7 +61,8 @@ void naos_kill(naos_task_t task);
 void naos_repeat(const char *name, uint32_t period_ms, naos_func_t func);
 
 /**
- * Defer a function call to the background task.
+ * Defer a function call to the dedicated "naos-defer" task. Callbacks run
+ * sequentially on that task. Delayed defers are routed via the timer service.
  *
  * @param name The name.
  * @param delay_ms The delay in milliseconds.
@@ -68,7 +71,7 @@ void naos_repeat(const char *name, uint32_t period_ms, naos_func_t func);
 void naos_defer(const char *name, uint32_t delay_ms, naos_func_t func);
 
 /**
- * Defer a function call to the background task from an ISR.
+ * Defer a function call to the "naos-defer" task from an ISR.
  *
  * @param func The function.
  * @return Whether the function was deferred.

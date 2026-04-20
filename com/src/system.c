@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "system.h"
+#include "sys.h"
 #include "msg.h"
 #include "net.h"
 #include "params.h"
@@ -136,6 +137,9 @@ void naos_system_init() {
 
   // create mutex
   naos_system_mutex = naos_mutex();
+
+  // initialize sys subsystem
+  naos_sys_init();
 
   // initialize message, parameter and metrics subsystems
   naos_msg_init();
