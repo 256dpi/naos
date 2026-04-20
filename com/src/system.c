@@ -109,9 +109,6 @@ static void naos_system_tick() {
   if (changed) {
     naos_defer("naos-status", 0, naos_system_dispatch);
   }
-
-  // dispatch parameters
-  naos_defer("naos-params", 0, naos_params_dispatch);
 }
 
 void naos_system_init() {

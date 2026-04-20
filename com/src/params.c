@@ -29,6 +29,7 @@ static naos_param_t *naos_params[CONFIG_NAOS_PARAM_REGISTRY_SIZE] = {0};
 static size_t naos_params_count = 0;
 static naos_params_handler_t naos_params_handlers[NAOS_PARAMS_MAX_HANDLERS] = {0};
 static uint8_t naos_params_handler_count = 0;
+static bool naos_params_pending = false;
 
 static naos_value_t naos_params_default(naos_param_t *param) {
   // prepare scratch
@@ -705,9 +706,12 @@ void naos_params_subscribe(naos_params_handler_t handler) {
   naos_unlock(naos_params_mutex);
 }
 
-void naos_params_dispatch() {
+static void naos_params_run() {
   // acquire mutex
   naos_lock(naos_params_mutex);
+
+  // clear pending flag
+  naos_params_pending = false;
 
   // iterate parameters
   for (size_t i = 0; i < naos_params_count; i++) {
@@ -732,6 +736,21 @@ void naos_params_dispatch() {
 
   // release mutex
   naos_unlock(naos_params_mutex);
+}
+
+static void naos_params_arm() {
+  // arm defer if not already pending
+  naos_lock(naos_params_mutex);
+  bool arm = !naos_params_pending;
+  if (arm) {
+    naos_params_pending = true;
+  }
+  naos_unlock(naos_params_mutex);
+
+  // enqueue defer
+  if (arm) {
+    naos_defer("naos-params", 0, naos_params_run);
+  }
 }
 
 naos_value_t naos_get(const char *name) {
@@ -816,6 +835,9 @@ void naos_set(const char *name, uint8_t *value, size_t length) {
 
   // update parameter
   naos_params_update(param, false);
+
+  // arm dispatch
+  naos_params_arm();
 }
 
 void naos_set_s(const char *param, const char *value) {
@@ -881,6 +903,9 @@ void naos_clear(const char *name) {
 
   // update parameter
   naos_params_update(param, false);
+
+  // arm dispatch
+  naos_params_arm();
 }
 
 void naos_reset() {
