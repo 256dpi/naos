@@ -651,14 +651,17 @@ bool naos_msg_send(naos_msg_t msg) {
   // release mutex
   naos_unlock(naos_msg_mutex);
 
+  // determine total frame length
+  size_t frame_len = 4 + msg.head_len + msg.len;
+
   // check channel MTU
-  if (4 + msg.len > mtu) {
+  if (frame_len > mtu) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: message too large (%s)", channel.name);
     return false;
   }
 
   // re-frame message
-  uint8_t* frame = malloc(4 + msg.len);
+  uint8_t* frame = malloc(frame_len);
   if (frame == NULL) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: allocation failed (%s)", channel.name);
     return false;
@@ -666,16 +669,21 @@ bool naos_msg_send(naos_msg_t msg) {
   frame[0] = 1;  // version
   memcpy(&frame[1], &msg.session, 2);
   frame[3] = msg.endpoint;
-  memcpy(&frame[4], msg.data, msg.len);
+  if (msg.head_len > 0) {
+    memcpy(&frame[4], msg.head, msg.head_len);
+  }
+  if (msg.len > 0) {
+    memcpy(&frame[4 + msg.head_len], msg.data, msg.len);
+  }
 
 #if NAOS_MSG_DEBUG
   // log message
   ESP_LOGI(NAOS_LOG_TAG, "naos_msg_send: outgoing message (%s)", channel.name);
-  ESP_LOG_BUFFER_HEX(NAOS_LOG_TAG, frame, 4 + msg.len);
+  ESP_LOG_BUFFER_HEX(NAOS_LOG_TAG, frame, frame_len);
 #endif
 
   // send message via channel
-  bool ok = channel.send(frame, 4 + msg.len, context);
+  bool ok = channel.send(frame, frame_len, context);
   if (!ok) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: failed to send message (%s)", channel.name);
   }

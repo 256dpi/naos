@@ -69,10 +69,16 @@
 
 /**
  * An incoming or outgoing message.
+ *
+ * On send, the optional `head` is prepended to `data` in a single framed
+ * allocation so callers can avoid building a combined buffer. Leave `head`
+ * NULL and `head_len` 0 when not needed. The fields are ignored on receive.
  */
 typedef struct {
   uint16_t session;
   uint8_t endpoint;
+  const uint8_t *head;
+  size_t head_len;
   uint8_t *data;
   size_t len;
 } naos_msg_t;

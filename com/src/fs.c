@@ -205,27 +205,21 @@ static void naos_fs_send_info(uint16_t session, const char *name, bool is_dir, u
   // reply structure:
   // TYPE (1) | IS_DIR (1) | SIZE (4) | NAME (*)
 
-  // determine length
-  size_t name_len = strlen(name);
-  size_t length = 6 + name_len;
-
-  // prepare data
-  uint8_t *data = calloc(length, 1);
-  data[0] = NAOS_FS_REPLY_INFO;
-  data[1] = is_dir;
-  memcpy(&data[2], &size, sizeof(size));
-  memcpy(&data[6], name, name_len);
+  // prepare head
+  uint8_t head[6];
+  head[0] = NAOS_FS_REPLY_INFO;
+  head[1] = is_dir;
+  memcpy(&head[2], &size, sizeof(size));
 
   // send reply
   naos_msg_send((naos_msg_t){
       .session = session,
       .endpoint = NAOS_FS_ENDPOINT,
-      .data = data,
-      .len = length,
+      .head = head,
+      .head_len = sizeof(head),
+      .data = (uint8_t *)name,
+      .len = strlen(name),
   });
-
-  // free data
-  free(data);
 }
 
 static naos_msg_reply_t naos_fs_handle_list(naos_msg_t msg) {

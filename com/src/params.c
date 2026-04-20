@@ -394,25 +394,20 @@ static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
         // reply structure
         // REF (1) | AGE (8) | VALUE (*)
 
-        // prepare data
-        uint8_t *data = malloc(9 + param->current.len);
-        data[0] = i;
-        memcpy(data + 1, &param->age, sizeof(uint64_t));
-        memcpy(data + 9, param->current.buf, param->current.len);
-
-        // prepare reply
-        naos_msg_t reply = {
-            .session = msg.session,
-            .endpoint = NAOS_PARAMS_ENDPOINT,
-            .data = data,
-            .len = 9 + param->current.len,
-        };
+        // prepare head
+        uint8_t head[9];
+        head[0] = i;
+        memcpy(head + 1, &param->age, sizeof(uint64_t));
 
         // send reply
-        naos_msg_send(reply);
-
-        // free data
-        free(data);
+        naos_msg_send((naos_msg_t){
+            .session = msg.session,
+            .endpoint = NAOS_PARAMS_ENDPOINT,
+            .head = head,
+            .head_len = sizeof(head),
+            .data = param->current.buf,
+            .len = param->current.len,
+        });
       }
 
       return NAOS_MSG_ACK;
