@@ -109,13 +109,21 @@ static void naos_repeat_call(TimerHandle_t timer) {
   naos_trace_end(span);
 }
 
-void naos_repeat(const char *name, uint32_t period_ms, naos_func_t func) {
+naos_timer_t naos_repeat(const char *name, uint32_t period_ms, naos_func_t func) {
   // create and start timer
   TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(period_ms), pdTRUE, (void *)func, naos_repeat_call);
   if (timer == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
   while (xTimerStart(timer, portMAX_DELAY) != pdPASS) {
+  }
+
+  return timer;
+}
+
+void naos_cancel(naos_timer_t timer) {
+  // stop and delete the timer
+  while (xTimerDelete(timer, portMAX_DELAY) != pdPASS) {
   }
 }
 

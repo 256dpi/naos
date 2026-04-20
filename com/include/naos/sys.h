@@ -50,6 +50,11 @@ naos_task_t naos_run(const char *name, uint16_t stack, int core, naos_func_t fun
 void naos_kill(naos_task_t task);
 
 /**
+ * A timer handler.
+ */
+typedef void * naos_timer_t;
+
+/**
  * Runs a periodic function using the specified name and period. The callback is
  * executed by the timer service; keep it short and use naos_defer for
  * long-running work to not delay others.
@@ -57,8 +62,16 @@ void naos_kill(naos_task_t task);
  * @param name The name.
  * @param period_ms The period in milliseconds.
  * @param func The function.
+ * @return A handle usable with naos_cancel.
  */
-void naos_repeat(const char *name, uint32_t period_ms, naos_func_t func);
+naos_timer_t naos_repeat(const char *name, uint32_t period_ms, naos_func_t func);
+
+/**
+ * Stops and deletes the repeating timer. The handle is invalid afterwards.
+ *
+ * @param timer The timer.
+ */
+void naos_cancel(naos_timer_t timer);
 
 /**
  * Defer a function call to the dedicated "naos-defer" task. Callbacks run
