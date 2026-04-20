@@ -197,9 +197,9 @@ void naos_defer(const char *name, uint32_t delay_ms, naos_func_t func) {
   }
 }
 
-bool naos_defer_isr(naos_func_t func) {
+bool naos_defer_isr(const char *name, naos_func_t func) {
   // enqueue item
-  naos_defer_item_t item = {.name = NULL, .func = func};
+  naos_defer_item_t item = {.name = name, .func = func};
   return xQueueSendFromISR(naos_defer_queue, &item, NULL) == pdTRUE;
 }
 

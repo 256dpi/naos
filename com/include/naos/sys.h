@@ -86,10 +86,11 @@ void naos_defer(const char *name, uint32_t delay_ms, naos_func_t func);
 /**
  * Defer a function call to the "naos-defer" task from an ISR.
  *
+ * @param name The name.
  * @param func The function.
  * @return Whether the function was deferred.
  */
-bool naos_defer_isr(naos_func_t func);
+bool naos_defer_isr(const char *name, naos_func_t func);
 
 /**
  * A mutex handle.
