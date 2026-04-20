@@ -77,6 +77,11 @@
 /**
  * An incoming or outgoing message.
  *
+ * On receive, `data[len]` is guaranteed to be `'\0'`, so handlers can safely
+ * cast `data` to `const char *` for string-shaped payloads (e.g. parameter
+ * names) without copying. The byte past `len` is owned by the messaging
+ * system, not the caller.
+ *
  * On send, the optional `head` is prepended to `data` in a single framed
  * allocation so callers can avoid building a combined buffer. Leave `head`
  * NULL and `head_len` 0 when not needed. The fields are ignored on receive.

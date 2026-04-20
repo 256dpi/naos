@@ -628,6 +628,14 @@ bool naos_msg_send(naos_msg_t msg) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
+  // catch caller typos where a length is set without a backing pointer
+  if (msg.len > 0 && msg.data == NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+  if (msg.head_len > 0 && msg.head == NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
   // acquire mutex
   naos_lock(naos_msg_mutex);
 
