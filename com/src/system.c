@@ -25,6 +25,7 @@
 
 static naos_mutex_t naos_system_mutex;
 static naos_status_t naos_system_status;
+static uint32_t naos_system_generation = 0;
 static naos_system_handler_t naos_system_handlers[NAOS_SYSTEM_MAX_HANDLERS];
 static size_t naos_system_handler_count;
 static int32_t naos_system_memory[3] = {0};
@@ -53,78 +54,64 @@ static naos_metric_t naos_system_metrics[] = {
     },
 };
 
-static void naos_system_set_status(naos_status_t status) {
-  // get name
-  const char *name = naos_status_str(status);
-
-  // change state
+static void naos_system_dispatch() {
+  // get current status and handler count
   naos_lock(naos_system_mutex);
-  naos_system_status = status;
+  naos_status_t status = naos_system_status;
+  size_t count = naos_system_handler_count;
   naos_unlock(naos_system_mutex);
 
-  // set status
+  // set connection-status parameter
+  const char *name = naos_status_str(status);
   naos_set_s("connection-status", name);
 
   // log new status
-  ESP_LOGI(NAOS_LOG_TAG, "naos_system_set_status: %s", name);
+  ESP_LOGI(NAOS_LOG_TAG, "naos_system_dispatch: %s", name);
+
+  // dispatch handlers
+  for (size_t i = 0; i < count; i++) {
+    naos_system_handlers[i](status);
+  }
 }
 
-static void naos_system_task() {
-  // prepare generation
-  uint32_t old_generation = 0;
+static void naos_system_update() {
+  // update uptime parameter
+  naos_set_l("uptime", (int32_t)naos_millis());
 
-  // prepare last update
-  static int64_t last_update = 0;
+  // update memory metrics
+  naos_system_memory[0] = (int32_t)esp_get_free_heap_size();
+  naos_system_memory[1] = (int32_t)esp_get_free_internal_heap_size();
+  naos_system_memory[2] = (int32_t)heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+}
 
-  for (;;) {
-    // wait some time
-    naos_delay(100);
-
-    // get old status
-    naos_lock(naos_system_mutex);
-    naos_status_t old_status = naos_system_status;
-    naos_unlock(naos_system_mutex);
-
-    // determine new status
-    uint32_t new_generation = 0;
-    bool connected = naos_net_connected(&new_generation);
-    bool networked = naos_com_networked(&new_generation);
-    naos_status_t new_status = NAOS_DISCONNECTED;
-    if (connected && networked) {
-      new_status = NAOS_NETWORKED;
-    } else if (connected) {
-      new_status = NAOS_CONNECTED;
-    }
-
-    // handle changes
-    if (old_status != new_status || new_generation > old_generation) {
-      // set status
-      naos_system_set_status(new_status);
-
-      // dispatch status
-      naos_lock(naos_system_mutex);
-      size_t count = naos_system_handler_count;
-      naos_unlock(naos_system_mutex);
-      for (size_t i = 0; i < count; i++) {
-        naos_system_handlers[i](new_status);
-      }
-    }
-
-    // update generation
-    old_generation = new_generation;
-
-    // update parameters and metrics
-    if (naos_millis() > last_update + 1000) {
-      naos_set_l("uptime", (int32_t)naos_millis());
-      naos_system_memory[0] = (int32_t)esp_get_free_heap_size();
-      naos_system_memory[1] = (int32_t)esp_get_free_internal_heap_size();
-      naos_system_memory[2] = (int32_t)heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
-      last_update = naos_millis();
-    }
-
-    // dispatch parameters
-    naos_params_dispatch();
+static void naos_system_tick() {
+  // determine new status
+  uint32_t new_generation = 0;
+  bool connected = naos_net_connected(&new_generation);
+  bool networked = naos_com_networked(&new_generation);
+  naos_status_t new_status = NAOS_DISCONNECTED;
+  if (connected && networked) {
+    new_status = NAOS_NETWORKED;
+  } else if (connected) {
+    new_status = NAOS_CONNECTED;
   }
+
+  // update state and detect changes
+  naos_lock(naos_system_mutex);
+  bool changed = naos_system_status != new_status || new_generation > naos_system_generation;
+  if (changed) {
+    naos_system_status = new_status;
+    naos_system_generation = new_generation;
+  }
+  naos_unlock(naos_system_mutex);
+
+  // dispatch status on change
+  if (changed) {
+    naos_defer("naos-status", 0, naos_system_dispatch);
+  }
+
+  // dispatch parameters
+  naos_defer("naos-params", 0, naos_params_dispatch);
 }
 
 void naos_system_init() {
@@ -183,15 +170,17 @@ void naos_system_init() {
   naos_update_init();
 
   // set initial state
-  naos_system_set_status(NAOS_DISCONNECTED);
+  naos_system_status = NAOS_DISCONNECTED;
+  naos_system_dispatch();
 
   // register application parameters
   for (int i = 0; i < naos_config()->num_parameters; i++) {
     naos_register(&naos_config()->parameters[i]);
   }
 
-  // run system task
-  naos_run("naos-system", 4096, 1, naos_system_task);
+  // run system tick and metrics
+  naos_repeat("naos-system", 100, naos_system_tick);
+  naos_repeat("naos-metrics", 1000, naos_system_update);
 }
 
 void naos_system_subscribe(naos_system_handler_t handler) {
