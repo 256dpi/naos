@@ -93,6 +93,18 @@ void naos_defer(const char *name, uint32_t delay_ms, naos_func_t func);
 bool naos_defer_isr(const char *name, naos_func_t func);
 
 /**
+ * Periodically defer a function call to the "naos-defer" task. Each period the
+ * function is enqueued via naos_defer, so callbacks run on the defer task and
+ * may take longer than the period without blocking the timer service.
+ *
+ * @param name The name.
+ * @param period_ms The period in milliseconds.
+ * @param func The function.
+ * @return A handle usable with naos_cancel.
+ */
+naos_timer_t naos_repeat_defer(const char *name, uint32_t period_ms, naos_func_t func);
+
+/**
  * A mutex handle.
  */
 typedef void * naos_mutex_t;

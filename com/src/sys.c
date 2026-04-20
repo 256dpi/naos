@@ -203,6 +203,27 @@ bool naos_defer_isr(const char *name, naos_func_t func) {
   return xQueueSendFromISR(naos_defer_queue, &item, NULL) == pdTRUE;
 }
 
+static void naos_repeat_defer_call(TimerHandle_t timer) {
+  // get name and callback
+  const char *name = pcTimerGetName(timer);
+  naos_func_t func = (naos_func_t)pvTimerGetTimerID(timer);
+
+  // defer call
+  naos_defer(name, 0, func);
+}
+
+naos_timer_t naos_repeat_defer(const char *name, uint32_t period_ms, naos_func_t func) {
+  // create and start timer
+  TimerHandle_t timer = xTimerCreate(name, pdMS_TO_TICKS(period_ms), pdTRUE, (void *)func, naos_repeat_defer_call);
+  if (timer == NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+  while (xTimerStart(timer, portMAX_DELAY) != pdPASS) {
+  }
+
+  return timer;
+}
+
 naos_mutex_t naos_mutex() {
   // create mutex
   return xSemaphoreCreateMutex();
