@@ -95,8 +95,12 @@ static naos_msg_reply_t naos_debug_handle_cdp_read(naos_msg_t msg) {
   // reply structure:
   // OFFSET (4) | DATA (*)
 
-  // prepare data
-  uint8_t* data = calloc(4 + max_chunk_size, 1);
+  // prepare data with framing headroom
+  uint8_t* buf = calloc(NAOS_MSG_FRAMING + 4 + max_chunk_size, 1);
+  if (buf == NULL) {
+    return NAOS_MSG_ERROR;
+  }
+  uint8_t* data = buf + NAOS_MSG_FRAMING;
 
   // read and reply with chunks
   uint32_t total = 0;
@@ -117,6 +121,7 @@ static naos_msg_reply_t naos_debug_handle_cdp_read(naos_msg_t msg) {
         .endpoint = NAOS_DEBUG_ENDPOINT,
         .data = data,
         .len = 4 + chunk_size,
+        .framed = true,
     });
 
     // increment total
@@ -127,7 +132,7 @@ static naos_msg_reply_t naos_debug_handle_cdp_read(naos_msg_t msg) {
   }
 
   // free data
-  free(data);
+  free(buf);
 
   return NAOS_MSG_ACK;
 }

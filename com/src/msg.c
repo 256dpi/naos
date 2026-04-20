@@ -623,6 +623,11 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
 }
 
 bool naos_msg_send(naos_msg_t msg) {
+  // head is inlined in framed buffers, so rejecting both avoids silent drops
+  if (msg.framed && msg.head_len > 0) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
   // acquire mutex
   naos_lock(naos_msg_mutex);
 
@@ -652,7 +657,7 @@ bool naos_msg_send(naos_msg_t msg) {
   naos_unlock(naos_msg_mutex);
 
   // determine total frame length
-  size_t frame_len = 4 + msg.head_len + msg.len;
+  size_t frame_len = NAOS_MSG_FRAMING + msg.head_len + msg.len;
 
   // check channel MTU
   if (frame_len > mtu) {
@@ -660,21 +665,28 @@ bool naos_msg_send(naos_msg_t msg) {
     return false;
   }
 
-  // re-frame message
-  uint8_t* frame = malloc(frame_len);
-  if (frame == NULL) {
-    ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: allocation failed (%s)", channel.name);
-    return false;
+  // build frame either in-place (framed) or via a fresh allocation
+  uint8_t* frame;
+  if (msg.framed) {
+    frame = msg.data - NAOS_MSG_FRAMING;
+  } else {
+    frame = malloc(frame_len);
+    if (frame == NULL) {
+      ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: allocation failed (%s)", channel.name);
+      return false;
+    }
+    if (msg.head_len > 0) {
+      memcpy(&frame[NAOS_MSG_FRAMING], msg.head, msg.head_len);
+    }
+    if (msg.len > 0) {
+      memcpy(&frame[NAOS_MSG_FRAMING + msg.head_len], msg.data, msg.len);
+    }
   }
+
+  // write framing header
   frame[0] = 1;  // version
   memcpy(&frame[1], &msg.session, 2);
   frame[3] = msg.endpoint;
-  if (msg.head_len > 0) {
-    memcpy(&frame[4], msg.head, msg.head_len);
-  }
-  if (msg.len > 0) {
-    memcpy(&frame[4 + msg.head_len], msg.data, msg.len);
-  }
 
 #if NAOS_MSG_DEBUG
   // log message
@@ -688,8 +700,10 @@ bool naos_msg_send(naos_msg_t msg) {
     ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: failed to send message (%s)", channel.name);
   }
 
-  // free frame
-  free(frame);
+  // free frame if we allocated it (framed buffers are owned by the caller)
+  if (!msg.framed) {
+    free(frame);
+  }
 
   // update session status
   naos_lock(naos_msg_mutex);

@@ -68,11 +68,25 @@
  */
 
 /**
+ * The number of bytes reserved for the framing header when using `framed`
+ * sends. Callers reserve this many bytes in front of their body buffer and
+ * pass the offset pointer as `naos_msg_t.data`.
+ */
+#define NAOS_MSG_FRAMING 4
+
+/**
  * An incoming or outgoing message.
  *
  * On send, the optional `head` is prepended to `data` in a single framed
  * allocation so callers can avoid building a combined buffer. Leave `head`
  * NULL and `head_len` 0 when not needed. The fields are ignored on receive.
+ *
+ * When `framed` is set, `data` must point `NAOS_MSG_FRAMING` bytes into a
+ * buffer owned by the caller so that the message framing can be written into
+ * the reserved headroom in-place, without any copy. `head` is ignored in this
+ * mode; the caller inlines any prefix at the start of `data`. The buffer can
+ * live in any memory region (heap, PSRAM, static); the caller is responsible
+ * for releasing it (if needed) after send.
  */
 typedef struct {
   uint16_t session;
@@ -81,6 +95,7 @@ typedef struct {
   size_t head_len;
   uint8_t *data;
   size_t len;
+  bool framed;
 } naos_msg_t;
 
 /**

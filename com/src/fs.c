@@ -434,8 +434,12 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
   // reply structure:
   // TYPE (1) | OFFSET (4) | DATA (*)
 
-  // prepare data
-  uint8_t *data = calloc(5 + max_chunk_size, 1);
+  // prepare data with framing headroom
+  uint8_t *buf = malloc(NAOS_MSG_FRAMING + 5 + max_chunk_size);
+  if (buf == NULL) {
+    return naos_fs_send_error(msg.session, ENOMEM);
+  }
+  uint8_t *data = buf + NAOS_MSG_FRAMING;
   data[0] = NAOS_FS_REPLY_CHUNK;
 
   // read and reply with chunks
@@ -451,11 +455,11 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
     // read chunk
     ret = read(file->fd, data + 5, chunk_size);
     if (ret < 0) {
-      free(data);
+      free(buf);
       return naos_fs_send_error(msg.session, errno);
     }
     if (ret == 0) {
-      free(data);
+      free(buf);
       return naos_fs_send_error(msg.session, EIO);
     }
 
@@ -465,6 +469,7 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
         .endpoint = NAOS_FS_ENDPOINT,
         .data = data,
         .len = 5 + ret,
+        .framed = true,
     });
 
     // increment total
@@ -480,7 +485,7 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
   }
 
   // free data
-  free(data);
+  free(buf);
 
   return NAOS_MSG_ACK;
 }

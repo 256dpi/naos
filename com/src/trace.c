@@ -267,11 +267,12 @@ static naos_msg_reply_t naos_trace_handle_read(naos_msg_t msg) {
   // get MTU
   size_t mtu = naos_msg_get_mtu(msg.session);
 
-  // allocate chunk buffer
-  uint8_t *chunk = malloc(mtu);
-  if (chunk == NULL) {
+  // allocate chunk buffer with framing headroom
+  uint8_t *buf = malloc(NAOS_MSG_FRAMING + mtu);
+  if (buf == NULL) {
     return NAOS_MSG_ERROR;
   }
+  uint8_t *chunk = buf + NAOS_MSG_FRAMING;
 
   // snapshot buffer state
   portENTER_CRITICAL(&naos_trace_spinlock);
@@ -332,6 +333,7 @@ static naos_msg_reply_t naos_trace_handle_read(naos_msg_t msg) {
           .endpoint = NAOS_TRACE_ENDPOINT,
           .data = chunk,
           .len = chunk_len,
+          .framed = true,
       });
     }
 
@@ -339,7 +341,7 @@ static naos_msg_reply_t naos_trace_handle_read(naos_msg_t msg) {
     naos_delay(1);
   }
 
-  free(chunk);
+  free(buf);
 
   return NAOS_MSG_ACK;
 }
