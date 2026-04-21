@@ -196,12 +196,14 @@ void naos_relay_host_init(naos_relay_host_t config) {
   // store config
   naos_relay_host = config;
 
-  // install endpoint
+  // install endpoint (open: the relay is transparent and downstream devices
+  // enforce their own lock policy)
   naos_msg_install((naos_msg_endpoint_t){
       .ref = NAOS_RELAY_ENDPOINT,
       .name = "relay",
       .handle = naos_relay_handle,
       .cleanup = naos_relay_cleanup,
+      .open = true,
   });
 }
 
@@ -209,11 +211,13 @@ void naos_relay_device_init(naos_relay_device_t config) {
   // store config
   naos_relay_device = config;
 
-  // register channel
+  // register channel; the sub-device firmware decides whether to trust the
+  // upstream host's authentication
   naos_relay_channel = naos_msg_register((naos_msg_channel_t){
       .name = "relay",
       .mtu = naos_relay_device_mtu,
       .send = naos_relay_device_send,
+      .trusted = config.trusted,
   });
 }
 

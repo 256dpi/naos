@@ -325,11 +325,13 @@ void naos_connect_init() {
     naos_register(&naos_connect_params[i]);
   }
 
-  // register the connect channel
+  // register the connect channel as trusted: the device authenticates against
+  // the configured endpoint via token, so incoming sessions start unlocked
   naos_connect_channel = naos_msg_register((naos_msg_channel_t){
       .name = "naos-conn",
       .mtu = naos_connect_mtu,
       .send = naos_connect_send,
+      .trusted = true,
   });
 
   // handle status

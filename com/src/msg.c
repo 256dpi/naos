@@ -180,10 +180,16 @@ static void naos_msg_worker() {
     // we do not hold the mutex when calling into the endpoint as the callee
     // most likely calls back into us to send a message to the session
 
-    // handle message
-    int trace_id = naos_trace_begin("naos-msg", endpoint->name, 0);
-    naos_msg_reply_t reply = endpoint->handle(msg);
-    naos_trace_end(trace_id);
+    // reject locked sessions on non-open endpoints up-front so that handlers
+    // do not need to repeat the check themselves
+    naos_msg_reply_t reply;
+    if (!endpoint->open && naos_msg_is_locked(msg.session)) {
+      reply = NAOS_MSG_LOCKED;
+    } else {
+      int trace_id = naos_trace_begin("naos-msg", endpoint->name, 0);
+      reply = endpoint->handle(msg);
+      naos_trace_end(trace_id);
+    }
 
     // send non-ok replies
     if (reply != NAOS_MSG_OK) {
@@ -307,11 +313,13 @@ void naos_msg_init() {
   // run worker
   naos_run("naos-msg", 8192, 1, naos_msg_worker);
 
-  // install system endpoint
+  // install system endpoint (always open: status/unlock/get-mtu must work
+  // while the session is locked)
   naos_msg_install((naos_msg_endpoint_t){
       .ref = 0xFD,
       .name = "system",
       .handle = naos_msg_process_system,
+      .open = true,
   });
 }
 
@@ -437,8 +445,9 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
     // set time
     session->last_msg = naos_millis();
 
-    // set lock status
-    session->locked = strlen(naos_get_s("device-password")) > 0;
+    // set lock status: trusted channels (outbound links authenticated at the
+    // transport layer) start unlocked even when a password is set
+    session->locked = !naos_msg_channels[channel].trusted && strlen(naos_get_s("device-password")) > 0;
 
     // prepare reply
     uint16_t session_id = session->id;

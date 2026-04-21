@@ -46,16 +46,29 @@
  * < End: Session=ID, Endpoint=0xFF
  *
  * The messaging system provides a basic access control mechanism to prevent
- * endpoints from being accessed by unauthorized sessions. If a device password
- * is set, all sessions are locked by default and need to be unlocked via the
- * system endpoint "0xFD" with the correct password. The system endpoint may also
- * be queried to determine if the session is locked.
+ * endpoints from being accessed by unauthorized sessions. Access is controlled
+ * along two axes:
+ *
+ * 1. Channels can be marked as "trusted" when peers are already authenticated
+ *    at the transport layer (e.g. outbound cloud connections using configured
+ *    credentials). Sessions on trusted channels start unlocked even when a
+ *    device password is set. Untrusted channels (local radio, serial, inbound
+ *    sockets) start locked whenever a password is set.
+ *
+ * 2. Endpoints can be marked as "open" when they are safe to expose to locked
+ *    sessions (the system and relay endpoints are open by default). Messages
+ *    to non-open endpoints from a locked session are rejected with LOCKED by
+ *    the messaging system before the endpoint's handler runs.
+ *
+ * Locked sessions can be unlocked via the system endpoint "0xFD" with the
+ * correct password. The system endpoint may also be queried to determine if
+ * the session is locked.
  *
  * > Query: Session=ID, Endpoint=0xFD Data=0
- * < Reply: Session=ID, Endpoint=0xFE, Data=[1|0]
+ * < Reply: Session=ID, Endpoint=0xFD, Data=[1|0]
  *
  * > Unlock: Session=ID, Endpoint=0xFD, Data=1+Password(*)
- * < Reply: Session=ID, Endpoint=0xFE, Data=[1|0]
+ * < Reply: Session=ID, Endpoint=0xFD, Data=[1|0]
  *
  * Messaging channels use different physical transports that support different
  * message sizes. The system provides a mechanism to query the maximum message
@@ -64,7 +77,7 @@
  * clients can query the MTU via the system endpoint:
  *
  * > Query: Session=ID, Endpoint=0xFD, Data=2
- * < Reply: Session=ID, Endpoint=0xFE, Data=MTU(2)
+ * < Reply: Session=ID, Endpoint=0xFD, Data=MTU(2)
  */
 
 /**
@@ -112,14 +125,22 @@ typedef struct {
  *
  * Note: The channel MTU reflects the underlying maximum message length.
  *
+ * Trusted channels are those that authenticate peers at the transport layer
+ * (e.g. outbound cloud connections using configured credentials). Sessions
+ * started on a trusted channel are unlocked automatically, even if a device
+ * password is set. Untrusted channels (local radio, serial, inbound sockets)
+ * always require the password to unlock the session.
+ *
  * @param name The channel name.
  * @param mtu The function to determine the channel MTU.
  * @param send The function to send messages.
+ * @param trusted Whether sessions on this channel start unlocked.
  */
 typedef struct {
   const char *name;
   uint16_t (*mtu)(void *ctx);
   bool (*send)(const uint8_t *data, size_t len, void *ctx);
+  bool trusted;
 } naos_msg_channel_t;
 
 /**
@@ -139,16 +160,23 @@ typedef enum {
  *
  * Note: Messages are dispatched by a single background task sequentially.
  *
+ * If `open` is false (the default), the messaging system will reject messages
+ * from locked sessions with `NAOS_MSG_LOCKED` before invoking `handle`. Open
+ * endpoints are always invoked regardless of lock status. The handler must
+ * not assume the session is unlocked when `open` is true.
+ *
  * @param ref The endpoint number.
  * @param name The endpoint name.
  * @param handle The function to handle messages.
  * @param cleanup The function to clean up sessions.
+ * @param open Whether this endpoint is accessible to locked sessions.
  */
 typedef struct {
   uint8_t ref;
   const char *name;
   naos_msg_reply_t (*handle)(naos_msg_t);
   void (*cleanup)(uint16_t session);
+  bool open;
 } naos_msg_endpoint_t;
 
 /**

@@ -64,10 +64,13 @@ void naos_bridge_install() {
   // subscribe handler
   naos_com_subscribe(naos_bridge_handler);
 
-  // register channel
+  // register channel as trusted: the device authenticates against the
+  // configured MQTT broker via credentials, so incoming sessions start
+  // unlocked
   naos_bridge_channel = naos_msg_register((naos_msg_channel_t){
       .name = "bridge",
       .mtu = naos_bridge_mtu,
       .send = naos_bridge_send,
+      .trusted = true,
   });
 }

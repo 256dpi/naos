@@ -54,11 +54,6 @@ static naos_msg_reply_t naos_auth_handle(naos_msg_t msg) {
     return NAOS_MSG_INVALID;
   }
 
-  // check lock status
-  if (naos_msg_is_locked(msg.session)) {
-    return NAOS_MSG_LOCKED;
-  }
-
   // pluck of command
   naos_auth_cmd_t cmd = (naos_auth_cmd_t)msg.data[0];
   msg.data++;

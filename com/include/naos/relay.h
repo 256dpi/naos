@@ -47,12 +47,19 @@ typedef struct {
 /**
  * The device relay configuration.
  *
+ * If `trusted` is true, sessions arriving over the relay channel start
+ * unlocked even when a device password is set. This delegates access control
+ * to the upstream host and should only be enabled when the host's own
+ * authentication is sufficient for this device's threat model.
+ *
  * @param mtu The relay MTU.
  * @param send The function to send a message upstream.
+ * @param trusted Whether relayed sessions are treated as pre-authenticated.
  */
 typedef struct {
   uint16_t mtu;
   bool (*send)(uint8_t *data, size_t len);
+  bool trusted;
 } naos_relay_device_t;
 
 /**
