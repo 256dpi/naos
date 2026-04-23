@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 #include <esp_random.h>
 
@@ -23,6 +24,7 @@
 #include <naos/debug.h>
 #include <naos/sys.h>
 #include <naos/msg.h>
+#include <naos/time.h>
 #include <naos/trace.h>
 
 #define WIFI true
@@ -37,6 +39,7 @@
 #define BLE_PAIRING false
 #define BLE_BONDING false
 #define TRACE true
+#define TIME true
 
 #define NAOS_ECHO_ENDPOINT 0x80
 
@@ -332,6 +335,12 @@ static naos_param_t param_message = {
     .type = NAOS_STRING,
 };
 
+static naos_param_t param_local_time = {
+    .name = "local-time",
+    .type = NAOS_STRING,
+    .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED,
+};
+
 static naos_metric_t counter_metric = {
     .name = "counter",
     .kind = NAOS_METRIC_COUNTER,
@@ -418,6 +427,16 @@ static void gauge_task() {
       naos_delay(100);
     }
   }
+}
+
+static void update_local_time() {
+  time_t now;
+  time(&now);
+  struct tm lt;
+  localtime_r(&now, &lt);
+  char buf[32];
+  strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S %Z", &lt);
+  naos_set_s("local-time", buf);
 }
 
 void app_main() {
@@ -507,6 +526,13 @@ void app_main() {
 
   // initialize debug
   naos_debug_install();
+
+  // initialize time
+  if (TIME) {
+    naos_time_init();
+    naos_register(&param_local_time);
+    naos_repeat("update-local-time", 1000, update_local_time);
+  }
 
   // initialize tracing
   if (TRACE) {
