@@ -88,7 +88,7 @@ static void naos_connect_start() {
     return;
   }
 
-  // serialize client lifecycle
+  // acquire client lock
   naos_lock(naos_connect_client_mutex);
 
   // re-check state after taking the client lock
@@ -101,20 +101,37 @@ static void naos_connect_start() {
   naos_connect_state = NAOS_CONNECT_STARTING;
   naos_unlock(naos_connect_mutex);
 
+  // check previous client
   if (naos_connect_client != NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
-  naos_connect_client = naos_connect_client_create(url, token);
-  if (naos_connect_client == NULL) {
-    ESP_ERROR_CHECK(ESP_FAIL);
-  }
-  ESP_ERROR_CHECK(esp_websocket_client_start(naos_connect_client));
 
+  // create and start new client
+  naos_connect_client = naos_connect_client_create(url, token);
+  if (naos_connect_client != NULL) {
+    esp_err_t err = esp_websocket_client_start(naos_connect_client);
+    if (err != ESP_OK) {
+      ESP_LOGE(NAOS_LOG_TAG, "naos_connect_start: failed to start client: %s", esp_err_to_name(err));
+      ESP_ERROR_CHECK(esp_websocket_client_destroy(naos_connect_client));
+      naos_connect_client = NULL;
+    }
+  }
+
+  // finalize state
   naos_lock(naos_connect_mutex);
-  if (naos_connect_state == NAOS_CONNECT_STARTING) {
+  if (naos_connect_client == NULL) {
+    naos_connect_state = NAOS_CONNECT_STOPPED;
+  } else if (naos_connect_state == NAOS_CONNECT_STARTING) {
     naos_connect_state = NAOS_CONNECT_STARTED;
   }
   naos_unlock(naos_connect_mutex);
+
+  // surface invalid URL via status
+  if (naos_connect_client == NULL) {
+    naos_set_s("connect-status", "invalid");
+  }
+
+  // release client lock
   naos_unlock(naos_connect_client_mutex);
 }
 
