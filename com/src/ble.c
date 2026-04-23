@@ -734,7 +734,9 @@ static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
     // send indicate
     esp_err_t err = esp_ble_gatts_send_indicate(naos_ble_gatts_profile.interface, conn->id, naos_ble_char_msg.handle,
                                                 (uint16_t)len, (uint8_t *)data, false);
-    if (err != ESP_OK) {
+    if (err == ESP_ERR_INVALID_STATE) {
+      return false;
+    } else if (err != ESP_OK) {
       ESP_LOGW(NAOS_LOG_TAG, "naos_ble_msg_send: failed to send msg as notification (%d)", err);
       continue;
     }
