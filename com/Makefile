@@ -75,3 +75,6 @@ fmt:
 	clang-format -i ./src/*.c ./src/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}"
 	clang-format -i ./include/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}"
 	clang-format -i ./test/main/*.c -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}"
+
+tzdata:
+	python3 tzdata.py
