@@ -25,6 +25,7 @@ Out-of-the-box NAOS supports the following features:
 - Coredump Extraction
 - Live Log Tailing
 - Kernel + App Tracing
+- Network Time & Timezones
 
 These features are provided by a messaging system exposed through various connectivity layers:
 
