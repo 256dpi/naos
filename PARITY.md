@@ -24,6 +24,7 @@ This document tracks the parity of features among the Go, TS, and Swift NAOS dri
 | Auth    |      | Done |       |          |         |       |
 | Debug   | Done | Done |       | Started  |         | Done  |
 | Trace   | Done |      |       | Done     |         |       | 
+| Time    | Done | Done | Done  |          |         |       | 
 
 ## TOOD
 

@@ -11,5 +11,6 @@ export * from "./queue";
 export * from "./relay";
 export * from "./serial";
 export * from "./session";
+export * from "./time";
 export * from "./update";
 export * from "./utils";
