@@ -2,7 +2,6 @@
 #include <naos/msg.h>
 #include <esp_efuse.h>
 #include <esp_efuse_table.h>
-#include <esp_hmac.h>
 #include <string.h>
 
 #ifdef CONFIG_EFUSE_VIRTUAL
@@ -10,6 +9,8 @@
 #endif  // CONFIG_EFUSE_VIRTUAL
 
 #ifdef CONFIG_IDF_TARGET_ESP32S3
+
+#include <esp_hmac.h>
 
 #define NAOS_AUTH_KEY HMAC_KEY5
 #define NAOS_AUTH_KEY_BLOCK EFUSE_BLK_KEY5
