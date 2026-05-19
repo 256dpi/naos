@@ -9,6 +9,8 @@
 #include <mbedtls/md.h>
 #endif  // CONFIG_EFUSE_VIRTUAL
 
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+
 #define NAOS_AUTH_KEY HMAC_KEY5
 #define NAOS_AUTH_KEY_BLOCK EFUSE_BLK_KEY5
 #define NAOS_AUTH_DATA_BLOCK EFUSE_BLK_USER_DATA
@@ -239,3 +241,5 @@ naos_auth_err_t naos_auth_attest(const void *challenge, size_t length, uint8_t r
 
   return NAOS_AUTH_ERR_OK;
 }
+
+#endif

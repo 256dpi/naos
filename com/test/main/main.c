@@ -40,6 +40,7 @@
 #define BLE_BONDING false
 #define TRACE true
 #define TIME true
+#define AUTH false
 
 #define NAOS_ECHO_ENDPOINT 0x80
 
@@ -522,7 +523,9 @@ void app_main() {
   }
 
   // initialize auth
-  naos_auth_install();
+  if (AUTH) {
+    naos_auth_install();
+  }
 
   // initialize debug
   naos_debug_install();
