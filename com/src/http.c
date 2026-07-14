@@ -212,16 +212,29 @@ static httpd_uri_t naos_http_route = {
     .supported_subprotocol = "naos",
 };
 
-void naos_http_init(int core) {
+void naos_http_init(naos_http_config_t config) {
   // prepare config
-  httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-  config.max_open_sockets = NAOS_HTTP_MAX_CONNS;
-  config.uri_match_fn = httpd_uri_match_wildcard;
-  config.core_id = core;
-  config.lru_purge_enable = true;
+  httpd_config_t httpd_conf = HTTPD_DEFAULT_CONFIG();
+  httpd_conf.max_open_sockets = NAOS_HTTP_MAX_CONNS;
+  httpd_conf.uri_match_fn = httpd_uri_match_wildcard;
+  httpd_conf.core_id = config.core;
+  httpd_conf.lru_purge_enable = true;
+
+  // enable TCP keep-alive so a client that vanishes without a clean close (e.g. a
+  // reconnect that just drops the old WebSocket) is detected and its socket +
+  // lwIP buffers reclaimed, instead of lingering until an LRU purge. A live idle
+  // link stays up on the app's periodic keep-alive; only a truly silent peer is
+  // probed. Reaped after idle + count*interval ~= 20 s of silence. Opt out via
+  // config.no_keep_alive to restore the previous always-persist behaviour.
+  if (!config.no_keep_alive) {
+    httpd_conf.keep_alive_enable = true;
+    httpd_conf.keep_alive_idle = 5;      // seconds of silence before the first probe
+    httpd_conf.keep_alive_interval = 5;  // seconds between probes
+    httpd_conf.keep_alive_count = 3;     // unanswered probes before the socket is dropped
+  }
 
   // start server
-  ESP_ERROR_CHECK(httpd_start(&naos_http_handle, &config));
+  ESP_ERROR_CHECK(httpd_start(&naos_http_handle, &httpd_conf));
 
   // register handler
   ESP_ERROR_CHECK(httpd_register_uri_handler(naos_http_handle, &naos_http_route));

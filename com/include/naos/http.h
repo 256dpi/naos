@@ -2,11 +2,24 @@
 #define NAOS_HTTP_H
 
 /**
+ * The HTTP service configuration.
+ */
+typedef struct {
+  // The core to run the background task on.
+  int core;
+
+  // Disable TCP keep-alive on client connections. By default keep-alive is
+  // enabled so a client that vanishes without a clean close is detected and its
+  // socket reclaimed; set this to keep the previous always-persist behaviour.
+  bool no_keep_alive;
+} naos_http_config_t;
+
+/**
  * Initialize the HTTP configuration subsystem.
  *
- * @param core The core to run the background task on.
+ * @param config The configuration.
  */
-void naos_http_init(int core);
+void naos_http_init(naos_http_config_t config);
 
 /**
  * Serve a text file with the specified content.
