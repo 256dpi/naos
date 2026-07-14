@@ -26,15 +26,19 @@
  * Initialize UART based serial messaging.
  *
  * This will use the `/dev/uart/0` file stream for communication.
+ *
+ * @param core The core to run the background task on.
  */
-void naos_serial_init_stdio();
+void naos_serial_init_stdio(int core);
 
 /**
  * Initialize UART based serial messaging using the driver.
  *
  * Same as `naos_serial_init_stdio` but configures an UART driver.
+ *
+ * @param core The core to run the background task on.
  */
-void naos_serial_init_stdio_uart();
+void naos_serial_init_stdio_uart(int core);
 
 /**
  * Initialize the secondary-IO based serial messaging.
@@ -42,8 +46,10 @@ void naos_serial_init_stdio_uart();
  * This will use the `/dev/secondary` file stream for communication.
  *
  * Note: Requires that `CONFIG_ESP_CONSOLE_SECONDARY` is configured accordingly.
+ *
+ * @param core The core to run the background task on.
  */
-void naos_serial_init_secio();
+void naos_serial_init_secio(int core);
 
 /**
  * Initialize blocking secondary-IO USB/Serial/JTAG based serial messaging.
@@ -55,8 +61,10 @@ void naos_serial_init_secio();
  * enable output to the USB/Serial/JTAG peripheral.
  *
  * Note: The function will not link if USB/JTAG support is unavailable.
+ *
+ * @param core The core to run the background task on.
  */
-void naos_serial_init_secio_usj();
+void naos_serial_init_secio_usj(int core);
 
 /**
  * Initialize native USB/Serial/JTAG based serial messaging.
@@ -67,8 +75,10 @@ void naos_serial_init_secio_usj();
  * output to the USB/Serial/JTAG peripheral.
  *
  * Note: The function will not link if USB/JTAG support is unavailable.
+ *
+ * @param core The core to run the background task on.
  */
-void naos_serial_init_usj();
+void naos_serial_init_usj(int core);
 
 /**
  * Lock the serial write mutex. The lock is re-entrant and can be used to

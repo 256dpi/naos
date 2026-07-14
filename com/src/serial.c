@@ -307,7 +307,7 @@ static void naos_serial_stdio_task() {
   });
 }
 
-void naos_serial_init_stdio() {
+void naos_serial_init_stdio(int core) {
   // assert config
   if (CONFIG_VFS_SUPPORT_IO != 1 || CONFIG_ESP_CONSOLE_UART_NUM != 0) {
     ESP_ERROR_CHECK(ESP_FAIL);
@@ -336,10 +336,10 @@ void naos_serial_init_stdio() {
   naos_serial_stdio_blocking = false;
 
   // start task
-  naos_run("naos-srl-stdio", 4096, 1, naos_serial_stdio_task);
+  naos_run("naos-srl-stdio", 4096, core, naos_serial_stdio_task);
 }
 
-void naos_serial_init_stdio_uart() {
+void naos_serial_init_stdio_uart(int core) {
   // assert config
   if (CONFIG_VFS_SUPPORT_IO != 1 || CONFIG_ESP_CONSOLE_UART_NUM != 0) {
     ESP_ERROR_CHECK(ESP_FAIL);
@@ -389,7 +389,7 @@ void naos_serial_init_stdio_uart() {
   naos_serial_stdio_blocking = true;
 
   // start task
-  naos_run("naos-srl-stdio", 4096, 1, naos_serial_stdio_task);
+  naos_run("naos-srl-stdio", 4096, core, naos_serial_stdio_task);
 }
 
 /* Secondary Interface */
@@ -410,7 +410,7 @@ static void naos_serial_secio_task() {
   });
 }
 
-void naos_serial_init_secio() {
+void naos_serial_init_secio(int core) {
   // open secondary stream
   FILE* stream = fopen("/dev/secondary", "r+");
   if (stream == NULL) {
@@ -434,14 +434,14 @@ void naos_serial_init_secio() {
   naos_serial_secio_blocking = false;
 
   // start task
-  naos_run("naos-srl-secio", 4096, 1, naos_serial_secio_task);
+  naos_run("naos-srl-secio", 4096, core, naos_serial_secio_task);
 }
 
 /* USB Interface */
 
 #if CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED
 
-void naos_serial_init_secio_usj() {
+void naos_serial_init_secio_usj(int core) {
   // assert config
 #ifndef CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
   ESP_ERROR_CHECK(ESP_FAIL);
@@ -483,7 +483,7 @@ void naos_serial_init_secio_usj() {
   naos_serial_secio_blocking = true;
 
   // start task
-  naos_run("naos-srl-secio", 4096, 1, naos_serial_secio_task);
+  naos_run("naos-srl-secio", 4096, core, naos_serial_secio_task);
 }
 
 static uint8_t naos_serial_usj_channel = 0;
@@ -535,7 +535,7 @@ static void naos_serial_usj_task() {
   });
 }
 
-void naos_serial_init_usj() {
+void naos_serial_init_usj(int core) {
   // assert config
 #ifdef CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
   ESP_ERROR_CHECK(ESP_FAIL);
@@ -558,7 +558,7 @@ void naos_serial_init_usj() {
   });
 
   // run task
-  naos_run("naos-srl-usb", 4096, 1, naos_serial_usj_task);
+  naos_run("naos-srl-usb", 4096, core, naos_serial_usj_task);
 }
 
 #endif  // CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED
