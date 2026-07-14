@@ -30,10 +30,14 @@ export class HTTPDevice implements Device {
     // create socket
     const socket = new WebSocket("ws://" + this.address, "naos");
 
-    // await connections
-    await new Promise((resolve, reject) => {
-      socket.onopen = resolve;
-      socket.onerror = reject;
+    // await connection
+    await new Promise<void>((resolve, reject) => {
+      socket.onopen = () => resolve();
+      socket.onerror = () => {
+        // close the half-open socket before failing, otherwise it lingers
+        socket.close();
+        reject(new Error("failed to open socket"));
+      };
     });
 
     const transport: Transport = {
