@@ -242,6 +242,17 @@ typedef struct {
    * devices restart at the same time.
    */
   bool delay_startup;
+
+  /**
+   * The cores on which the internal tasks are run.
+   *
+   * Only used if "set_cores" is set, otherwise the application core (1) is used. Use 0 for the protocol
+   * core, 1 for the application core or -1 for no affinity.
+   */
+  bool set_cores;
+  int msg_core;
+  int setup_core;
+  int task_core;
 } naos_config_t;
 
 /**

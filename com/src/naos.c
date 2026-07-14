@@ -18,6 +18,13 @@ void naos_init(naos_config_t *config) {
     config->app_version = desc->version;
   }
 
+  // default cores to the application core
+  if (!config->set_cores) {
+    config->msg_core = 1;
+    config->setup_core = 1;
+    config->task_core = 1;
+  }
+
   // initialize system
   naos_system_init();
 }
