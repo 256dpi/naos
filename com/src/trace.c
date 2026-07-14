@@ -22,6 +22,14 @@
 #define NAOS_TRACE_REC_LABEL 6   // TYPE(1) ID(1) TEXT(*) NUL(1) = 3+
 #define NAOS_TRACE_REC_TASK 7    // TYPE(1) ID(1) NAME(*) NUL(1) = 3+
 
+// feature flags select which records are captured; bits 0..(cores-1) enable
+// task switches per core, the remaining bits toggle the other record types
+#define NAOS_TRACE_FLAG_CORE(n) (1 << (n))  // task switches on core n
+#define NAOS_TRACE_FLAG_EVENT (1 << 4)      // instant events
+#define NAOS_TRACE_FLAG_VALUE (1 << 5)      // counter values
+#define NAOS_TRACE_FLAG_SPAN (1 << 6)       // begin/end spans
+#define NAOS_TRACE_FLAG_ALL 0xFF            // capture everything
+
 typedef enum {
   NAOS_TRACE_CMD_START,
   NAOS_TRACE_CMD_STOP,
@@ -31,6 +39,7 @@ typedef enum {
 
 static portMUX_TYPE naos_trace_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static bool naos_trace_active = false;
+static uint8_t naos_trace_flags = NAOS_TRACE_FLAG_ALL;
 static int64_t naos_trace_start_time = 0;
 
 // byte ring buffer; records never wrap, zeros pad to buffer start
@@ -195,8 +204,13 @@ void IRAM_ATTR naos_trace_task_switched_in(void *task) {
     return;
   }
 
-  // skip if same task as last time on this core
+  // skip cores that are not being traced
   uint8_t core = (uint8_t)xPortGetCoreID();
+  if (!(naos_trace_flags & NAOS_TRACE_FLAG_CORE(core))) {
+    return;
+  }
+
+  // skip if same task as last time on this core
   if ((TaskHandle_t)task == naos_trace_last_task[core]) {
     return;
   }
@@ -220,13 +234,20 @@ void IRAM_ATTR naos_trace_task_switched_in(void *task) {
 
 static naos_msg_reply_t naos_trace_handle_start(naos_msg_t msg) {
   // check message
-  if (msg.len != 0) {
+  if (msg.len > 1) {
     return NAOS_MSG_INVALID;
+  }
+
+  // determine feature flags (default to capturing everything)
+  uint8_t flags = NAOS_TRACE_FLAG_ALL;
+  if (msg.len == 1) {
+    flags = msg.data[0];
   }
 
   // reset and activate
   portENTER_CRITICAL(&naos_trace_spinlock);
   naos_trace_active = false;
+  naos_trace_flags = flags;
   naos_trace_head = 0;
   naos_trace_tail = 0;
   naos_trace_used = 0;
@@ -420,7 +441,7 @@ void naos_trace_install() {
 
 void naos_trace_event(const char *category, const char *name, uint16_t arg) {
   // check state
-  if (!naos_trace_active) {
+  if (!naos_trace_active || !(naos_trace_flags & NAOS_TRACE_FLAG_EVENT)) {
     return;
   }
 
@@ -448,7 +469,7 @@ void naos_trace_event(const char *category, const char *name, uint16_t arg) {
 
 void naos_trace_value(const char *category, const char *name, int32_t value) {
   // check state
-  if (!naos_trace_active) {
+  if (!naos_trace_active || !(naos_trace_flags & NAOS_TRACE_FLAG_VALUE)) {
     return;
   }
 
@@ -476,7 +497,7 @@ void naos_trace_value(const char *category, const char *name, int32_t value) {
 
 int naos_trace_begin(const char *category, const char *name, uint16_t arg) {
   // check state
-  if (!naos_trace_active) {
+  if (!naos_trace_active || !(naos_trace_flags & NAOS_TRACE_FLAG_SPAN)) {
     return -1;
   }
 

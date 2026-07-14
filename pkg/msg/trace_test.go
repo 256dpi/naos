@@ -20,7 +20,26 @@ func TestStartTrace(t *testing.T) {
 	s, err := OpenSession(ch, time.Second)
 	assert.NoError(t, err)
 
-	err = StartTrace(s, time.Second)
+	err = StartTrace(s, TraceAll, time.Second)
+	assert.NoError(t, err)
+
+	err = s.End(time.Second)
+	assert.NoError(t, err)
+}
+
+func TestStartTraceFlags(t *testing.T) {
+	dev := newTestDevice(t, 42, []testMessage{
+		receive(Message{Endpoint: traceEndpoint, Data: []byte{0, byte(TraceCore0)}}),
+		ack(),
+	})
+
+	ch, err := dev.Open()
+	assert.NoError(t, err)
+
+	s, err := OpenSession(ch, time.Second)
+	assert.NoError(t, err)
+
+	err = StartTrace(s, TraceCore0, time.Second)
 	assert.NoError(t, err)
 
 	err = s.End(time.Second)

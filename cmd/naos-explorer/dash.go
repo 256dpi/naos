@@ -847,6 +847,58 @@ func (d *dashboard) deleteCoredump() {
 }
 
 func (d *dashboard) performTrace() {
+	// build options form with all records enabled by default
+	form := tview.NewForm()
+	form.AddCheckbox("Core 0 switches", true, nil)
+	form.AddCheckbox("Core 1 switches", true, nil)
+	form.AddCheckbox("Events", true, nil)
+	form.AddCheckbox("Values", true, nil)
+	form.AddCheckbox("Spans", true, nil)
+
+	// helper to read a checkbox state
+	checked := func(label string) bool {
+		return form.GetFormItemByLabel(label).(*tview.Checkbox).IsChecked()
+	}
+
+	form.AddButton("Start", func() {
+		// collect selected flags
+		var flags msg.TraceFlags
+		if checked("Core 0 switches") {
+			flags |= msg.TraceCore0
+		}
+		if checked("Core 1 switches") {
+			flags |= msg.TraceCore1
+		}
+		if checked("Events") {
+			flags |= msg.TraceEvents
+		}
+		if checked("Values") {
+			flags |= msg.TraceValues
+		}
+		if checked("Spans") {
+			flags |= msg.TraceSpans
+		}
+		d.pages.RemovePage("trace-options")
+		d.recordTrace(flags)
+	})
+	form.AddButton("Cancel", func() {
+		d.pages.RemovePage("trace-options")
+	})
+	form.SetBorder(true).SetTitle(" Trace Options ")
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			d.pages.RemovePage("trace-options")
+			return nil
+		}
+		return event
+	})
+
+	// show form
+	d.pages.AddPage("trace-options", centered(44, 12, form), true, true)
+	d.app.SetFocus(form)
+}
+
+func (d *dashboard) recordTrace(flags msg.TraceFlags) {
 	// signal to stop recording
 	stop := make(chan struct{})
 
@@ -878,7 +930,7 @@ func (d *dashboard) performTrace() {
 			defer s.End(time.Second)
 
 			// start trace
-			err = msg.StartTrace(s, 5*time.Second)
+			err = msg.StartTrace(s, flags, 5*time.Second)
 			if err != nil {
 				return fmt.Errorf("start: %w", err)
 			}

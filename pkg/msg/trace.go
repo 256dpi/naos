@@ -63,9 +63,31 @@ type TraceData struct {
 	Events []TraceEvent
 }
 
-// StartTrace begins trace recording.
-func StartTrace(s *Session, timeout time.Duration) error {
-	return s.Send(traceEndpoint, []byte{0}, timeout)
+// TraceFlags selects which records are captured during a trace. The low bits
+// enable task switches per core, the remaining bits toggle the other record
+// types.
+type TraceFlags uint8
+
+// The available trace flags.
+const (
+	TraceCore0  TraceFlags = 1 << 0 // task switches on core 0
+	TraceCore1  TraceFlags = 1 << 1 // task switches on core 1
+	TraceEvents TraceFlags = 1 << 4 // instant events
+	TraceValues TraceFlags = 1 << 5 // counter values
+	TraceSpans  TraceFlags = 1 << 6 // begin/end spans
+	TraceAll    TraceFlags = 0xFF   // capture everything
+)
+
+// StartTrace begins trace recording. The flags select which records are
+// captured; pass TraceAll to capture everything.
+func StartTrace(s *Session, flags TraceFlags, timeout time.Duration) error {
+	// omit the flags byte for TraceAll so the default case stays compatible
+	// with firmware that predates flag support
+	cmd := []byte{0}
+	if flags != TraceAll {
+		cmd = append(cmd, byte(flags))
+	}
+	return s.Send(traceEndpoint, cmd, timeout)
 }
 
 // StopTrace stops trace recording.
