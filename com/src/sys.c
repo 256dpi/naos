@@ -146,7 +146,12 @@ static void naos_defer_task(void *arg) {
   }
 }
 
-void naos_sys_init() {
+void naos_sys_init(int core) {
+  // check core
+  if (core < 0) {
+    core = tskNO_AFFINITY;
+  }
+
   // create queue
   naos_defer_queue = xQueueCreate(CONFIG_NAOS_DEFER_QUEUE_LENGTH, sizeof(naos_defer_item_t));
   if (naos_defer_queue == NULL) {
@@ -154,8 +159,8 @@ void naos_sys_init() {
   }
 
   // create task
-  if (xTaskCreatePinnedToCore(naos_defer_task, "naos-defer", CONFIG_NAOS_DEFER_STACK_SIZE, NULL, 2, NULL,
-                              tskNO_AFFINITY) != pdPASS) {
+  if (xTaskCreatePinnedToCore(naos_defer_task, "naos-defer", CONFIG_NAOS_DEFER_STACK_SIZE, NULL, 2, NULL, core) !=
+      pdPASS) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 }

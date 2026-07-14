@@ -123,7 +123,7 @@ void naos_system_init() {
   naos_system_mutex = naos_mutex();
 
   // initialize sys subsystem
-  naos_sys_init();
+  naos_sys_init(naos_config()->defer_core);
 
   // initialize message, parameter and metrics subsystems
   naos_msg_init();
