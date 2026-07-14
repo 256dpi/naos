@@ -2,9 +2,15 @@
 #include <naos/http.h>
 
 #include <esp_http_server.h>
+#include <freertos/FreeRTOS.h>
 
 #define NAOS_HTTP_MAX_CONNS 7
 #define NAOS_HTTP_MAX_FILES 8
+
+// Max frames queued for async send. Kept below the httpd UDP control mailbox
+// depth (CONFIG_LWIP_UDP_RECVMBOX_SIZE, default 6) so httpd_queue_work can never
+// overflow it and silently drop (and leak) a queued frame.
+#define NAOS_HTTP_MAX_INFLIGHT 4
 
 typedef struct {
   int fd;
@@ -28,6 +34,8 @@ static httpd_handle_t naos_http_handle = {0};
 static naos_http_file_t naos_http_files[NAOS_HTTP_MAX_FILES] = {0};
 static size_t naos_http_file_count = 0;
 static uint8_t naos_http_channel = 0;
+static portMUX_TYPE naos_http_inflight_mux = portMUX_INITIALIZER_UNLOCKED;
+static int naos_http_inflight = 0;  // frames queued for async send, not yet freed
 
 static esp_err_t naos_http_socket(httpd_req_t *conn) {
   // get context
@@ -173,6 +181,11 @@ static void naos_http_send_frame(void *arg) {
   // send frame
   ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_ws_send_frame_async(naos_http_handle, msg->ctx->fd, &frame));
 
+  // release in-flight slot
+  portENTER_CRITICAL(&naos_http_inflight_mux);
+  naos_http_inflight--;
+  portEXIT_CRITICAL(&naos_http_inflight_mux);
+
   // free message
   free(msg);
 }
@@ -195,11 +208,30 @@ static bool naos_http_msg_send(const uint8_t *data, size_t len, void *ctx) {
     return false;
   }
 
+  // reserve an in-flight slot; drop the frame (but keep the session alive) when
+  // the async send queue is saturated, bounding memory under a congested link.
+  portENTER_CRITICAL(&naos_http_inflight_mux);
+  bool full = naos_http_inflight >= NAOS_HTTP_MAX_INFLIGHT;
+  if (!full) {
+    naos_http_inflight++;
+  }
+  portEXIT_CRITICAL(&naos_http_inflight_mux);
+  if (full) {
+    free(msg);
+    return true;
+  }
+
   // copy payload
   memcpy(msg->payload, data, len);
 
-  // queue function
-  ESP_ERROR_CHECK(httpd_queue_work(naos_http_handle, naos_http_send_frame, msg));
+  // queue function; on failure release the slot instead of aborting the device
+  if (httpd_queue_work(naos_http_handle, naos_http_send_frame, msg) != ESP_OK) {
+    portENTER_CRITICAL(&naos_http_inflight_mux);
+    naos_http_inflight--;
+    portEXIT_CRITICAL(&naos_http_inflight_mux);
+    free(msg);
+    return false;
+  }
 
   return true;
 }
