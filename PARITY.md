@@ -1,30 +1,30 @@
 # Parity
 
-This document tracks the parity of features among the Go, TS, and Swift NAOS drivers, as well as the availability of features in the CLI tools and Swift desktop application.
+This document tracks the parity of features among the Go, TS, Swift, and Python NAOS drivers, as well as the availability of features in the CLI tools and Swift desktop application.
 
 ## Transports
 
-| Name    | Securable  | Go  | TS  | Swift | 
-|---------|------------|-----|-----|-------|
-| BLE     | Yes - Bond | Yes | Yes | Yes   |
-| HTTP    | Yes - TLS  | Yes | Yes | Yes   |
-| MQTT    | Yes - TLS  | Yes |     |       |
-| Connect | Yes - TLS  | Yes |     |       |
-| Serial  | No - Wired | Yes | Yes | Yes   |
+| Name    | Securable  | Go  | TS  | Swift | Python |
+|---------|------------|-----|-----|-------|--------|
+| BLE     | Yes - Bond | Yes | Yes | Yes   |        |
+| HTTP    | Yes - TLS  | Yes | Yes | Yes   |        |
+| MQTT    | Yes - TLS  | Yes |     |       |        |
+| Connect | Yes - TLS  | Yes |     |       |        |
+| Serial  | No - Wired | Yes | Yes | Yes   | Yes    |
 
 ## Endpoints
 
-| Name    | Go   | TS   | Swift | Explorer | Desktop | Fleet |  
-|---------|------|------|-------|----------|---------|-------|  
-| Params  | Done | Done | Done  | Started  | Done    | Done  |
-| Update  | Done | Done | Done  | Started  | Done    | Done  | 
-| FS      | Done | Done | Done  | Started  | Done    |       |
-| Relay   |      | Done | Done  |          | Done    |       |
-| Metrics | Done | Done | Done  | Started  | Done    |       |
-| Auth    |      | Done |       |          |         |       |
-| Debug   | Done | Done |       | Started  |         | Done  |
-| Trace   | Done |      |       | Done     |         |       | 
-| Time    | Done | Done | Done  |          |         |       | 
+| Name    | Go   | TS   | Swift | Python | Explorer | Desktop | Fleet |  
+|---------|------|------|-------|--------|----------|---------|-------|  
+| Params  | Done | Done | Done  | Done   | Started  | Done    | Done  |
+| Update  | Done | Done | Done  |        | Started  | Done    | Done  | 
+| FS      | Done | Done | Done  |        | Started  | Done    |       |
+| Relay   |      | Done | Done  |        |          | Done    |       |
+| Metrics | Done | Done | Done  |        | Started  | Done    |       |
+| Auth    |      | Done |       |        |          |         |       |
+| Debug   | Done | Done |       |        | Started  |         | Done  |
+| Trace   | Done |      |       |        | Done     |         |       | 
+| Time    | Done | Done | Done  |        |          |         |       | 
 
 ## TOOD
 
