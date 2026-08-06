@@ -18,13 +18,13 @@ This document tracks the parity of features among the Go, TS, Swift, and Python 
 |---------|------|------|-------|--------|----------|---------|-------|  
 | Params  | Done | Done | Done  | Done   | Started  | Done    | Done  |
 | Update  | Done | Done | Done  |        | Started  | Done    | Done  | 
-| FS      | Done | Done | Done  |        | Started  | Done    |       |
+| FS      | Done | Done | Done  | Done   | Started  | Done    |       |
 | Relay   |      | Done | Done  |        |          | Done    |       |
-| Metrics | Done | Done | Done  |        | Started  | Done    |       |
+| Metrics | Done | Done | Done  | Done   | Started  | Done    |       |
 | Auth    |      | Done |       |        |          |         |       |
 | Debug   | Done | Done |       |        | Started  |         | Done  |
 | Trace   | Done |      |       |        | Done     |         |       | 
-| Time    | Done | Done | Done  |        |          |         |       | 
+| Time    | Done | Done | Done  | Done   |          |         |       | 
 
 ## TOOD
 

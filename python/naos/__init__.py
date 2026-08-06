@@ -1,4 +1,28 @@
 from .device import Channel, Device, Message, Queue, Transport, read
+from .fs import (
+    FSInfo,
+    list_dir,
+    make_path,
+    read_file,
+    read_file_range,
+    remove_path,
+    rename_path,
+    sha256_file,
+    stat_path,
+    write_file,
+)
+from .metrics import (
+    MetricInfo,
+    MetricKind,
+    MetricLayout,
+    MetricType,
+    describe_metric,
+    list_metrics,
+    read_double_metrics,
+    read_float_metrics,
+    read_long_metrics,
+    read_metrics,
+)
 from .params import (
     ParamInfo,
     ParamMode,
@@ -13,12 +37,18 @@ from .params import (
     write_param,
 )
 from .session import Session, Status
+from .time import get_time, get_time_info, set_time
 from .utils import pack, random_handle, unpack
 
 __all__ = [
     "Channel",
     "Device",
+    "FSInfo",
     "Message",
+    "MetricInfo",
+    "MetricKind",
+    "MetricLayout",
+    "MetricType",
     "ParamInfo",
     "ParamMode",
     "ParamType",
@@ -29,13 +59,31 @@ __all__ = [
     "Transport",
     "clear_param",
     "collect_params",
+    "describe_metric",
     "get_param",
+    "get_time",
+    "get_time_info",
+    "list_dir",
+    "list_metrics",
     "list_params",
+    "make_path",
     "pack",
     "random_handle",
     "read",
+    "read_double_metrics",
+    "read_file",
+    "read_file_range",
+    "read_float_metrics",
+    "read_long_metrics",
+    "read_metrics",
     "read_param",
+    "remove_path",
+    "rename_path",
     "set_param",
+    "set_time",
+    "sha256_file",
+    "stat_path",
     "unpack",
+    "write_file",
     "write_param",
 ]

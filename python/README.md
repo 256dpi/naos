@@ -4,7 +4,7 @@ Python driver for NAOS devices.
 
 ## Status
 
-Supported transports: Serial. Supported endpoints: Params.
+Supported transports: Serial. Supported endpoints: Params, FS, Metrics, Time.
 See `PARITY.md` in the repository root for the full parity matrix.
 
 ## Installation
