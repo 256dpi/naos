@@ -792,6 +792,15 @@ void naos_ble_init(naos_ble_config_t cfg) {
   naos_ble_adv_data.service_uuid_len = ESP_UUID_LEN_128;
   naos_ble_adv_data.p_service_uuid = naos_ble_gatts_profile.service_id.id.uuid.uuid.uuid128;
 
+  // apply custom advertising intervals if configured (converted to 0.625 ms
+  // units and clamped to the specification range of 20 ms to 10.24 s)
+  if (cfg.adv_int_min_ms > 0 && cfg.adv_int_max_ms >= cfg.adv_int_min_ms) {
+    uint32_t min_units = (uint32_t)cfg.adv_int_min_ms * 8 / 5;
+    uint32_t max_units = (uint32_t)cfg.adv_int_max_ms * 8 / 5;
+    naos_ble_adv_params.adv_int_min = min_units < 0x20 ? 0x20 : (min_units > 0x4000 ? 0x4000 : min_units);
+    naos_ble_adv_params.adv_int_max = max_units < 0x20 ? 0x20 : (max_units > 0x4000 ? 0x4000 : max_units);
+  }
+
   // adjust the advertisement filter policy
   if (cfg.pairing) {
     naos_ble_adv_params.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST;

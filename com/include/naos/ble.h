@@ -28,6 +28,15 @@ typedef struct {
    * Whether to skip bluetooth initialization.
    */
   bool skip_bt_init;
+
+  /**
+   * The advertising interval range in milliseconds. If both are set, they
+   * replace the default aggressive range of 20/40 ms. Longer intervals
+   * reduce power consumption at the expense of discovery latency. Values
+   * are clamped to the specification range of 20 to 10240 ms.
+   */
+  uint16_t adv_int_min_ms;
+  uint16_t adv_int_max_ms;
 } naos_ble_config_t;
 
 /**
