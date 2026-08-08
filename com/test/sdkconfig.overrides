@@ -10,3 +10,6 @@ CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
 
 # enable virtual fuses
 CONFIG_EFUSE_VIRTUAL=y
+
+# enable long FATFS filenames
+CONFIG_FATFS_LFN_HEAP=y

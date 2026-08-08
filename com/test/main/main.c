@@ -447,6 +447,7 @@ void app_main() {
   naos_ble_init((naos_ble_config_t){
       .pairing = BLE_PAIRING,
       .bonding = BLE_BONDING,
+      .adaptive = true,
   });
   if (WIFI) {
     naos_wifi_init();
