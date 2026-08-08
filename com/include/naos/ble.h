@@ -37,6 +37,17 @@ typedef struct {
    */
   uint16_t adv_int_min_ms;
   uint16_t adv_int_max_ms;
+
+  /**
+   * Whether to adaptively manage connection parameters. When enabled, each
+   * connection switches between three profiles based on usage: a slow profile
+   * (~1 s effective interval) when no messaging session is active, a medium
+   * profile (30-45 ms) while a session is open, and a fast profile (7.5-15 ms)
+   * while data is transferred in bulk or at a sustained high rate. Upgrades
+   * are applied within a few seconds, downgrades after several seconds of
+   * lower usage. When disabled, connections always use the fast profile.
+   */
+  bool adaptive;
 } naos_ble_config_t;
 
 /**

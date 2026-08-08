@@ -36,13 +36,50 @@ typedef struct {
   bool valid;
 } naos_ble_identity_t;
 
+typedef enum {
+  NAOS_BLE_TIER_SLOW = 0,
+  NAOS_BLE_TIER_MEDIUM,
+  NAOS_BLE_TIER_FAST,
+} naos_ble_tier_t;
+
 typedef struct {
   uint16_t id;
   uint16_t mtu;
   bool congested;
   bool connected;
   naos_ble_identity_t pending_id;
+  esp_bd_addr_t addr;
+  naos_ble_tier_t tier;
+  int64_t below_since;
+  int64_t last_update;
+  uint32_t traffic;
+  uint32_t msgs;
+  uint32_t msg_ewma;
 } naos_ble_conn_t;
+
+// the connection parameter profiles used by the adaptive mode. the values are
+// chosen to satisfy the acceptance rules of restrictive centrals (iOS):
+// intervals are multiples of 15 ms, the effective interval (interval *
+// (latency + 1)) stays below 2 s, and the supervision timeout exceeds three
+// times the effective interval.
+static const struct {
+  uint16_t min_int;  // 1.25 ms units
+  uint16_t max_int;  // 1.25 ms units
+  uint16_t latency;  // skippable events
+  uint16_t timeout;  // 10 ms units
+} naos_ble_tiers[] = {
+    [NAOS_BLE_TIER_SLOW] = {144, 156, 4, 600},  // 180-195 ms, ~1 s effective, 6 s timeout
+    [NAOS_BLE_TIER_MEDIUM] = {24, 36, 1, 500},  // 30-45 ms, ~90 ms effective, 5 s timeout
+    [NAOS_BLE_TIER_FAST] = {6, 12, 0, 500},     // 7.5-15 ms, no skips, 5 s timeout
+};
+
+// the byte and message rates per second above which a connection is considered
+// to be transferring in bulk, the quiet period required before a downgrade,
+// and the settle time between connection parameter update requests
+#define NAOS_BLE_ADAPTIVE_FAST_BYTES 4096
+#define NAOS_BLE_ADAPTIVE_FAST_MSGS 12
+#define NAOS_BLE_ADAPTIVE_DOWNGRADE_MS 5000
+#define NAOS_BLE_ADAPTIVE_SETTLE_MS 2000
 
 static esp_ble_adv_params_t naos_ble_adv_params = {
     .adv_int_min = 0x20,  // 20 ms
@@ -117,6 +154,89 @@ static naos_ble_conn_t *naos_ble_find_conn(const esp_bd_addr_t addr) {
   }
 
   return NULL;
+}
+
+static void naos_ble_set_tier(naos_ble_conn_t *conn, naos_ble_tier_t tier) {
+  // store tier and update time
+  conn->tier = tier;
+  conn->last_update = naos_millis();
+
+  // request connection parameter update
+  esp_ble_conn_update_params_t params = {0};
+  memcpy(params.bda, conn->addr, sizeof(params.bda));
+  params.min_int = naos_ble_tiers[tier].min_int;
+  params.max_int = naos_ble_tiers[tier].max_int;
+  params.latency = naos_ble_tiers[tier].latency;
+  params.timeout = naos_ble_tiers[tier].timeout;
+  ESP_ERROR_CHECK(esp_ble_gap_update_conn_params(&params));
+}
+
+static void naos_ble_adaptive_tick() {
+  // get current time
+  int64_t now = naos_millis();
+
+  // iterate over connections
+  for (size_t i = 0; i < NAOS_BLE_MAX_CONNECTIONS; i++) {
+    // skip unconnected
+    naos_ble_conn_t *conn = &naos_ble_conns[i];
+    if (!conn->connected) {
+      continue;
+    }
+
+    // take traffic accumulated since the last tick
+    uint32_t traffic = conn->traffic;
+    uint32_t msgs = conn->msgs;
+    conn->traffic = 0;
+    conn->msgs = 0;
+
+    // update the exponential moving average of the message rate, so that short
+    // interactive bursts do not trip the fast tier, only sustained chatter
+    // does (the average settles at four times a constant input rate)
+    conn->msg_ewma = conn->msg_ewma * 3 / 4 + msgs;
+
+    // get session count
+    size_t sessions = naos_msg_sessions(naos_ble_msg_channel_id, conn);
+
+    // determine desired tier: bulk transfers (instantaneous bytes) or
+    // sustained chatty traffic (averaged messages) select the fast profile, an
+    // open session the medium profile, and an unused connection the slow one
+    naos_ble_tier_t desired = NAOS_BLE_TIER_SLOW;
+    if (traffic >= NAOS_BLE_ADAPTIVE_FAST_BYTES || conn->msg_ewma >= NAOS_BLE_ADAPTIVE_FAST_MSGS * 4) {
+      desired = NAOS_BLE_TIER_FAST;
+    } else if (sessions > 0) {
+      desired = NAOS_BLE_TIER_MEDIUM;
+    }
+
+    // log tier determination
+    // ESP_LOGD(NAOS_LOG_TAG,
+    //          "naos_ble_adaptive_tick: id=%d traffic=%u msgs=%u avg=%u sessions=%u tier=%d desired=%d below_for=%d",
+    //          conn->id, (unsigned)traffic, (unsigned)msgs, (unsigned)(conn->msg_ewma / 4), (unsigned)sessions,
+    //          conn->tier, desired, conn->below_since > 0 ? (int)(now - conn->below_since) : 0);
+
+    // let a requested parameter update settle before requesting another one
+    bool settled = now - conn->last_update >= NAOS_BLE_ADAPTIVE_SETTLE_MS;
+
+    // apply upgrades immediately, but downgrades only after the lower tier has
+    // been desired for a sustained period to prevent oscillation and to not
+    // exhaust the parameter update rate tolerated by centrals
+    if (desired > conn->tier) {
+      conn->below_since = 0;
+      if (settled) {
+        ESP_LOGI(NAOS_LOG_TAG, "naos_ble_adaptive_tick: upgrading connection (id=%d tier=%d)", conn->id, desired);
+        naos_ble_set_tier(conn, desired);
+      }
+    } else if (desired < conn->tier) {
+      if (conn->below_since == 0) {
+        conn->below_since = now;
+      } else if (now - conn->below_since >= NAOS_BLE_ADAPTIVE_DOWNGRADE_MS && settled) {
+        conn->below_since = 0;
+        ESP_LOGI(NAOS_LOG_TAG, "naos_ble_adaptive_tick: downgrading connection (id=%d tier=%d)", conn->id, desired);
+        naos_ble_set_tier(conn, desired);
+      }
+    } else {
+      conn->below_since = 0;
+    }
+  }
 }
 
 static void naos_ble_gap_handler(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
@@ -433,21 +553,22 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
                p->connect.conn_params.timeout);
 
       // mark connection
-      naos_ble_conns[p->connect.conn_id].id = p->connect.conn_id;
-      naos_ble_conns[p->connect.conn_id].mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
-      naos_ble_conns[p->connect.conn_id].connected = true;
-      memset(&naos_ble_conns[p->connect.conn_id].pending_id, 0, sizeof(naos_ble_conns[p->connect.conn_id].pending_id));
-      memcpy(naos_ble_conns[p->connect.conn_id].pending_id.addr, p->connect.remote_bda, sizeof(esp_bd_addr_t));
-      naos_ble_conns[p->connect.conn_id].pending_id.type = p->connect.ble_addr_type;
+      naos_ble_conn_t *conn = &naos_ble_conns[p->connect.conn_id];
+      conn->id = p->connect.conn_id;
+      conn->mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
+      conn->connected = true;
+      memset(&conn->pending_id, 0, sizeof(conn->pending_id));
+      memcpy(conn->pending_id.addr, p->connect.remote_bda, sizeof(esp_bd_addr_t));
+      conn->pending_id.type = p->connect.ble_addr_type;
+      memcpy(conn->addr, p->connect.remote_bda, sizeof(esp_bd_addr_t));
+      conn->below_since = 0;
+      conn->traffic = 0;
+      conn->msgs = 0;
+      conn->msg_ewma = 0;
 
-      // update connection params
-      esp_ble_conn_update_params_t conn_params;
-      memcpy(conn_params.bda, p->connect.remote_bda, sizeof(conn_params.bda));
-      conn_params.min_int = 6;    // 7.5ms
-      conn_params.max_int = 12;   // 15ms
-      conn_params.latency = 0;    // no skips
-      conn_params.timeout = 500;  // 5s
-      ESP_ERROR_CHECK(esp_ble_gap_update_conn_params(&conn_params));
+      // request the fast profile initially to speed up service discovery and
+      // session setup, the adaptive mode will downgrade unused connections
+      naos_ble_set_tier(conn, NAOS_BLE_TIER_FAST);
 
       // trigger signal
       naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_CONN, false);
@@ -631,6 +752,8 @@ static void naos_ble_gatts_handler(esp_gatts_cb_event_t e, esp_gatt_if_t i, esp_
         // handle characteristic
         if (c == &naos_ble_char_msg) {
           if (p->write.len > 0) {
+            conn->traffic += p->write.len;
+            conn->msgs++;
             bool ok = naos_msg_dispatch(naos_ble_msg_channel_id, p->write.value, p->write.len, conn);
             if (!ok) {
               status = ESP_GATT_UNKNOWN_ERROR;
@@ -740,6 +863,10 @@ static bool naos_ble_msg_send(const uint8_t *data, size_t len, void *ctx) {
       ESP_LOGW(NAOS_LOG_TAG, "naos_ble_msg_send: failed to send msg as notification (%d)", err);
       continue;
     }
+
+    // count outgoing traffic
+    conn->traffic += len;
+    conn->msgs++;
 
     return true;
   }
@@ -881,6 +1008,11 @@ void naos_ble_init(naos_ble_config_t cfg) {
       .mtu = naos_ble_msg_mtu,
       .send = naos_ble_msg_send,
   });
+
+  // periodically adjust connection parameters in adaptive mode
+  if (cfg.adaptive) {
+    naos_repeat_defer("naos-ble-adapt", 1000, naos_ble_adaptive_tick);
+  }
 
   // clear signal
   naos_trigger(naos_ble_signal, NAOS_BLE_SIGNAL_ADV, true);
