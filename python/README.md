@@ -4,8 +4,8 @@ Python driver for NAOS devices.
 
 ## Status
 
-Supported transports: Serial. Supported endpoints: Params, FS, Metrics, Time.
-See `PARITY.md` in the repository root for the full parity matrix.
+Supported transports: Serial, BLE. Supported endpoints: Params, FS, Metrics,
+Time. See `PARITY.md` in the repository root for the full parity matrix.
 
 ## Installation
 
@@ -19,6 +19,12 @@ Or install from a local checkout:
 
 ```
 pip install ./python
+```
+
+BLE support requires the optional `bleak` dependency:
+
+```
+pip install "./python[ble]"
 ```
 
 ## Usage
@@ -42,7 +48,17 @@ async def main():
 asyncio.run(main())
 ```
 
-See `examples/ping.py` for a runnable example.
+To connect over BLE, scan for devices and use a `BLEDevice` instead:
+
+```python
+from naos.ble import BLEDevice, ble_find
+
+descriptor = await ble_find()
+device = BLEDevice.from_descriptor(descriptor)
+channel = await device.open()
+```
+
+See `examples/ping.py` and `examples/ble.py` for runnable examples.
 
 ## Tests
 

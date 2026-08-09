@@ -6,7 +6,7 @@ This document tracks the parity of features among the Go, TS, Swift, and Python 
 
 | Name    | Securable  | Go  | TS  | Swift | Python |
 |---------|------------|-----|-----|-------|--------|
-| BLE     | Yes - Bond | Yes | Yes | Yes   |        |
+| BLE     | Yes - Bond | Yes | Yes | Yes   | Yes    |
 | HTTP    | Yes - TLS  | Yes | Yes | Yes   |        |
 | MQTT    | Yes - TLS  | Yes |     |       |        |
 | Connect | Yes - TLS  | Yes |     |       |        |
