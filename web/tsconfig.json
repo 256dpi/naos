@@ -2,6 +2,10 @@
   "compilerOptions": {
     "target": "es6",
     "lib": ["dom", "ES2024"],
-    "moduleResolution": "node"
+    "types": ["node", "w3c-web-serial", "web-bluetooth"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": false,
+    "skipLibCheck": true
   }
 }

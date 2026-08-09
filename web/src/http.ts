@@ -58,7 +58,7 @@ export class HTTPDevice implements Device {
         };
       },
       write: async (msg: Message) => {
-        socket.send(msg.build());
+        socket.send(msg.build() as BufferSource);
       },
       close: async () => {
         socket.close();
