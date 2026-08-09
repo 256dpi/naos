@@ -6,18 +6,24 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
 
 // Config will write settings and parameters to an attached device.
 func Config(naosPath string, values map[string]string, port, baudRate string, out io.Writer) error {
-	// assemble CSV
+	// assemble CSV, sorting the keys to get a stable order
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
 	var buf bytes.Buffer
 	buf.WriteString("key,type,encoding,value\n")
 	buf.WriteString("naos,namespace,,\n")
-	for key, value := range values {
-		buf.WriteString(fmt.Sprintf("%s,data,binary,%s\n", key, value))
+	for _, key := range keys {
+		buf.WriteString(fmt.Sprintf("%s,data,binary,%s\n", key, values[key]))
 	}
 
 	// calculate paths
