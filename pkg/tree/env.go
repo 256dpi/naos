@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -64,14 +65,19 @@ func WriteEnvCache(naosPath string) error {
 		return err
 	}
 
-	// source export script and dump the resulting environment
+	// source export script and dump the resulting environment, aborting if
+	// sourcing fails to not cache an incomplete environment, and diverting its
+	// output to stderr to keep it out of the dump but available for reporting
 	source := filepath.Join(IDFDirectory(naosPath), "export.sh")
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("source %q > /dev/null 2>&1; env -0", source))
+	cmd := exec.Command("bash", "-c", fmt.Sprintf("source %q 1>&2 || exit 1; env -0", source))
 	cmd.Dir = Directory(naosPath)
 	cmd.Env = base
-	output, err := cmd.Output()
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("failed to export ESP-IDF environment: %w", err)
+		return fmt.Errorf("failed to export ESP-IDF environment: %w: %s", err, strings.TrimSpace(stderr.String()))
 	}
 
 	// index base environment
@@ -83,7 +89,8 @@ func WriteEnvCache(naosPath string) error {
 
 	// collect variables that have been added or changed
 	var lines []string
-	for _, str := range strings.Split(string(output), "\x00") {
+	var exported bool
+	for _, str := range strings.Split(stdout.String(), "\x00") {
 		// skip empty entries
 		if str == "" {
 			continue
@@ -100,8 +107,19 @@ func WriteEnvCache(naosPath string) error {
 			value = strings.TrimSuffix(value, ":"+baseMap["PATH"])
 		}
 
+		// note the marker variable
+		if key == "IDF_PATH" {
+			exported = true
+		}
+
 		// collect variable
 		lines = append(lines, key+"="+value)
+	}
+
+	// verify the environment, as the export script may return successfully
+	// without having set anything up
+	if !exported {
+		return fmt.Errorf("incomplete ESP-IDF environment: %s", strings.TrimSpace(stderr.String()))
 	}
 
 	// write cache
