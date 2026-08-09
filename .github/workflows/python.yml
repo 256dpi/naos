@@ -1,0 +1,23 @@
+on: [push, pull_request]
+name: Python
+jobs:
+  python:
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.13"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Prepare
+        run: pip install "./python[test]"
+
+      - name: Test
+        run: pytest
+        working-directory: ./python
