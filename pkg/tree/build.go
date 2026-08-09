@@ -94,20 +94,20 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 		err = utils.Remove(filepath.Join(Directory(naosPath), "version.txt"))
 	}
 
-	// prepare files contents
-	var filesContent = "COMPONENT_EMBED_FILES :="
-	var filesContent2 string
+	// prepare files content (one file per line, as the list is read back
+	// with "file(STRINGS ...)" which splits on newlines)
+	var filesContent string
 	for _, file := range files {
-		filesContent += " data/" + file
-		filesContent2 += "data/" + file
+		filesContent += "data/" + file + "\n"
 	}
-	filesContent += "\n"
 
 	// update files
 	utils.Log(out, "Updating files...")
-	_, err = utils.Update(filepath.Join(Directory(naosPath), "main", "files.list"), filesContent2)
+	changedFiles, err := utils.Update(filepath.Join(Directory(naosPath), "main", "files.list"), filesContent)
 	if err != nil {
 		return err
+	} else if changedFiles {
+		reconfigure = true
 	}
 
 	// determine path
