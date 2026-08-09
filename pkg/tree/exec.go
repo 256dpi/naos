@@ -64,6 +64,11 @@ func Exec(naosPath string, out io.Writer, in io.Reader, noEnv, usePty bool, name
 	// add managed components tweak
 	cmd.Env = append(cmd.Env, "IDF_COMPONENT_OVERWRITE_MANAGED_COMPONENTS=1")
 
+	// enable ccache if available
+	if _, err := exec.LookPath("ccache"); err == nil {
+		cmd.Env = append(cmd.Env, "IDF_CCACHE_ENABLE=1")
+	}
+
 	// add ADF path if existing
 	ok, err := utils.Exists(ADFDirectory(naosPath))
 	if err != nil {
