@@ -62,9 +62,6 @@ coredump, data, coredump, ,        64K
 	partitions = strings.ReplaceAll(partitions, "BETA_BYTES", strconv.Itoa(beta))
 	partitions = strings.ReplaceAll(partitions, "STORAGE_BYTES", strconv.Itoa(storage))
 
-	// print partitions
-	println(partitions)
-
 	return partitions, nil
 }
 
