@@ -15,12 +15,6 @@ Install directly from the repository:
 pip install "git+https://github.com/256dpi/naos.git#subdirectory=python"
 ```
 
-To install a specific branch, tag, or commit, add a `@<ref>` suffix:
-
-```
-pip install "git+https://github.com/256dpi/naos.git@v0.15.0#subdirectory=python"
-```
-
 Or install from a local checkout:
 
 ```

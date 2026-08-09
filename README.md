@@ -90,6 +90,7 @@ naos run
 - **Go** — `go get github.com/256dpi/naos/pkg/...`
 - **JS/TS** — [NAOS.js](https://github.com/256dpi/NAOS.js)
 - **Swift** — [NAOSKit](https://github.com/256dpi/NAOSKit)
+- **Python** — `pip install "git+https://github.com/256dpi/naos.git#subdirectory=python"`
 
 > [!NOTE]
 > NAOS.js and NAOSKit commit hashes will not match with the main repository since the mirror creates its own commits.
