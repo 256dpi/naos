@@ -27,6 +27,21 @@ var envVolatile = map[string]bool{
 	"IDF_DEACTIVATE_FILE_PATH": true,
 }
 
+// toolchainDirectory returns the location of the linked toolchain directory,
+// with the link resolved if it has been established already.
+func toolchainDirectory(naosPath string) string {
+	// get link
+	link := filepath.Join(Directory(naosPath), "toolchain")
+
+	// resolve link
+	dir, err := filepath.EvalSymlinks(link)
+	if err != nil {
+		return link
+	}
+
+	return dir
+}
+
 // baseEnv returns the environment used to run commands in the build tree,
 // without the ESP-IDF specific additions.
 func baseEnv(naosPath string) ([]string, error) {
@@ -41,8 +56,10 @@ func baseEnv(naosPath string) ([]string, error) {
 		}
 	}
 
-	// add IDF tools path
-	env = append(env, "IDF_TOOLS_PATH="+filepath.Join(Directory(naosPath), "toolchain"))
+	// add IDF tools path, resolving the link, as idf.py compares the derived
+	// virtual environment path against the resolved interpreter path and would
+	// otherwise warn about a mismatch
+	env = append(env, "IDF_TOOLS_PATH="+toolchainDirectory(naosPath))
 
 	// add managed components tweak
 	env = append(env, "IDF_COMPONENT_OVERWRITE_MANAGED_COMPONENTS=1")
@@ -143,9 +160,9 @@ func WriteEnvCache(naosPath string) error {
 	return nil
 }
 
-// envStamp returns a value identifying the ESP-IDF the cache belongs to. The
-// linked directory carries the version, so it changes whenever the tree is
-// pointed at another installation.
+// envStamp returns a value identifying the ESP-IDF and toolchain the cache
+// belongs to. The linked directories carry the versions, so the stamp changes
+// whenever the tree is pointed at another installation.
 func envStamp(naosPath string) (string, error) {
 	// resolve linked ESP-IDF
 	dir, err := filepath.EvalSymlinks(IDFDirectory(naosPath))
@@ -153,7 +170,7 @@ func envStamp(naosPath string) (string, error) {
 		return "", err
 	}
 
-	return dir, nil
+	return dir + "|" + toolchainDirectory(naosPath), nil
 }
 
 // envCacheFresh reports whether the cache exists and was written for the
