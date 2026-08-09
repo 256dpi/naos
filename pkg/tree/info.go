@@ -95,18 +95,20 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 		}
 	}
 
-	// resolve links
-	for i, include := range includes {
+	// resolve links and drop missing directories (IDF components may declare
+	// include directories that are not shipped, which the compiler ignores)
+	var list []string
+	for _, include := range includes {
 		path, err := filepath.EvalSymlinks(include)
-		if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		} else if err != nil {
 			return nil, err
 		}
-		if path != include {
-			includes[i] = path
-		}
+		list = append(list, path)
 	}
 
-	return includes, nil
+	return list, nil
 }
 
 // RequiredToolchain returns the required toolchain version by the current
