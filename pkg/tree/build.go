@@ -11,7 +11,6 @@ import (
 	"github.com/256dpi/naos/pkg/utils"
 )
 
-// TODO: Changing embeds in a v4 projects requires a clean.
 // TODO: Changing target needs a reconfigure and clean.
 
 // Partitions defines a percentage based partitioning scheme.
