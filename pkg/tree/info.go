@@ -111,26 +111,6 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 	return list, nil
 }
 
-// RequiredToolchain returns the required toolchain version by the current
-// NAOS installation.
-func RequiredToolchain(naosPath string) (string, error) {
-	// read version
-	bytes, err := os.ReadFile(filepath.Join(Directory(naosPath), "toolchain.version"))
-	if err != nil {
-		return "", err
-	}
-
-	// trim version
-	version := strings.TrimSpace(string(bytes))
-
-	// check version
-	if version == "" || version == "-" {
-		return "", errors.New("malformed version")
-	}
-
-	return version, nil
-}
-
 // SourceAndHeaderFiles will return a list of source and header files.
 func SourceAndHeaderFiles(naosPath string) ([]string, []string, error) {
 	// prepare list
