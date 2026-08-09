@@ -3,6 +3,7 @@ package tree
 import (
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -10,8 +11,6 @@ import (
 
 	"github.com/256dpi/naos/pkg/utils"
 )
-
-// TODO: Changing target needs a reconfigure and clean.
 
 // Partitions defines a percentage based partitioning scheme.
 type Partitions struct {
@@ -149,6 +148,17 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 		}
 	}
 
+	// check configured target
+	configuredTarget, err := readConfiguredTarget(naosPath)
+	if err != nil {
+		return err
+	} else if configuredTarget != "" && configuredTarget != target {
+		// a configured build directory cannot be re-targeted in place
+		utils.Log(out, fmt.Sprintf("Target changed from %s to %s...", configuredTarget, target))
+		clean = true
+		reconfigure = true
+	}
+
 	// clean project if requested
 	if clean {
 		utils.Log(out, "Cleaning project...")
@@ -209,6 +219,27 @@ func AppELF(naosPath, appName string) string {
 	}
 
 	return filepath.Join(Directory(naosPath), "build", appName+".elf")
+}
+
+// readConfiguredTarget will return the target the build directory has been
+// configured for, or an empty string if it has not been configured yet.
+func readConfiguredTarget(naosPath string) (string, error) {
+	// read cmake cache
+	data, err := os.ReadFile(filepath.Join(Directory(naosPath), "build", "CMakeCache.txt"))
+	if os.IsNotExist(err) {
+		return "", nil
+	} else if err != nil {
+		return "", err
+	}
+
+	// find target
+	for _, line := range strings.Split(string(data), "\n") {
+		if value, ok := strings.CutPrefix(line, "IDF_TARGET:STRING="); ok {
+			return strings.TrimSpace(value), nil
+		}
+	}
+
+	return "", nil
 }
 
 func joinOverrides(overrides map[string]string) string {
