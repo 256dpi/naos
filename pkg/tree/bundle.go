@@ -37,7 +37,8 @@ type projectDescription struct {
 }
 
 type flasherArgs struct {
-	Flash struct {
+	WriteFlashArgs []string `json:"write_flash_args"`
+	Flash          struct {
 		Mode string `json:"flash_mode"`
 		Size string `json:"flash_size"`
 		Freq string `json:"flash_freq"`
@@ -46,11 +47,36 @@ type flasherArgs struct {
 	Application    flasherArgsItem `json:"app"`
 	PartitionTable flasherArgsItem `json:"partition-table"`
 	OTAData        flasherArgsItem `json:"otadata"`
+	Extra          struct {
+		Before string `json:"before"`
+		After  string `json:"after"`
+		Chip   string `json:"chip"`
+	} `json:"extra_esptool_args"`
 }
 
 type flasherArgsItem struct {
 	Offset string `json:"offset"`
 	File   string `json:"file"`
+}
+
+// readFlasherArgs will read the flasher arguments written by the build. They
+// carry the target specific offsets and flash settings and are therefore
+// preferred over hard-coded values.
+func readFlasherArgs(naosPath string) (*flasherArgs, error) {
+	// read flasher arguments
+	data, err := os.ReadFile(filepath.Join(Directory(naosPath), "build", "flasher_args.json"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read flasher arguments: %w", err)
+	}
+
+	// decode flasher arguments
+	var args flasherArgs
+	err = json.Unmarshal(data, &args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode flasher arguments: %w", err)
+	}
+
+	return &args, nil
 }
 
 func Bundle(naosPath, file string, addDebug bool, out io.Writer) error {
@@ -67,14 +93,9 @@ func Bundle(naosPath, file string, addDebug bool, out io.Writer) error {
 	}
 
 	// read flasher arguments
-	data, err = os.ReadFile(filepath.Join(Directory(naosPath), "build", "flasher_args.json"))
+	args, err := readFlasherArgs(naosPath)
 	if err != nil {
-		return fmt.Errorf("failed to read flasher arguments: %w", err)
-	}
-	var args flasherArgs
-	err = json.Unmarshal(data, &args)
-	if err != nil {
-		return fmt.Errorf("failed to decode flasher arguments: %w", err)
+		return err
 	}
 
 	// prepare binary paths

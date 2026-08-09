@@ -218,7 +218,7 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly, alt bool, 
 		return err
 	}
 
-	return tree.Flash(p.Tree(), p.Manifest.Name, p.Manifest.Target, device, baudRate, erase, appOnly, alt, out)
+	return tree.Flash(p.Tree(), device, baudRate, erase, appOnly, alt, out)
 }
 
 // Attach will attach to the attached device.
