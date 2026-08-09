@@ -105,26 +105,41 @@ func Exec(naosPath string, out io.Writer, in io.Reader, noEnv, usePty bool, name
 	// make sure tty gets closed
 	defer tty.Close()
 
-	// prepare channel
+	// prepare channels
 	quit := make(chan os.Signal, 1)
+	drained := make(chan struct{})
+
+	// handle interrupts
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(quit)
 
 	// read data until EOF
 	go func() {
 		_, _ = io.Copy(out, tty)
-		quit <- os.Interrupt
+		close(drained)
 	}()
 
 	// write data until EOF
 	go func() {
 		_, _ = io.Copy(tty, in)
-		quit <- os.Interrupt
 	}()
 
-	// handle interrupts
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	// wait for the output to drain or an interrupt
+	var interrupted bool
+	select {
+	case <-drained:
+	case <-quit:
+		// forward the interrupt and let the command wind down
+		interrupted = true
+		_ = cmd.Process.Signal(syscall.SIGINT)
+		<-drained
+	}
 
-	// wait for interrupt
-	<-quit
+	// reap command and report its result unless it was interrupted
+	err = cmd.Wait()
+	if interrupted {
+		return nil
+	}
 
-	return nil
+	return err
 }
