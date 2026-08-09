@@ -105,7 +105,7 @@ func run(cmd *command, p *naos.Project) {
 
 func exec(cmd *command, p *naos.Project) {
 	// exec command
-	exitIfSet(p.Exec(cmd.aCommand, os.Stdout, os.Stdin))
+	exitIfSet(p.Exec(cmd.aCommand, cmd.aArgs, os.Stdout, os.Stdin))
 }
 
 func config(cmd *command, p *naos.Project) {

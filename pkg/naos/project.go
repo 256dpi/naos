@@ -247,10 +247,11 @@ func (p *Project) Attach(device string, noReset bool, out io.Writer, in io.Reade
 	return tree.Attach(p.Tree(), device, noReset, out, in)
 }
 
-// Exec will execute a command withing the tree.
-func (p *Project) Exec(cmd string, out io.Writer, in io.Reader) error {
+// Exec will execute a command withing the tree. It is run on a pseudo terminal
+// so that interactive commands like "idf.py menuconfig" work.
+func (p *Project) Exec(cmd string, args []string, out io.Writer, in io.Reader) error {
 	// execute command
-	return tree.Exec(p.Tree(), out, in, false, false, cmd)
+	return tree.Exec(p.Tree(), out, in, false, true, cmd, args...)
 }
 
 // Config will write settings and parameters to an attached device.

@@ -16,7 +16,7 @@ Project Management:
   flash    Flash the previously built binary to an attached device.
   attach   Open a serial communication with an attached device.
   run      Run 'build', 'flash', and 'attach' sequentially.
-  exec     Run a command in the tree. 
+  exec     Run a command in the tree.
   config   Write parameters to an attached device.
   format   Format all source files in the 'src' subdirectory.
   bundle   Generate a bundle of the project.
@@ -34,7 +34,7 @@ Usage:
   naos flash [<device>] [--baud=<rate> --erase --app-only --alt]
   naos attach [<device>] [--no-reset]
   naos run [<device>] [--clean --reconfigure --app-only --baud=<rate> --erase --alt]
-  naos exec <command>
+  naos exec [--] <command> [<args>...]
   naos config <file> [<device>] [--baud=<rate>]
   naos format
   naos bundle [<file>] [--add-debug]
@@ -77,6 +77,7 @@ type command struct {
 	aDevice  string
 	aFile    string
 	aCommand string
+	aArgs    []string
 
 	// options
 	oForce       bool
@@ -117,6 +118,7 @@ func parseCommand() *command {
 		aDevice:  getString(a["<device>"]),
 		aFile:    getString(a["<file>"]),
 		aCommand: getString(a["<command>"]),
+		aArgs:    getStrings(a["<args>"]),
 
 		// options
 		oForce:       getBool(a["--force"]),
@@ -141,4 +143,9 @@ func getBool(field interface{}) bool {
 func getString(field interface{}) string {
 	str, _ := field.(string)
 	return str
+}
+
+func getStrings(field interface{}) []string {
+	list, _ := field.([]string)
+	return list
 }
