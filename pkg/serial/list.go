@@ -1,6 +1,7 @@
 package serial
 
 import (
+	"errors"
 	"sort"
 	"strings"
 
@@ -33,13 +34,18 @@ func ListPorts() ([]string, error) {
 	return ports, nil
 }
 
-// FindPort will return the fist known USB serial port or an empty string.
-func FindPort() string {
+// FindPort will return the first known USB serial port.
+func FindPort() (string, error) {
 	// list ports
 	ports, err := ListPorts()
-	if err != nil || len(ports) == 0 {
-		return ""
+	if err != nil {
+		return "", err
 	}
 
-	return ports[0]
+	// check list
+	if len(ports) == 0 {
+		return "", errors.New("no serial device found")
+	}
+
+	return ports[0], nil
 }

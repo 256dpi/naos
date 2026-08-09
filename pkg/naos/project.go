@@ -212,9 +212,10 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly, alt bool, 
 		}
 	}
 
-	// set missing device
-	if device == "" {
-		device = serial.FindPort()
+	// ensure device
+	device, err := ensureDevice(device)
+	if err != nil {
+		return err
 	}
 
 	return tree.Flash(p.Tree(), p.Manifest.Name, p.Manifest.Target, device, baudRate, erase, appOnly, alt, out)
@@ -222,9 +223,10 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly, alt bool, 
 
 // Attach will attach to the attached device.
 func (p *Project) Attach(device string, noReset bool, out io.Writer, in io.Reader) error {
-	// set missing device
-	if device == "" {
-		device = serial.FindPort()
+	// ensure device
+	device, err := ensureDevice(device)
+	if err != nil {
+		return err
 	}
 
 	return tree.Attach(p.Tree(), device, noReset, out, in)
@@ -259,9 +261,10 @@ func (p *Project) Config(file, device, baudRate string, out io.Writer) error {
 		return err
 	}
 
-	// set missing device
-	if device == "" {
-		device = serial.FindPort()
+	// ensure device
+	device, err = ensureDevice(device)
+	if err != nil {
+		return err
 	}
 
 	return tree.Config(p.Tree(), values, device, baudRate, out)
@@ -282,9 +285,10 @@ func (p *Project) ParseCoredump(elf string, coredump []byte) ([]byte, error) {
 // LoadCoredump will read the coredump directly from the device flash and return
 // a human-readable representation.
 func (p *Project) LoadCoredump(elf, device string) ([]byte, error) {
-	// set missing device
-	if device == "" {
-		device = serial.FindPort()
+	// ensure device
+	device, err := ensureDevice(device)
+	if err != nil {
+		return nil, err
 	}
 
 	return tree.LoadCoredump(p.Tree(), p.Manifest.Name, elf, device)
@@ -293,4 +297,14 @@ func (p *Project) LoadCoredump(elf, device string) ([]byte, error) {
 // Bundle will create a bundle of the project.
 func (p *Project) Bundle(file string, addDebug bool, out io.Writer) error {
 	return tree.Bundle(p.Tree(), file, addDebug, out)
+}
+
+// ensureDevice will return the provided device or find an attached one.
+func ensureDevice(device string) (string, error) {
+	// return provided device
+	if device != "" {
+		return device, nil
+	}
+
+	return serial.FindPort()
 }
