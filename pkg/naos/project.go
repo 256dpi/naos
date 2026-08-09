@@ -152,6 +152,21 @@ func (p *Project) Install(force bool, out io.Writer) error {
 		}
 	}
 
+	// remove components that are not part of the manifest anymore, keeping
+	// every name it mentions, as registry components are managed elsewhere and
+	// must not be affected by a stale entry
+	known := make([]string, 0, len(p.Manifest.Components))
+	for name, com := range p.Manifest.Components {
+		known = append(known, name)
+		if com.Registry != "" {
+			known = append(known, com.Registry)
+		}
+	}
+	err = tree.PruneComponents(p.Tree(), known, out)
+	if err != nil {
+		return err
+	}
+
 	// install registry components
 	var registryComponents []tree.IDFComponent
 	for _, com := range p.Manifest.Components {

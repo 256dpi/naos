@@ -152,10 +152,18 @@ func relink(path, target string, out io.Writer) error {
 	return utils.Link(path, target)
 }
 
+// builtinComponents are the components shipped with the build tree itself and
+// must therefore never be installed or removed.
+var builtinComponents = map[string]bool{
+	"esp-mqtt": true,
+	"esp-osc":  true,
+	"naos":     true,
+}
+
 // InstallComponent will install the specified component in the build tree.
 func InstallComponent(projectPath, naosPath, name, path, repository, version string, force bool, out io.Writer) error {
 	// check component name
-	if name == "esp-mqtt" || name == "esp-osc" || name == "naos" {
+	if builtinComponents[name] {
 		return errors.New("illegal component name")
 	}
 
@@ -207,6 +215,44 @@ func InstallComponent(projectPath, naosPath, name, path, repository, version str
 		// perform repo update
 		utils.Log(out, fmt.Sprintf("Updating component '%s' '%s'...", name, version))
 		err = utils.Fetch(comPath, version, nil, out)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// PruneComponents will remove all components from the build tree that are not
+// part of the provided list. This is needed as the build system picks up every
+// directory in "components" and would keep compiling removed components.
+func PruneComponents(naosPath string, names []string, out io.Writer) error {
+	// index wanted components
+	wanted := map[string]bool{}
+	for _, name := range names {
+		wanted[name] = true
+	}
+
+	// read directory
+	dir := filepath.Join(Directory(naosPath), "components")
+	entries, err := os.ReadDir(dir)
+	if os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	// remove unwanted components
+	for _, entry := range entries {
+		// skip built-in and wanted components
+		name := entry.Name()
+		if builtinComponents[name] || wanted[name] {
+			continue
+		}
+
+		// remove component
+		utils.Log(out, fmt.Sprintf("Removing component '%s'.", name))
+		err = os.RemoveAll(filepath.Join(dir, name))
 		if err != nil {
 			return err
 		}
