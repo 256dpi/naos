@@ -217,20 +217,26 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 		}
 	}
 
-	// build project (app only)
+	// prepare arguments
+	args := []string{"build"}
 	if appOnly {
-		utils.Log(out, "Building project (app only)...")
-		err = Exec(naosPath, out, nil, false, false, "idf.py", "build", "app")
-		if err != nil {
-			return err
-		}
-
-		return nil
+		args = append(args, "app")
 	}
 
-	// build project
-	utils.Log(out, "Building project...")
-	err = Exec(naosPath, out, nil, false, false, "idf.py", "build")
+	// build project, dropping the closing message that suggests flashing
+	// commands that do not apply to a NAOS project
+	if appOnly {
+		utils.Log(out, "Building project (app only)...")
+	} else {
+		utils.Log(out, "Building project...")
+	}
+	filter := filterClosingMessage(out)
+	err = Exec(naosPath, filter, nil, false, false, "idf.py", args...)
+	if err != nil {
+		_ = filter.Flush()
+		return err
+	}
+	err = filter.Flush()
 	if err != nil {
 		return err
 	}
