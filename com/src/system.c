@@ -3,7 +3,6 @@
 
 #include <esp_log.h>
 #include <esp_ota_ops.h>
-#include <esp_pm.h>
 #include <esp_random.h>
 #include <esp_system.h>
 #include <esp_mac.h>
@@ -208,18 +207,10 @@ naos_status_t naos_status() {
 }
 
 void naos_reboot() {
-#ifdef CONFIG_PM_ENABLE
-  // keep both cores out of automatic light sleep before restarting: esp_restart
-  // resets and stalls the other core, while a core entering light sleep stalls
-  // this one from esp_light_sleep_start, which deadlocks into an interrupt
-  // watchdog panic (the lock is never released as we do not return)
-  esp_pm_lock_handle_t lock;
-  ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "naos-reboot", &lock));
-  ESP_ERROR_CHECK(esp_pm_lock_acquire(lock));
-
-  // give the other core time to leave light sleep
-  naos_delay(50);
-#endif
+  // invoke custom reboot function, if set
+  if (naos_config()->reboot_callback != NULL) {
+    naos_config()->reboot_callback();
+  }
 
   // restart device
   esp_restart();

@@ -238,6 +238,13 @@ typedef struct {
   float (*battery_callback)();
 
   /**
+   * The callback that is called by naos_reboot() to restart the device. If unset or returning, the device is
+   * restarted using esp_restart(). Applications may use this to restart differently (e.g. via a short deep sleep)
+   * or perform preparations (e.g. handle automatic light sleep interactions).
+   */
+  void (*reboot_callback)();
+
+  /**
    * If set, the device will randomly (up to 5s) delay startup to overcome WiFi and MQTT congestion issues if many
    * devices restart at the same time.
    */
@@ -375,7 +382,7 @@ naos_status_t naos_status();
 /**
  * Restart the device.
  *
- * @note Prefer this over esp_restart() as it also handles the automatic light sleep interaction.
+ * @note Prefer this over esp_restart() to honor a configured custom reboot function.
  */
 void naos_reboot();
 
