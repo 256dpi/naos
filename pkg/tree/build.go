@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -216,11 +217,19 @@ func AppELF(naosPath, appName string) string {
 }
 
 func joinOverrides(overrides map[string]string) string {
+	// collect and sort keys to get a stable order (an unstable order would
+	// change the file on every build and force a needless reconfiguration)
+	keys := make([]string, 0, len(overrides))
+	for key := range overrides {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
 	// compile config
 	config := ""
-	for key, value := range overrides {
-		if value != "" {
-			config += key + "=" + value + "\n"
+	for _, key := range keys {
+		if overrides[key] != "" {
+			config += key + "=" + overrides[key] + "\n"
 		}
 	}
 
