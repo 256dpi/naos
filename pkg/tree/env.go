@@ -14,6 +14,10 @@ import (
 // envCache is the name of the file that caches the ESP-IDF environment.
 const envCache = "env.cache"
 
+// envStampPrefix marks the first line of the cache, which records the ESP-IDF
+// the cache has been written for.
+const envStampPrefix = "#idf="
+
 // envVolatile lists variables that must not be cached, either because they are
 // artifacts of the shell used to source the export script or because they refer
 // to temporary files that are cleaned up eventually.
@@ -122,6 +126,14 @@ func WriteEnvCache(naosPath string) error {
 		return fmt.Errorf("incomplete ESP-IDF environment: %s", strings.TrimSpace(stderr.String()))
 	}
 
+	// prepend the stamp, so that a cache written for another ESP-IDF is not
+	// mistaken for a current one
+	stamp, err := envStamp(naosPath)
+	if err != nil {
+		return err
+	}
+	lines = append([]string{envStampPrefix + stamp}, lines...)
+
 	// write cache
 	err = os.WriteFile(filepath.Join(Directory(naosPath), envCache), []byte(strings.Join(lines, "\n")+"\n"), 0644)
 	if err != nil {
@@ -131,8 +143,44 @@ func WriteEnvCache(naosPath string) error {
 	return nil
 }
 
+// envStamp returns a value identifying the ESP-IDF the cache belongs to. The
+// linked directory carries the version, so it changes whenever the tree is
+// pointed at another installation.
+func envStamp(naosPath string) (string, error) {
+	// resolve linked ESP-IDF
+	dir, err := filepath.EvalSymlinks(IDFDirectory(naosPath))
+	if err != nil {
+		return "", err
+	}
+
+	return dir, nil
+}
+
+// envCacheFresh reports whether the cache exists and was written for the
+// currently linked ESP-IDF.
+func envCacheFresh(naosPath, path string) (bool, error) {
+	// read cache
+	data, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	// get stamp
+	stamp, err := envStamp(naosPath)
+	if err != nil {
+		return false, err
+	}
+
+	// compare against the stamp on the first line
+	line, _, _ := strings.Cut(string(data), "\n")
+
+	return line == envStampPrefix+stamp, nil
+}
+
 // commandEnv returns the environment for a command run in the build tree,
-// writing the environment cache first if it is missing.
+// writing the environment cache first if it is missing or stale.
 func commandEnv(naosPath string) ([]string, error) {
 	// prepare base environment
 	env, err := baseEnv(naosPath)
@@ -140,12 +188,12 @@ func commandEnv(naosPath string) ([]string, error) {
 		return nil, err
 	}
 
-	// write cache if missing
+	// write cache if missing or stale
 	path := filepath.Join(Directory(naosPath), envCache)
-	ok, err := utils.Exists(path)
+	fresh, err := envCacheFresh(naosPath, path)
 	if err != nil {
 		return nil, err
-	} else if !ok {
+	} else if !fresh {
 		err = WriteEnvCache(naosPath)
 		if err != nil {
 			return nil, err
@@ -160,8 +208,8 @@ func commandEnv(naosPath string) ([]string, error) {
 
 	// apply cached variables
 	for _, line := range strings.Split(string(data), "\n") {
-		// skip empty lines
-		if line == "" {
+		// skip empty lines and the stamp
+		if line == "" || strings.HasPrefix(line, envStampPrefix) {
 			continue
 		}
 
