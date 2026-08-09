@@ -95,7 +95,7 @@ func Install(naosPath, sourcePath, dataPath, version string, force bool, out io.
 
 	// link IDF
 	utils.Log(out, "Linking ESP-IDF.")
-	err = utils.Link(filepath.Join(Directory(naosPath), "esp-idf"), idf)
+	err = relink(filepath.Join(Directory(naosPath), "esp-idf"), idf, out)
 	if err != nil {
 		return err
 	}
@@ -106,40 +106,50 @@ func Install(naosPath, sourcePath, dataPath, version string, force bool, out io.
 		return err
 	}
 
-	// remove old toolchain
-	oldToolchain, err := utils.IsDir(filepath.Join(Directory(naosPath), "toolchain"))
-	if err != nil {
-		return err
-	} else if oldToolchain {
-		utils.Log(out, "Removing old toolchain.")
-		err = os.RemoveAll(filepath.Join(Directory(naosPath), "toolchain"))
-		if err != nil {
-			return err
-		}
-	}
-
 	// link toolchain
 	utils.Log(out, "Linking toolchain.")
-	err = utils.Link(filepath.Join(Directory(naosPath), "toolchain"), toolchain)
+	err = relink(filepath.Join(Directory(naosPath), "toolchain"), toolchain, out)
 	if err != nil {
 		return err
 	}
 
 	// link source directory if missing
 	utils.Log(out, "Linking source directory.")
-	err = utils.Link(filepath.Join(Directory(naosPath), "main", "src"), sourcePath)
+	err = relink(filepath.Join(Directory(naosPath), "main", "src"), sourcePath, out)
 	if err != nil {
 		return err
 	}
 
 	// link data directory if missing
 	utils.Log(out, "Linking data directory.")
-	err = utils.Link(filepath.Join(Directory(naosPath), "main", "data"), dataPath)
+	err = relink(filepath.Join(Directory(naosPath), "main", "data"), dataPath, out)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// relink will ensure a link with the specified target at the provided path,
+// replacing files and directories left behind by earlier installations, which
+// utils.Link cannot handle on its own.
+func relink(path, target string, out io.Writer) error {
+	// check path
+	info, err := os.Lstat(path)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	// remove anything that is not a link
+	if err == nil && info.Mode()&os.ModeSymlink == 0 {
+		utils.Log(out, fmt.Sprintf("Removing old '%s'.", filepath.Base(path)))
+		err = os.RemoveAll(path)
+		if err != nil {
+			return err
+		}
+	}
+
+	return utils.Link(path, target)
 }
 
 // InstallComponent will install the specified component in the build tree.
