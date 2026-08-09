@@ -40,7 +40,7 @@ func main() {
 	} else if cmd.cDebug {
 		debug(cmd, getProject())
 	} else if cmd.cSDKs {
-		sdks()
+		sdks(cmd)
 	} else if cmd.cHelp {
 		fmt.Print(usage)
 	}
@@ -153,7 +153,14 @@ func debug(cmd *command, p *naos.Project) {
 	exitIfSet(err)
 }
 
-func sdks() {
+func sdks(cmd *command) {
+	// remove the specified version
+	if cmd.oRemove != "" {
+		_, err := sdk.Remove(cmd.oRemove, os.Stdout)
+		exitIfSet(err)
+		return
+	}
+
 	// list SDKs
 	sdks, err := sdk.List()
 	exitIfSet(err)

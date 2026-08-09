@@ -1,9 +1,13 @@
 package sdk
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/256dpi/naos/pkg/utils"
 )
 
 // SDK represents an installed SDK.
@@ -55,4 +59,36 @@ func List() ([]SDK, error) {
 	}
 
 	return sdks, nil
+}
+
+// Remove will remove all SDKs installed for the specified version and return
+// the removed ones. Removing the version currently linked into a build tree
+// requires a reinstall before that tree can be used again.
+func Remove(version string, out io.Writer) ([]SDK, error) {
+	// list SDKs
+	sdks, err := List()
+	if err != nil {
+		return nil, err
+	}
+
+	// remove matching SDKs
+	var removed []SDK
+	for _, item := range sdks {
+		if item.Version != version {
+			continue
+		}
+		utils.Log(out, fmt.Sprintf("Removing '%s' '%s'...", item.Name, item.Version))
+		err = os.RemoveAll(item.Path)
+		if err != nil {
+			return nil, err
+		}
+		removed = append(removed, item)
+	}
+
+	// check result
+	if len(removed) == 0 {
+		return nil, fmt.Errorf("no SDK installed for version %q", version)
+	}
+
+	return removed, nil
 }

@@ -39,7 +39,7 @@ Usage:
   naos format
   naos bundle [<file>] [--add-debug]
   naos debug [<file>] [--elf=<file>]
-  naos sdks
+  naos sdks [--remove=<version>]
   naos help
 
 Options:
@@ -53,6 +53,7 @@ Options:
   --no-reset         Do not reset the device when attaching.
   --add-debug        Add debug ELF file to bundle.
   --elf=<file>       The ELF file for coredump analysis.
+  --remove=<version> Remove the SDKs installed for the specified version.
   -b --baud=<rate>   The baud rate.
 `
 
@@ -91,6 +92,7 @@ type command struct {
 	oAddDebug    bool
 	oNoReset     bool
 	oELF         string
+	oRemove      string
 }
 
 func parseCommand() *command {
@@ -132,6 +134,7 @@ func parseCommand() *command {
 		oNoReset:     getBool(a["--no-reset"]),
 		oAddDebug:    getBool(a["--add-debug"]),
 		oELF:         getString(a["--elf"]),
+		oRemove:      getString(a["--remove"]),
 	}
 }
 
