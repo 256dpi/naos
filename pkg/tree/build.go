@@ -157,11 +157,14 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 		return err
 	}
 
-	// check configured target
-	if configured := cache["IDF_TARGET"]; configured != "" && configured != target {
-		// a configured build directory cannot be re-targeted in place
-		utils.Log(out, fmt.Sprintf("Target changed from %s to %s...", configured, target))
-		clean = true
+	// check configured target, as an unconfigured build directory falls back to
+	// the ESP-IDF default target instead of the requested one
+	if configured := cache["IDF_TARGET"]; configured != target {
+		if configured != "" {
+			// a configured build directory cannot be re-targeted in place
+			utils.Log(out, fmt.Sprintf("Target changed from %s to %s...", configured, target))
+			clean = true
+		}
 		reconfigure = true
 	}
 
