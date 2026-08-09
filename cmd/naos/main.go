@@ -22,7 +22,7 @@ func main() {
 	} else if cmd.cBuild {
 		build(cmd, getProject())
 	} else if cmd.cDetect {
-		detect(cmd, getProject())
+		detect()
 	} else if cmd.cFlash {
 		flash(cmd, getProject())
 	} else if cmd.cAttach {
@@ -65,7 +65,7 @@ func build(cmd *command, p *naos.Project) {
 	exitIfSet(p.Build(cmd.oClean, cmd.oReconfigure, cmd.oAppOnly, os.Stdout))
 }
 
-func detect(cmd *command, p *naos.Project) {
+func detect() {
 	// detect devices
 	list, err := serial.ListPorts()
 	exitIfSet(err)
