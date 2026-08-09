@@ -91,6 +91,9 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 	} else {
 		err = utils.Remove(filepath.Join(Directory(naosPath), "version.txt"))
 	}
+	if err != nil {
+		return fmt.Errorf("failed to update project version: %w", err)
+	}
 
 	// prepare files content (one file per line, as the list is read back
 	// with "file(STRINGS ...)" which splits on newlines)
