@@ -14,8 +14,9 @@ func Attach(naosPath, port string, noReset bool, out io.Writer, in io.Reader) er
 		return err
 	}
 
-	// log
-	utils.Log(out, "Attaching to serial port (press Ctrl+C to exit)...")
+	// log, as the monitor receives keys unaltered, Ctrl+C is forwarded to the
+	// device and Ctrl+] is what leaves the monitor
+	utils.Log(out, "Attaching to serial port (press Ctrl+] to exit)...")
 
 	// prepare arguments
 	args := []string{"monitor"}

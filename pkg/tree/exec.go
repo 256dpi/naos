@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/creack/pty"
+	"golang.org/x/term"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
@@ -91,6 +92,29 @@ func Exec(naosPath string, out io.Writer, in io.Reader, noEnv, usePty bool, name
 
 	// make sure tty gets closed
 	defer tty.Close()
+
+	// put the terminal in raw mode and forward its size, so that programs like
+	// the ESP-IDF monitor receive keys like Ctrl+] and Ctrl+T unaltered and can
+	// lay out their output correctly
+	if file, ok := in.(*os.File); ok && term.IsTerminal(int(file.Fd())) {
+		// enable raw mode
+		state, err := term.MakeRaw(int(file.Fd()))
+		if err != nil {
+			return err
+		}
+		defer term.Restore(int(file.Fd()), state)
+
+		// inherit size and keep it up to date
+		resize := make(chan os.Signal, 1)
+		signal.Notify(resize, syscall.SIGWINCH)
+		defer signal.Stop(resize)
+		go func() {
+			for range resize {
+				_ = pty.InheritSize(file, tty)
+			}
+		}()
+		resize <- syscall.SIGWINCH
+	}
 
 	// prepare channels
 	quit := make(chan os.Signal, 1)
