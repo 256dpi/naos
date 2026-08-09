@@ -101,10 +101,15 @@ func Flash(naosPath, port, baudRate string, erase, appOnly, alt bool, out io.Wri
 		return err
 	}
 
-	// run steps
+	// run steps, invoking the alternative esptool directly and letting its
+	// shebang pick the interpreter, as it may live in its own environment
 	for _, step := range steps {
 		utils.Log(out, step.message)
-		err = Exec(naosPath, out, nil, alt, false, "python", step.args...)
+		program, arg := "python", step.args
+		if alt {
+			program, arg = step.args[0], step.args[1:]
+		}
+		err = Exec(naosPath, out, nil, alt, false, program, arg...)
 		if err != nil {
 			return err
 		}
