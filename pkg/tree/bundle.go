@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
@@ -119,6 +121,20 @@ func Bundle(naosPath, file string, addDebug bool, out io.Writer) error {
 		return fmt.Errorf("failed to stat project binary: %w", err)
 	}
 
+	// parse offsets
+	bootLoaderOffset, err := parseHex(args.Bootloader.Offset)
+	if err != nil {
+		return fmt.Errorf("failed to parse bootloader offset: %w", err)
+	}
+	partitionsOffset, err := parseHex(args.PartitionTable.Offset)
+	if err != nil {
+		return fmt.Errorf("failed to parse partition table offset: %w", err)
+	}
+	projectOffset, err := parseHex(args.Application.Offset)
+	if err != nil {
+		return fmt.Errorf("failed to parse application offset: %w", err)
+	}
+
 	// prepare manifest
 	manifest := bundleManifest{
 		Name:      desc.Name,
@@ -130,19 +146,19 @@ func Bundle(naosPath, file string, addDebug bool, out io.Writer) error {
 		Regions: []bundleRegion{
 			{
 				Name:   "bootloader",
-				Offset: mustParseHex(args.Bootloader.Offset),
+				Offset: bootLoaderOffset,
 				Size:   bootLoaderStat.Size(),
 				File:   filepath.Base(bootLoaderBinary),
 			},
 			{
 				Name:   "partition-table",
-				Offset: mustParseHex(args.PartitionTable.Offset),
+				Offset: partitionsOffset,
 				Size:   partitionsStat.Size(),
 				File:   filepath.Base(partitionsBinary),
 			},
 			{
 				Name:   "application",
-				Offset: mustParseHex(args.Application.Offset),
+				Offset: projectOffset,
 				Size:   projectStat.Size(),
 				File:   filepath.Base(projectBinary),
 			},
@@ -160,9 +176,13 @@ func Bundle(naosPath, file string, addDebug bool, out io.Writer) error {
 		if err != nil {
 			return fmt.Errorf("failed to stat OTA data binary: %w", err)
 		}
+		offset, err := parseHex(args.OTAData.Offset)
+		if err != nil {
+			return fmt.Errorf("failed to parse OTA data offset: %w", err)
+		}
 		manifest.Regions = append(manifest.Regions, bundleRegion{
 			Name:   "ota-data",
-			Offset: mustParseHex(args.OTAData.Offset),
+			Offset: offset,
 			Size:   stat.Size(),
 			Fill:   0xFF,
 		})
@@ -179,11 +199,13 @@ func Bundle(naosPath, file string, addDebug bool, out io.Writer) error {
 	if err != nil {
 		return err
 	}
+
+	// make sure the file gets closed on error, as both are closed explicitly
+	// below to be able to report a failure to flush the archive
 	defer f.Close()
 
 	// create writer
 	w := zip.NewWriter(f)
-	defer w.Close()
 
 	// prepare files
 	addFiles := []string{
@@ -225,17 +247,31 @@ func Bundle(naosPath, file string, addDebug bool, out io.Writer) error {
 		return err
 	}
 
+	// flush archive
+	err = w.Close()
+	if err != nil {
+		return fmt.Errorf("failed to write archive: %w", err)
+	}
+
+	// properly close file
+	err = f.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close archive: %w", err)
+	}
+
 	// print manifest
 	_, _ = fmt.Fprintln(out, string(manifestData))
 
 	return nil
 }
 
-func mustParseHex(s string) int64 {
-	var value int64
-	_, err := fmt.Sscanf(s, "0x%x", &value)
+// parseHex will parse a hexadecimal offset as written by the build.
+func parseHex(s string) (int64, error) {
+	// parse value
+	value, err := strconv.ParseInt(strings.TrimPrefix(s, "0x"), 16, 64)
 	if err != nil {
-		panic(fmt.Sprintf("failed to parse hex value %s: %v", s, err))
+		return 0, fmt.Errorf("malformed hex value %q", s)
 	}
-	return value
+
+	return value, nil
 }
