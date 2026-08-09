@@ -47,6 +47,22 @@ coredump, data, coredump, ,        64K
 `
 	}
 
+	// TODO: Tighten the partition math.
+	//
+	// Only 2<<16 is actually taken up by the partitions around the ones sized
+	// here (64K before "alpha" and the trailing 64K coredump), and app sizes
+	// are aligned to 4K while the generator needs the following app partition
+	// to start at a 64K boundary. It therefore silently aligns "beta" up and
+	// leaves 28K to 116K of the flash unused, depending on the percentages.
+	//
+	// Reserving 2<<16, aligning app partitions to 64K and giving the remainder
+	// to "storage" uses the flash exactly, but moves every partition after
+	// "alpha" and changes the size of "alpha" itself. Devices in the field keep
+	// the table that was flashed onto them, so a firmware built against a table
+	// with a larger "alpha" may no longer fit their app partition: sweeping the
+	// realistic percentages showed "alpha" growing by up to 32K. Changing this
+	// needs a migration story for deployed devices.
+
 	// calculate available bytes
 	total := int64(p.Total)*1024*1024 - 3<<16
 
