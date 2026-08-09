@@ -148,13 +148,27 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 		}
 	}
 
-	// check configured target
-	configuredTarget, err := readConfiguredTarget(naosPath)
+	// read cmake cache
+	cache, err := readCMakeCache(naosPath)
 	if err != nil {
 		return err
-	} else if configuredTarget != "" && configuredTarget != target {
+	}
+
+	// check configured target
+	if configured := cache["IDF_TARGET"]; configured != "" && configured != target {
 		// a configured build directory cannot be re-targeted in place
-		utils.Log(out, fmt.Sprintf("Target changed from %s to %s...", configuredTarget, target))
+		utils.Log(out, fmt.Sprintf("Target changed from %s to %s...", configured, target))
+		clean = true
+		reconfigure = true
+	}
+
+	// check configured toolchain, as a build directory configured for another
+	// ESP-IDF version or toolchain refers to files that have been replaced
+	stale, err := staleToolchain(naosPath, cache)
+	if err != nil {
+		return err
+	} else if stale {
+		utils.Log(out, "Toolchain changed...")
 		clean = true
 		reconfigure = true
 	}
@@ -162,7 +176,7 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 	// clean project if requested
 	if clean {
 		utils.Log(out, "Cleaning project...")
-		err = Exec(naosPath, out, nil, false, false, "idf.py", "fullclean")
+		err = cleanProject(naosPath, out)
 		if err != nil {
 			return err
 		}
@@ -221,25 +235,80 @@ func AppELF(naosPath, appName string) string {
 	return filepath.Join(Directory(naosPath), "build", appName+".elf")
 }
 
-// readConfiguredTarget will return the target the build directory has been
-// configured for, or an empty string if it has not been configured yet.
-func readConfiguredTarget(naosPath string) (string, error) {
+// readCMakeCache will return the entries of the build directories cmake cache,
+// or an empty map if it has not been configured yet.
+func readCMakeCache(naosPath string) (map[string]string, error) {
+	// prepare cache
+	cache := map[string]string{}
+
 	// read cmake cache
 	data, err := os.ReadFile(filepath.Join(Directory(naosPath), "build", "CMakeCache.txt"))
 	if os.IsNotExist(err) {
-		return "", nil
+		return cache, nil
 	} else if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	// find target
+	// collect entries ("KEY:TYPE=VALUE")
 	for _, line := range strings.Split(string(data), "\n") {
-		if value, ok := strings.CutPrefix(line, "IDF_TARGET:STRING="); ok {
-			return strings.TrimSpace(value), nil
+		// split entry
+		name, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+
+		// strip type
+		key, _, ok := strings.Cut(name, ":")
+		if !ok {
+			continue
+		}
+
+		// store entry
+		cache[key] = strings.TrimSpace(value)
+	}
+
+	return cache, nil
+}
+
+// staleToolchain will check whether the build directory has been configured
+// with an ESP-IDF version or toolchain that is not the current one anymore.
+func staleToolchain(naosPath string, cache map[string]string) (bool, error) {
+	// check the linked ESP-IDF directory against the configured toolchain
+	// file, as both versions may still be installed side by side
+	if file := cache["CMAKE_TOOLCHAIN_FILE"]; file != "" {
+		idfDir, err := filepath.EvalSymlinks(IDFDirectory(naosPath))
+		if err == nil && !strings.HasPrefix(file, idfDir+string(filepath.Separator)) {
+			return true, nil
 		}
 	}
 
-	return "", nil
+	// check that the configured compiler still exists, as the toolchain may
+	// have been updated in place
+	if compiler := cache["CMAKE_C_COMPILER_AR"]; compiler != "" {
+		ok, err := utils.Exists(compiler)
+		if err != nil {
+			return false, err
+		} else if !ok {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// cleanProject will clean the build directory.
+func cleanProject(naosPath string, out io.Writer) error {
+	// let idf.py clean the build directory
+	err := Exec(naosPath, out, nil, false, false, "idf.py", "fullclean")
+	if err == nil {
+		return nil
+	}
+
+	// otherwise remove the build directory, as idf.py refuses to clean
+	// directories it does not recognize as cmake build directories
+	utils.Log(out, "Removing build directory...")
+
+	return os.RemoveAll(filepath.Join(Directory(naosPath), "build"))
 }
 
 func joinOverrides(overrides map[string]string) string {
