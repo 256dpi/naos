@@ -30,6 +30,31 @@ func ADFDirectory(naosPath string) string {
 	return filepath.Join(Directory(naosPath), "esp-adf")
 }
 
+// terminalInput may be implemented by readers that filter terminal input, to
+// expose the underlying terminal for configuration.
+type terminalInput interface {
+	Terminal() *os.File
+}
+
+// inputTerminal returns the terminal behind the provided input, if any.
+func inputTerminal(in io.Reader) *os.File {
+	// get file
+	var file *os.File
+	switch value := in.(type) {
+	case *os.File:
+		file = value
+	case terminalInput:
+		file = value.Terminal()
+	}
+
+	// check terminal
+	if file == nil || !term.IsTerminal(int(file.Fd())) {
+		return nil
+	}
+
+	return file
+}
+
 // Exec runs a named command in the build tree. All xtensa toolchain binaries are
 // made available in the path transparently.
 func Exec(naosPath string, out io.Writer, in io.Reader, noEnv, usePty bool, name string, arg ...string) error {
@@ -96,7 +121,7 @@ func Exec(naosPath string, out io.Writer, in io.Reader, noEnv, usePty bool, name
 	// put the terminal in raw mode and forward its size, so that programs like
 	// the ESP-IDF monitor receive keys like Ctrl+] and Ctrl+T unaltered and can
 	// lay out their output correctly
-	if file, ok := in.(*os.File); ok && term.IsTerminal(int(file.Fd())) {
+	if file := inputTerminal(in); file != nil {
 		// enable raw mode
 		state, err := term.MakeRaw(int(file.Fd()))
 		if err != nil {
