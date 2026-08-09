@@ -101,12 +101,12 @@ static void naos_serial_decode(naos_serial_decoder_t decoder) {
         naos_delay(1);
       }
 
-      // read into buffer
+      // read into buffer (a blocking read that yields no data indicates an
+      // unavailable interface, e.g. an unplugged USB-Serial/JTAG since IDF
+      // v5.5, therefore back off to not spin and starve automatic light sleep)
       size_t ret = decoder.read(decoder.buffer + len, space, decoder.ctx);
       if (ret == 0) {
-        if (!decoder.blocking) {
-          naos_delay(1);
-        }
+        naos_delay(decoder.blocking ? 100 : 1);
         continue;
       }
 
