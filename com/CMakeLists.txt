@@ -4,7 +4,7 @@ IF(DEFINED ENV{IDF_PATH})
     idf_component_register(SRCS ${srcs}
         INCLUDE_DIRS "include"
         # Note: Managed components are added automatically
-        REQUIRES nvs_flash efuse bt espcoredump esp_eth esp_http_server esp-mqtt esp-osc app_update fatfs esp_driver_uart esp_driver_usb_serial_jtag wpa_supplicant
+        REQUIRES nvs_flash efuse bt espcoredump esp_eth esp_http_server esp-mqtt esp-osc app_update fatfs esp_pm esp_driver_uart esp_driver_usb_serial_jtag wpa_supplicant
     )
 
     # Force-include the FreeRTOS trace hooks header globally so that the

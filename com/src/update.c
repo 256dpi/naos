@@ -1,10 +1,10 @@
+#include <naos.h>
 #include <naos/update.h>
 #include <naos/sys.h>
 #include <naos/msg.h>
 
 #include <esp_log.h>
 #include <esp_ota_ops.h>
-#include <esp_system.h>
 #include <string.h>
 
 #include "utils.h"
@@ -392,7 +392,7 @@ bool naos_update_finish() {
   ESP_LOGI(NAOS_LOG_TAG, "naos_update_finish: rebooting in 1s...");
 
   // restart in one second
-  naos_defer("naos-restart", 1000, esp_restart);
+  naos_defer("naos-restart", 1000, naos_reboot);
 
   return true;
 }

@@ -3,6 +3,7 @@
 
 #include <esp_log.h>
 #include <esp_ota_ops.h>
+#include <esp_pm.h>
 #include <esp_random.h>
 #include <esp_system.h>
 #include <esp_mac.h>
@@ -34,7 +35,7 @@ static naos_param_t naos_system_params[] = {
     {.name = "device-id", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "device-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = esp_restart},
+    {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_reboot},
     {.name = "app-name", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "app-version", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "app-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
@@ -204,4 +205,22 @@ naos_status_t naos_status() {
   naos_unlock(naos_system_mutex);
 
   return status;
+}
+
+void naos_reboot() {
+#ifdef CONFIG_PM_ENABLE
+  // keep both cores out of automatic light sleep before restarting: esp_restart
+  // resets and stalls the other core, while a core entering light sleep stalls
+  // this one from esp_light_sleep_start, which deadlocks into an interrupt
+  // watchdog panic (the lock is never released as we do not return)
+  esp_pm_lock_handle_t lock;
+  ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "naos-reboot", &lock));
+  ESP_ERROR_CHECK(esp_pm_lock_acquire(lock));
+
+  // give the other core time to leave light sleep
+  naos_delay(50);
+#endif
+
+  // restart device
+  esp_restart();
 }

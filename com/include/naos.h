@@ -373,6 +373,13 @@ bool naos_publish_d(const char *topic, double payload, int qos, bool retained, n
 naos_status_t naos_status();
 
 /**
+ * Restart the device.
+ *
+ * @note Prefer this over esp_restart() as it also handles the automatic light sleep interaction.
+ */
+void naos_reboot();
+
+/**
  * The message will be printed to the serial port and published to the broker if logging is activated.
  *
  * @param fmt The message format.
