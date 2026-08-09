@@ -63,15 +63,6 @@ func Resolve(path, base string) (string, error) {
 
 // Download will download the specified source to the specified destination.
 func Download(destination, source string) error {
-	// create file
-	file, err := os.Create(destination)
-	if err != nil {
-		return err
-	}
-
-	// make sure file gets closed
-	defer file.Close()
-
 	// read data
 	resp, err := http.Get(source)
 	if err != nil {
@@ -86,6 +77,20 @@ func Download(destination, source string) error {
 		return fmt.Errorf("download failed with status %d", resp.StatusCode)
 	}
 
+	// download to a temporary file, to not leave a truncated file at the
+	// destination if the download is interrupted
+	temp := destination + ".part"
+
+	// create file
+	file, err := os.Create(temp)
+	if err != nil {
+		return err
+	}
+
+	// make sure the temporary file gets removed and closed
+	defer os.Remove(temp)
+	defer file.Close()
+
 	// write body to file
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
@@ -98,13 +103,20 @@ func Download(destination, source string) error {
 		return err
 	}
 
+	// move file into place
+	err = os.Rename(temp, destination)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // Unzip will extract the specified zip file to the provided destination using
 // the system unzip command.
 func Unzip(source, destination string, out io.Writer) error {
-	cmd := exec.Command("unzip", "-q", source, "-d", destination)
+	// overwrite existing files, as "unzip" would otherwise stop and ask
+	cmd := exec.Command("unzip", "-qo", source, "-d", destination)
 	cmd.Stdout = out
 	cmd.Stderr = out
 	return cmd.Run()

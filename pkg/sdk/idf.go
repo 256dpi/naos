@@ -50,8 +50,16 @@ func InstallIDF(version string, out io.Writer) (string, error) {
 		}
 	}
 
-	// prepare zip path
+	// prepare paths
 	zipPath := filepath.Join(base, key+".zip")
+	extracted := filepath.Join(base, fmt.Sprintf("esp-idf-%s", version))
+
+	// remove leftovers of an interrupted installation, as the archive is
+	// extracted under its own name before being moved into place
+	err = os.RemoveAll(extracted)
+	if err != nil {
+		return "", err
+	}
 
 	// download zip archive
 	url := fmt.Sprintf("https://github.com/espressif/esp-idf/releases/download/%s/esp-idf-%s.zip", version, version)
@@ -73,7 +81,6 @@ func InstallIDF(version string, out io.Writer) (string, error) {
 	os.Remove(zipPath)
 
 	// rename extracted directory
-	extracted := filepath.Join(base, fmt.Sprintf("esp-idf-%s", version))
 	err = os.Rename(extracted, dir)
 	if err != nil {
 		return "", err
