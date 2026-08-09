@@ -4,3 +4,4 @@ build/
 main/src/
 includes.list
 sdkconfig
+env.cache

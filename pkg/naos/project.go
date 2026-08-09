@@ -175,6 +175,13 @@ func (p *Project) Install(force bool, out io.Writer) error {
 		return err
 	}
 
+	// refresh environment cache
+	utils.Log(out, "Caching environment...")
+	err = tree.WriteEnvCache(p.Tree())
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -35,48 +35,35 @@ func Exec(naosPath string, out io.Writer, in io.Reader, noEnv, usePty bool, name
 	// print command
 	utils.Log(out, fmt.Sprintf("%s %s", name, strings.Join(arg, " ")))
 
-	// prepare command
-	var cmd = exec.Command(name, arg...)
-
-	// construct command for new projects
-	if !noEnv {
-		source := filepath.Join(IDFDirectory(naosPath), "export.sh")
-		cmd = exec.Command("bash", "-c", fmt.Sprintf("source %s; %s %s", source, name, strings.Join(arg, " ")))
+	// prepare environment and program
+	var err error
+	var env []string
+	program := name
+	if noEnv {
+		env, err = baseEnv(naosPath)
+	} else {
+		env, err = commandEnv(naosPath)
+		if err == nil {
+			program, err = lookPath(name, env)
+		}
 	}
+	if err != nil {
+		return err
+	}
+
+	// enable ccache if available
+	if _, e := exec.LookPath("ccache"); e == nil {
+		env = append(env, "IDF_CCACHE_ENABLE=1")
+	}
+
+	// prepare command
+	cmd := exec.Command(program, arg...)
 
 	// set working directory
 	cmd.Dir = Directory(naosPath)
 
-	// inherit current environment
-	cmd.Env = os.Environ()
-
-	// go through all env variables
-	for i, str := range cmd.Env {
-		if strings.HasPrefix(str, "PWD=") {
-			// override shell working directory
-			cmd.Env[i] = "PWD=" + Directory(naosPath)
-		}
-	}
-
-	// add IDF tools path
-	cmd.Env = append(cmd.Env, "IDF_TOOLS_PATH="+filepath.Join(Directory(naosPath), "toolchain"))
-
-	// add managed components tweak
-	cmd.Env = append(cmd.Env, "IDF_COMPONENT_OVERWRITE_MANAGED_COMPONENTS=1")
-
-	// enable ccache if available
-	if _, err := exec.LookPath("ccache"); err == nil {
-		cmd.Env = append(cmd.Env, "IDF_CCACHE_ENABLE=1")
-	}
-
-	// add ADF path if existing
-	ok, err := utils.Exists(ADFDirectory(naosPath))
-	if err != nil {
-		return err
-	}
-	if ok {
-		cmd.Env = append(cmd.Env, "ADF_PATH="+ADFDirectory(naosPath))
-	}
+	// set environment
+	cmd.Env = env
 
 	// run command without PTY
 	if !usePty {
