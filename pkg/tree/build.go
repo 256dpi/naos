@@ -3,7 +3,6 @@ package tree
 import (
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -109,7 +108,7 @@ func Build(naosPath, appName, tagPrefix, target string, overrides map[string]str
 
 	// update files
 	utils.Log(out, "Updating files...")
-	err = os.WriteFile(filepath.Join(Directory(naosPath), "main", "files.list"), []byte(filesContent2), 0644)
+	_, err = utils.Update(filepath.Join(Directory(naosPath), "main", "files.list"), filesContent2)
 	if err != nil {
 		return err
 	}
