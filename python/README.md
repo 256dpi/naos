@@ -58,6 +58,17 @@ device = BLEDevice.from_descriptor(descriptor)
 channel = await device.open()
 ```
 
+`ble_find` returns as soon as a matching device advertises. Use `ble_scan` to
+survey all devices for a full duration, or keep a `BLEScanner` running to avoid
+starting and stopping a scan for every lookup:
+
+```python
+from naos.ble import BLEScanner
+
+async with BLEScanner(on_detect=print) as scanner:
+    descriptor = await scanner.find("my-device")
+```
+
 See `examples/ping.py` and `examples/ble.py` for runnable examples.
 
 ## Tests

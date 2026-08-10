@@ -3,9 +3,49 @@ import asyncio
 import pytest
 
 from naos import Message, Session
-from naos.ble import BLEDevice, BLETransport
+from naos.ble import BLEDescriptor, BLEDevice, BLEScanner, BLETransport, ble_find
 from naos import ble as ble_module
 from fake import FakeDeviceTransport
+
+
+class FakeAdvertisement:
+    def __init__(self, local_name=None, rssi=-50):
+        self.local_name = local_name
+        self.rssi = rssi
+
+
+class FakeBackendDevice:
+    def __init__(self, address, name=None):
+        self.address = address
+        self.name = name
+
+
+class FakeScanner:
+    """Emulates a bleak scanner that reports devices on demand."""
+
+    def __init__(self, on_detect):
+        self.on_detect = on_detect
+        self.started = False
+        self.stopped = False
+
+    async def start(self):
+        self.started = True
+
+    async def stop(self):
+        self.stopped = True
+
+    def detect(self, address, name, rssi=-50):
+        device = FakeBackendDevice(address, name)
+        self.on_detect(device, FakeAdvertisement(name, rssi))
+        return device
+
+
+def install_scanner(monkeypatch, holder):
+    def new_scanner(on_detect):
+        holder["scanner"] = FakeScanner(on_detect)
+        return holder["scanner"]
+
+    monkeypatch.setattr(ble_module, "_new_scanner", new_scanner)
 
 
 class FakeCharacteristic:
@@ -73,6 +113,76 @@ class FakeClient:
 
     def notify(self, data: bytes):
         self._cb(0, bytearray(data))
+
+
+async def test_ble_scanner(monkeypatch):
+    holder = {}
+    install_scanner(monkeypatch, holder)
+
+    detected = []
+    scanner = BLEScanner(detected.append)
+
+    async with scanner:
+        fake = holder["scanner"]
+        assert fake.started
+
+        # devices are sorted by descending signal strength
+        fake.detect("AA", "weak", rssi=-80)
+        fake.detect("BB", "strong", rssi=-40)
+        assert [d.name for d in scanner.devices()] == ["strong", "weak"]
+        assert [d.name for d in detected] == ["weak", "strong"]
+
+        # descriptors carry the backend device and are updated in place
+        assert scanner.devices()[0].handle.address == "BB"
+        fake.detect("BB", "renamed", rssi=-40)
+        assert len(scanner.devices()) == 2
+        assert scanner.devices()[0].name == "renamed"
+
+        # find returns the strongest device
+        assert (await scanner.find()).name == "renamed"
+
+        # find matches by name
+        assert (await scanner.find("weak")).name == "weak"
+
+    assert holder["scanner"].stopped
+
+    # only one scan at a time
+    await scanner.start()
+    with pytest.raises(RuntimeError):
+        await scanner.start()
+    await scanner.stop()
+
+
+async def test_ble_scanner_find_waits(monkeypatch):
+    holder = {}
+    install_scanner(monkeypatch, holder)
+
+    async with BLEScanner() as scanner:
+        fake = holder["scanner"]
+
+        # report the device only after find is already waiting
+        async def report():
+            await asyncio.sleep(0.01)
+            fake.detect("AA", "late")
+
+        task = asyncio.create_task(report())
+        found = await scanner.find("late", timeout=1)
+        await task
+
+        assert found is not None
+        assert found.address == "AA"
+
+        # missing devices time out
+        assert await scanner.find("other", timeout=0.01) is None
+
+
+async def test_ble_find(monkeypatch):
+    holder = {}
+    install_scanner(monkeypatch, holder)
+
+    # a scan that finds nothing stops the scanner and returns None
+    assert await ble_find(timeout=0.01) is None
+    assert holder["scanner"].stopped
 
 
 async def test_ble_transport_notify():
@@ -174,6 +284,80 @@ async def test_ble_device_open(monkeypatch):
     # channel can be opened again
     client.connected = False
     await device.open()
+
+
+async def test_ble_device_from_descriptor(monkeypatch):
+    client = FakeClient()
+    targets = []
+
+    def new_client(target, on_disconnect):
+        targets.append(target)
+        return client
+
+    monkeypatch.setattr(ble_module, "_new_client", new_client)
+
+    # a descriptor from a scan carries the backend device
+    handle = FakeBackendDevice("AA:BB:CC:DD:EE:FF", "test")
+    device = BLEDevice.from_descriptor(
+        BLEDescriptor("AA:BB:CC:DD:EE:FF", "test", -50, handle)
+    )
+    assert device.name() == "test"
+
+    # the backend device is used to connect without re-discovering the address
+    await device.open()
+    assert targets == [handle]
+
+    # without a handle the address is used
+    await BLEDevice("AA:BB:CC:DD:EE:FF").open()
+    assert targets[1] == "AA:BB:CC:DD:EE:FF"
+
+
+async def test_ble_device_stale_handle(monkeypatch):
+    targets = []
+
+    def new_client(target, on_disconnect):
+        targets.append(target)
+
+        # fail the first connect to simulate a stale handle
+        client = FakeClient()
+        if len(targets) == 1:
+            async def connect():
+                raise RuntimeError("device not found")
+
+            client.connect = connect
+
+        return client
+
+    monkeypatch.setattr(ble_module, "_new_client", new_client)
+
+    handle = FakeBackendDevice("AA:BB:CC:DD:EE:FF", "test")
+    device = BLEDevice("AA:BB:CC:DD:EE:FF", "test", handle)
+
+    # the address is used once the handle fails
+    channel = await device.open()
+    assert targets == [handle, "AA:BB:CC:DD:EE:FF"]
+
+    # the stale handle is not tried again
+    await channel.close()
+    await device.open()
+    assert targets == [handle, "AA:BB:CC:DD:EE:FF", "AA:BB:CC:DD:EE:FF"]
+
+
+async def test_ble_device_connect_error(monkeypatch):
+    def new_client(target, on_disconnect):
+        client = FakeClient()
+
+        async def connect():
+            raise RuntimeError("out of range")
+
+        client.connect = connect
+        return client
+
+    monkeypatch.setattr(ble_module, "_new_client", new_client)
+
+    # without a handle the error is reported directly
+    with pytest.raises(RuntimeError, match="out of range"):
+        await BLEDevice("AA:BB:CC:DD:EE:FF").open()
 
 
 async def test_ble_device_missing_service(monkeypatch):

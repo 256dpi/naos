@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from .device import Channel, Device, Message, Transport
 
@@ -27,84 +27,177 @@ def _import_bleak():
     return bleak
 
 
-def _new_client(address: str, on_disconnect: Callable[[], None]) -> Any:
+def _new_scanner(on_detect: Callable[[Any, Any], None]) -> Any:
+    # create scanner
+    bleak = _import_bleak()
+    return bleak.BleakScanner(
+        detection_callback=on_detect, service_uuids=[_service_uuid]
+    )
+
+
+def _new_client(target: Any, on_disconnect: Callable[[], None]) -> Any:
     # create client
     bleak = _import_bleak()
     return bleak.BleakClient(
-        address, disconnected_callback=lambda _client: on_disconnect()
+        target, disconnected_callback=lambda _client: on_disconnect()
+    )
+
+
+def _sort(descriptors: Iterable[BLEDescriptor]) -> List[BLEDescriptor]:
+    # sort by descending signal strength
+    return sorted(
+        descriptors, key=lambda d: d.rssi if d.rssi is not None else -128, reverse=True
     )
 
 
 class BLEDescriptor:
     """BLEDescriptor describes a discovered BLE device."""
 
-    __slots__ = ("address", "name", "rssi")
+    __slots__ = ("address", "name", "rssi", "handle")
 
-    def __init__(self, address: str, name: Optional[str], rssi: Optional[int]):
+    def __init__(
+        self,
+        address: str,
+        name: Optional[str],
+        rssi: Optional[int],
+        handle: Any = None,
+    ):
         self.address = address
         self.name = name
         self.rssi = rssi
+        self.handle = handle  # backend device, used to connect without re-scanning
 
     def __repr__(self):
         return f"BLEDescriptor(address={self.address}, name={self.name}, rssi={self.rssi})"
 
 
+class BLEScanner:
+    """BLEScanner continuously scans for NAOS devices. Keeping a scanner running
+    avoids the setup cost of starting and stopping a scan for every lookup."""
+
+    def __init__(self, on_detect: Optional[Callable[[BLEDescriptor], None]] = None):
+        self._on_detect = on_detect
+        self._scanner: Optional[Any] = None
+        self._found: Dict[str, BLEDescriptor] = {}
+        self._updated = asyncio.Event()
+
+    async def __aenter__(self) -> BLEScanner:
+        await self.start()
+        return self
+
+    async def __aexit__(self, *_exc):
+        await self.stop()
+
+    async def start(self):
+        """Start scanning."""
+
+        # check state
+        if self._scanner:
+            raise RuntimeError("scanner already started")
+
+        # create and start scanner
+        self._scanner = _new_scanner(self._handle_detect)
+        try:
+            await self._scanner.start()
+        except Exception:
+            self._scanner = None
+            raise
+
+    async def stop(self):
+        """Stop scanning."""
+
+        # check state
+        if not self._scanner:
+            return
+
+        # stop scanner
+        scanner, self._scanner = self._scanner, None
+        await scanner.stop()
+
+    def devices(self) -> List[BLEDescriptor]:
+        """Return the devices discovered so far, strongest signal first."""
+
+        return _sort(self._found.values())
+
+    async def find(
+        self, name: Optional[str] = None, timeout: float = 5.0
+    ) -> Optional[BLEDescriptor]:
+        """Return the first best available device, optionally matching the
+        provided name, waiting up to the specified timeout."""
+
+        # determine deadline
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
+
+        while True:
+            # arm before matching to not miss concurrent detections
+            self._updated.clear()
+
+            # match device
+            for device in self.devices():
+                if name is None or device.name == name:
+                    return device
+
+            # check deadline
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                return None
+
+            # await next detection
+            try:
+                await asyncio.wait_for(self._updated.wait(), remaining)
+            except asyncio.TimeoutError:
+                return None
+
+    def _handle_detect(self, device: Any, adv: Any):
+        # store descriptor (bleak already filters by service UUID)
+        descriptor = BLEDescriptor(
+            device.address, adv.local_name or device.name, adv.rssi, device
+        )
+        self._found[device.address] = descriptor
+
+        # notify waiters
+        self._updated.set()
+
+        # call callback
+        if self._on_detect:
+            self._on_detect(descriptor)
+
+
 async def ble_scan(duration: float = 5.0) -> List[BLEDescriptor]:
     """Scan for NAOS devices for the specified duration."""
 
-    # scan for devices advertising the service
-    bleak = _import_bleak()
-    found = await bleak.BleakScanner.discover(
-        timeout=duration, service_uuids=[_service_uuid], return_adv=True
-    )
-
-    # collect descriptors
-    descriptors: List[BLEDescriptor] = []
-    for device, adv in found.values():
-        # skip devices that do not advertise the service
-        uuids = [uuid.lower() for uuid in (adv.service_uuids or [])]
-        if uuids and _service_uuid not in uuids:
-            continue
-
-        descriptors.append(
-            BLEDescriptor(device.address, adv.local_name or device.name, adv.rssi)
-        )
-
-    # sort by descending signal strength
-    descriptors.sort(key=lambda d: d.rssi if d.rssi is not None else -128, reverse=True)
-
-    return descriptors
+    async with BLEScanner() as scanner:
+        await asyncio.sleep(duration)
+        return scanner.devices()
 
 
 async def ble_find(
-    name: Optional[str] = None, duration: float = 5.0
+    name: Optional[str] = None, timeout: float = 5.0
 ) -> Optional[BLEDescriptor]:
     """Return the first best available NAOS device, optionally matching the
-    provided name."""
+    provided name. This returns as soon as a device is found and only scans up
+    to the specified timeout."""
 
-    # scan devices
-    devices = await ble_scan(duration)
-
-    # find device
-    for device in devices:
-        if name is None or device.name == name:
-            return device
-
-    return None
+    async with BLEScanner() as scanner:
+        return await scanner.find(name, timeout)
 
 
 class BLEDevice(Device):
-    def __init__(self, address: str, name: Optional[str] = None):
-        # store address and name
+    def __init__(
+        self, address: str, name: Optional[str] = None, handle: Any = None
+    ):
+        # store address, name and handle
         self._address = address
         self._name = name
+        self._handle = handle
         self._ch: Optional[Channel] = None
 
     @classmethod
     def from_descriptor(cls, descriptor: BLEDescriptor) -> BLEDevice:
         """Create a device from a scan result."""
 
-        return cls(descriptor.address, descriptor.name)
+        return cls(descriptor.address, descriptor.name, descriptor.handle)
 
     def id(self) -> str:
         return f"ble/{self._address}"
@@ -127,11 +220,21 @@ class BLEDevice(Device):
             if ref[0]:
                 ref[0].handle_disconnect()
 
-        # create client
-        client = _new_client(self._address, on_disconnect)
+        # create client, preferring the handle from the scan to let the backend
+        # connect right away instead of re-discovering the address
+        client = _new_client(self._handle or self._address, on_disconnect)
 
         # connect to device
-        await client.connect()
+        try:
+            await client.connect()
+        except Exception:
+            # a handle goes stale once the backend forgets the device, in which
+            # case we drop it and let the backend re-discover the address
+            if not self._handle:
+                raise
+            self._handle = None
+            client = _new_client(self._address, on_disconnect)
+            await client.connect()
 
         # create transport
         transport = BLETransport(client)
