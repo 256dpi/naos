@@ -30,11 +30,16 @@ static naos_system_handler_t naos_system_handlers[NAOS_SYSTEM_MAX_HANDLERS];
 static size_t naos_system_handler_count;
 static int32_t naos_system_memory[3] = {0};
 
+static void naos_system_reboot() {
+  // restart in one second
+  naos_defer("reboot", 1000, naos_reboot);
+}
+
 static naos_param_t naos_system_params[] = {
     {.name = "device-id", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "device-name", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
     {.name = "device-password", .type = NAOS_STRING, .mode = NAOS_SYSTEM},
-    {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_reboot},
+    {.name = "device-reboot", .type = NAOS_ACTION, .mode = NAOS_SYSTEM, .func_a = naos_system_reboot},
     {.name = "app-name", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "app-version", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
     {.name = "app-partition", .type = NAOS_STRING, .mode = NAOS_VOLATILE | NAOS_SYSTEM | NAOS_LOCKED},
@@ -210,8 +215,7 @@ void naos_reboot() {
   // invoke custom reboot function, if set
   if (naos_config()->reboot_callback != NULL) {
     naos_config()->reboot_callback();
+  } else {
+    esp_restart();
   }
-
-  // restart device
-  esp_restart();
 }
