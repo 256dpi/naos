@@ -73,12 +73,14 @@ func IncludeDirectories(naosPath string) ([]string, error) {
 		return nil, err
 	}
 
-	// find main compile command
-	suffix := filepath.Join("tree", "build", "esp-idf", "main")
+	// find main compile command (the "directory" field is generator specific and
+	// points to the top level build directory when using ninja, therefore the
+	// source file path is used to identify the main component)
+	prefix := filepath.Join(Directory(naosPath), "main") + string(filepath.Separator)
 	var cmd compileCommand
 	var found bool
 	for _, cmd = range compileCommands {
-		if strings.HasSuffix(cmd.Directory, suffix) {
+		if strings.HasPrefix(cmd.File, prefix) {
 			found = true
 			break
 		}
