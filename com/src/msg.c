@@ -759,6 +759,24 @@ size_t naos_msg_sessions(uint8_t channel, void* ctx) {
   return count;
 }
 
+size_t naos_msg_count() {
+  // acquire mutex
+  naos_lock(naos_msg_mutex);
+
+  // count active sessions
+  size_t count = 0;
+  for (size_t i = 0; i < NAOS_MSG_MAX_SESSIONS; i++) {
+    if (naos_msg_session[i].active) {
+      count++;
+    }
+  }
+
+  // release mutex
+  naos_unlock(naos_msg_mutex);
+
+  return count;
+}
+
 uint16_t naos_msg_get_mtu(uint16_t id) {
   // acquire mutex
   naos_lock(naos_msg_mutex);

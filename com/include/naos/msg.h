@@ -223,6 +223,13 @@ bool naos_msg_send(naos_msg_t msg);
 size_t naos_msg_sessions(uint8_t channel, void *ctx);
 
 /**
+ * Returns the number of active sessions across all channels.
+ *
+ * @return The number of active sessions.
+ */
+size_t naos_msg_count();
+
+/**
  * Called by endpoints to determine a sessions MTU.
  *
  * Note: The message framing overhead is already been subtracted from the value.
