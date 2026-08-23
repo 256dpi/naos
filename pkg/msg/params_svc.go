@@ -8,6 +8,9 @@ import (
 
 var ErrParamNotFound = errors.New("param not found")
 
+// ParamsService provides cached access to the parameters of a device. It is
+// not safe for concurrent use; like the underlying Session, it must be driven
+// by a single caller at a time.
 type ParamsService struct {
 	session *Session
 	infos   []ParamInfo

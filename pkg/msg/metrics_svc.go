@@ -11,6 +11,9 @@ import (
 
 var ErrMetricNotFound = errors.New("metric not found")
 
+// MetricsService provides cached access to the metrics of a device. It is
+// not safe for concurrent use; like the underlying Session, it must be driven
+// by a single caller at a time.
 type MetricsService struct {
 	session *Session
 	infos   []MetricInfo

@@ -5,6 +5,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -27,6 +28,7 @@ type dashboard struct {
 	focusable   []tview.Primitive
 	focusIndex  int
 	paramRows   []paramRow
+	paramsMut   sync.Mutex
 	metricRows  []metricRow
 	done        chan struct{}
 	onClose     func()
@@ -326,6 +328,10 @@ func (d *dashboard) refreshParams() {
 		return
 	}
 
+	// serialize access to the shared params service and session
+	d.paramsMut.Lock()
+	defer d.paramsMut.Unlock()
+
 	// collect params
 	err := ps.Collect()
 	if err != nil {
@@ -371,6 +377,9 @@ func (d *dashboard) loopMetrics() {
 func (d *dashboard) refreshMetrics() {
 	// get metrics service
 	ms := d.device.MetricsService()
+	if ms == nil {
+		return
+	}
 
 	// prepare rows
 	var rows []metricRow
@@ -508,9 +517,15 @@ func (d *dashboard) editParam(row int) {
 func (d *dashboard) writeParam(info msg.ParamInfo, text string) {
 	// get param service
 	ps := d.device.ParamsService()
+	if ps == nil {
+		return
+	}
 
-	// write value
+	// write value while serializing access to the shared params service and
+	// session
+	d.paramsMut.Lock()
 	err := ps.Write(info.Name, []byte(text))
+	d.paramsMut.Unlock()
 	if err != nil {
 		d.log("[red]Write %s failed[-]: %v", info.Name, err)
 		return
