@@ -70,6 +70,81 @@ func TestDeleteCoredump(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestEcho(t *testing.T) {
+	data := []byte("0123456789")
+
+	cmd := echoCommand(0, 1, len(data))
+	copy(cmd[4:], data)
+
+	dev := newTestDevice(t, 42, []testMessage{
+		receive(Message{Endpoint: debugEndpoint, Data: cmd}),
+		send(Message{Endpoint: debugEndpoint, Data: data}),
+		ack(),
+	})
+
+	ch, err := dev.Open()
+	assert.NoError(t, err)
+
+	s, err := OpenSession(ch, time.Second)
+	assert.NoError(t, err)
+
+	reply, err := Echo(s, data, time.Second)
+	assert.NoError(t, err)
+	assert.Equal(t, data, reply)
+
+	err = s.End(time.Second)
+	assert.NoError(t, err)
+}
+
+func TestMeasureDownload(t *testing.T) {
+	cmd := echoCommand(echoRepeat, 2, 16)
+
+	dev := newTestDevice(t, 42, []testMessage{
+		receive(Message{Endpoint: debugEndpoint, Data: cmd}),
+		send(Message{Endpoint: debugEndpoint, Data: cmd[4:]}),
+		send(Message{Endpoint: debugEndpoint, Data: cmd[4:]}),
+		ack(),
+	})
+
+	ch, err := dev.Open()
+	assert.NoError(t, err)
+
+	s, err := OpenSession(ch, time.Second)
+	assert.NoError(t, err)
+
+	total, elapsed, err := MeasureDownload(s, 16, 2, time.Second)
+	assert.NoError(t, err)
+	assert.Equal(t, 32, total)
+	assert.Greater(t, elapsed, time.Duration(0))
+
+	err = s.End(time.Second)
+	assert.NoError(t, err)
+}
+
+func TestMeasureUpload(t *testing.T) {
+	cmd := echoCommand(echoDiscard, 0, 16)
+
+	// a zero duration yields exactly one echo exchange
+	dev := newTestDevice(t, 42, []testMessage{
+		receive(Message{Endpoint: debugEndpoint, Data: cmd}),
+		ack(),
+	})
+
+	ch, err := dev.Open()
+	assert.NoError(t, err)
+
+	s, err := OpenSession(ch, time.Second)
+	assert.NoError(t, err)
+
+	total, elapsed, err := MeasureUpload(s, 16, 8, 0, time.Second)
+	assert.NoError(t, err)
+	assert.Equal(t, 16, total)
+	assert.Greater(t, elapsed, time.Duration(0))
+
+	err = s.End(time.Second)
+	assert.NoError(t, err)
+}
+
 func TestStreamLog(t *testing.T) {
 	dev := newTestDevice(t, 42, []testMessage{
 		// start log

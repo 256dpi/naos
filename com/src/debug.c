@@ -20,7 +20,13 @@ typedef enum {
   NAOS_DEBUG_CDP_DELETE,
   NAOS_DEBUG_LOG_START,
   NAOS_DEBUG_LOG_STOP,
+  NAOS_DEBUG_ECHO,
 } naos_debug_cmd_t;
+
+typedef enum {
+  NAOS_DEBUG_ECHO_REPEAT = 1 << 0,
+  NAOS_DEBUG_ECHO_DISCARD = 1 << 1,
+} naos_debug_echo_flags_t;
 
 static naos_mutex_t naos_debug_mutex = 0;
 static uint16_t naos_debug_log_subs[NAOS_DEBUG_LOG_SUBS] = {0};
@@ -220,6 +226,59 @@ static naos_msg_reply_t naos_debug_handle_log_stop(naos_msg_t msg) {
   return NAOS_MSG_ACK;
 }
 
+static naos_msg_reply_t naos_debug_handle_echo(naos_msg_t msg) {
+  // command structure:
+  // FLAGS (1) | COUNT (2) | DATA (*)
+
+  // reply structure:
+  // DATA (*) [× COUNT if repeated]
+
+  // check length
+  if (msg.len < 3) {
+    return NAOS_MSG_INVALID;
+  }
+
+  // get flags and count
+  uint8_t flags = msg.data[0];
+  uint16_t count;
+  memcpy(&count, msg.data + 1, 2);
+
+  // check flags
+  if ((flags & ~(NAOS_DEBUG_ECHO_REPEAT | NAOS_DEBUG_ECHO_DISCARD)) != 0) {
+    return NAOS_MSG_INVALID;
+  }
+
+  // adjust message
+  msg.data += 3;
+  msg.len -= 3;
+
+  // discard data if requested
+  if (flags & NAOS_DEBUG_ECHO_DISCARD) {
+    return NAOS_MSG_ACK;
+  }
+
+  // determine repetitions
+  uint16_t repeat = 1;
+  if (flags & NAOS_DEBUG_ECHO_REPEAT) {
+    repeat = count;
+  }
+
+  // send back received data
+  for (uint16_t i = 0; i < repeat; i++) {
+    naos_msg_send((naos_msg_t){
+        .session = msg.session,
+        .endpoint = NAOS_DEBUG_ENDPOINT,
+        .data = msg.data,
+        .len = msg.len,
+    });
+
+    // yield to system
+    naos_delay(1);
+  }
+
+  return NAOS_MSG_ACK;
+}
+
 static naos_msg_reply_t naos_debug_handle(naos_msg_t msg) {
   // message structure:
   // CMD (1) | *
@@ -253,6 +312,9 @@ static naos_msg_reply_t naos_debug_handle(naos_msg_t msg) {
       break;
     case NAOS_DEBUG_LOG_STOP:
       reply = naos_debug_handle_log_stop(msg);
+      break;
+    case NAOS_DEBUG_ECHO:
+      reply = naos_debug_handle_echo(msg);
       break;
     default:
       reply = NAOS_MSG_UNKNOWN;

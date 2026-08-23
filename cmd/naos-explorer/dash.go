@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -40,6 +42,9 @@ type dashboard struct {
 
 	// log streaming state
 	logDone chan struct{}
+
+	// bench state
+	benchActive atomic.Bool
 }
 
 type paramRow struct {
@@ -100,7 +105,7 @@ func (d *dashboard) buildUI() {
 	if d.device.HasTrace() {
 		statusParts = append(statusParts, "(T) Trace")
 	}
-	statusParts = append(statusParts, "(Esc) Close")
+	statusParts = append(statusParts, "(P) Bench", "(Esc) Close")
 
 	// create status view
 	d.statusView = tview.NewTextView().
@@ -273,6 +278,9 @@ func (d *dashboard) capture(event *tcell.EventKey) *tcell.EventKey {
 			if d.device.HasDebug() {
 				d.toggleLogStreaming()
 			}
+			return nil
+		case 'p':
+			d.promptBench()
 			return nil
 		}
 	default:
@@ -708,6 +716,121 @@ func (d *dashboard) performFirmwareUpdate(path string) {
 		return
 	}
 	d.log("Firmware update complete")
+}
+
+func (d *dashboard) promptBench() {
+	// create form with window input
+	form := tview.NewForm()
+	input := tview.NewInputField().
+		SetLabel("Ack Window (1-64)").
+		SetFieldWidth(10).
+		SetText("8")
+	form.AddFormItem(input)
+	form.AddButton("Run", func() {
+		d.pages.RemovePage("bench")
+		window, err := strconv.Atoi(strings.TrimSpace(input.GetText()))
+		if err != nil || window < 1 || window > 64 {
+			d.log("[red]Bench aborted[-]: invalid ack window")
+			return
+		}
+		go d.performBench(window)
+	})
+	form.AddButton("Cancel", func() {
+		d.pages.RemovePage("bench")
+	})
+	form.SetBorder(true).SetTitle(" Bench Connection ")
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			d.pages.RemovePage("bench")
+			return nil
+		}
+		return event
+	})
+
+	// show form
+	d.pages.AddPage("bench", centered(40, 7, form), true, true)
+	d.app.SetFocus(form)
+}
+
+func (d *dashboard) performBench(window int) {
+	// prevent concurrent runs
+	if !d.benchActive.CompareAndSwap(false, true) {
+		return
+	}
+	defer d.benchActive.Store(false)
+
+	// create dedicated session
+	d.log("Benchmarking connection...")
+	s, err := d.device.NewSession()
+	if err != nil {
+		d.log("[red]Bench failed[-]: %v", err)
+		return
+	}
+	defer s.End(time.Second)
+
+	// measure RTT with a series of pings
+	const samples = 10
+	var minRTT, maxRTT, sumRTT time.Duration
+	for i := 0; i < samples; i++ {
+		start := time.Now()
+		err = s.Ping(5 * time.Second)
+		if err != nil {
+			d.log("[red]Bench ping failed[-]: %v", err)
+			return
+		}
+		rtt := time.Since(start)
+		sumRTT += rtt
+		if i == 0 || rtt < minRTT {
+			minRTT = rtt
+		}
+		if rtt > maxRTT {
+			maxRTT = rtt
+		}
+	}
+	d.log("RTT: min %s, avg %s, max %s (%d pings)",
+		minRTT.Round(time.Microsecond), (sumRTT / samples).Round(time.Microsecond),
+		maxRTT.Round(time.Microsecond), samples)
+
+	// throughput requires the echo command on the debug endpoint
+	if !d.device.HasDebug() {
+		d.log("Throughput: N/A (debug endpoint unavailable)")
+		return
+	}
+
+	// determine payload size from MTU
+	mtu, err := s.GetMTU(5 * time.Second)
+	if err != nil {
+		d.log("[red]Bench MTU failed[-]: %v", err)
+		return
+	}
+	size := int(mtu) - 16
+	if size < 16 {
+		size = 16
+	}
+
+	// measure downstream throughput via a repeated echo stream (~128 KB)
+	count := 131072 / size
+	if count < 1 {
+		count = 1
+	} else if count > 256 {
+		count = 256
+	}
+	total, elapsed, err := msg.MeasureDownload(s, size, count, 10*time.Second)
+	if err != nil {
+		d.log("[red]Bench download failed[-]: %v", err)
+		return
+	}
+	d.log("Download: %.1f KB/s (%d bytes in %.2fs, %d byte payloads)",
+		float64(total)/elapsed.Seconds()/1024, total, elapsed.Seconds(), size)
+
+	// measure upstream throughput via pipelined discarded echoes
+	total, elapsed, err = msg.MeasureUpload(s, size, window, 3*time.Second, 10*time.Second)
+	if err != nil {
+		d.log("[red]Bench upload failed[-]: %v", err)
+		return
+	}
+	d.log("Upload: %.1f KB/s (%d bytes in %.2fs, %d byte payloads, window %d)",
+		float64(total)/elapsed.Seconds()/1024, total, elapsed.Seconds(), size, window)
 }
 
 func (d *dashboard) updateInfo() {

@@ -94,6 +94,138 @@ func DeleteCoredump(s *Session, timeout time.Duration) error {
 	return nil
 }
 
+// The available echo flags.
+const (
+	echoRepeat  = 1 << 0
+	echoDiscard = 1 << 1
+)
+
+// echoCommand prepares an echo command with the given flags, count and
+// payload size. The payload is filled with a rolling byte pattern.
+func echoCommand(flags uint8, count uint16, size int) []byte {
+	cmd := make([]byte, 4+size)
+	cmd[0] = 5
+	cmd[1] = flags
+	binary.LittleEndian.PutUint16(cmd[2:], count)
+	for i := 4; i < len(cmd); i++ {
+		cmd[i] = byte(i)
+	}
+	return cmd
+}
+
+// Echo sends the provided data to the device and returns the echoed reply.
+func Echo(s *Session, data []byte, timeout time.Duration) ([]byte, error) {
+	// send command
+	cmd := echoCommand(0, 1, len(data))
+	copy(cmd[4:], data)
+	err := s.Send(debugEndpoint, cmd, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// receive reply
+	reply, err := s.Receive(debugEndpoint, false, timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	// receive ack
+	_, err = s.Receive(debugEndpoint, true, timeout)
+	if err == nil {
+		return nil, fmt.Errorf("missing ack")
+	} else if !errors.Is(err, Ack) {
+		return nil, err
+	}
+
+	return reply, nil
+}
+
+// MeasureDownload measures downstream throughput by requesting a stream of
+// repeated echo replies of the given payload size. It returns the number of
+// payload bytes received and the elapsed time.
+func MeasureDownload(s *Session, size, count int, timeout time.Duration) (int, time.Duration, error) {
+	// check arguments
+	if size <= 0 || count <= 0 || count > 0xFFFF {
+		return 0, 0, fmt.Errorf("invalid size or count")
+	}
+
+	// send command
+	cmd := echoCommand(echoRepeat, uint16(count), size)
+	start := time.Now()
+	err := s.Send(debugEndpoint, cmd, 0)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// receive replies until ack
+	var total int
+	for {
+		reply, err := s.Receive(debugEndpoint, true, timeout)
+		if errors.Is(err, Ack) {
+			break
+		} else if err != nil {
+			return 0, 0, err
+		}
+		if len(reply) != size {
+			return 0, 0, fmt.Errorf("invalid echo reply")
+		}
+		total += size
+	}
+
+	// verify total
+	if total != size*count {
+		return 0, 0, fmt.Errorf("incomplete echo stream")
+	}
+
+	return total, time.Since(start), nil
+}
+
+// MeasureUpload measures upstream throughput by sending pipelined discarded
+// echo commands of the given payload size for at least the specified
+// duration. It returns the number of payload bytes sent and the elapsed time.
+func MeasureUpload(s *Session, size, window int, duration, timeout time.Duration) (int, time.Duration, error) {
+	// check arguments
+	if size <= 0 || window <= 0 {
+		return 0, 0, fmt.Errorf("invalid size or window")
+	}
+
+	// prepare command
+	cmd := echoCommand(echoDiscard, 0, size)
+
+	// run pipelined echo exchanges
+	start := time.Now()
+	deadline := start.Add(duration)
+	var inflight, total int
+	for {
+		// fill send window until the deadline has passed, but always send at
+		// least one command
+		for inflight < window && (total+inflight == 0 || time.Now().Before(deadline)) {
+			err := s.Send(debugEndpoint, cmd, 0)
+			if err != nil {
+				return 0, 0, err
+			}
+			inflight++
+		}
+
+		// stop once all commands have been acknowledged
+		if inflight == 0 {
+			break
+		}
+
+		// receive ack
+		_, err := s.Receive(debugEndpoint, true, timeout)
+		if err == nil {
+			return 0, 0, fmt.Errorf("unexpected reply")
+		} else if !errors.Is(err, Ack) {
+			return 0, 0, err
+		}
+		inflight--
+		total += size
+	}
+
+	return total, time.Since(start), nil
+}
+
 // StreamLog streams log messages and calls the provided function for each
 // message until the stop channel is closed.
 func StreamLog(s *Session, stop chan struct{}, fn func(string)) error {
