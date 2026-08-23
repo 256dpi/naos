@@ -30,6 +30,11 @@ CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y
 # https://mbed-tls.readthedocs.io/en/latest/kb/development/restartable-ecc/
 CONFIG_MBEDTLS_ECP_RESTARTABLE=y
 
+# increase the TCP receive mailbox, as the default of just 6 segments fills up
+# faster than reader tasks drain it, causing lwIP to refuse segments that are
+# only retried on the 250ms TCP timer, capping inbound throughput at ~70 KB/s
+CONFIG_LWIP_TCP_RECVMBOX_SIZE=32
+
 # increase FreeRTOS frequency
 CONFIG_FREERTOS_HZ=1000
 
