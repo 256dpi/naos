@@ -8,6 +8,11 @@
 #include <esp_heap_caps.h>
 #include <esp_websocket_client.h>
 #include <esp_crt_bundle.h>
+#include <esp_transport.h>
+#include <esp_transport_tcp.h>
+#include <esp_transport_ssl.h>
+#include <esp_transport_ws.h>
+#include <lwip/sockets.h>
 
 #include "system.h"
 #include "utils.h"
@@ -56,6 +61,8 @@ typedef enum {
 static naos_mutex_t naos_connect_mutex;
 static naos_mutex_t naos_connect_client_mutex;
 static esp_websocket_client_handle_t naos_connect_client;
+static esp_transport_handle_t naos_connect_transport_base = NULL;
+static esp_transport_handle_t naos_connect_transport_ws = NULL;
 static naos_task_t naos_connect_dispatching = NULL;
 static uint8_t naos_connect_channel = 0;
 static naos_connect_state_t naos_connect_state = NAOS_CONNECT_STOPPED;
@@ -68,12 +75,24 @@ static size_t naos_connect_rx_length = 0;
 
 static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *d);
 
-static esp_websocket_client_handle_t naos_connect_client_create(const char *url, const char *token) {
-  // handle scheme and select transport
-  esp_websocket_transport_t transport = WEBSOCKET_TRANSPORT_OVER_TCP;
-  if (strncasecmp(url, "wss://", 6) == 0) {
-    transport = WEBSOCKET_TRANSPORT_OVER_SSL;
+static void naos_connect_destroy_transports() {
+  // destroy externally managed transports
+  if (naos_connect_transport_ws != NULL) {
+    esp_transport_destroy(naos_connect_transport_ws);
+    naos_connect_transport_ws = NULL;
   }
+  if (naos_connect_transport_base != NULL) {
+    esp_transport_destroy(naos_connect_transport_base);
+    naos_connect_transport_base = NULL;
+  }
+}
+
+static esp_websocket_client_handle_t naos_connect_client_create(const char *url, const char *token) {
+  // handle scheme
+  bool secure = strncasecmp(url, "wss://", 6) == 0;
+
+  // determine path after scheme and authority
+  const char *path = strchr(url + (secure ? 6 : 5), '/');
 
   // prepare headers
   char *headers = NULL;
@@ -81,22 +100,59 @@ static esp_websocket_client_handle_t naos_connect_client_create(const char *url,
     headers = naos_format("Authorization: %s\r\n", token);
   }
 
-  // create client
-  esp_websocket_client_config_t config = {
-      .uri = url,
-      .headers = headers,
-      .buffer_size = NAOS_CONNECT_BUFFER,
-      .transport = transport,
-      .subprotocol = "naos",
-      .reconnect_timeout_ms = NAOS_CONNECT_TIMEOUT,
-      .network_timeout_ms = NAOS_CONNECT_TIMEOUT,
-      .crt_bundle_attach = esp_crt_bundle_attach,
-  };
-  esp_websocket_client_handle_t client = esp_websocket_client_init(&config);
-  free(headers);
-  if (client == NULL) {
+  // create the transports externally to gain access to the underlying socket,
+  // which the client does not expose (the client then skips its own transport
+  // creation and websocket configuration, so the path, sub-protocol and
+  // headers must be applied here; the setters copy all strings)
+  esp_transport_handle_t base;
+  if (secure) {
+    base = esp_transport_ssl_init();
+    if (base != NULL) {
+      esp_transport_ssl_crt_bundle_attach(base, esp_crt_bundle_attach);
+      esp_transport_set_default_port(base, 443);
+    }
+  } else {
+    base = esp_transport_tcp_init();
+    if (base != NULL) {
+      esp_transport_set_default_port(base, 80);
+    }
+  }
+  esp_transport_handle_t ws = base != NULL ? esp_transport_ws_init(base) : NULL;
+  if (ws == NULL) {
+    if (base != NULL) {
+      esp_transport_destroy(base);
+    }
+    free(headers);
     return NULL;
   }
+  esp_transport_set_default_port(ws, secure ? 443 : 80);
+  esp_transport_ws_config_t ws_config = {
+      .ws_path = path != NULL ? path : "/",
+      .sub_protocol = "naos",
+      .headers = headers,
+      .propagate_control_frames = true,
+  };
+  ESP_ERROR_CHECK(esp_transport_ws_set_config(ws, &ws_config));
+  free(headers);
+
+  // create client with the external transport
+  esp_websocket_client_config_t config = {
+      .uri = url,
+      .buffer_size = NAOS_CONNECT_BUFFER,
+      .reconnect_timeout_ms = NAOS_CONNECT_TIMEOUT,
+      .network_timeout_ms = NAOS_CONNECT_TIMEOUT,
+      .ext_transport = ws,
+  };
+  esp_websocket_client_handle_t client = esp_websocket_client_init(&config);
+  if (client == NULL) {
+    esp_transport_destroy(ws);
+    esp_transport_destroy(base);
+    return NULL;
+  }
+
+  // store transports for socket access and cleanup
+  naos_connect_transport_base = base;
+  naos_connect_transport_ws = ws;
 
   // register events
   ESP_ERROR_CHECK(esp_websocket_register_events(client, WEBSOCKET_EVENT_ANY, naos_connect_handler, NULL));
@@ -140,6 +196,7 @@ static void naos_connect_start() {
       ESP_LOGE(NAOS_LOG_TAG, "naos_connect_start: failed to start client: %s", esp_err_to_name(err));
       ESP_ERROR_CHECK(esp_websocket_client_destroy(naos_connect_client));
       naos_connect_client = NULL;
+      naos_connect_destroy_transports();
     }
   }
 
@@ -181,6 +238,7 @@ static void naos_connect_stop() {
     ESP_ERROR_CHECK(esp_websocket_client_stop(naos_connect_client));
     ESP_ERROR_CHECK(esp_websocket_client_destroy(naos_connect_client));
     naos_connect_client = NULL;
+    naos_connect_destroy_transports();
   }
   naos_unlock(naos_connect_client_mutex);
 }
@@ -231,6 +289,18 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
       }
       naos_connect_state = NAOS_CONNECT_CONNECTED;
       naos_unlock(naos_connect_mutex);
+
+      // disable Nagle's algorithm on the underlying socket, as the trailing
+      // partial segment of a message would otherwise be held back until all
+      // preceding segments are acknowledged, stalling every message by up to
+      // a round trip
+      int sock = esp_transport_get_socket(naos_connect_transport_base);
+      if (sock >= 0) {
+        int flag = 1;
+        if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag)) != 0) {
+          ESP_LOGE(NAOS_LOG_TAG, "naos_connect_handler: failed to disable nagle");
+        }
+      }
 
       // reset receive state
       naos_connect_rx_state = NAOS_CONNECT_RX_IDLE;
