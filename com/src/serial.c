@@ -153,7 +153,7 @@ static void naos_serial_decode(naos_serial_decoder_t decoder) {
 
 static naos_mutex_t naos_serial_mutex = NULL;
 static naos_mutex_t naos_serial_write_mutex = NULL;
-static volatile TaskHandle_t naos_serial_write_owner = NULL;
+static volatile naos_task_t naos_serial_write_owner = NULL;
 static volatile int naos_serial_write_depth = 0;
 static vprintf_like_t naos_serial_log_vprintf = NULL;
 static void* naos_serial_output = NULL;
@@ -182,7 +182,7 @@ static void* naos_serial_alloc() {
 
 void naos_serial_lock() {
   // handle re-entry
-  if (naos_serial_write_owner == xTaskGetCurrentTaskHandle()) {
+  if (naos_serial_write_owner == naos_current()) {
     naos_serial_write_depth++;
     return;
   }
@@ -190,7 +190,7 @@ void naos_serial_lock() {
   // acquire mutex (use xSemaphoreTake directly to avoid recursive
   // timeout logging in naos_lock if this mutex is held too long)
   xSemaphoreTake(naos_serial_write_mutex, portMAX_DELAY);
-  naos_serial_write_owner = xTaskGetCurrentTaskHandle();
+  naos_serial_write_owner = naos_current();
   naos_serial_write_depth = 1;
 }
 

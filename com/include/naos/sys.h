@@ -50,6 +50,13 @@ naos_task_t naos_run(const char *name, uint16_t stack, int core, naos_func_t fun
 void naos_kill(naos_task_t task);
 
 /**
+ * Returns the handle of the calling task.
+ *
+ * @return A handle.
+ */
+naos_task_t naos_current();
+
+/**
  * A timer handler.
  */
 typedef void * naos_timer_t;

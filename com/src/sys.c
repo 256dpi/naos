@@ -94,6 +94,11 @@ void naos_kill(naos_task_t task) {
   vTaskDelete(task);
 }
 
+naos_task_t naos_current() {
+  // get current task
+  return xTaskGetCurrentTaskHandle();
+}
+
 static void naos_repeat_call(TimerHandle_t timer) {
   // get name and callback
   const char *name = pcTimerGetName(timer);
