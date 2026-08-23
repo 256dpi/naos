@@ -42,20 +42,6 @@
 #define TIME true
 #define AUTH false
 
-#define NAOS_ECHO_ENDPOINT 0x80
-
-static naos_msg_reply_t naos_echo_handle(naos_msg_t msg) {
-  // echo data back
-  naos_msg_send((naos_msg_t){
-      .session = msg.session,
-      .endpoint = msg.endpoint,
-      .data = msg.data,
-      .len = msg.len,
-  });
-
-  return NAOS_MSG_OK;
-}
-
 static char *var_s = NULL;
 static int32_t var_l = 0;
 static double var_d = 0;
@@ -544,13 +530,6 @@ void app_main() {
     naos_run("trace-task", 4096, 1, trace_task);
     naos_repeat("trace-repeat", 500, trace_repeat);
   }
-
-  // install echo endpoint
-  naos_msg_install((naos_msg_endpoint_t){
-      .ref = NAOS_ECHO_ENDPOINT,
-      .name = "echo",
-      .handle = naos_echo_handle,
-  });
 
   // initialize counter
   counter = naos_get_l("counter");

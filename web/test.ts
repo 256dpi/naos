@@ -35,6 +35,7 @@ import {
   checkCoredump,
   readCoredump,
   deleteCoredump,
+  echo,
   streamLog,
   ParamType,
   ParamMode,
@@ -576,8 +577,6 @@ async function debug() {
   log("Done!", "success");
 }
 
-const ECHO_ENDPOINT = 0x80;
-
 async function throughput() {
   log("Throughput", "heading");
 
@@ -586,7 +585,7 @@ async function throughput() {
   const mtu = await session.getMTU();
   logData("MTU", mtu);
 
-  const payloadSize = mtu - 4;
+  const payloadSize = mtu - 8;
   const payload = new Uint8Array(payloadSize);
   for (let i = 0; i < payloadSize; i++) {
     payload[i] = i & 0xff;
@@ -601,9 +600,7 @@ async function throughput() {
   const start = performance.now();
 
   for (let i = 0; i < rounds; i++) {
-    await session.send(ECHO_ENDPOINT, payload, 0);
-
-    const [data] = await session.receive(ECHO_ENDPOINT, false, 5000);
+    const data = await echo(session, payload, 5000);
     if (!data || data.length !== payload.length || !compare(payload, data)) {
       errors++;
       log(

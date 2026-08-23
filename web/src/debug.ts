@@ -74,6 +74,27 @@ export async function deleteCoredump(
   await s.send(debugEndpoint, cmd, timeout);
 }
 
+export async function echo(
+  s: Session,
+  data: Uint8Array,
+  timeout: number = 5000
+): Promise<Uint8Array> {
+  // send command (cmd, flags, count, data)
+  const cmd = pack("oohb", 5, 0, 1, data);
+  await s.send(debugEndpoint, cmd, 0);
+
+  // receive reply
+  const [reply] = await s.receive(debugEndpoint, false, timeout);
+
+  // receive ack
+  const [, ack] = await s.receive(debugEndpoint, true, timeout);
+  if (!ack) {
+    throw new Error("missing ack");
+  }
+
+  return reply;
+}
+
 export async function streamLog(
   s: Session,
   signal: AbortSignal,
