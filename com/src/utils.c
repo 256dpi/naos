@@ -1,10 +1,26 @@
 #include <esp_err.h>
+#include <esp_heap_caps.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <float.h>
 #include <stdarg.h>
 
 #include "utils.h"
+
+void *naos_alloc(size_t size) {
+  // allocate buffer, preferring external memory
+#ifdef CONFIG_SPIRAM
+  void *buf = heap_caps_malloc_prefer(size, 2, MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT);
+#else
+  void *buf = malloc(size);
+#endif
+  if (buf == NULL) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+  }
+
+  return buf;
+}
 
 const char *naos_i2str(char buf[16], int32_t num) {
   snprintf(buf, 16, "%ld", num);

@@ -7,7 +7,6 @@
 #include <freertos/semphr.h>
 #include <freertos/task.h>
 #include <esp_err.h>
-#include <esp_heap_caps.h>
 #include <esp_log.h>
 #include <mbedtls/base64.h>
 #include <driver/uart.h>
@@ -15,6 +14,8 @@
 #include <driver/usb_serial_jtag.h>
 #include <driver/usb_serial_jtag_vfs.h>
 #include <sys/fcntl.h>
+
+#include "utils.h"
 
 #define NAOS_SERIAL_BS CONFIG_NAOS_SERIAL_BUFFER_SIZE
 
@@ -167,19 +168,6 @@ static int naos_serial_vprintf(const char* fmt, va_list args) {
   return ret;
 }
 
-static void* naos_serial_alloc() {
-#ifdef CONFIG_SPIRAM
-  void* buf = heap_caps_malloc_prefer(NAOS_SERIAL_BS, 2, MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT);
-#else
-  void* buf = malloc(NAOS_SERIAL_BS);
-#endif
-  if (buf == NULL) {
-    ESP_ERROR_CHECK(ESP_FAIL);
-  }
-
-  return buf;
-}
-
 void naos_serial_lock() {
   // handle re-entry
   if (naos_serial_write_owner == naos_current()) {
@@ -212,7 +200,7 @@ void naos_serial_init() {
   naos_serial_mutex = naos_mutex();
 
   // allocate shared output buffer
-  naos_serial_output = naos_serial_alloc();
+  naos_serial_output = naos_alloc(NAOS_SERIAL_BS);
 
   // create write mutex and set custom vprintf
   naos_serial_write_mutex = naos_mutex();
@@ -323,7 +311,7 @@ void naos_serial_init_stdio(int core) {
   naos_serial_stdio_vfs.stream = fd;
 
   // allocate input buffer
-  naos_serial_stdio_input = naos_serial_alloc();
+  naos_serial_stdio_input = naos_alloc(NAOS_SERIAL_BS);
 
   // register channel
   naos_serial_stdio_channel = naos_msg_register((naos_msg_channel_t){
@@ -376,7 +364,7 @@ void naos_serial_init_stdio_uart(int core) {
   naos_serial_stdio_vfs.fd = fd;
 
   // allocate input buffer
-  naos_serial_stdio_input = naos_serial_alloc();
+  naos_serial_stdio_input = naos_alloc(NAOS_SERIAL_BS);
 
   // register channel
   naos_serial_stdio_channel = naos_msg_register((naos_msg_channel_t){
@@ -421,7 +409,7 @@ void naos_serial_init_secio(int core) {
   naos_serial_secio_vfs.stream = stream;
 
   // allocate input buffer
-  naos_serial_secio_input = naos_serial_alloc();
+  naos_serial_secio_input = naos_alloc(NAOS_SERIAL_BS);
 
   // register channel
   naos_serial_secio_channel = naos_msg_register((naos_msg_channel_t){
@@ -470,7 +458,7 @@ void naos_serial_init_secio_usj(int core) {
   naos_serial_secio_vfs.fd = fd;
 
   // allocate input buffer
-  naos_serial_secio_input = naos_serial_alloc();
+  naos_serial_secio_input = naos_alloc(NAOS_SERIAL_BS);
 
   // register channel
   naos_serial_secio_channel = naos_msg_register((naos_msg_channel_t){
@@ -542,7 +530,7 @@ void naos_serial_init_usj(int core) {
 #endif
 
   // allocate input buffer
-  naos_serial_usj_input = naos_serial_alloc();
+  naos_serial_usj_input = naos_alloc(NAOS_SERIAL_BS);
 
   // configure USB serial/JTAG driver
   usb_serial_jtag_driver_config_t config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();

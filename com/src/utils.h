@@ -1,11 +1,13 @@
 #ifndef _NAOS_UTILS_H
 #define _NAOS_UTILS_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 
 #define NAOS_LOG_TAG "naos"
 
+void *naos_alloc(size_t size);
 const char *naos_i2str(char buf[16], int32_t num);
 const char *naos_d2str(char buf[32], double num);
 char *naos_format(const char *fmt, ...);
