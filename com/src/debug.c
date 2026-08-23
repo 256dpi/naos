@@ -26,6 +26,7 @@ typedef enum {
 typedef enum {
   NAOS_DEBUG_ECHO_REPEAT = 1 << 0,
   NAOS_DEBUG_ECHO_DISCARD = 1 << 1,
+  NAOS_DEBUG_ECHO_SILENT = 1 << 2,
 } naos_debug_echo_flags_t;
 
 static naos_mutex_t naos_debug_mutex = 0;
@@ -244,7 +245,13 @@ static naos_msg_reply_t naos_debug_handle_echo(naos_msg_t msg) {
   memcpy(&count, msg.data + 1, 2);
 
   // check flags
-  if ((flags & ~(NAOS_DEBUG_ECHO_REPEAT | NAOS_DEBUG_ECHO_DISCARD)) != 0) {
+  if ((flags & ~(NAOS_DEBUG_ECHO_REPEAT | NAOS_DEBUG_ECHO_DISCARD | NAOS_DEBUG_ECHO_SILENT)) != 0) {
+    return NAOS_MSG_INVALID;
+  }
+
+  // silent mode is only allowed for discarded echoes, as replied echoes rely
+  // on the final acknowledgement to terminate the stream
+  if ((flags & NAOS_DEBUG_ECHO_SILENT) && !(flags & NAOS_DEBUG_ECHO_DISCARD)) {
     return NAOS_MSG_INVALID;
   }
 
@@ -252,9 +259,9 @@ static naos_msg_reply_t naos_debug_handle_echo(naos_msg_t msg) {
   msg.data += 3;
   msg.len -= 3;
 
-  // discard data if requested
+  // discard data if requested, with or without acknowledgement
   if (flags & NAOS_DEBUG_ECHO_DISCARD) {
-    return NAOS_MSG_ACK;
+    return (flags & NAOS_DEBUG_ECHO_SILENT) ? NAOS_MSG_OK : NAOS_MSG_ACK;
   }
 
   // determine repetitions

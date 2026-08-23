@@ -122,11 +122,14 @@ func TestMeasureDownload(t *testing.T) {
 }
 
 func TestMeasureUpload(t *testing.T) {
-	cmd := echoCommand(echoDiscard, 0, 16)
+	silentCmd := echoCommand(echoDiscard|echoSilent, 0, 16)
+	ackedCmd := echoCommand(echoDiscard, 0, 16)
 
-	// a zero duration yields exactly one echo exchange
+	// a zero duration yields exactly one batch of echo commands
 	dev := newTestDevice(t, 42, []testMessage{
-		receive(Message{Endpoint: debugEndpoint, Data: cmd}),
+		receive(Message{Endpoint: debugEndpoint, Data: silentCmd}),
+		receive(Message{Endpoint: debugEndpoint, Data: silentCmd}),
+		receive(Message{Endpoint: debugEndpoint, Data: ackedCmd}),
 		ack(),
 	})
 
@@ -136,9 +139,9 @@ func TestMeasureUpload(t *testing.T) {
 	s, err := OpenSession(ch, time.Second)
 	assert.NoError(t, err)
 
-	total, elapsed, err := MeasureUpload(s, 16, 8, 0, time.Second)
+	total, elapsed, err := MeasureUpload(s, 16, 3, 0, time.Second)
 	assert.NoError(t, err)
-	assert.Equal(t, 16, total)
+	assert.Equal(t, 48, total)
 	assert.Greater(t, elapsed, time.Duration(0))
 
 	err = s.End(time.Second)

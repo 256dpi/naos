@@ -98,6 +98,7 @@ func DeleteCoredump(s *Session, timeout time.Duration) error {
 const (
 	echoRepeat  = 1 << 0
 	echoDiscard = 1 << 1
+	echoSilent  = 1 << 2
 )
 
 // echoCommand prepares an echo command with the given flags, count and
@@ -180,36 +181,38 @@ func MeasureDownload(s *Session, size, count int, timeout time.Duration) (int, t
 	return total, time.Since(start), nil
 }
 
-// MeasureUpload measures upstream throughput by sending pipelined discarded
-// echo commands of the given payload size for at least the specified
-// duration. It returns the number of payload bytes sent and the elapsed time.
+// MeasureUpload measures upstream throughput by sending batches of discarded
+// echo commands of the given payload size for at least the specified duration.
+// All commands but the last of each batch are silent, while the acknowledged
+// last command acts as a barrier that confirms in-order processing of the
+// whole batch. It returns the number of payload bytes sent and the elapsed
+// time.
 func MeasureUpload(s *Session, size, window int, duration, timeout time.Duration) (int, time.Duration, error) {
 	// check arguments
 	if size <= 0 || window <= 0 {
 		return 0, 0, fmt.Errorf("invalid size or window")
 	}
 
-	// prepare command
-	cmd := echoCommand(echoDiscard, 0, size)
+	// prepare commands
+	silentCmd := echoCommand(echoDiscard|echoSilent, 0, size)
+	ackedCmd := echoCommand(echoDiscard, 0, size)
 
-	// run pipelined echo exchanges
+	// run batched echo exchanges until the deadline has passed, but always
+	// send at least one batch
 	start := time.Now()
 	deadline := start.Add(duration)
-	var inflight, total int
-	for {
-		// fill send window until the deadline has passed, but always send at
-		// least one command
-		for inflight < window && (total+inflight == 0 || time.Now().Before(deadline)) {
+	var total int
+	for total == 0 || time.Now().Before(deadline) {
+		// send silent commands followed by a final acknowledged command
+		for i := 0; i < window; i++ {
+			cmd := silentCmd
+			if i == window-1 {
+				cmd = ackedCmd
+			}
 			err := s.Send(debugEndpoint, cmd, 0)
 			if err != nil {
 				return 0, 0, err
 			}
-			inflight++
-		}
-
-		// stop once all commands have been acknowledged
-		if inflight == 0 {
-			break
 		}
 
 		// receive ack
@@ -219,8 +222,7 @@ func MeasureUpload(s *Session, size, window int, duration, timeout time.Duration
 		} else if !errors.Is(err, Ack) {
 			return 0, 0, err
 		}
-		inflight--
-		total += size
+		total += window * size
 	}
 
 	return total, time.Since(start), nil
