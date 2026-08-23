@@ -23,7 +23,7 @@ public struct NAOSBLEDescriptor: Hashable, @unchecked Sendable {
 	init(manager: CentralManager, peripheral: Peripheral, advertisementData: [String: Any], rssi: NSNumber) {
 		self.manager = manager
 		self.identifier = peripheral.identifier
-		self.name = peripheral.name ?? "Unnamed"
+		self.name = (advertisementData[CBAdvertisementDataLocalNameKey] as? String) ?? peripheral.name ?? "Unnamed"
 		self.advertisementData = advertisementData
 		self.rssi = rssi
 		self.peripheral = peripheral
@@ -189,6 +189,7 @@ enum NAOSBLEError: LocalizedError {
 public class NAOSBLEDevice: NAOSDevice {
 	private let manager: CentralManager
 	private let peripheral: Peripheral
+	private let advertisedName: String?
 	private let lock = NSLock()
 	private var service: Service?
 	private var characteristic: Characteristic?
@@ -198,6 +199,7 @@ public class NAOSBLEDevice: NAOSDevice {
 	public init(descriptor: NAOSBLEDescriptor) {
 		self.manager = descriptor.manager
 		self.peripheral = descriptor.peripheral
+		self.advertisedName = descriptor.advertisementData[CBAdvertisementDataLocalNameKey] as? String
 
 		// watch for BLE disconnects to end the transport stream
 		Task { [weak self] in
@@ -223,7 +225,7 @@ public class NAOSBLEDevice: NAOSDevice {
 	}
 
 	public func name() -> String {
-		peripheral.name ?? "Unnamed"
+		advertisedName ?? peripheral.name ?? "Unnamed"
 	}
 
 	public func open() async throws -> NAOSChannel {
