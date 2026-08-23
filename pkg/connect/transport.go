@@ -10,6 +10,14 @@ const (
 	cmdMsg  = 0x0
 )
 
+// Devices receive websocket messages into a fixed buffer
+// (NAOS_CONNECT_BUFFER in the firmware), limiting the framed message size and
+// thereby the raw message size.
+const (
+	maxFrameSize   = 4096
+	maxMessageSize = maxFrameSize - 2
+)
+
 // Conn exchanges packet-oriented binary messages over a connection.
 type Conn interface {
 	LocalAddr() net.Addr

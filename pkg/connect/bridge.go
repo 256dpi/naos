@@ -38,6 +38,10 @@ func Bridge(t *Transport, c *msg.Channel) error {
 				errs <- fmt.Errorf("invalid message")
 				return
 			}
+			if len(data) > maxMessageSize {
+				errs <- fmt.Errorf("message too large: %d bytes", len(data))
+				return
+			}
 			err = c.Write(queue, m)
 			if err != nil {
 				errs <- err

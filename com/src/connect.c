@@ -1,8 +1,11 @@
+#include <string.h>
+
 #include <naos.h>
 #include <naos/msg.h>
 #include <naos/sys.h>
 
 #include <esp_log.h>
+#include <esp_heap_caps.h>
 #include <esp_websocket_client.h>
 #include <esp_crt_bundle.h>
 
@@ -44,12 +47,24 @@ typedef enum {
 //   single call, so the client's internal lock alone serializes concurrent
 //   sends. All sends use bounded timeouts as a last line of defense.
 
+typedef enum {
+  NAOS_CONNECT_RX_IDLE,
+  NAOS_CONNECT_RX_ACTIVE,
+  NAOS_CONNECT_RX_SKIP,
+} naos_connect_rx_state_t;
+
 static naos_mutex_t naos_connect_mutex;
 static naos_mutex_t naos_connect_client_mutex;
 static esp_websocket_client_handle_t naos_connect_client;
 static naos_task_t naos_connect_dispatching = NULL;
 static uint8_t naos_connect_channel = 0;
 static naos_connect_state_t naos_connect_state = NAOS_CONNECT_STOPPED;
+
+// receive re-assembly state, only accessed from the websocket client task's
+// event handler, which dispatches events sequentially
+static naos_connect_rx_state_t naos_connect_rx_state = NAOS_CONNECT_RX_IDLE;
+static uint8_t* naos_connect_rx_buffer = NULL;
+static size_t naos_connect_rx_length = 0;
 
 static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *d);
 
@@ -217,6 +232,10 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
       naos_connect_state = NAOS_CONNECT_CONNECTED;
       naos_unlock(naos_connect_mutex);
 
+      // reset receive state
+      naos_connect_rx_state = NAOS_CONNECT_RX_IDLE;
+      naos_connect_rx_length = 0;
+
       // set status
       naos_set_s("connect-status", "connected");
 
@@ -249,29 +268,72 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
       }
       naos_unlock(naos_connect_mutex);
 
-      // ignore websocket control frames; only binary frames carry NAOS data
-      if (data->op_code != 0x2) {
-        if (data->op_code == 0x8 || data->op_code == 0x9 || data->op_code == 0xA) {
-          break;
-        }
-        ESP_LOGE(NAOS_LOG_TAG, "naos_connect_handler: ignored unexpected opcode: 0x%x", data->op_code);
+      // ignore interleaved control frames (close, ping, pong)
+      if (data->op_code == 0x8 || data->op_code == 0x9 || data->op_code == 0xA) {
         break;
       }
 
-      // ignore chunked messages
-      if (data->payload_offset > 0 || data->payload_len > data->data_len) {
-        ESP_LOGE(NAOS_LOG_TAG, "naos_connect_handler: ignored chunked message");
+      // messages may span multiple websocket frames (continuation frames with
+      // opcode 0x0) and frame payloads may span multiple events (partial
+      // transport reads), so all data is re-assembled into a buffer and
+      // dispatched once the last chunk of the final frame is received
+
+      // handle the first chunk of a message's first frame
+      if (data->op_code != 0x0 && data->payload_offset == 0) {
+        // drop unfinished previous message
+        if (naos_connect_rx_state == NAOS_CONNECT_RX_ACTIVE) {
+          ESP_LOGE(NAOS_LOG_TAG, "naos_connect_handler: dropped incomplete message");
+        }
+
+        // begin new message
+        naos_connect_rx_state = NAOS_CONNECT_RX_ACTIVE;
+        naos_connect_rx_length = 0;
+
+        // skip non-binary messages; only binary frames carry NAOS data
+        if (data->op_code != 0x2) {
+          ESP_LOGE(NAOS_LOG_TAG, "naos_connect_handler: skipped unexpected opcode: 0x%x", data->op_code);
+          naos_connect_rx_state = NAOS_CONNECT_RX_SKIP;
+        }
+      } else if (naos_connect_rx_state == NAOS_CONNECT_RX_IDLE) {
+        // skip continuations of a message whose beginning was never received
+        ESP_LOGE(NAOS_LOG_TAG, "naos_connect_handler: skipped stray continuation");
+        naos_connect_rx_state = NAOS_CONNECT_RX_SKIP;
+      }
+
+      // append chunk, skipping messages exceeding the buffer
+      if (naos_connect_rx_state == NAOS_CONNECT_RX_ACTIVE && data->data_len > 0) {
+        if (naos_connect_rx_length + (size_t)data->data_len > NAOS_CONNECT_BUFFER) {
+          ESP_LOGE(NAOS_LOG_TAG, "naos_connect_handler: skipped too long message");
+          naos_connect_rx_state = NAOS_CONNECT_RX_SKIP;
+          naos_connect_rx_length = 0;
+        } else {
+          memcpy(naos_connect_rx_buffer + naos_connect_rx_length, data->data_ptr, data->data_len);
+          naos_connect_rx_length += (size_t)data->data_len;
+        }
+      }
+
+      // await remaining chunks of this frame or further continuation frames
+      if (data->payload_offset + data->data_len < data->payload_len || !data->fin) {
+        break;
+      }
+
+      // take completed message and reset receive state
+      size_t length = naos_connect_rx_length;
+      bool skipped = naos_connect_rx_state == NAOS_CONNECT_RX_SKIP;
+      naos_connect_rx_state = NAOS_CONNECT_RX_IDLE;
+      naos_connect_rx_length = 0;
+      if (skipped) {
         break;
       }
 
       // require a full header
-      if (data->data_len < sizeof(naos_connect_header_t)) {
+      if (length < sizeof(naos_connect_header_t)) {
         ESP_LOGE(NAOS_LOG_TAG, "naos_connect_handler: ignored short message");
         break;
       }
 
       // get header
-      naos_connect_header_t *header = (naos_connect_header_t *)data->data_ptr;
+      naos_connect_header_t *header = (naos_connect_header_t *)naos_connect_rx_buffer;
 
       // check version
       if (header->version != NAOS_CONNECT_VERSION) {
@@ -285,14 +347,11 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
         break;
       }
 
-      // get buffer and length
-      uint8_t *buffer = (uint8_t *)(data->data_ptr) + sizeof(naos_connect_header_t);
-      size_t length = data->data_len - sizeof(naos_connect_header_t);
-
       // dispatch message, marking the dispatching task so triggered sends can
       // skip the client mutex (see locking model above)
       naos_connect_dispatching = naos_current();
-      naos_msg_dispatch(naos_connect_channel, buffer, length, NULL);
+      naos_msg_dispatch(naos_connect_channel, naos_connect_rx_buffer + sizeof(naos_connect_header_t),
+                        length - sizeof(naos_connect_header_t), NULL);
       naos_connect_dispatching = NULL;
 
       break;
@@ -363,6 +422,9 @@ void naos_connect_init() {
   // initialize mutexes
   naos_connect_mutex = naos_mutex();
   naos_connect_client_mutex = naos_mutex();
+
+  // allocate receive buffer
+  naos_connect_rx_buffer = naos_alloc(NAOS_CONNECT_BUFFER);
 
   // register parameters
   for (size_t i = 0; i < NAOS_COUNT(naos_connect_params); i++) {

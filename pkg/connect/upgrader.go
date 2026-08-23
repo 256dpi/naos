@@ -18,9 +18,12 @@ func NewWebSocketUpgrader(fallback http.Handler) *WebSocketUpgrader {
 	return &WebSocketUpgrader{
 		fallback: fallback,
 		upgrader: &websocket.Upgrader{
-			HandshakeTimeout:  60 * time.Second,
-			ReadBufferSize:    0,
-			WriteBufferSize:   0,
+			HandshakeTimeout: 60 * time.Second,
+			ReadBufferSize:   0,
+			// an explicit write buffer size prevents gorilla from re-using the
+			// smaller hijacked HTTP buffer and fragmenting full-size messages
+			// into multiple frames
+			WriteBufferSize:   maxFrameSize,
 			Subprotocols:      []string{"naos"},
 			CheckOrigin:       func(*http.Request) bool { return true },
 			EnableCompression: false,
