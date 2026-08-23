@@ -11,6 +11,7 @@
 
 #define NAOS_CONNECT_VERSION 0x1
 #define NAOS_CONNECT_BUFFER 4096
+#define NAOS_CONNECT_TIMEOUT 5000
 
 typedef enum : uint8_t {
   NAOS_CONNECT_MSG,
@@ -33,10 +34,20 @@ typedef enum {
 // - naos_connect_client_mutex serializes client lifecycle and send access.
 // - Code that needs both locks must always take naos_connect_client_mutex first
 //   and naos_connect_mutex second to avoid races and lock inversion.
+// - The websocket client task holds the client's internal lock while it
+//   dispatches events, so sends issued from the event handler (inline message
+//   dispatch may send replies) must not wait on naos_connect_client_mutex, as
+//   another task may hold it while waiting for the client's internal lock
+//   inside a send. Handler sends therefore skip the client mutex, which is
+//   safe as the client cannot be stopped and destroyed while its task
+//   dispatches an event. Messages are framed contiguously and sent with a
+//   single call, so the client's internal lock alone serializes concurrent
+//   sends. All sends use bounded timeouts as a last line of defense.
 
 static naos_mutex_t naos_connect_mutex;
 static naos_mutex_t naos_connect_client_mutex;
 static esp_websocket_client_handle_t naos_connect_client;
+static naos_task_t naos_connect_dispatching = NULL;
 static uint8_t naos_connect_channel = 0;
 static naos_connect_state_t naos_connect_state = NAOS_CONNECT_STOPPED;
 
@@ -62,8 +73,8 @@ static esp_websocket_client_handle_t naos_connect_client_create(const char *url,
       .buffer_size = NAOS_CONNECT_BUFFER,
       .transport = transport,
       .subprotocol = "naos",
-      .reconnect_timeout_ms = 5000,
-      .network_timeout_ms = 5000,
+      .reconnect_timeout_ms = NAOS_CONNECT_TIMEOUT,
+      .network_timeout_ms = NAOS_CONNECT_TIMEOUT,
       .crt_bundle_attach = esp_crt_bundle_attach,
   };
   esp_websocket_client_handle_t client = esp_websocket_client_init(&config);
@@ -278,20 +289,17 @@ static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *
       uint8_t *buffer = (uint8_t *)(data->data_ptr) + sizeof(naos_connect_header_t);
       size_t length = data->data_len - sizeof(naos_connect_header_t);
 
-      // dispatch message
+      // dispatch message, marking the dispatching task so triggered sends can
+      // skip the client mutex (see locking model above)
+      naos_connect_dispatching = naos_current();
       naos_msg_dispatch(naos_connect_channel, buffer, length, NULL);
+      naos_connect_dispatching = NULL;
 
       break;
   }
 }
 
 static bool naos_connect_send(const uint8_t *data, size_t len, void *ctx) {
-  // prepare header
-  naos_connect_header_t header = {
-      .version = NAOS_CONNECT_VERSION,
-      .cmd = NAOS_CONNECT_MSG,
-  };
-
   // validate payload length against the websocket frame budget
   if (len > NAOS_CONNECT_BUFFER - sizeof(naos_connect_header_t)) {
     return false;
@@ -305,19 +313,38 @@ static bool naos_connect_send(const uint8_t *data, size_t len, void *ctx) {
   }
   naos_unlock(naos_connect_mutex);
 
-  // serialize client access against stop/destroy and other sends
-  naos_lock(naos_connect_client_mutex);
-  esp_websocket_client_handle_t client = naos_connect_client;
-  if (client == NULL) {
-    naos_unlock(naos_connect_client_mutex);
+  // frame message contiguously to allow an atomic single-call send
+  size_t total = sizeof(naos_connect_header_t) + len;
+  uint8_t *frame = malloc(total);
+  if (frame == NULL) {
     return false;
   }
-  int r1 = esp_websocket_client_send_bin_partial(client, (char *)&header, sizeof(naos_connect_header_t), portMAX_DELAY);
-  int r2 = esp_websocket_client_send_cont_msg(client, (char *)data, (int)len, portMAX_DELAY);
-  int r3 = esp_websocket_client_send_fin(client, portMAX_DELAY);
-  naos_unlock(naos_connect_client_mutex);
+  naos_connect_header_t *header = (naos_connect_header_t *)frame;
+  header->version = NAOS_CONNECT_VERSION;
+  header->cmd = NAOS_CONNECT_MSG;
+  memcpy(frame + sizeof(naos_connect_header_t), data, len);
 
-  return r1 >= 0 && r2 >= 0 && r3 >= 0;
+  // skip the client mutex when sending from the event handler
+  // (see locking model above)
+  bool inline_send = naos_connect_dispatching == naos_current();
+
+  // serialize client access against stop/destroy for cross-task sends
+  if (!inline_send) {
+    naos_lock(naos_connect_client_mutex);
+  }
+  int ret = -1;
+  if (naos_connect_client != NULL) {
+    ret = esp_websocket_client_send_bin(naos_connect_client, (char *)frame, (int)total,
+                                        pdMS_TO_TICKS(NAOS_CONNECT_TIMEOUT));
+  }
+  if (!inline_send) {
+    naos_unlock(naos_connect_client_mutex);
+  }
+
+  // free frame
+  free(frame);
+
+  return ret >= 0;
 }
 
 static uint16_t naos_connect_mtu() {
