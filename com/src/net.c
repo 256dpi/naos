@@ -8,10 +8,65 @@
 #include "utils.h"
 
 #define NAOS_NET_MAX_LINKS 4
+#define NAOS_NET_WATCHDOG_INTERVAL 5000     // 5s
+#define NAOS_NET_WATCHDOG_TIMEOUT 300000    // 5m
 
 static naos_mutex_t naos_net_mutex;
 static naos_net_link_t naos_net_links[NAOS_NET_MAX_LINKS] = {0};
 static size_t naos_net_link_count = 0;
+static uint32_t naos_net_seen_generation[NAOS_NET_MAX_LINKS] = {0};
+static int64_t naos_net_quiet_since[NAOS_NET_MAX_LINKS] = {0};
+
+static void naos_net_watchdog() {
+  // a healthy link that cannot connect keeps producing status changes as the
+  // driver retries, so a link that claims to be active, is not connected and
+  // has been completely quiet for the timeout has a stalled driver and gets
+  // reconfigured to restore its event and retry machinery
+
+  // collect stalled links
+  naos_net_link_t stalled[NAOS_NET_MAX_LINKS];
+  size_t num_stalled = 0;
+  int64_t now = naos_millis();
+  naos_lock(naos_net_mutex);
+  for (size_t i = 0; i < naos_net_link_count; i++) {
+    // skip links without reconfigure support
+    naos_net_link_t *link = &naos_net_links[i];
+    if (link->reconfigure == NULL) {
+      continue;
+    }
+
+    // get status
+    naos_net_status_t status = link->status();
+
+    // disarm if inactive or connected
+    if (!status.active || status.connected) {
+      naos_net_quiet_since[i] = 0;
+      naos_net_seen_generation[i] = status.generation;
+      continue;
+    }
+
+    // re-arm on first observation or status change
+    if (naos_net_quiet_since[i] == 0 || status.generation != naos_net_seen_generation[i]) {
+      naos_net_quiet_since[i] = now;
+      naos_net_seen_generation[i] = status.generation;
+      continue;
+    }
+
+    // collect link if quiet for too long
+    if (now - naos_net_quiet_since[i] >= NAOS_NET_WATCHDOG_TIMEOUT) {
+      stalled[num_stalled] = *link;
+      num_stalled++;
+      naos_net_quiet_since[i] = now;
+    }
+  }
+  naos_unlock(naos_net_mutex);
+
+  // reconfigure stalled links
+  for (size_t i = 0; i < num_stalled; i++) {
+    ESP_LOGW(NAOS_LOG_TAG, "naos_net_watchdog: reconfiguring stalled link '%s'", stalled[i].name);
+    stalled[i].reconfigure();
+  }
+}
 
 void naos_net_init() {
   // create mutex
@@ -22,6 +77,9 @@ void naos_net_init() {
 
   // create default event loop
   ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+  // start watchdog
+  naos_repeat_defer("naos-net", NAOS_NET_WATCHDOG_INTERVAL, naos_net_watchdog);
 }
 
 void naos_net_register(naos_net_link_t link) {

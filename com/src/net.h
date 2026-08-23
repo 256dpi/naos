@@ -4,6 +4,7 @@
 #include <esp_netif.h>
 
 typedef struct {
+  bool active;  // link is configured and expected to connect
   bool connected;
   uint32_t generation;
 } naos_net_status_t;
@@ -11,6 +12,7 @@ typedef struct {
 typedef struct {
   const char *name;
   naos_net_status_t (*status)();
+  void (*reconfigure)();  // optional, used by the watchdog to revive stalled links
 } naos_net_link_t;
 
 void naos_net_init();

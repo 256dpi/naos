@@ -134,6 +134,7 @@ static naos_net_status_t naos_eth_status() {
   // read status
   naos_lock(naos_eth_mutex);
   naos_net_status_t status = {
+      .active = naos_eth_started,
       .connected = naos_eth_connected,
       .generation = naos_eth_generation,
   };
@@ -264,6 +265,7 @@ void naos_eth_init() {
   naos_net_link_t link = {
       .name = "eth",
       .status = naos_eth_status,
+      .reconfigure = naos_eth_configure,
   };
   naos_net_register(link);
 

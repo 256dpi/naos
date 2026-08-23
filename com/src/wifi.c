@@ -188,6 +188,7 @@ static naos_net_status_t naos_wifi_status() {
   // read status
   naos_lock(naos_wifi_mutex);
   naos_net_status_t status = {
+      .active = naos_wifi_started,
       .connected = naos_wifi_connected,
       .generation = naos_wifi_generation,
   };
@@ -248,6 +249,7 @@ void naos_wifi_init() {
   naos_net_link_t link = {
       .name = "wifi",
       .status = naos_wifi_status,
+      .reconfigure = naos_wifi_configure,
   };
   naos_net_register(link);
 
