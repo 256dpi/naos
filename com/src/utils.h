@@ -7,6 +7,7 @@
 
 #define NAOS_LOG_TAG "naos"
 
+void *naos_try_alloc(size_t size);
 void *naos_alloc(size_t size);
 const char *naos_i2str(char buf[16], int32_t num);
 const char *naos_d2str(char buf[32], double num);

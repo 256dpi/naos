@@ -374,7 +374,7 @@ static bool naos_connect_send(const uint8_t *data, size_t len, void *ctx) {
 
   // frame message contiguously to allow an atomic single-call send
   size_t total = sizeof(naos_connect_header_t) + len;
-  uint8_t *frame = malloc(total);
+  uint8_t *frame = naos_try_alloc(total);
   if (frame == NULL) {
     return false;
   }

@@ -602,7 +602,7 @@ bool naos_msg_dispatch(uint8_t channel, uint8_t* data, size_t len, void* ctx) {
   }
 
   // copy data
-  uint8_t* copy = malloc(len - 4 + 1);
+  uint8_t* copy = naos_try_alloc(len - 4 + 1);
   if (copy == NULL) {
     naos_unlock(naos_msg_mutex);
     ESP_LOGE(NAOS_LOG_TAG, "naos_msg_dispatch: allocation failed (%s)", name);
@@ -687,7 +687,7 @@ bool naos_msg_send(naos_msg_t msg) {
   if (msg.framed) {
     frame = msg.data - NAOS_MSG_FRAMING;
   } else {
-    frame = malloc(frame_len);
+    frame = naos_try_alloc(frame_len);
     if (frame == NULL) {
       ESP_LOGE(NAOS_LOG_TAG, "naos_msg_send: allocation failed (%s)", channel.name);
       return false;

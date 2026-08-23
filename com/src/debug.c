@@ -102,7 +102,7 @@ static naos_msg_reply_t naos_debug_handle_cdp_read(naos_msg_t msg) {
   // OFFSET (4) | DATA (*)
 
   // prepare data with framing headroom
-  uint8_t* buf = calloc(NAOS_MSG_FRAMING + 4 + max_chunk_size, 1);
+  uint8_t* buf = naos_try_alloc(NAOS_MSG_FRAMING + 4 + max_chunk_size);
   if (buf == NULL) {
     return NAOS_MSG_ERROR;
   }

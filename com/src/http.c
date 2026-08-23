@@ -4,6 +4,8 @@
 #include <esp_http_server.h>
 #include <freertos/FreeRTOS.h>
 
+#include "utils.h"
+
 #define NAOS_HTTP_MAX_CONNS 7
 #define NAOS_HTTP_MAX_FILES 8
 
@@ -61,7 +63,7 @@ static esp_err_t naos_http_socket(httpd_req_t *conn) {
   }
 
   // allocate payload
-  req.payload = malloc(req.len);
+  req.payload = naos_try_alloc(req.len);
   if (req.payload == NULL) {
     return ESP_ERR_NO_MEM;
   }
@@ -194,7 +196,7 @@ static uint16_t naos_http_msg_mtu() { return 4096; }
 
 static bool naos_http_msg_send(const uint8_t *data, size_t len, void *ctx) {
   // prepare message
-  naos_http_msg_t *msg = malloc(sizeof(naos_http_msg_t) + len);
+  naos_http_msg_t *msg = naos_try_alloc(sizeof(naos_http_msg_t) + len);
   if (msg == NULL) {
     return false;
   }

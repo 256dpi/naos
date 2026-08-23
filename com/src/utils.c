@@ -8,13 +8,18 @@
 
 #include "utils.h"
 
-void *naos_alloc(size_t size) {
+void *naos_try_alloc(size_t size) {
   // allocate buffer, preferring external memory
 #ifdef CONFIG_SPIRAM
-  void *buf = heap_caps_malloc_prefer(size, 2, MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT);
+  return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT);
 #else
-  void *buf = malloc(size);
+  return malloc(size);
 #endif
+}
+
+void *naos_alloc(size_t size) {
+  // allocate buffer, aborting on failure
+  void *buf = naos_try_alloc(size);
   if (buf == NULL) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }

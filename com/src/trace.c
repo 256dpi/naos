@@ -9,6 +9,8 @@
 #include <naos/sys.h>
 #include <naos/trace.h>
 
+#include "utils.h"
+
 #define NAOS_TRACE_ENDPOINT 0x8
 #define NAOS_TRACE_MAX_TASKS 64
 #define NAOS_TRACE_MAX_LABELS 255
@@ -289,7 +291,7 @@ static naos_msg_reply_t naos_trace_handle_read(naos_msg_t msg) {
   size_t mtu = naos_msg_get_mtu(msg.session);
 
   // allocate chunk buffer with framing headroom
-  uint8_t *buf = malloc(NAOS_MSG_FRAMING + mtu);
+  uint8_t *buf = naos_try_alloc(NAOS_MSG_FRAMING + mtu);
   if (buf == NULL) {
     return NAOS_MSG_ERROR;
   }
@@ -424,12 +426,10 @@ static naos_msg_reply_t naos_trace_handle(naos_msg_t msg) {
 }
 
 void naos_trace_install() {
-  // allocate buffer
+  // allocate buffer (reads are bounded by the used counter and wrap-around
+  // padding is zeroed during writes, so no zeroing is needed)
   naos_trace_capacity = NAOS_TRACE_BUF_SIZE;
-  naos_trace_buffer = calloc(1, naos_trace_capacity);
-  if (naos_trace_buffer == NULL) {
-    ESP_ERROR_CHECK(ESP_FAIL);
-  }
+  naos_trace_buffer = naos_alloc(naos_trace_capacity);
 
   // install endpoint
   naos_msg_install((naos_msg_endpoint_t){

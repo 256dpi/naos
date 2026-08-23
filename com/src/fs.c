@@ -15,6 +15,8 @@
 #include <esp_vfs_fat.h>
 #include <mbedtls/sha256.h>
 
+#include "utils.h"
+
 #define NAOS_FS_ENDPOINT 0x3
 #define NAOS_FS_MAX_FILES 4
 
@@ -435,7 +437,7 @@ static naos_msg_reply_t naos_fs_handle_read(naos_msg_t msg) {
   // TYPE (1) | OFFSET (4) | DATA (*)
 
   // prepare data with framing headroom
-  uint8_t *buf = malloc(NAOS_MSG_FRAMING + 5 + max_chunk_size);
+  uint8_t *buf = naos_try_alloc(NAOS_MSG_FRAMING + 5 + max_chunk_size);
   if (buf == NULL) {
     return naos_fs_send_error(msg.session, ENOMEM);
   }
