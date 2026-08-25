@@ -135,13 +135,16 @@ static esp_websocket_client_handle_t naos_connect_client_create(const char *url,
   ESP_ERROR_CHECK(esp_transport_ws_set_config(ws, &ws_config));
   free(headers);
 
-  // create client with the external transport
+  // create client with the external transport; the client task also runs the
+  // TLS handshake for secure URLs, which its own 4K default stack does not
+  // cover
   esp_websocket_client_config_t config = {
       .uri = url,
       .buffer_size = NAOS_CONNECT_BUFFER,
       .reconnect_timeout_ms = NAOS_CONNECT_TIMEOUT,
       .network_timeout_ms = NAOS_CONNECT_TIMEOUT,
       .ext_transport = ws,
+      .task_stack = CONFIG_NAOS_CONNECT_STACK_SIZE,
   };
   esp_websocket_client_handle_t client = esp_websocket_client_init(&config);
   if (client == NULL) {
