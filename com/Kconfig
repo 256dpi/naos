@@ -28,6 +28,10 @@ config NAOS_MSG_DEBUG
     bool "Enable debug messages"
     default n
 
+config NAOS_MSG_STACK_SIZE
+    int "The stack size of the message worker task in bytes" # runs endpoint handlers
+    default 8192
+
 config NAOS_SERIAL_BUFFER_SIZE
     int "The serial buffer sizes"
     default 2048
@@ -43,5 +47,13 @@ config NAOS_DEFER_QUEUE_LENGTH
 config NAOS_DEFER_STACK_SIZE
     int "The stack size of the defer task in bytes"
     default 4096
+
+config NAOS_TASK_STACK_SIZE
+    int "The stack size of the main task in bytes" # runs the loop callback
+    default 8192
+
+config NAOS_SETUP_STACK_SIZE
+    int "The stack size of the setup task in bytes" # runs the setup callback
+    default 8192
 
 endmenu

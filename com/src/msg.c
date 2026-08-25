@@ -311,7 +311,7 @@ void naos_msg_init() {
   naos_msg_queue = naos_queue(NAOS_MSG_MAX_SESSIONS, sizeof(naos_msg_t));
 
   // run worker
-  naos_run("naos-msg", 8192, naos_config()->msg_core, naos_msg_worker);
+  naos_run("naos-msg", CONFIG_NAOS_MSG_STACK_SIZE, naos_config()->msg_core, naos_msg_worker);
 
   // install system endpoint (always open: status/unlock/get-mtu must work
   // while the session is locked)
