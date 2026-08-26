@@ -30,6 +30,9 @@ func Config(naosPath string, values map[string]string, port, baudRate string, ou
 	}
 	defer flasher.Close()
 
+	// reset device on return, to leave it running the application
+	defer flasher.Reset()
+
 	// find NVS partition
 	nvsPart, err := findDevicePartition(flasher, naosPath, "nvs")
 	if err != nil {
@@ -49,9 +52,6 @@ func Config(naosPath string, values map[string]string, port, baudRate string, ou
 	if err != nil {
 		return err
 	}
-
-	// reset device to run the application with the new parameters
-	flasher.Reset()
 
 	return nil
 }
@@ -160,6 +160,9 @@ func ReadConfig(naosPath, port, baudRate string, out io.Writer) (map[string]stri
 	}
 	defer flasher.Close()
 
+	// reset device on return, to leave it running the application
+	defer flasher.Reset()
+
 	// find NVS partition
 	nvsPart, err := findDevicePartition(flasher, naosPath, "nvs")
 	if err != nil {
@@ -172,9 +175,6 @@ func ReadConfig(naosPath, port, baudRate string, out io.Writer) (map[string]stri
 	if err != nil {
 		return nil, err
 	}
-
-	// reset device to leave it running the application
-	flasher.Reset()
 
 	// parse partition
 	entries, err := nvs.ParseNVS(data)

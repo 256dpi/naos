@@ -160,6 +160,11 @@ func Flash(naosPath, port, baudRate string, erase, appOnly, alt bool, out io.Wri
 	}
 	defer flasher.Close()
 
+	// reset device on return, to leave it running the flashed application
+	if orDefault(args.Extra.After, "hard_reset") == "hard_reset" {
+		defer flasher.Reset()
+	}
+
 	// verify chip, as an image built for another target does not boot
 	err = verifyChip(flasher.ChipName(), args.Extra.Chip)
 	if err != nil {
@@ -173,11 +178,6 @@ func Flash(naosPath, port, baudRate string, erase, appOnly, alt bool, out io.Wri
 		if err != nil {
 			return err
 		}
-	}
-
-	// reset device to run the flashed application
-	if orDefault(args.Extra.After, "hard_reset") == "hard_reset" {
-		flasher.Reset()
 	}
 
 	return nil
