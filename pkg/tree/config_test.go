@@ -68,3 +68,36 @@ func TestCollectValues(t *testing.T) {
 		t.Errorf("unexpected values")
 	}
 }
+
+func TestGenerateImage(t *testing.T) {
+	// prepare values that cover an empty value, a value that is split into
+	// multiple chunks and a value that contains a comma
+	values := map[string]string{
+		"wifi-ssid":   "WS",
+		"device-name": "hello-world",
+		"empty":       "",
+		"comma":       "a,b",
+		"long":        strings.Repeat("L", 5000),
+	}
+
+	// generate image
+	image, err := generateImage(values, 0x6000)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// parse image
+	entries, err := nvs.ParseNVS(image)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// collect values
+	got := collectValues(entries, nil)
+	if !reflect.DeepEqual(got, values) {
+		for key, value := range got {
+			t.Logf("%s = %q", key, value)
+		}
+		t.Errorf("unexpected values")
+	}
+}

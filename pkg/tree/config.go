@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"hash/crc32"
 	"io"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -111,12 +111,6 @@ func parseSize(str string) (int64, error) {
 
 // Config will write settings and parameters to an attached device.
 func Config(naosPath string, values map[string]string, port, baudRate string, out io.Writer) error {
-	// read flasher arguments, as the flash settings depend on the target
-	args, err := readFlasherArgs(naosPath)
-	if err != nil {
-		return err
-	}
-
 	// read partition table, as the NVS partition may be placed anywhere
 	partitions, err := readPartitions(naosPath)
 	if err != nil {
@@ -124,86 +118,159 @@ func Config(naosPath string, values map[string]string, port, baudRate string, ou
 	}
 
 	// find NVS partition
-	var nvsPart *partition
-	for i, p := range partitions {
-		if p.Name == "nvs" {
-			nvsPart = &partitions[i]
-			break
-		}
-	}
-	if nvsPart == nil {
-		return fmt.Errorf("missing 'nvs' partition")
+	nvsPart, err := findPartition(partitions, "nvs")
+	if err != nil {
+		return err
 	}
 
-	// assemble CSV, sorting the keys to get a stable order
+	// generate image
+	utils.Log(out, "Generating image...")
+	image, err := generateImage(values, int(nvsPart.Size))
+	if err != nil {
+		return err
+	}
+
+	// connect to device
+	utils.Log(out, "Connecting...")
+	flasher, err := connectDevice(port, baudRate, out)
+	if err != nil {
+		return err
+	}
+	defer flasher.Close()
+
+	// flash image
+	utils.Log(out, "Flashing...")
+	err = flasher.FlashImage(image, uint32(nvsPart.Offset), nil)
+	if err != nil {
+		return err
+	}
+
+	// reset device to run the application with the new parameters
+	flasher.Reset()
+
+	return nil
+}
+
+// chunkMaxSize is the maximum size of a single blob chunk, which is the space
+// left on a page beside the chunk's own entry.
+const chunkMaxSize = nvs.EntrySize * (nvs.EntriesPerPage - 1)
+
+// generateImage will generate an NVS partition image that stores the provided
+// parameters.
+func generateImage(values map[string]string, size int) ([]byte, error) {
+	// assemble entries, sorting the keys to get a stable order
 	keys := make([]string, 0, len(values))
 	for key := range values {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-	var buf bytes.Buffer
-	buf.WriteString("key,type,encoding,value\n")
-	buf.WriteString("naos,namespace,,\n")
+	var entries []nvs.Entry
 	for _, key := range keys {
-		buf.WriteString(fmt.Sprintf("%s,data,binary,%s\n", key, values[key]))
+		// check size, as the chunk index and count are stored as a single byte
+		if len(values[key]) > 255*chunkMaxSize {
+			return nil, fmt.Errorf("value of %q is too big", key)
+		}
+
+		entries = append(entries, blobEntries(key, []byte(values[key]))...)
 	}
 
-	// calculate paths
-	tempDir := filepath.Join(os.TempDir(), "naos")
-	valuesCSV := filepath.Join(tempDir, "values.csv")
-	nvsImage := filepath.Join(tempDir, "nvs.bin")
-	nvsPartGen := filepath.Join(IDFDirectory(naosPath), "components", "nvs_flash", "nvs_partition_generator", "nvs_partition_gen.py")
-	espTool := filepath.Join(IDFDirectory(naosPath), "components", "esptool_py", "esptool", "esptool.py")
+	return nvs.GenerateNVS(entries, size)
+}
 
-	// ensure directory
-	err = os.MkdirAll(tempDir, 0755)
+// blobEntries will assemble the entries that store the provided value: one data
+// entry per chunk and an index entry that describes the chunks. The generator
+// only supports the single entry blobs of the earlier format, which are limited
+// to one page, therefore the chunked entries written by ESP-IDF itself are
+// assembled as raw entries.
+func blobEntries(key string, value []byte) []nvs.Entry {
+	// split value into chunks, storing empty values as a single empty chunk
+	var chunks [][]byte
+	for offset := 0; offset < len(value); offset += chunkMaxSize {
+		chunks = append(chunks, value[offset:min(offset+chunkMaxSize, len(value))])
+	}
+	if len(chunks) == 0 {
+		chunks = append(chunks, nil)
+	}
+
+	// prepare data entries
+	entries := make([]nvs.Entry, 0, len(chunks)+1)
+	for i, chunk := range chunks {
+		// prepare data, padding the chunk to full entries with the erased state
+		data := bytes.Repeat([]byte{0xff}, 8+alignSize(len(chunk)))
+		copy(data[8:], chunk)
+
+		// write header ("size, reserved, CRC")
+		binary.LittleEndian.PutUint16(data[0:2], uint16(len(chunk)))
+		binary.LittleEndian.PutUint32(data[4:8], espCRC32(chunk))
+
+		// collect entry
+		entries = append(entries, nvs.Entry{
+			Namespace:  "naos",
+			Key:        key,
+			Raw:        true,
+			TypeByte:   typeBlobData,
+			Span:       uint8(1 + alignSize(len(chunk))/nvs.EntrySize),
+			ChunkIndex: uint8(i),
+			Data:       data,
+		})
+	}
+
+	// prepare index ("size, chunk count, chunk start, reserved")
+	index := bytes.Repeat([]byte{0xff}, 8)
+	binary.LittleEndian.PutUint32(index[0:4], uint32(len(value)))
+	index[4] = uint8(len(chunks))
+	index[5] = 0
+
+	// collect index entry
+	entries = append(entries, nvs.Entry{
+		Namespace:  "naos",
+		Key:        key,
+		Raw:        true,
+		TypeByte:   typeBlobIndex,
+		Span:       1,
+		ChunkIndex: chunkIndexNone,
+		Data:       index,
+	})
+
+	return entries
+}
+
+// alignSize will round the provided size up to full entries.
+func alignSize(size int) int {
+	return (size + nvs.EntrySize - 1) / nvs.EntrySize * nvs.EntrySize
+}
+
+// espCRC32 will calculate the CRC as used by NVS.
+func espCRC32(data []byte) uint32 {
+	return crc32.Update(0xffffffff, crc32.IEEETable, data)
+}
+
+// findPartition will return the named partition.
+func findPartition(partitions []partition, name string) (*partition, error) {
+	for i, p := range partitions {
+		if p.Name == name {
+			return &partitions[i], nil
+		}
+	}
+
+	return nil, fmt.Errorf("missing %q partition", name)
+}
+
+// connectDevice will connect to the device on the specified serial port.
+func connectDevice(port, baudRate string, out io.Writer) (*espflasher.Flasher, error) {
+	// parse baud rate
+	rate, err := strconv.Atoi(baudRate)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("invalid baud rate: %w", err)
 	}
 
-	// writing CSV
-	utils.Log(out, "Writing values...")
-	err = os.WriteFile(valuesCSV, buf.Bytes(), 0644)
-	if err != nil {
-		return err
-	}
+	// prepare options, using the requested rate for the transfer only, as the
+	// initial synchronization is more reliable at the default rate
+	opts := espflasher.DefaultOptions()
+	opts.FlashBaudRate = rate
+	opts.Logger = flasherLogger{out: out}
 
-	// prepare arguments
-	nvsPartGenArgs := []string{
-		nvsPartGen,
-		"generate",
-		valuesCSV,
-		nvsImage,
-		fmt.Sprintf("0x%x", nvsPart.Size),
-	}
-
-	// generating image
-	utils.Log(out, "Generating image...")
-	err = Exec(naosPath, out, nil, false, false, "python", nvsPartGenArgs...)
-	if err != nil {
-		return err
-	}
-
-	// prepare flash arguments
-	flashArgs := []string{espTool}
-	if args.Extra.Chip != "" {
-		flashArgs = append(flashArgs, "--chip", args.Extra.Chip)
-	}
-	flashArgs = append(flashArgs, "--port", port, "--baud", baudRate)
-	flashArgs = append(flashArgs, "--before", orDefault(args.Extra.Before, "default_reset"))
-	flashArgs = append(flashArgs, "--after", orDefault(args.Extra.After, "hard_reset"))
-	flashArgs = append(flashArgs, "write_flash", "-z")
-	flashArgs = append(flashArgs, args.WriteFlashArgs...)
-	flashArgs = append(flashArgs, fmt.Sprintf("0x%x", nvsPart.Offset), nvsImage)
-
-	// flashing image
-	utils.Log(out, "Flashing...")
-	err = Exec(naosPath, out, nil, false, false, "python", flashArgs...)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return espflasher.New(port, opts)
 }
 
 // flasherLogger adapts the tree logging to the flasher logger interface.
@@ -225,32 +292,14 @@ func ReadConfig(naosPath, port, baudRate string, out io.Writer) (map[string]stri
 	}
 
 	// find NVS partition
-	var nvsPart *partition
-	for i, p := range partitions {
-		if p.Name == "nvs" {
-			nvsPart = &partitions[i]
-			break
-		}
-	}
-	if nvsPart == nil {
-		return nil, fmt.Errorf("missing 'nvs' partition")
-	}
-
-	// parse baud rate
-	rate, err := strconv.Atoi(baudRate)
+	nvsPart, err := findPartition(partitions, "nvs")
 	if err != nil {
-		return nil, fmt.Errorf("invalid baud rate: %w", err)
+		return nil, err
 	}
-
-	// prepare options, using the requested rate for the transfer only, as the
-	// initial synchronization is more reliable at the default rate
-	opts := espflasher.DefaultOptions()
-	opts.FlashBaudRate = rate
-	opts.Logger = flasherLogger{out: out}
 
 	// connect to device
 	utils.Log(out, "Connecting...")
-	flasher, err := espflasher.New(port, opts)
+	flasher, err := connectDevice(port, baudRate, out)
 	if err != nil {
 		return nil, err
 	}
@@ -275,10 +324,14 @@ func ReadConfig(naosPath, port, baudRate string, out io.Writer) (map[string]stri
 	return collectValues(entries, out), nil
 }
 
-// typeBlobData is the entry type ESP-IDF uses for the chunks of a stored blob.
-// The NVS parser does not decode chunked blobs and yields their index and data
-// entries as raw entries instead.
-const typeBlobData = 0x42
+// The entry types ESP-IDF uses to store a blob as a set of chunks, and the
+// chunk index used by entries that are not a chunk. The NVS parser does not
+// decode chunked blobs and yields their entries as raw entries instead.
+const (
+	typeBlobData   = 0x42
+	typeBlobIndex  = 0x48
+	chunkIndexNone = 0xff
+)
 
 // collectValues will extract the parameters stored in the "naos" namespace from
 // the provided NVS entries. Values are stored as blobs, which ESP-IDF splits
