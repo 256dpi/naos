@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash/crc32"
 	"io"
+	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -21,92 +22,56 @@ import (
 // partition describes an entry of the built partition table.
 type partition struct {
 	Name   string
-	Type   string
 	Offset int64
 	Size   int64
 }
 
-// readPartitions will return the partitions of the built partition table. The
-// table is decoded using the ESP-IDF generator, as the offsets and sizes in the
-// CSV may be left blank and are only resolved during the build.
-func readPartitions(naosPath string) ([]partition, error) {
-	// get paths
-	generator := filepath.Join(IDFDirectory(naosPath), "components", "partition_table", "gen_esp32part.py")
-	table := filepath.Join(Directory(naosPath), "build", "partition_table", "partition-table.bin")
+// The magic and size of a partition table entry. The layout is fixed, as the
+// bootloader itself parses the table, and has not changed since it has been
+// introduced.
+const (
+	partitionMagic     = 0x50aa
+	partitionEntrySize = 32
+)
 
-	// decode table into a buffer, which also swallows the echoed command as it
-	// does not parse as a table row
-	buf := new(bytes.Buffer)
-	err := Exec(naosPath, buf, nil, false, false, "python", generator, table, "-")
+// readPartitions will return the partitions of the built partition table. The
+// table is parsed directly, as the offsets and sizes in the CSV may be left
+// blank and are only resolved during the build.
+func readPartitions(naosPath string) ([]partition, error) {
+	// read table
+	file := filepath.Join(Directory(naosPath), "build", "partition_table", "partition-table.bin")
+	data, err := os.ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read partition table: %w: %s", err, buf.String())
+		return nil, fmt.Errorf("failed to read partition table: %w", err)
 	}
 
-	// parse table ("name,type,subtype,offset,size,flags")
+	return parsePartitions(data), nil
+}
+
+// parsePartitions will parse the entries of a partition table
+// ("magic, type, subtype, offset, size, label, flags").
+func parsePartitions(data []byte) []partition {
 	var partitions []partition
-	for _, line := range strings.Split(buf.String(), "\n") {
-		// skip comments and empty lines
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
+	for len(data) >= partitionEntrySize {
+		// get entry
+		entry := data[:partitionEntrySize]
+		data = data[partitionEntrySize:]
 
-		// split row
-		row := strings.Split(line, ",")
-		if len(row) < 5 {
-			continue
-		}
-
-		// parse offset and size
-		offset, err := parseSize(row[3])
-		if err != nil {
-			continue
-		}
-		size, err := parseSize(row[4])
-		if err != nil {
-			continue
+		// stop at the first other entry, which is either the appended MD5 sum
+		// or the erased remainder of the table
+		if binary.LittleEndian.Uint16(entry[0:2]) != partitionMagic {
+			break
 		}
 
 		// collect partition
 		partitions = append(partitions, partition{
-			Name:   row[0],
-			Type:   row[1],
-			Offset: offset,
-			Size:   size,
+			Name:   string(bytes.TrimRight(entry[12:28], "\x00")),
+			Offset: int64(binary.LittleEndian.Uint32(entry[4:8])),
+			Size:   int64(binary.LittleEndian.Uint32(entry[8:12])),
 		})
 	}
 
-	return partitions, nil
-}
-
-// parseSize will parse an offset or size as printed by the ESP-IDF partition
-// table generator, which uses hexadecimal values and "K"/"M" suffixes.
-func parseSize(str string) (int64, error) {
-	// determine multiplier
-	var multiplier int64 = 1
-	switch {
-	case strings.HasSuffix(str, "K"):
-		multiplier, str = 1024, strings.TrimSuffix(str, "K")
-	case strings.HasSuffix(str, "M"):
-		multiplier, str = 1024*1024, strings.TrimSuffix(str, "M")
-	}
-
-	// parse hexadecimal values
-	if rest, ok := strings.CutPrefix(str, "0x"); ok {
-		value, err := strconv.ParseInt(rest, 16, 64)
-		if err != nil {
-			return 0, err
-		}
-		return value * multiplier, nil
-	}
-
-	// parse decimal values
-	value, err := strconv.ParseInt(str, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return value * multiplier, nil
+	return partitions
 }
 
 // Config will write settings and parameters to an attached device.

@@ -20,6 +20,36 @@ type Partitions struct {
 	Storage int // %
 }
 
+// parseSize will parse an offset or size as used in a partition table CSV,
+// which uses hexadecimal values and "K"/"M" suffixes.
+func parseSize(str string) (int64, error) {
+	// determine multiplier
+	var multiplier int64 = 1
+	switch {
+	case strings.HasSuffix(str, "K"):
+		multiplier, str = 1024, strings.TrimSuffix(str, "K")
+	case strings.HasSuffix(str, "M"):
+		multiplier, str = 1024*1024, strings.TrimSuffix(str, "M")
+	}
+
+	// parse hexadecimal values
+	if rest, ok := strings.CutPrefix(str, "0x"); ok {
+		value, err := strconv.ParseInt(rest, 16, 64)
+		if err != nil {
+			return 0, err
+		}
+		return value * multiplier, nil
+	}
+
+	// parse decimal values
+	value, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return value * multiplier, nil
+}
+
 func (p *Partitions) generate() (string, error) {
 	// check if values add up
 	if p.Alpha+p.Beta+p.Storage != 100 {
