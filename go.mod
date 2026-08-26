@@ -16,16 +16,16 @@ require (
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/samber/lo v1.53.0
 	github.com/stretchr/testify v1.11.1
-	go.bug.st/serial v1.6.4
+	go.bug.st/serial v1.8.0
 	golang.org/x/term v0.42.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
+	tinygo.org/x/espflasher v0.8.1
 )
 
 require (
 	github.com/256dpi/mercury v0.4.1 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
-	github.com/creack/goselect v0.1.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect

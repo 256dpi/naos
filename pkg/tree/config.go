@@ -2,6 +2,7 @@ package tree
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +10,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode/utf8"
+
+	"tinygo.org/x/espflasher/pkg/espflasher"
+	"tinygo.org/x/espflasher/pkg/nvs"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
@@ -119,14 +124,14 @@ func Config(naosPath string, values map[string]string, port, baudRate string, ou
 	}
 
 	// find NVS partition
-	var nvs *partition
+	var nvsPart *partition
 	for i, p := range partitions {
 		if p.Name == "nvs" {
-			nvs = &partitions[i]
+			nvsPart = &partitions[i]
 			break
 		}
 	}
-	if nvs == nil {
+	if nvsPart == nil {
 		return fmt.Errorf("missing 'nvs' partition")
 	}
 
@@ -169,7 +174,7 @@ func Config(naosPath string, values map[string]string, port, baudRate string, ou
 		"generate",
 		valuesCSV,
 		nvsImage,
-		fmt.Sprintf("0x%x", nvs.Size),
+		fmt.Sprintf("0x%x", nvsPart.Size),
 	}
 
 	// generating image
@@ -189,7 +194,7 @@ func Config(naosPath string, values map[string]string, port, baudRate string, ou
 	flashArgs = append(flashArgs, "--after", orDefault(args.Extra.After, "hard_reset"))
 	flashArgs = append(flashArgs, "write_flash", "-z")
 	flashArgs = append(flashArgs, args.WriteFlashArgs...)
-	flashArgs = append(flashArgs, fmt.Sprintf("0x%x", nvs.Offset), nvsImage)
+	flashArgs = append(flashArgs, fmt.Sprintf("0x%x", nvsPart.Offset), nvsImage)
 
 	// flashing image
 	utils.Log(out, "Flashing...")
@@ -199,4 +204,150 @@ func Config(naosPath string, values map[string]string, port, baudRate string, ou
 	}
 
 	return nil
+}
+
+// flasherLogger adapts the tree logging to the flasher logger interface.
+type flasherLogger struct {
+	out io.Writer
+}
+
+// Logf implements the espflasher.Logger interface.
+func (l flasherLogger) Logf(format string, args ...interface{}) {
+	utils.Log(l.out, strings.TrimSpace(fmt.Sprintf(format, args...)))
+}
+
+// ReadConfig will read the parameters stored on an attached device.
+func ReadConfig(naosPath, port, baudRate string, out io.Writer) (map[string]string, error) {
+	// read partition table, as the NVS partition may be placed anywhere
+	partitions, err := readPartitions(naosPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// find NVS partition
+	var nvsPart *partition
+	for i, p := range partitions {
+		if p.Name == "nvs" {
+			nvsPart = &partitions[i]
+			break
+		}
+	}
+	if nvsPart == nil {
+		return nil, fmt.Errorf("missing 'nvs' partition")
+	}
+
+	// parse baud rate
+	rate, err := strconv.Atoi(baudRate)
+	if err != nil {
+		return nil, fmt.Errorf("invalid baud rate: %w", err)
+	}
+
+	// prepare options, using the requested rate for the transfer only, as the
+	// initial synchronization is more reliable at the default rate
+	opts := espflasher.DefaultOptions()
+	opts.FlashBaudRate = rate
+	opts.Logger = flasherLogger{out: out}
+
+	// connect to device
+	utils.Log(out, "Connecting...")
+	flasher, err := espflasher.New(port, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer flasher.Close()
+
+	// read partition
+	utils.Log(out, "Reading...")
+	data, err := flasher.ReadFlash(uint32(nvsPart.Offset), uint32(nvsPart.Size), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// reset device to leave it running the application
+	flasher.Reset()
+
+	// parse partition
+	entries, err := nvs.ParseNVS(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return collectValues(entries, out), nil
+}
+
+// typeBlobData is the entry type ESP-IDF uses for the chunks of a stored blob.
+// The NVS parser does not decode chunked blobs and yields their index and data
+// entries as raw entries instead.
+const typeBlobData = 0x42
+
+// collectValues will extract the parameters stored in the "naos" namespace from
+// the provided NVS entries. Values are stored as blobs, which ESP-IDF splits
+// into chunks that must be reassembled in order.
+func collectValues(entries []nvs.Entry, out io.Writer) map[string]string {
+	// collect values and chunks
+	values := map[string]string{}
+	chunks := map[string]map[uint8][]byte{}
+	for _, entry := range entries {
+		// skip other namespaces
+		if entry.Namespace != "naos" {
+			continue
+		}
+
+		// handle legacy single entry blobs
+		if !entry.Raw && entry.Type == "blob" {
+			if value, ok := entry.Value.([]byte); ok {
+				values[entry.Key] = string(value)
+			}
+			continue
+		}
+
+		// skip other entries, especially the blob index entries, which only
+		// describe the chunks collected below
+		if !entry.Raw || entry.TypeByte != typeBlobData {
+			continue
+		}
+
+		// get size, which is stored in the first two bytes of the entry header
+		if len(entry.Data) < 8 {
+			continue
+		}
+		size := int(binary.LittleEndian.Uint16(entry.Data[0:2]))
+		if 8+size > len(entry.Data) {
+			continue
+		}
+
+		// store chunk
+		if chunks[entry.Key] == nil {
+			chunks[entry.Key] = map[uint8][]byte{}
+		}
+		chunks[entry.Key][entry.ChunkIndex] = entry.Data[8 : 8+size]
+	}
+
+	// assemble chunked values
+	for key, parts := range chunks {
+		// sort chunks
+		indexes := make([]int, 0, len(parts))
+		for index := range parts {
+			indexes = append(indexes, int(index))
+		}
+		sort.Ints(indexes)
+
+		// concatenate chunks
+		var value []byte
+		for _, index := range indexes {
+			value = append(value, parts[uint8(index)]...)
+		}
+
+		values[key] = string(value)
+	}
+
+	// drop binary values, as they cannot be represented in the configuration
+	for key, value := range values {
+		if !utf8.ValidString(value) {
+			utils.Log(out, fmt.Sprintf("Skipping binary value: %s", key))
+			delete(values, key)
+		}
+	}
+
+	return values
 }

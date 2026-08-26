@@ -109,6 +109,12 @@ func exec(cmd *command, p *naos.Project) {
 }
 
 func config(cmd *command, p *naos.Project) {
+	// read configuration if requested
+	if cmd.oGet {
+		exitIfSet(p.ReadConfig(cmd.aFile, cmd.aDevice, cmd.oBaudRate, os.Stdout))
+		return
+	}
+
 	// configure device
 	exitIfSet(p.Config(cmd.aFile, cmd.aDevice, cmd.oBaudRate, os.Stdout))
 }

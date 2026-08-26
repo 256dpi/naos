@@ -286,6 +286,45 @@ func (p *Project) Config(file, device, baudRate string, out io.Writer) error {
 	return tree.Config(p.Tree(), values, device, baudRate, out)
 }
 
+// ReadConfig will read the parameters from an attached device and write them to
+// the specified file.
+func (p *Project) ReadConfig(file, device, baudRate string, out io.Writer) error {
+	// ensure baud rate
+	if baudRate == "" {
+		baudRate = p.Manifest.BaudRate
+		if baudRate == "" {
+			baudRate = "921600"
+		}
+	}
+
+	// ensure device
+	device, err := ensureDevice(device)
+	if err != nil {
+		return err
+	}
+
+	// read values
+	values, err := tree.ReadConfig(p.Tree(), device, baudRate, out)
+	if err != nil {
+		return err
+	}
+
+	// marshal values
+	data, err := yaml.Marshal(values)
+	if err != nil {
+		return err
+	}
+
+	// write file
+	utils.Log(out, "Writing "+file+"...")
+	err = os.WriteFile(file, data, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Format will format all source files in the project if 'clang-format' is
 // available.
 func (p *Project) Format(out io.Writer) error {
