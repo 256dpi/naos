@@ -6,84 +6,32 @@ import (
 	"fmt"
 	"hash/crc32"
 	"io"
-	"os"
-	"path/filepath"
 	"sort"
-	"strconv"
-	"strings"
 	"unicode/utf8"
 
-	"tinygo.org/x/espflasher/pkg/espflasher"
 	"tinygo.org/x/espflasher/pkg/nvs"
 
 	"github.com/256dpi/naos/pkg/utils"
 )
 
-// partition describes an entry of the built partition table.
-type partition struct {
-	Name   string
-	Offset int64
-	Size   int64
-}
-
-// The magic and size of a partition table entry. The layout is fixed, as the
-// bootloader itself parses the table, and has not changed since it has been
-// introduced.
-const (
-	partitionMagic     = 0x50aa
-	partitionEntrySize = 32
-)
-
-// readPartitions will return the partitions of the built partition table. The
-// table is parsed directly, as the offsets and sizes in the CSV may be left
-// blank and are only resolved during the build.
-func readPartitions(naosPath string) ([]partition, error) {
-	// read table
-	file := filepath.Join(Directory(naosPath), "build", "partition_table", "partition-table.bin")
-	data, err := os.ReadFile(file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read partition table: %w", err)
-	}
-
-	return parsePartitions(data), nil
-}
-
-// parsePartitions will parse the entries of a partition table
-// ("magic, type, subtype, offset, size, label, flags").
-func parsePartitions(data []byte) []partition {
-	var partitions []partition
-	for len(data) >= partitionEntrySize {
-		// get entry
-		entry := data[:partitionEntrySize]
-		data = data[partitionEntrySize:]
-
-		// stop at the first other entry, which is either the appended MD5 sum
-		// or the erased remainder of the table
-		if binary.LittleEndian.Uint16(entry[0:2]) != partitionMagic {
-			break
-		}
-
-		// collect partition
-		partitions = append(partitions, partition{
-			Name:   string(bytes.TrimRight(entry[12:28], "\x00")),
-			Offset: int64(binary.LittleEndian.Uint32(entry[4:8])),
-			Size:   int64(binary.LittleEndian.Uint32(entry[8:12])),
-		})
-	}
-
-	return partitions
-}
-
 // Config will write settings and parameters to an attached device.
 func Config(naosPath string, values map[string]string, port, baudRate string, out io.Writer) error {
-	// read partition table, as the NVS partition may be placed anywhere
-	partitions, err := readPartitions(naosPath)
+	// read flasher arguments, as the flash settings depend on the target
+	args, err := readFlasherArgs(naosPath)
 	if err != nil {
 		return err
 	}
 
+	// connect to device
+	utils.Log(out, "Connecting...")
+	flasher, err := connectDevice(port, baudRate, args, out)
+	if err != nil {
+		return err
+	}
+	defer flasher.Close()
+
 	// find NVS partition
-	nvsPart, err := findPartition(partitions, "nvs")
+	nvsPart, err := findDevicePartition(flasher, naosPath, "nvs")
 	if err != nil {
 		return err
 	}
@@ -94,14 +42,6 @@ func Config(naosPath string, values map[string]string, port, baudRate string, ou
 	if err != nil {
 		return err
 	}
-
-	// connect to device
-	utils.Log(out, "Connecting...")
-	flasher, err := connectDevice(port, baudRate, nil, out)
-	if err != nil {
-		return err
-	}
-	defer flasher.Close()
 
 	// flash image
 	utils.Log(out, "Flashing...")
@@ -210,89 +150,8 @@ func espCRC32(data []byte) uint32 {
 	return crc32.Update(0xffffffff, crc32.IEEETable, data)
 }
 
-// findPartition will return the named partition.
-func findPartition(partitions []partition, name string) (*partition, error) {
-	for i, p := range partitions {
-		if p.Name == name {
-			return &partitions[i], nil
-		}
-	}
-
-	return nil, fmt.Errorf("missing %q partition", name)
-}
-
-// connectDevice will connect to the device on the specified serial port. If
-// flasher arguments are provided, their flash settings are applied to written
-// images, the same way esptool patches the image header.
-func connectDevice(port, baudRate string, args *flasherArgs, out io.Writer) (*espflasher.Flasher, error) {
-	// parse baud rate
-	rate, err := strconv.Atoi(baudRate)
-	if err != nil {
-		return nil, fmt.Errorf("invalid baud rate: %w", err)
-	}
-
-	// prepare options, using the requested rate for the transfer only, as the
-	// initial synchronization is more reliable at the default rate
-	opts := espflasher.DefaultOptions()
-	opts.FlashBaudRate = rate
-	opts.Logger = flasherLogger{out: out}
-
-	// apply flash settings
-	if args != nil {
-		opts.FlashMode = args.Flash.Mode
-		opts.FlashSize = args.Flash.Size
-		opts.FlashFreq = args.Flash.Freq
-	}
-
-	return espflasher.New(port, opts)
-}
-
-// flasherLogger adapts the tree logging to the flasher logger interface.
-type flasherLogger struct {
-	out io.Writer
-}
-
-// Logf implements the espflasher.Logger interface.
-func (l flasherLogger) Logf(format string, args ...interface{}) {
-	utils.Log(l.out, strings.TrimSpace(fmt.Sprintf(format, args...)))
-}
-
-// progressLogger returns a progress function that logs the progress of a long
-// running operation in steps of ten percent.
-func progressLogger(out io.Writer) espflasher.ProgressFunc {
-	var last int
-	return func(current, total int) {
-		// check total
-		if total <= 0 {
-			return
-		}
-
-		// determine step, skipping steps that have been logged already
-		step := min(current*100/total, 100) / 10 * 10
-		if step <= last {
-			return
-		}
-		last = step
-
-		// log step
-		utils.Log(out, fmt.Sprintf("%d%%...", step))
-	}
-}
-
 // ReadConfig will read the parameters stored on an attached device.
 func ReadConfig(naosPath, port, baudRate string, out io.Writer) (map[string]string, error) {
-	// read partition table, as the NVS partition may be placed anywhere
-	partitions, err := readPartitions(naosPath)
-	if err != nil {
-		return nil, err
-	}
-
-	// find NVS partition
-	nvsPart, err := findPartition(partitions, "nvs")
-	if err != nil {
-		return nil, err
-	}
-
 	// connect to device
 	utils.Log(out, "Connecting...")
 	flasher, err := connectDevice(port, baudRate, nil, out)
@@ -300,6 +159,12 @@ func ReadConfig(naosPath, port, baudRate string, out io.Writer) (map[string]stri
 		return nil, err
 	}
 	defer flasher.Close()
+
+	// find NVS partition
+	nvsPart, err := findDevicePartition(flasher, naosPath, "nvs")
+	if err != nil {
+		return nil, err
+	}
 
 	// read partition
 	utils.Log(out, "Reading...")
