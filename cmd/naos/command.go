@@ -35,7 +35,7 @@ Usage:
   naos attach [<device>] [--no-reset]
   naos run [<device>] [--clean --reconfigure --app-only --baud=<rate> --erase --alt]
   naos exec [--] <command> [<args>...]
-  naos config <file> [<device>] [--get --baud=<rate>]
+  naos config (--read | --write) <file> [<device>] [--baud=<rate>]
   naos format
   naos bundle [<file>] [--add-debug]
   naos debug [<file>] [--elf=<file>]
@@ -51,7 +51,8 @@ Options:
   --app-only         Only build or flash the application.
   --alt              Use alternative esptool.py found in PATH.
   --no-reset         Do not reset the device when attaching.
-  --get              Read the parameters and write them to the file.
+  --read             Read the parameters from the device into the file.
+  --write            Write the parameters from the file to the device.
   --add-debug        Add debug ELF file to bundle.
   --elf=<file>       The ELF file for coredump analysis.
   --remove=<version> Remove the SDKs installed for the specified version.
@@ -92,7 +93,8 @@ type command struct {
 	oAlt         bool
 	oAddDebug    bool
 	oNoReset     bool
-	oGet         bool
+	oRead        bool
+	oWrite       bool
 	oELF         string
 	oRemove      string
 }
@@ -134,7 +136,8 @@ func parseCommand() *command {
 		oAppOnly:     getBool(a["--app-only"]),
 		oAlt:         getBool(a["--alt"]),
 		oNoReset:     getBool(a["--no-reset"]),
-		oGet:         getBool(a["--get"]),
+		oRead:        getBool(a["--read"]),
+		oWrite:       getBool(a["--write"]),
 		oAddDebug:    getBool(a["--add-debug"]),
 		oELF:         getString(a["--elf"]),
 		oRemove:      getString(a["--remove"]),
