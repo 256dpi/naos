@@ -97,7 +97,7 @@ func Config(naosPath string, values map[string]string, port, baudRate string, ou
 
 	// connect to device
 	utils.Log(out, "Connecting...")
-	flasher, err := connectDevice(port, baudRate, out)
+	flasher, err := connectDevice(port, baudRate, nil, out)
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func Config(naosPath string, values map[string]string, port, baudRate string, ou
 
 	// flash image
 	utils.Log(out, "Flashing...")
-	err = flasher.FlashImage(image, uint32(nvsPart.Offset), nil)
+	err = flasher.FlashImage(image, uint32(nvsPart.Offset), progressLogger(out))
 	if err != nil {
 		return err
 	}
@@ -221,8 +221,10 @@ func findPartition(partitions []partition, name string) (*partition, error) {
 	return nil, fmt.Errorf("missing %q partition", name)
 }
 
-// connectDevice will connect to the device on the specified serial port.
-func connectDevice(port, baudRate string, out io.Writer) (*espflasher.Flasher, error) {
+// connectDevice will connect to the device on the specified serial port. If
+// flasher arguments are provided, their flash settings are applied to written
+// images, the same way esptool patches the image header.
+func connectDevice(port, baudRate string, args *flasherArgs, out io.Writer) (*espflasher.Flasher, error) {
 	// parse baud rate
 	rate, err := strconv.Atoi(baudRate)
 	if err != nil {
@@ -235,6 +237,13 @@ func connectDevice(port, baudRate string, out io.Writer) (*espflasher.Flasher, e
 	opts.FlashBaudRate = rate
 	opts.Logger = flasherLogger{out: out}
 
+	// apply flash settings
+	if args != nil {
+		opts.FlashMode = args.Flash.Mode
+		opts.FlashSize = args.Flash.Size
+		opts.FlashFreq = args.Flash.Freq
+	}
+
 	return espflasher.New(port, opts)
 }
 
@@ -246,6 +255,28 @@ type flasherLogger struct {
 // Logf implements the espflasher.Logger interface.
 func (l flasherLogger) Logf(format string, args ...interface{}) {
 	utils.Log(l.out, strings.TrimSpace(fmt.Sprintf(format, args...)))
+}
+
+// progressLogger returns a progress function that logs the progress of a long
+// running operation in steps of ten percent.
+func progressLogger(out io.Writer) espflasher.ProgressFunc {
+	var last int
+	return func(current, total int) {
+		// check total
+		if total <= 0 {
+			return
+		}
+
+		// determine step, skipping steps that have been logged already
+		step := min(current*100/total, 100) / 10 * 10
+		if step <= last {
+			return
+		}
+		last = step
+
+		// log step
+		utils.Log(out, fmt.Sprintf("%d%%...", step))
+	}
 }
 
 // ReadConfig will read the parameters stored on an attached device.
@@ -264,7 +295,7 @@ func ReadConfig(naosPath, port, baudRate string, out io.Writer) (map[string]stri
 
 	// connect to device
 	utils.Log(out, "Connecting...")
-	flasher, err := connectDevice(port, baudRate, out)
+	flasher, err := connectDevice(port, baudRate, nil, out)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +303,7 @@ func ReadConfig(naosPath, port, baudRate string, out io.Writer) (map[string]stri
 
 	// read partition
 	utils.Log(out, "Reading...")
-	data, err := flasher.ReadFlash(uint32(nvsPart.Offset), uint32(nvsPart.Size), nil)
+	data, err := flasher.ReadFlash(uint32(nvsPart.Offset), uint32(nvsPart.Size), progressLogger(out))
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,8 @@
 package tree
 
 import (
+	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -96,5 +98,38 @@ func TestReadPartitions(t *testing.T) {
 			t.Logf("%s: offset 0x%x size 0x%x", p.Name, p.Offset, p.Size)
 		}
 		t.Errorf("unexpected partitions")
+	}
+}
+
+func TestProgressLogger(t *testing.T) {
+	// log every percent
+	var buf bytes.Buffer
+	log := progressLogger(&buf)
+	for i := 0; i <= 1000; i++ {
+		log(i, 1000)
+	}
+	var want string
+	for i := 10; i <= 100; i += 10 {
+		want += fmt.Sprintf("==> %d%%...\n", i)
+	}
+	if buf.String() != want {
+		t.Errorf("unexpected output:\n got: %q\nwant: %q", buf.String(), want)
+	}
+
+	// a single jump only logs the reached step
+	buf.Reset()
+	log = progressLogger(&buf)
+	log(0, 16384)
+	log(16384, 16384)
+	if buf.String() != "==> 100%...\n" {
+		t.Errorf("unexpected output: %q", buf.String())
+	}
+
+	// an unknown total is ignored
+	buf.Reset()
+	log = progressLogger(&buf)
+	log(0, 0)
+	if buf.String() != "" {
+		t.Errorf("unexpected output: %q", buf.String())
 	}
 }
