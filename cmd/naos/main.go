@@ -148,7 +148,7 @@ func debug(cmd *command, p *naos.Project) {
 		exitIfSet(err)
 	} else {
 		// load and parse coredump from device
-		result, err = p.LoadCoredump(cmd.oELF, "")
+		result, err = p.LoadCoredump(cmd.oELF, cmd.aDevice, cmd.oBaudRate, os.Stderr)
 		exitIfSet(err)
 	}
 

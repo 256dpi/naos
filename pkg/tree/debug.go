@@ -3,6 +3,7 @@ package tree
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -59,32 +60,32 @@ func ParseCoredump(naosPath, appName, elf string, coredump []byte) ([]byte, erro
 	return buf.Bytes(), nil
 }
 
-// LoadCoredump will read the coredump directly from flash using the specified
-// serial port and return a human-readable representation.
-func LoadCoredump(naosPath, appName, elf, port string) ([]byte, error) {
-	// get paths
-	espCoredump := filepath.Join(IDFDirectory(naosPath), "components", "espcoredump", "espcoredump.py")
-
-	// ensure ELF
-	if elf == "" {
-		elf = AppELF(naosPath, appName)
-	}
-
-	// create buffer
-	buf := new(bytes.Buffer)
-
-	// prepare args
-	var args []string
-	if port != "" {
-		args = append(args, "--port", port)
-	}
-	args = append(args, "info_corefile", elf)
-
-	// load and parse coredump from device
-	err := Exec(naosPath, buf, nil, false, false, espCoredump, args...)
+// LoadCoredump will read the coredump from the flash of an attached device and
+// return a human-readable representation.
+func LoadCoredump(naosPath, appName, elf, port, baudRate string, out io.Writer) ([]byte, error) {
+	// connect to device
+	utils.Log(out, "Connecting...")
+	flasher, err := connectDevice(port, baudRate, nil, out)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", err, buf.String())
+		return nil, err
+	}
+	defer flasher.Close()
+
+	// find coredump partition
+	part, err := findDevicePartition(flasher, naosPath, "coredump")
+	if err != nil {
+		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	// read partition
+	utils.Log(out, "Reading...")
+	data, err := flasher.ReadFlash(uint32(part.Offset), uint32(part.Size), progressLogger(out))
+	if err != nil {
+		return nil, err
+	}
+
+	// reset device to leave it running the application
+	flasher.Reset()
+
+	return ParseCoredump(naosPath, appName, elf, data)
 }

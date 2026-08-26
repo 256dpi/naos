@@ -219,14 +219,6 @@ func (p *Project) Build(clean, reconfigure, appOnly bool, out io.Writer) error {
 
 // Flash will flash the project to the attached device.
 func (p *Project) Flash(device, baudRate string, erase bool, appOnly, alt bool, out io.Writer) error {
-	// ensure baud rate
-	if baudRate == "" {
-		baudRate = p.Manifest.BaudRate
-		if baudRate == "" {
-			baudRate = "921600"
-		}
-	}
-
 	// ensure device
 	device, err := ensureDevice(device)
 	if err != nil {
@@ -256,14 +248,6 @@ func (p *Project) Exec(cmd string, args []string, out io.Writer, in io.Reader) e
 
 // Config will write settings and parameters to an attached device.
 func (p *Project) Config(file, device, baudRate string, out io.Writer) error {
-	// ensure baud rate
-	if baudRate == "" {
-		baudRate = p.Manifest.BaudRate
-		if baudRate == "" {
-			baudRate = "921600"
-		}
-	}
-
 	// load file
 	data, err := os.ReadFile(file)
 	if err != nil {
@@ -283,7 +267,7 @@ func (p *Project) Config(file, device, baudRate string, out io.Writer) error {
 		return err
 	}
 
-	return tree.Config(p.Tree(), values, device, baudRate, out)
+	return tree.Config(p.Tree(), values, device, p.baudRate(baudRate), out)
 }
 
 // ReadConfig will read the parameters from an attached device and write them to
@@ -304,7 +288,7 @@ func (p *Project) ReadConfig(file, device, baudRate string, out io.Writer) error
 	}
 
 	// read values
-	values, err := tree.ReadConfig(p.Tree(), device, baudRate, out)
+	values, err := tree.ReadConfig(p.Tree(), device, p.baudRate(baudRate), out)
 	if err != nil {
 		return err
 	}
@@ -338,20 +322,33 @@ func (p *Project) ParseCoredump(elf string, coredump []byte) ([]byte, error) {
 }
 
 // LoadCoredump will read the coredump directly from the device flash and return
-// a human-readable representation.
-func (p *Project) LoadCoredump(elf, device string) ([]byte, error) {
+// a human-readable representation. Progress is logged to the provided writer,
+// as the result is usually written to stdout.
+func (p *Project) LoadCoredump(elf, device, baudRate string, out io.Writer) ([]byte, error) {
 	// ensure device
 	device, err := ensureDevice(device)
 	if err != nil {
 		return nil, err
 	}
 
-	return tree.LoadCoredump(p.Tree(), p.Manifest.Name, elf, device)
+	return tree.LoadCoredump(p.Tree(), p.Manifest.Name, elf, device, p.baudRate(baudRate), out)
 }
 
 // Bundle will create a bundle of the project.
 func (p *Project) Bundle(file string, addDebug bool, out io.Writer) error {
 	return tree.Bundle(p.Tree(), file, addDebug, out)
+}
+
+// baudRate will return the provided baud rate or the configured default.
+func (p *Project) baudRate(baudRate string) string {
+	if baudRate != "" {
+		return baudRate
+	}
+	if p.Manifest.BaudRate != "" {
+		return p.Manifest.BaudRate
+	}
+
+	return "921600"
 }
 
 // ensureDevice will return the provided device or find an attached one.
