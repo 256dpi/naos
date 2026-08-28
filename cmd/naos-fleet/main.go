@@ -24,7 +24,7 @@ func main() {
 
 	// run desired command
 	if cmd.cCreate {
-		create()
+		create(cmd)
 	} else if cmd.cList {
 		list(cmd, getFleet())
 	} else if cmd.cCollect {
@@ -52,9 +52,18 @@ func main() {
 	}
 }
 
-func create() {
+func create(cmd *command) {
 	// create new fleet
-	saveFleet(fleet.NewFleet())
+	f := fleet.NewFleet()
+
+	// apply specified endpoints
+	if cmd.oBroker != "" || cmd.oHub != "" {
+		f.Broker = cmd.oBroker
+		f.HubURL = cmd.oHub
+	}
+
+	// save fleet
+	saveFleet(f)
 
 	// log info
 	fmt.Println("Created new fleet in 'fleet.json'.")
@@ -62,11 +71,11 @@ func create() {
 
 func list(_ *command, f *fleet.Fleet) {
 	// prepare table
-	tbl := newTable("DEVICE NAME", "APP NAME", "APP VERSION", "BASE TOPIC")
+	tbl := newTable("DEVICE NAME", "APP NAME", "APP VERSION", "SOURCE", "ADDRESS")
 
 	// add rows
 	for _, d := range f.Devices {
-		tbl.add(d.DeviceName, d.AppName, d.AppVersion, d.BaseTopic)
+		tbl.add(d.DeviceName, d.AppName, d.AppVersion, d.Source, d.Address())
 	}
 
 	// show table
@@ -84,11 +93,11 @@ func collect(cmd *command, f *fleet.Fleet) {
 	exitIfSet(err)
 
 	// prepare table
-	tbl := newTable("DEVICE NAME", "APP NAME", "APP VERSION", "BASE TOPIC")
+	tbl := newTable("DEVICE NAME", "APP NAME", "APP VERSION", "SOURCE", "ADDRESS")
 
 	// add rows
 	for _, d := range list {
-		tbl.add(d.DeviceName, d.AppName, d.AppVersion, d.BaseTopic)
+		tbl.add(d.DeviceName, d.AppName, d.AppVersion, d.Source, d.Address())
 	}
 
 	// show table

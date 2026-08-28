@@ -29,7 +29,7 @@ Utilities:
   help     Show this help message.
 
 Usage:
-  naos-fleet create
+  naos-fleet create [--broker=<url>] [--hub=<url>]
   naos-fleet list
   naos-fleet collect [--clear --duration=<time>]
   naos-fleet discover [<pattern>] [--jobs=<count>]
@@ -44,6 +44,8 @@ Usage:
   naos-fleet help
 
 Options:
+  -b --broker=<url>     MQTT broker URL of the new fleet.
+  --hub=<url>           NAOS hub base URL of the new fleet.
   --clear               Remove not available devices from fleet.
   --delete              Delete loaded coredumps from the devices.
   -d --duration=<time>  Operation duration [default: 5s].
@@ -75,6 +77,8 @@ type command struct {
 	aFile    string
 
 	// options
+	oBroker   string
+	oHub      string
 	oClear    bool
 	oDelete   bool
 	oDuration time.Duration
@@ -110,6 +114,8 @@ func parseCommand() *command {
 		aFile:    getString(a["<file>"]),
 
 		// options
+		oBroker:   getString(a["--broker"]),
+		oHub:      getString(a["--hub"]),
 		oClear:    getBool(a["--clear"]),
 		oDelete:   getBool(a["--delete"]),
 		oDuration: getDuration(a["--duration"]),

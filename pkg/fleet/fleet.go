@@ -12,6 +12,7 @@ import (
 
 // A Device represents a single device in a fleet.
 type Device struct {
+	Source     string            `json:"source,omitempty"`
 	BaseTopic  string            `json:"base_topic"`
 	DeviceID   string            `json:"device_id,omitempty"`
 	DeviceName string            `json:"device_name"`
@@ -21,10 +22,21 @@ type Device struct {
 	Metrics    []string          `json:"metrics,omitempty"`
 }
 
+// Address returns the address used to reach the device.
+func (d *Device) Address() string {
+	if d.Source == SourceHub {
+		return d.DeviceID
+	}
+
+	return d.BaseTopic
+}
+
 // A Fleet represents a fleet of devices.
 type Fleet struct {
-	Broker  string             `json:"broker,omitempty"`
-	Devices map[string]*Device `json:"devices,omitempty"`
+	Broker   string             `json:"broker,omitempty"`
+	HubURL   string             `json:"hub_url,omitempty"`
+	HubToken string             `json:"hub_token,omitempty"`
+	Devices  map[string]*Device `json:"devices,omitempty"`
 }
 
 // NewFleet creates a new fleet.
@@ -54,10 +66,19 @@ func ReadFleet(path string) (*Fleet, error) {
 		f.Devices = make(map[string]*Device)
 	}
 
-	// iterate over all devices and initialize parameters
+	// determine fallback source
+	fallback := SourceMQTT
+	if f.Broker == "" && f.HubURL != "" {
+		fallback = SourceHub
+	}
+
+	// iterate over all devices and initialize fields
 	for _, device := range f.Devices {
 		if device.Parameters == nil {
 			device.Parameters = make(map[string]string)
+		}
+		if device.Source == "" {
+			device.Source = fallback
 		}
 	}
 
@@ -82,9 +103,16 @@ func (f *Fleet) Save(path string) error {
 }
 
 // Backend will open a backend for the fleet. The caller is responsible for
-// closing the returned backend.
+// closing the returned backend. The hub token is read from the NAOS_HUB_TOKEN
+// environment variable if set, otherwise from the fleet.
 func (f *Fleet) Backend() (Backend, error) {
-	return NewMQTTBackend(f.Broker)
+	// get hub token
+	hubToken := os.Getenv("NAOS_HUB_TOKEN")
+	if hubToken == "" {
+		hubToken = f.HubToken
+	}
+
+	return NewBackend(f.Broker, f.HubURL, hubToken)
 }
 
 // FilterDevices will return a list of devices that have a name matching the
@@ -139,6 +167,7 @@ func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
 		}
 
 		// update fields
+		d.Source = a.Source
 		d.BaseTopic = a.BaseTopic
 		d.DeviceID = a.DeviceID
 		d.AppName = a.AppName
