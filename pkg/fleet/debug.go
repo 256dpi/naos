@@ -4,30 +4,20 @@ import (
 	"errors"
 	"time"
 
-	"github.com/256dpi/gomqtt/packet"
-
-	"github.com/256dpi/naos/pkg/mqtt"
 	"github.com/256dpi/naos/pkg/msg"
 )
 
 // Debug will request coredump debug information from the specified devices.
-func Debug(url string, baseTopics []string, delete bool, jobs int) (map[string][]byte, error) {
+func Debug(backend Backend, baseTopics []string, delete bool, jobs int) (map[string][]byte, error) {
 	// check base topics
 	if len(baseTopics) == 0 {
 		return nil, errors.New("zero base topics")
 	}
 
-	// create router
-	router, err := mqtt.Connect(url, "naos-fleet", packet.QOSAtMostOnce)
+	// get devices
+	devices, err := backend.Devices(baseTopics)
 	if err != nil {
 		return nil, err
-	}
-	defer router.Close()
-
-	// create devices
-	devices := make([]msg.Device, 0, len(baseTopics))
-	for _, baseTopic := range baseTopics {
-		devices = append(devices, mqtt.NewDevice(router, baseTopic))
 	}
 
 	// execute

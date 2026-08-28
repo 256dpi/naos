@@ -3,9 +3,6 @@ package fleet
 import (
 	"errors"
 
-	"github.com/256dpi/gomqtt/packet"
-
-	"github.com/256dpi/naos/pkg/mqtt"
 	"github.com/256dpi/naos/pkg/msg"
 )
 
@@ -15,25 +12,18 @@ type DiscoverResult struct {
 	Metrics []string
 }
 
-// Discover will connect to the specified MQTT broker and discover all available
-// parameters and metrics for the specified base topics.
-func Discover(url string, baseTopics []string, jobs int) (map[string]DiscoverResult, error) {
+// Discover will discover all available parameters and metrics for the
+// specified base topics.
+func Discover(backend Backend, baseTopics []string, jobs int) (map[string]DiscoverResult, error) {
 	// check base topics
 	if len(baseTopics) == 0 {
 		return nil, errors.New("zero base topics")
 	}
 
-	// create router
-	router, err := mqtt.Connect(url, "naos-fleet", packet.QOSAtMostOnce)
+	// get devices
+	devices, err := backend.Devices(baseTopics)
 	if err != nil {
 		return nil, err
-	}
-	defer router.Close()
-
-	// create devices
-	devices := make([]msg.Device, 0, len(baseTopics))
-	for _, baseTopic := range baseTopics {
-		devices = append(devices, mqtt.NewDevice(router, baseTopic))
 	}
 
 	// execute discover

@@ -5,10 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/256dpi/gomqtt/packet"
 	"github.com/samber/lo"
 
-	"github.com/256dpi/naos/pkg/mqtt"
 	"github.com/256dpi/naos/pkg/msg"
 )
 
@@ -27,27 +25,19 @@ type Heartbeat struct {
 	SignalStrength int64     // -50 - -100
 }
 
-// Monitor will connect to the specified MQTT broker and periodically collect
-// heartbeat information from all specified base topics until the provided
-// stop channel has been closed. The collected heartbeats are provided via
-// the callback.
-func Monitor(url string, baseTopics []string, stop chan struct{}, cb func(*Heartbeat)) error {
+// Monitor will periodically collect heartbeat information from all specified
+// base topics until the provided stop channel has been closed. The collected
+// heartbeats are provided via the callback.
+func Monitor(backend Backend, baseTopics []string, stop chan struct{}, cb func(*Heartbeat)) error {
 	// check base topics
 	if len(baseTopics) == 0 {
 		return errors.New("zero base topics")
 	}
 
-	// create router
-	router, err := mqtt.Connect(url, "naos-fleet", packet.QOSAtMostOnce)
+	// get devices
+	devices, err := backend.Devices(baseTopics)
 	if err != nil {
 		return err
-	}
-	defer router.Close()
-
-	// create devices
-	devices := make([]msg.Device, 0, len(baseTopics))
-	for _, baseTopic := range baseTopics {
-		devices = append(devices, mqtt.NewDevice(router, baseTopic))
 	}
 
 	// TODO: Handle device resets.

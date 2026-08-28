@@ -4,10 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/256dpi/gomqtt/packet"
 	"github.com/samber/lo"
 
-	"github.com/256dpi/naos/pkg/mqtt"
 	"github.com/256dpi/naos/pkg/msg"
 )
 
@@ -20,23 +18,16 @@ type LogMessage struct {
 
 // Record will enable log recording mode on all devices and yield the received
 // log messages until the provided channel has been closed.
-func Record(url string, baseTopics []string, stop chan struct{}, cb func(*LogMessage)) error {
+func Record(backend Backend, baseTopics []string, stop chan struct{}, cb func(*LogMessage)) error {
 	// check base topics
 	if len(baseTopics) == 0 {
 		return errors.New("zero base topics")
 	}
 
-	// create router
-	router, err := mqtt.Connect(url, "naos-fleet", packet.QOSAtMostOnce)
+	// get devices
+	devices, err := backend.Devices(baseTopics)
 	if err != nil {
 		return err
-	}
-	defer router.Close()
-
-	// create devices
-	devices := make([]msg.Device, 0, len(baseTopics))
-	for _, baseTopic := range baseTopics {
-		devices = append(devices, mqtt.NewDevice(router, baseTopic))
 	}
 
 	// execute log streaming

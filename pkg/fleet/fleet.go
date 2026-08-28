@@ -80,6 +80,12 @@ func (f *Fleet) Save(path string) error {
 	return nil
 }
 
+// Backend will open a backend for the fleet. The caller is responsible for
+// closing the returned backend.
+func (f *Fleet) Backend() (Backend, error) {
+	return NewMQTTBackend(f.Broker)
+}
+
 // FilterDevices will return a list of devices that have a name matching the
 // supplied glob pattern.
 func (f *Fleet) FilterDevices(pattern string) []*Device {
@@ -109,8 +115,15 @@ func (f *Fleet) FindDevice(baseTopic string) *Device {
 // Collect will collect and update the flet with found devices for the given
 // duration. It will return a list of devices that have been added to the fleet.
 func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
+	// open backend
+	backend, err := f.Backend()
+	if err != nil {
+		return nil, err
+	}
+	defer backend.Close()
+
 	// collect announcements
-	ann, err := Collect(f.Broker, duration)
+	ann, err := backend.Collect(duration)
 	if err != nil {
 		return nil, err
 	}
@@ -149,8 +162,15 @@ func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
 // The fleet is updated with the reported parameters and metrics, and a list of
 // queried devices is returned.
 func (f *Fleet) Discover(pattern string, jobs int) ([]*Device, error) {
+	// open backend
+	backend, err := f.Backend()
+	if err != nil {
+		return nil, err
+	}
+	defer backend.Close()
+
 	// discover parameters and metrics
-	results, err := Discover(f.Broker, BaseTopics(f.FilterDevices(pattern)), jobs)
+	results, err := Discover(backend, BaseTopics(f.FilterDevices(pattern)), jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -181,8 +201,15 @@ func (f *Fleet) Ping(pattern string, jobs int) error {
 // fleet is updated with the reported value and a list of queried devices is
 // returned.
 func (f *Fleet) GetParams(pattern, param string, jobs int) ([]*Device, error) {
-	// set parameter
-	table, err := GetParams(f.Broker, param, BaseTopics(f.FilterDevices(pattern)), jobs)
+	// open backend
+	backend, err := f.Backend()
+	if err != nil {
+		return nil, err
+	}
+	defer backend.Close()
+
+	// get parameter
+	table, err := GetParams(backend, param, BaseTopics(f.FilterDevices(pattern)), jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -205,8 +232,15 @@ func (f *Fleet) GetParams(pattern, param string, jobs int) ([]*Device, error) {
 // SetParams will set the specified parameter on all matching devices. The fleet
 // is updated with the saved value and a list of updated devices is returned.
 func (f *Fleet) SetParams(pattern, param, value string, jobs int) ([]*Device, error) {
+	// open backend
+	backend, err := f.Backend()
+	if err != nil {
+		return nil, err
+	}
+	defer backend.Close()
+
 	// set parameter
-	table, err := SetParams(f.Broker, param, value, BaseTopics(f.FilterDevices(pattern)), jobs)
+	table, err := SetParams(backend, param, value, BaseTopics(f.FilterDevices(pattern)), jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -230,8 +264,15 @@ func (f *Fleet) SetParams(pattern, param, value string, jobs int) ([]*Device, er
 // fleet is updated with the unset value and a list of updated devices is
 // returned.
 func (f *Fleet) UnsetParams(pattern, param string, jobs int) ([]*Device, error) {
-	// set parameter
-	err := UnsetParams(f.Broker, param, BaseTopics(f.FilterDevices(pattern)), jobs)
+	// open backend
+	backend, err := f.Backend()
+	if err != nil {
+		return nil, err
+	}
+	defer backend.Close()
+
+	// unset parameter
+	err = UnsetParams(backend, param, BaseTopics(f.FilterDevices(pattern)), jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +292,14 @@ func (f *Fleet) UnsetParams(pattern, param string, jobs int) ([]*Device, error) 
 // Record will enable log recording on all matching devices and yield the
 // received log messages until the provided channel has been closed.
 func (f *Fleet) Record(pattern string, quit chan struct{}, callback func(time.Time, *Device, string)) error {
-	return Record(f.Broker, BaseTopics(f.FilterDevices(pattern)), quit, func(log *LogMessage) {
+	// open backend
+	backend, err := f.Backend()
+	if err != nil {
+		return err
+	}
+	defer backend.Close()
+
+	return Record(backend, BaseTopics(f.FilterDevices(pattern)), quit, func(log *LogMessage) {
 		// call user callback
 		if callback != nil {
 			callback(log.Time, f.FindDevice(log.BaseTopic), log.Content)
@@ -263,7 +311,14 @@ func (f *Fleet) Record(pattern string, quit chan struct{}, callback func(time.Ti
 // The specified callback is called for every heartbeat with the updated device
 // and the received heartbeat.
 func (f *Fleet) Monitor(pattern string, quit chan struct{}, callback func(*Device, *Heartbeat)) error {
-	return Monitor(f.Broker, BaseTopics(f.FilterDevices(pattern)), quit, func(heartbeat *Heartbeat) {
+	// open backend
+	backend, err := f.Backend()
+	if err != nil {
+		return err
+	}
+	defer backend.Close()
+
+	return Monitor(backend, BaseTopics(f.FilterDevices(pattern)), quit, func(heartbeat *Heartbeat) {
 		// get device
 		device, ok := f.Devices[heartbeat.DeviceName]
 		if !ok {
@@ -286,8 +341,15 @@ func (f *Fleet) Monitor(pattern string, quit chan struct{}, callback func(*Devic
 // true, the coredumps are deleted from the devices after retrieval. A table of
 // devices and their corresponding coredumps is returned.
 func (f *Fleet) Debug(pattern string, delete bool, jobs int) (map[*Device][]byte, error) {
+	// open backend
+	backend, err := f.Backend()
+	if err != nil {
+		return nil, err
+	}
+	defer backend.Close()
+
 	// gather coredumps
-	coredumps, err := Debug(f.Broker, BaseTopics(f.FilterDevices(pattern)), delete, jobs)
+	coredumps, err := Debug(backend, BaseTopics(f.FilterDevices(pattern)), delete, jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -312,6 +374,13 @@ func (f *Fleet) Debug(pattern string, delete bool, jobs int) (map[*Device][]byte
 // Update will update all matching devices with the specified image. The
 // specified callback is called for every change in state or progress.
 func (f *Fleet) Update(version, pattern string, firmware []byte, jobs int, callback func(*Device, UpdateStatus)) error {
+	// open backend
+	backend, err := f.Backend()
+	if err != nil {
+		return err
+	}
+	defer backend.Close()
+
 	// get devices
 	list := f.FilterDevices(pattern)
 
@@ -324,7 +393,7 @@ func (f *Fleet) Update(version, pattern string, firmware []byte, jobs int, callb
 	}
 
 	// update devices
-	_, err := Update(f.Broker, BaseTopics(devices), firmware, jobs, func(baseTopic string, status UpdateStatus) {
+	_, err = Update(backend, BaseTopics(devices), firmware, jobs, func(baseTopic string, status UpdateStatus) {
 		// get device
 		device := f.FindDevice(baseTopic)
 		if device == nil {

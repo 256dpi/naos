@@ -4,10 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/256dpi/gomqtt/packet"
 	"github.com/samber/lo"
 
-	"github.com/256dpi/naos/pkg/mqtt"
 	"github.com/256dpi/naos/pkg/msg"
 )
 
@@ -19,23 +17,16 @@ type UpdateStatus struct {
 
 // Update will perform a firmware update on the provided devices. If a callback
 // is provided it will be called with the current status of the update.
-func Update(url string, baseTopics []string, firmware []byte, jobs int, callback func(string, UpdateStatus)) ([]UpdateStatus, error) {
+func Update(backend Backend, baseTopics []string, firmware []byte, jobs int, callback func(string, UpdateStatus)) ([]UpdateStatus, error) {
 	// check base topics
 	if len(baseTopics) == 0 {
 		return nil, errors.New("zero base topics")
 	}
 
-	// create router
-	router, err := mqtt.Connect(url, "naos-fleet", packet.QOSAtMostOnce)
+	// get devices
+	devices, err := backend.Devices(baseTopics)
 	if err != nil {
 		return nil, err
-	}
-	defer router.Close()
-
-	// create devices
-	devices := make([]msg.Device, 0, len(baseTopics))
-	for _, baseTopic := range baseTopics {
-		devices = append(devices, mqtt.NewDevice(router, baseTopic))
 	}
 
 	// map topics to devices
