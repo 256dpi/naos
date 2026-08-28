@@ -25,8 +25,10 @@ type Heartbeat struct {
 
 // Monitor will periodically collect heartbeat information from all specified
 // devices until the provided stop channel has been closed. The collected
-// heartbeats are provided via the callback.
-func Monitor(backend Backend, devices []*Device, stop chan struct{}, cb func(*Heartbeat)) error {
+// heartbeats are provided via the callback. Devices that fail are reported via
+// the error callback as soon as they fail, potentially from multiple
+// goroutines.
+func Monitor(backend Backend, devices []*Device, stop chan struct{}, cb func(*Heartbeat), onError func(*Device, error)) error {
 	// check devices
 	if len(devices) == 0 {
 		return errors.New("zero devices")
@@ -132,6 +134,11 @@ func Monitor(backend Backend, devices []*Device, stop chan struct{}, cb func(*He
 				case <-time.After(5 * time.Second):
 				}
 			}
+		}
+	}, func(i int, result msg.Result) {
+		// report device error if requested
+		if result.Error != nil && onError != nil {
+			onError(devices[i], result.Error)
 		}
 	})
 	for _, result := range results {

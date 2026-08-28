@@ -15,8 +15,10 @@ type LogMessage struct {
 }
 
 // Record will enable log recording mode on all devices and yield the received
-// log messages until the provided channel has been closed.
-func Record(backend Backend, devices []*Device, stop chan struct{}, cb func(*LogMessage)) error {
+// log messages until the provided channel has been closed. Devices that fail
+// are reported via the error callback as soon as they fail, potentially from
+// multiple goroutines.
+func Record(backend Backend, devices []*Device, stop chan struct{}, cb func(*LogMessage), onError func(*Device, error)) error {
 	// check devices
 	if len(devices) == 0 {
 		return errors.New("zero devices")
@@ -38,6 +40,11 @@ func Record(backend Backend, devices []*Device, stop chan struct{}, cb func(*Log
 				Content: content,
 			})
 		})
+	}, func(i int, result msg.Result) {
+		// report device error if requested
+		if result.Error != nil && onError != nil {
+			onError(devices[i], result.Error)
+		}
 	})
 	for _, result := range results {
 		if result.Error != nil {

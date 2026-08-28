@@ -296,8 +296,9 @@ func (f *Fleet) UnsetParams(pattern, param string, jobs int) ([]*Device, error) 
 }
 
 // Record will enable log recording on all matching devices and yield the
-// received log messages until the provided channel has been closed.
-func (f *Fleet) Record(pattern string, quit chan struct{}, callback func(time.Time, *Device, string)) error {
+// received log messages until the provided channel has been closed. Devices
+// that fail are reported via the error callback.
+func (f *Fleet) Record(pattern string, quit chan struct{}, callback func(time.Time, *Device, string), onError func(*Device, error)) error {
 	// open backend
 	backend, err := f.Backend()
 	if err != nil {
@@ -310,13 +311,14 @@ func (f *Fleet) Record(pattern string, quit chan struct{}, callback func(time.Ti
 		if callback != nil {
 			callback(log.Time, log.Device, log.Content)
 		}
-	})
+	}, onError)
 }
 
 // Monitor will monitor the matching devices and update the fleet accordingly.
 // The specified callback is called for every heartbeat with the updated device
-// and the received heartbeat.
-func (f *Fleet) Monitor(pattern string, quit chan struct{}, callback func(*Device, *Heartbeat)) error {
+// and the received heartbeat. Devices that fail are reported via the error
+// callback.
+func (f *Fleet) Monitor(pattern string, quit chan struct{}, callback func(*Device, *Heartbeat), onError func(*Device, error)) error {
 	// open backend
 	backend, err := f.Backend()
 	if err != nil {
@@ -337,7 +339,7 @@ func (f *Fleet) Monitor(pattern string, quit chan struct{}, callback func(*Devic
 		if callback != nil {
 			callback(device, heartbeat)
 		}
-	})
+	}, onError)
 }
 
 // Debug will load the latest coredump from all matching devices. If delete is

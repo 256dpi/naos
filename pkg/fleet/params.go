@@ -50,7 +50,7 @@ func modifyParams(backend Backend, param, value string, set bool, devices []*Dev
 			return nil, err
 		}
 		return string(value), nil
-	})
+	}, nil)
 
 	// prepare output
 	var firstErr error

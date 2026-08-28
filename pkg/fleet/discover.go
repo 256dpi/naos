@@ -52,7 +52,7 @@ func Discover(backend Backend, devices []*Device, jobs int) ([]DiscoverResult, e
 			result.Metrics = append(result.Metrics, info.Name)
 		}
 		return result, nil
-	})
+	}, nil)
 
 	// prepare output
 	var firstErr error

@@ -13,9 +13,11 @@ type Result struct {
 
 // Execute will run the provided function for all devices in the list with the
 // specified level of parallelism. The function is called with the index of the
-// device in the provided list. It will return a list of results in the same
-// order as the provided device list.
-func Execute(list []Device, parallel int, fn func(i int, s *Session) (any, error)) []Result {
+// device in the provided list. If provided, the done function is called with
+// every result as soon as it is available, potentially from multiple goroutines.
+// It will return a list of results in the same order as the provided device
+// list.
+func Execute(list []Device, parallel int, fn func(i int, s *Session) (any, error), done func(i int, result Result)) []Result {
 	// ensure parallelism is at least 1
 	if parallel < 1 {
 		parallel = 1
@@ -49,10 +51,18 @@ func Execute(list []Device, parallel int, fn func(i int, s *Session) (any, error
 					return fn(i, s)
 				})
 
+				// prepare result
+				result := Result{Value: val, Error: err}
+
 				// store result
 				mu.Lock()
-				results[i] = Result{Value: val, Error: err}
+				results[i] = result
 				mu.Unlock()
+
+				// yield result if requested
+				if done != nil {
+					done(i, result)
+				}
 			}
 		}()
 	}

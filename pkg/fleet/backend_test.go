@@ -2,10 +2,13 @@ package fleet
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sort"
+	"sync"
 	"testing"
 	"time"
 
@@ -167,4 +170,56 @@ func names(devices []*Device) []string {
 		l = append(l, d.DeviceName)
 	}
 	return l
+}
+
+type failingBackend struct {
+	err error
+}
+
+func (b *failingBackend) Collect(time.Duration) ([]*Announcement, error) {
+	return nil, nil
+}
+
+func (b *failingBackend) Resolve(devices []*Device) ([]msg.Device, error) {
+	list := make([]msg.Device, 0, len(devices))
+	for _, d := range devices {
+		list = append(list, &missingDevice{name: d.DeviceName, err: b.err})
+	}
+
+	return list, nil
+}
+
+func (b *failingBackend) Close() {}
+
+func TestStreamErrorReporting(t *testing.T) {
+	backend := &failingBackend{err: errors.New("nope")}
+	devices := []*Device{{DeviceName: "a"}, {DeviceName: "b"}}
+
+	for _, item := range []struct {
+		name string
+		run  func(func(*Device, error)) error
+	}{
+		{"record", func(onError func(*Device, error)) error {
+			return Record(backend, devices, make(chan struct{}), nil, onError)
+		}},
+		{"monitor", func(onError func(*Device, error)) error {
+			return Monitor(backend, devices, make(chan struct{}), nil, onError)
+		}},
+	} {
+		var mutex sync.Mutex
+		var failed []string
+
+		err := item.run(func(d *Device, err error) {
+			mutex.Lock()
+			defer mutex.Unlock()
+			failed = append(failed, d.DeviceName+": "+err.Error())
+		})
+
+		// every device must be reported as it fails
+		sort.Strings(failed)
+		assert.Equal(t, []string{"a: nope", "b: nope"}, failed, item.name)
+
+		// the first error must still be returned
+		assert.EqualError(t, err, "nope", item.name)
+	}
 }

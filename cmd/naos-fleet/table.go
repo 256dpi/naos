@@ -7,7 +7,8 @@ import (
 )
 
 type table struct {
-	data [][]string
+	data  [][]string
+	notes []string
 
 	writtenLines int
 }
@@ -18,6 +19,12 @@ func newTable(headers ...string) *table {
 
 func (t *table) add(cells ...string) *table {
 	t.data = append(t.data, cells)
+	return t
+}
+
+// note adds a line that is shown below the table.
+func (t *table) note(format string, args ...any) *table {
+	t.notes = append(t.notes, fmt.Sprintf(format, args...))
 	return t
 }
 
@@ -48,6 +55,12 @@ func (t *table) string() string {
 		buf.WriteString("\n")
 	}
 
+	// append notes
+	for _, note := range t.notes {
+		buf.WriteString(note)
+		buf.WriteString("\n")
+	}
+
 	return buf.String()
 }
 
@@ -71,7 +84,7 @@ func (t *table) show(sortColumn int) {
 	fmt.Print(t.string())
 
 	// save written lines
-	t.writtenLines = len(t.data)
+	t.writtenLines = len(t.data) + len(t.notes)
 }
 
 func (t *table) clear() {
@@ -80,8 +93,9 @@ func (t *table) clear() {
 		fmt.Printf("\033[%dA", t.writtenLines)
 	}
 
-	// reset data, but retain headers
+	// reset data and notes, but retain headers
 	t.data = [][]string{t.data[0]}
+	t.notes = nil
 }
 
 func makeRow(cells []string, lengths []int) string {

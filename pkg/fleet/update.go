@@ -54,7 +54,7 @@ func Update(backend Backend, devices []*Device, firmware []byte, jobs int, callb
 		}
 
 		return nil, err
-	})
+	}, nil)
 
 	// get first error
 	var firstErr error

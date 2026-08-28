@@ -5,7 +5,9 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/bytefmt"
@@ -218,14 +220,13 @@ func monitor(cmd *command, f *fleet.Fleet) {
 		"CPU1",
 	)
 
-	// prepare list
+	// prepare state
 	list := make(map[*fleet.Device]*fleet.Heartbeat)
+	errs := make(map[*fleet.Device]error)
+	var mutex sync.Mutex
 
-	// monitor devices
-	exitIfSet(f.Monitor(cmd.aPattern, quit, func(d *fleet.Device, hb *fleet.Heartbeat) {
-		// set the latest heartbeat for device
-		list[d] = hb
-
+	// prepare redraw
+	redraw := func() {
 		// clear previously printed table
 		tbl.clear()
 
@@ -280,8 +281,33 @@ func monitor(cmd *command, f *fleet.Fleet) {
 			)
 		}
 
+		// add notes for failed devices
+		var notes []string
+		for device, err := range errs {
+			notes = append(notes, fmt.Sprintf("%s: %s", device.DeviceName, err.Error()))
+		}
+		sort.Strings(notes)
+		for _, note := range notes {
+			tbl.note("%s", note)
+		}
+
 		// show table
 		tbl.show(0)
+	}
+
+	// monitor devices
+	exitIfSet(f.Monitor(cmd.aPattern, quit, func(d *fleet.Device, hb *fleet.Heartbeat) {
+		// set the latest heartbeat for device
+		mutex.Lock()
+		defer mutex.Unlock()
+		list[d] = hb
+		redraw()
+	}, func(d *fleet.Device, err error) {
+		// set the error for device
+		mutex.Lock()
+		defer mutex.Unlock()
+		errs[d] = err
+		redraw()
 	}))
 
 	// save fleet
@@ -304,6 +330,8 @@ func record(cmd *command, f *fleet.Fleet) {
 	start := time.Now()
 	err := f.Record(cmd.aPattern, quit, func(t time.Time, d *fleet.Device, msg string) {
 		fmt.Printf("%s [%s] %s\n", time.Since(start).Round(time.Millisecond).String(), d.DeviceName, msg)
+	}, func(d *fleet.Device, err error) {
+		fmt.Printf("%s [%s] error: %s\n", time.Since(start).Round(time.Millisecond).String(), d.DeviceName, err.Error())
 	})
 	exitIfSet(err)
 }

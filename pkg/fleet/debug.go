@@ -38,7 +38,7 @@ func Debug(backend Backend, devices []*Device, delete bool, jobs int) ([][]byte,
 			return nil, err
 		}
 		return data, nil
-	})
+	}, nil)
 
 	// prepare output
 	var firstErr error
