@@ -12,6 +12,7 @@
 #define NAOS_PARAMS_ENDPOINT 0x1
 #define NAOS_PARAMS_MAX_HANDLERS 8
 #define NAOS_PARAMS_MAX_NAME_LEN 32
+#define NAOS_PARAMS_MAX_COUNT 256  // refs are transferred as a single byte
 
 typedef enum {
   NAOS_PARAMS_CMD_GET,
@@ -389,7 +390,7 @@ static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
       memcpy(&since, msg.data + 8, sizeof(uint64_t));
 
       // yield requested parameter values
-      for (int i = 0; i < naos_params_count && i < 256; i++) {
+      for (int i = 0; i < naos_params_count && i < NAOS_PARAMS_MAX_COUNT; i++) {
         // get param
         naos_param_t *param = naos_params[i];
 
@@ -490,7 +491,7 @@ void naos_register(naos_param_t *param) {
   naos_lock(naos_params_mutex);
 
   // check size
-  if (naos_params_count >= CONFIG_NAOS_PARAM_REGISTRY_SIZE) {
+  if (naos_params_count >= CONFIG_NAOS_PARAM_REGISTRY_SIZE || naos_params_count >= NAOS_PARAMS_MAX_COUNT) {
     ESP_ERROR_CHECK(ESP_FAIL);
   }
 
