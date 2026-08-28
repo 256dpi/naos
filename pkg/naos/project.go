@@ -225,7 +225,7 @@ func (p *Project) Flash(device, baudRate string, erase bool, appOnly, alt bool, 
 		return err
 	}
 
-	return tree.Flash(p.Tree(), device, baudRate, erase, appOnly, alt, out)
+	return tree.Flash(p.Tree(), device, p.baudRate(baudRate), erase, appOnly, alt, out)
 }
 
 // Attach will attach to the attached device.
@@ -273,14 +273,6 @@ func (p *Project) Config(file, device, baudRate string, out io.Writer) error {
 // ReadConfig will read the parameters from an attached device and write them to
 // the specified file.
 func (p *Project) ReadConfig(file, device, baudRate string, out io.Writer) error {
-	// ensure baud rate
-	if baudRate == "" {
-		baudRate = p.Manifest.BaudRate
-		if baudRate == "" {
-			baudRate = "921600"
-		}
-	}
-
 	// ensure device
 	device, err := ensureDevice(device)
 	if err != nil {
