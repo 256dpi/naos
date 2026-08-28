@@ -5,15 +5,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/256dpi/naos/pkg/msg"
 )
 
 // A Heartbeat gathered from a device.
 type Heartbeat struct {
 	ReceivedAt     time.Time
-	BaseTopic      string
+	Device         *Device
 	DeviceName     string
 	AppName        string
 	AppVersion     string
@@ -26,34 +24,30 @@ type Heartbeat struct {
 }
 
 // Monitor will periodically collect heartbeat information from all specified
-// base topics until the provided stop channel has been closed. The collected
+// devices until the provided stop channel has been closed. The collected
 // heartbeats are provided via the callback.
-func Monitor(backend Backend, baseTopics []string, stop chan struct{}, cb func(*Heartbeat)) error {
-	// check base topics
-	if len(baseTopics) == 0 {
-		return errors.New("zero base topics")
+func Monitor(backend Backend, devices []*Device, stop chan struct{}, cb func(*Heartbeat)) error {
+	// check devices
+	if len(devices) == 0 {
+		return errors.New("zero devices")
 	}
 
-	// get devices
-	devices, err := backend.Devices(baseTopics)
+	// resolve devices
+	list, err := backend.Resolve(devices)
 	if err != nil {
 		return err
 	}
 
 	// TODO: Handle device resets.
 
-	// execute discover
-	results := msg.Execute(devices, len(devices), func(s *msg.Session) (any, error) {
-		// get index and base topic
-		index := lo.IndexOf(devices, s.Channel().Device())
-		baseTopic := baseTopics[index]
-
+	// execute monitor
+	results := msg.Execute(list, len(list), func(i int, s *msg.Session) (any, error) {
 		// prepare services
 		ps := msg.NewParamsService(s)
 		ms := msg.NewMetricsService(s)
 
 		// list params
-		err = ps.List()
+		err := ps.List()
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +110,7 @@ func Monitor(backend Backend, baseTopics []string, stop chan struct{}, cb func(*
 				// create heartbeat
 				hb := &Heartbeat{
 					ReceivedAt:     time.Now(),
-					BaseTopic:      baseTopic,
+					Device:         devices[i],
 					DeviceName:     string(deviceName),
 					AppName:        string(appName),
 					AppVersion:     string(appVersion),

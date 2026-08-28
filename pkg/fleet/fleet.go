@@ -13,6 +13,7 @@ import (
 // A Device represents a single device in a fleet.
 type Device struct {
 	BaseTopic  string            `json:"base_topic"`
+	DeviceID   string            `json:"device_id,omitempty"`
 	DeviceName string            `json:"device_name"`
 	AppName    string            `json:"app_name"`
 	AppVersion string            `json:"app_version"`
@@ -100,18 +101,6 @@ func (f *Fleet) FilterDevices(pattern string) []*Device {
 	return devices
 }
 
-// FindDevice returns the first device that has the matching base topic.
-func (f *Fleet) FindDevice(baseTopic string) *Device {
-	// find matching device
-	for _, d := range f.Devices {
-		if d.BaseTopic == baseTopic {
-			return d
-		}
-	}
-
-	return nil
-}
-
 // Collect will collect and update the flet with found devices for the given
 // duration. It will return a list of devices that have been added to the fleet.
 func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
@@ -151,6 +140,7 @@ func (f *Fleet) Collect(duration time.Duration) ([]*Device, error) {
 
 		// update fields
 		d.BaseTopic = a.BaseTopic
+		d.DeviceID = a.DeviceID
 		d.AppName = a.AppName
 		d.AppVersion = a.AppVersion
 	}
@@ -169,26 +159,22 @@ func (f *Fleet) Discover(pattern string, jobs int) ([]*Device, error) {
 	}
 	defer backend.Close()
 
+	// get devices
+	devices := f.FilterDevices(pattern)
+
 	// discover parameters and metrics
-	results, err := Discover(backend, BaseTopics(f.FilterDevices(pattern)), jobs)
+	results, err := Discover(backend, devices, jobs)
 	if err != nil {
 		return nil, err
 	}
 
-	// prepare list
-	var queried []*Device
-
 	// update devices
-	for baseTopic, result := range results {
-		device := f.FindDevice(baseTopic)
-		if device != nil {
-			device.Parameters = result.Params
-			device.Metrics = result.Metrics
-			queried = append(queried, device)
-		}
+	for i, result := range results {
+		devices[i].Parameters = result.Params
+		devices[i].Metrics = result.Metrics
 	}
 
-	return queried, nil
+	return devices, nil
 }
 
 // Ping will send a ping message to all matching devices.
@@ -208,25 +194,21 @@ func (f *Fleet) GetParams(pattern, param string, jobs int) ([]*Device, error) {
 	}
 	defer backend.Close()
 
+	// get devices
+	devices := f.FilterDevices(pattern)
+
 	// get parameter
-	table, err := GetParams(backend, param, BaseTopics(f.FilterDevices(pattern)), jobs)
+	values, err := GetParams(backend, param, devices, jobs)
 	if err != nil {
 		return nil, err
 	}
 
-	// prepare list
-	var queried []*Device
-
-	// update device
-	for baseTopic, value := range table {
-		device := f.FindDevice(baseTopic)
-		if device != nil {
-			device.Parameters[param] = value
-			queried = append(queried, device)
-		}
+	// update devices
+	for i, value := range values {
+		devices[i].Parameters[param] = value
 	}
 
-	return queried, nil
+	return devices, nil
 }
 
 // SetParams will set the specified parameter on all matching devices. The fleet
@@ -239,25 +221,21 @@ func (f *Fleet) SetParams(pattern, param, value string, jobs int) ([]*Device, er
 	}
 	defer backend.Close()
 
+	// get devices
+	devices := f.FilterDevices(pattern)
+
 	// set parameter
-	table, err := SetParams(backend, param, value, BaseTopics(f.FilterDevices(pattern)), jobs)
+	values, err := SetParams(backend, param, value, devices, jobs)
 	if err != nil {
 		return nil, err
 	}
 
-	// prepare list of updated devices
-	var updated []*Device
-
-	// update device
-	for baseTopic, value := range table {
-		device := f.FindDevice(baseTopic)
-		if device != nil {
-			device.Parameters[param] = value
-			updated = append(updated, device)
-		}
+	// update devices
+	for i, value := range values {
+		devices[i].Parameters[param] = value
 	}
 
-	return updated, nil
+	return devices, nil
 }
 
 // UnsetParams will unset the specified parameter on all matching devices. The
@@ -271,22 +249,21 @@ func (f *Fleet) UnsetParams(pattern, param string, jobs int) ([]*Device, error) 
 	}
 	defer backend.Close()
 
+	// get devices
+	devices := f.FilterDevices(pattern)
+
 	// unset parameter
-	err = UnsetParams(backend, param, BaseTopics(f.FilterDevices(pattern)), jobs)
+	err = UnsetParams(backend, param, devices, jobs)
 	if err != nil {
 		return nil, err
 	}
 
-	// prepare list
-	var updated []*Device
-
-	// update device
-	for _, device := range f.FilterDevices(pattern) {
+	// update devices
+	for _, device := range devices {
 		delete(device.Parameters, param)
-		updated = append(updated, device)
 	}
 
-	return updated, nil
+	return devices, nil
 }
 
 // Record will enable log recording on all matching devices and yield the
@@ -299,10 +276,10 @@ func (f *Fleet) Record(pattern string, quit chan struct{}, callback func(time.Ti
 	}
 	defer backend.Close()
 
-	return Record(backend, BaseTopics(f.FilterDevices(pattern)), quit, func(log *LogMessage) {
+	return Record(backend, f.FilterDevices(pattern), quit, func(log *LogMessage) {
 		// call user callback
 		if callback != nil {
-			callback(log.Time, f.FindDevice(log.BaseTopic), log.Content)
+			callback(log.Time, log.Device, log.Content)
 		}
 	})
 }
@@ -318,12 +295,9 @@ func (f *Fleet) Monitor(pattern string, quit chan struct{}, callback func(*Devic
 	}
 	defer backend.Close()
 
-	return Monitor(backend, BaseTopics(f.FilterDevices(pattern)), quit, func(heartbeat *Heartbeat) {
+	return Monitor(backend, f.FilterDevices(pattern), quit, func(heartbeat *Heartbeat) {
 		// get device
-		device, ok := f.Devices[heartbeat.DeviceName]
-		if !ok {
-			return
-		}
+		device := heartbeat.Device
 
 		// update fields
 		device.DeviceName = heartbeat.DeviceName
@@ -348,8 +322,11 @@ func (f *Fleet) Debug(pattern string, delete bool, jobs int) (map[*Device][]byte
 	}
 	defer backend.Close()
 
+	// get devices
+	devices := f.FilterDevices(pattern)
+
 	// gather coredumps
-	coredumps, err := Debug(backend, BaseTopics(f.FilterDevices(pattern)), delete, jobs)
+	coredumps, err := Debug(backend, devices, delete, jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -358,14 +335,14 @@ func (f *Fleet) Debug(pattern string, delete bool, jobs int) (map[*Device][]byte
 	table := make(map[*Device][]byte, len(coredumps))
 
 	// fill table
-	for baseTopic, coredump := range coredumps {
+	for i, coredump := range coredumps {
 		// ignore zero length coredump
 		if len(coredump) == 0 {
 			continue
 		}
 
 		// add entry
-		table[f.FindDevice(baseTopic)] = coredump
+		table[devices[i]] = coredump
 	}
 
 	return table, nil
@@ -393,32 +370,10 @@ func (f *Fleet) Update(version, pattern string, firmware []byte, jobs int, callb
 	}
 
 	// update devices
-	_, err = Update(backend, BaseTopics(devices), firmware, jobs, func(baseTopic string, status UpdateStatus) {
-		// get device
-		device := f.FindDevice(baseTopic)
-		if device == nil {
-			return
-		}
-
-		// call callback
-		callback(device, status)
-	})
+	_, err = Update(backend, devices, firmware, jobs, callback)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-// BaseTopics returns a list of base topics from the provided devices.
-func BaseTopics(devices []*Device) []string {
-	// prepare list
-	var l []string
-
-	// add all matching devices
-	for _, d := range devices {
-		l = append(l, d.BaseTopic)
-	}
-
-	return l
 }

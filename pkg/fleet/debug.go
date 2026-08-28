@@ -7,21 +7,22 @@ import (
 	"github.com/256dpi/naos/pkg/msg"
 )
 
-// Debug will request coredump debug information from the specified devices.
-func Debug(backend Backend, baseTopics []string, delete bool, jobs int) (map[string][]byte, error) {
-	// check base topics
-	if len(baseTopics) == 0 {
-		return nil, errors.New("zero base topics")
+// Debug will request coredump debug information from the specified devices. The
+// returned list is aligned with the provided list.
+func Debug(backend Backend, devices []*Device, delete bool, jobs int) ([][]byte, error) {
+	// check devices
+	if len(devices) == 0 {
+		return nil, errors.New("zero devices")
 	}
 
-	// get devices
-	devices, err := backend.Devices(baseTopics)
+	// resolve devices
+	list, err := backend.Resolve(devices)
 	if err != nil {
 		return nil, err
 	}
 
 	// execute
-	results := msg.Execute(devices, jobs, func(s *msg.Session) (any, error) {
+	results := msg.Execute(list, jobs, func(_ int, s *msg.Session) (any, error) {
 		size, _, err := msg.CheckCoredump(s, 5*time.Second)
 		if err != nil {
 			return nil, err
@@ -41,7 +42,7 @@ func Debug(backend Backend, baseTopics []string, delete bool, jobs int) (map[str
 
 	// prepare output
 	var firstErr error
-	table := make(map[string][]byte)
+	coredumps := make([][]byte, len(results))
 	for i, result := range results {
 		if result.Error != nil {
 			if firstErr == nil {
@@ -49,8 +50,8 @@ func Debug(backend Backend, baseTopics []string, delete bool, jobs int) (map[str
 			}
 			continue
 		}
-		table[baseTopics[i]] = result.Value.([]byte)
+		coredumps[i] = result.Value.([]byte)
 	}
 
-	return table, firstErr
+	return coredumps, firstErr
 }

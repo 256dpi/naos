@@ -14,6 +14,7 @@ import (
 // Note: Not correctly formatted announcements are ignored.
 type Announcement struct {
 	BaseTopic  string
+	DeviceID   string
 	DeviceName string
 	AppName    string
 	AppVersion string
@@ -25,8 +26,10 @@ type Backend interface {
 	// specified duration.
 	Collect(duration time.Duration) ([]*Announcement, error)
 
-	// Devices will return devices for the specified base topics.
-	Devices(baseTopics []string) ([]msg.Device, error)
+	// Resolve will return the addressable devices for the provided fleet
+	// devices. The returned list is aligned with the provided list. Devices
+	// that cannot be addressed yield a device that fails when opened.
+	Resolve(devices []*Device) ([]msg.Device, error)
 
 	// Close will close the backend and all underlying connections.
 	Close()
@@ -69,14 +72,14 @@ func (b *mqttBackend) Collect(duration time.Duration) ([]*Announcement, error) {
 	return ans, nil
 }
 
-func (b *mqttBackend) Devices(baseTopics []string) ([]msg.Device, error) {
+func (b *mqttBackend) Resolve(devices []*Device) ([]msg.Device, error) {
 	// create devices
-	devices := make([]msg.Device, 0, len(baseTopics))
-	for _, baseTopic := range baseTopics {
-		devices = append(devices, mqtt.NewDevice(b.router, baseTopic))
+	list := make([]msg.Device, 0, len(devices))
+	for _, device := range devices {
+		list = append(list, mqtt.NewDevice(b.router, device.BaseTopic))
 	}
 
-	return devices, nil
+	return list, nil
 }
 
 func (b *mqttBackend) Close() {

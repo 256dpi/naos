@@ -12,9 +12,10 @@ type Result struct {
 }
 
 // Execute will run the provided function for all devices in the list with the
-// specified level of parallelism. It will return a list of results in the same
+// specified level of parallelism. The function is called with the index of the
+// device in the provided list. It will return a list of results in the same
 // order as the provided device list.
-func Execute(list []Device, parallel int, fn func(s *Session) (any, error)) []Result {
+func Execute(list []Device, parallel int, fn func(i int, s *Session) (any, error)) []Result {
 	// ensure parallelism is at least 1
 	if parallel < 1 {
 		parallel = 1
@@ -44,7 +45,9 @@ func Execute(list []Device, parallel int, fn func(s *Session) (any, error)) []Re
 
 			for i := range queue {
 				// yield
-				val, err := execute(list[i], fn)
+				val, err := execute(list[i], func(s *Session) (any, error) {
+					return fn(i, s)
+				})
 
 				// store result
 				mu.Lock()

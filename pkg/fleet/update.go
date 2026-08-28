@@ -4,8 +4,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/256dpi/naos/pkg/msg"
 )
 
@@ -16,51 +14,42 @@ type UpdateStatus struct {
 }
 
 // Update will perform a firmware update on the provided devices. If a callback
-// is provided it will be called with the current status of the update.
-func Update(backend Backend, baseTopics []string, firmware []byte, jobs int, callback func(string, UpdateStatus)) ([]UpdateStatus, error) {
-	// check base topics
-	if len(baseTopics) == 0 {
-		return nil, errors.New("zero base topics")
+// is provided it will be called with the current status of the update. The
+// returned list is aligned with the provided list.
+func Update(backend Backend, devices []*Device, firmware []byte, jobs int, callback func(*Device, UpdateStatus)) ([]UpdateStatus, error) {
+	// check devices
+	if len(devices) == 0 {
+		return nil, errors.New("zero devices")
 	}
 
-	// get devices
-	devices, err := backend.Devices(baseTopics)
+	// resolve devices
+	list, err := backend.Resolve(devices)
 	if err != nil {
 		return nil, err
 	}
 
-	// map topics to devices
-	deviceTopics := make(map[string]msg.Device)
-	for i, baseTopic := range baseTopics {
-		deviceTopics[baseTopic] = devices[i]
-	}
-
 	// prepare statuses
-	statuses := make([]UpdateStatus, len(devices))
+	statuses := make([]UpdateStatus, len(list))
 
-	// execute log streaming
-	results := msg.Execute(devices, jobs, func(s *msg.Session) (any, error) {
-		// get index and base topic
-		index := lo.IndexOf(devices, s.Channel().Device())
-		baseTopic := baseTopics[index]
-
+	// execute update
+	results := msg.Execute(list, jobs, func(i int, s *msg.Session) (any, error) {
 		// perform update
 		err := msg.Update(s, firmware, func(progress int) {
 			// set progress
-			statuses[index].Progress = float64(progress) / float64(len(firmware))
+			statuses[i].Progress = float64(progress) / float64(len(firmware))
 
 			// call callback if provided
 			if callback != nil {
-				callback(baseTopic, statuses[index])
+				callback(devices[i], statuses[i])
 			}
 		}, 5*time.Second)
 		if err != nil {
 			// set error
-			statuses[index].Error = err
+			statuses[i].Error = err
 
 			// call callback if provided
 			if callback != nil {
-				callback(baseTopic, statuses[index])
+				callback(devices[i], statuses[i])
 			}
 		}
 

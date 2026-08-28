@@ -13,21 +13,21 @@ type DiscoverResult struct {
 }
 
 // Discover will discover all available parameters and metrics for the
-// specified base topics.
-func Discover(backend Backend, baseTopics []string, jobs int) (map[string]DiscoverResult, error) {
-	// check base topics
-	if len(baseTopics) == 0 {
-		return nil, errors.New("zero base topics")
+// specified devices. The returned list is aligned with the provided list.
+func Discover(backend Backend, devices []*Device, jobs int) ([]DiscoverResult, error) {
+	// check devices
+	if len(devices) == 0 {
+		return nil, errors.New("zero devices")
 	}
 
-	// get devices
-	devices, err := backend.Devices(baseTopics)
+	// resolve devices
+	list, err := backend.Resolve(devices)
 	if err != nil {
 		return nil, err
 	}
 
 	// execute discover
-	results := msg.Execute(devices, jobs, func(s *msg.Session) (any, error) {
+	results := msg.Execute(list, jobs, func(_ int, s *msg.Session) (any, error) {
 		ps := msg.NewParamsService(s)
 		ms := msg.NewMetricsService(s)
 		err := ps.List()
@@ -56,7 +56,7 @@ func Discover(backend Backend, baseTopics []string, jobs int) (map[string]Discov
 
 	// prepare output
 	var firstErr error
-	table := make(map[string]DiscoverResult)
+	output := make([]DiscoverResult, len(results))
 	for i, result := range results {
 		if result.Error != nil {
 			if firstErr == nil {
@@ -64,8 +64,8 @@ func Discover(backend Backend, baseTopics []string, jobs int) (map[string]Discov
 			}
 			continue
 		}
-		table[baseTopics[i]] = result.Value.(DiscoverResult)
+		output[i] = result.Value.(DiscoverResult)
 	}
 
-	return table, firstErr
+	return output, firstErr
 }
