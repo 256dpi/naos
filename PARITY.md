@@ -4,13 +4,13 @@ This document tracks the parity of features among the Go, TS, Swift, and Python 
 
 ## Transports
 
-| Name    | Securable  | Go  | TS  | Swift | Python |
-|---------|------------|-----|-----|-------|--------|
-| BLE     | Yes - Bond | Yes | Yes | Yes   | Yes    |
-| HTTP    | Yes - TLS  | Yes | Yes | Yes   |        |
-| MQTT    | Yes - TLS  | Yes |     |       |        |
-| Connect | Yes - TLS  | Yes | Yes |       |        |
-| Serial  | No - Wired | Yes | Yes | Yes   | Yes    |
+| Name    | Securable  | Go  | TS  | Swift | Python | Explorer | Desktop | Fleet |
+|---------|------------|-----|-----|-------|--------|----------|---------|-------|
+| BLE     | Yes - Bond | Yes | Yes | Yes   | Yes    | Yes      | Yes     |       |
+| HTTP    | Yes - TLS  | Yes | Yes | Yes   |        | Yes      | Yes     |       |
+| MQTT    | Yes - TLS  | Yes |     |       |        | Yes      |         | Yes   |
+| Connect | Yes - TLS  | Yes | Yes |       |        | Yes      |         | Yes   |
+| Serial  | No - Wired | Yes | Yes | Yes   | Yes    | Yes      | Yes     |       |
 
 ## Endpoints
 
