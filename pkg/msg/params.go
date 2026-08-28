@@ -167,22 +167,32 @@ func WriteParam(s *Session, ref uint8, value []byte, timeout time.Duration) erro
 	return nil
 }
 
-// CollectParams returns a list of parameter updates.
+// CollectParams returns a list of parameter updates. If no refs are provided,
+// all parameters are collected.
 func CollectParams(s *Session, refs []uint8, since uint64, timeout time.Duration) ([]ParamUpdate, error) {
-	// prepare map
-	var mp uint64 = math.MaxUint64
+	// prepare maps, a single fully set map selects all parameters
+	var maps [4]uint64
 	if len(refs) > 0 {
-		mp = 0
 		for _, ref := range refs {
-			if ref >= 64 {
-				return nil, fmt.Errorf("ref %d exceeds bitmap capacity", ref)
-			}
-			mp |= 1 << ref
+			maps[ref/64] |= 1 << (ref % 64)
 		}
+	} else {
+		maps[0] = math.MaxUint64
+	}
+
+	// trim unused maps
+	num := len(maps)
+	for num > 1 && maps[num-1] == 0 {
+		num--
+	}
+
+	// assemble command, appending the additional maps as needed
+	cmd := Pack("oqq", uint8(5), maps[0], since)
+	for _, mp := range maps[1:num] {
+		cmd = Pack("bq", cmd, mp)
 	}
 
 	// send command
-	cmd := Pack("oqq", uint8(5), mp, since)
 	err := s.Send(paramsEndpoint, cmd, 0)
 	if err != nil {
 		return nil, err

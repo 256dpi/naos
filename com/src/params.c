@@ -361,28 +361,43 @@ static naos_msg_reply_t naos_params_process(naos_msg_t msg) {
 
     case NAOS_PARAMS_CMD_COLLECT: {
       // command structure:
-      // MAP (8) | SINCE (8)
+      // MAP (8) | SINCE (8) | MAPS (0-24)
+      //
+      // the first map selects the parameters with the refs 0-63 while the up to
+      // three additional maps select the parameters with the refs 64-255
 
       // check length
-      if (msg.len != 16) {
+      if (msg.len < 16 || msg.len > 40 || msg.len % 8 != 0) {
         return NAOS_MSG_INVALID;
       }
 
-      // get map
-      uint64_t map = 0;
-      memcpy(&map, msg.data, sizeof(uint64_t));
+      // get maps
+      uint64_t maps[4] = {0};
+      memcpy(&maps[0], msg.data, sizeof(uint64_t));
+      memcpy(&maps[1], msg.data + 16, msg.len - 16);
+
+      // a single fully set map selects all parameters, which allows clients to
+      // request all parameters without knowing the size of the registry
+      if (msg.len == 16 && maps[0] == UINT64_MAX) {
+        maps[1] = UINT64_MAX;
+        maps[2] = UINT64_MAX;
+        maps[3] = UINT64_MAX;
+      }
 
       // get since
       uint64_t since = 0;
       memcpy(&since, msg.data + 8, sizeof(uint64_t));
 
       // yield requested parameter values
-      for (int i = 0; i < naos_params_count; i++) {
+      for (int i = 0; i < naos_params_count && i < 256; i++) {
         // get param
         naos_param_t *param = naos_params[i];
 
+        // check if requested
+        bool requested = (maps[i / 64] & ((uint64_t)1 << (i % 64))) != 0;
+
         // skip action, unchanged, or not requested
-        if (param->type == NAOS_ACTION || param->age < since || !(map & ((uint64_t)1 << i))) {
+        if (param->type == NAOS_ACTION || param->age < since || !requested) {
           continue;
         }
 

@@ -155,20 +155,33 @@ export async function collectParams(
   since: bigint,
   timeout: number = 5000
 ): Promise<ParamUpdate[]> {
-  // prepare map
-  let map: bigint = (BigInt(1) << BigInt(64)) - BigInt(1);
+  // prepare maps, a single fully set map selects all parameters
+  const maps = [BigInt(0), BigInt(0), BigInt(0), BigInt(0)];
   if (refs.length > 0) {
-    map = BigInt(0);
     for (const ref of refs) {
-      if (ref >= 64) {
+      if (ref >= 256) {
         throw new Error(`ref ${ref} exceeds bitmap capacity`);
       }
-      map |= BigInt(1) << BigInt(ref);
+      maps[Math.floor(ref / 64)] |= BigInt(1) << BigInt(ref % 64);
     }
+  } else {
+    maps[0] = (BigInt(1) << BigInt(64)) - BigInt(1);
+  }
+
+  // trim unused maps
+  let num = maps.length;
+  while (num > 1 && maps[num - 1] === BigInt(0)) {
+    num--;
   }
 
   // prepare command
-  const cmd = pack("oqq", 5, map, since);
+  const cmd = pack(
+    "oqq" + "q".repeat(num - 1),
+    5,
+    maps[0],
+    since,
+    ...maps.slice(1, num)
+  );
 
   // send command
   await s.send(paramsEndpoint, cmd, 0);

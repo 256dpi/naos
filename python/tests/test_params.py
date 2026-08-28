@@ -92,7 +92,7 @@ async def test_params_collect():
 
     # reject out-of-range refs
     with pytest.raises(ValueError, match="exceeds bitmap capacity"):
-        await collect_params(session, [64], 0)
+        await collect_params(session, [256], 0)
 
     await session.end()
     await channel.close()

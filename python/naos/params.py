@@ -136,19 +136,23 @@ async def write_param(s: Session, ref: int, value: bytes, timeout: float = 5.0):
 async def collect_params(
     s: Session, refs: Sequence[int], since: int, timeout: float = 5.0
 ) -> List[ParamUpdate]:
-    """Return a list of parameter updates."""
+    """Return a list of parameter updates. If no refs are provided, all
+    parameters are collected."""
 
-    # prepare map
-    map_ = (1 << 64) - 1
-    if refs:
-        map_ = 0
-        for ref in refs:
-            if ref >= 64:
-                raise ValueError(f"ref {ref} exceeds bitmap capacity")
-            map_ |= 1 << ref
+    # prepare maps, a single fully set map selects all parameters
+    maps = [0] * 4 if refs else [(1 << 64) - 1, 0, 0, 0]
+    for ref in refs:
+        if ref >= 256:
+            raise ValueError(f"ref {ref} exceeds bitmap capacity")
+        maps[ref // 64] |= 1 << (ref % 64)
+
+    # trim unused maps
+    num = len(maps)
+    while num > 1 and maps[num - 1] == 0:
+        num -= 1
 
     # send command
-    cmd = pack("oqq", 5, map_, since)
+    cmd = pack("oqq" + "q" * (num - 1), 5, maps[0], since, *maps[1:num])
     await s.send(_params_endpoint, cmd, 0)
 
     # prepare list

@@ -1,6 +1,7 @@
 package msg
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -129,6 +130,60 @@ func TestCollectParams(t *testing.T) {
 	assert.Equal(t, []ParamUpdate{
 		{Ref: 1, Age: 200, Value: []byte("val1")},
 		{Ref: 3, Age: 300, Value: []byte("val2")},
+	}, updates)
+
+	err = s.End(time.Second)
+	assert.NoError(t, err)
+}
+
+func TestCollectParamsAll(t *testing.T) {
+	// a single fully set map is sent, as understood by all firmwares
+	cmd := Pack("oqq", uint8(5), uint64(math.MaxUint64), uint64(0))
+
+	dev := newTestDevice(t, 42, []testMessage{
+		receive(Message{Endpoint: paramsEndpoint, Data: cmd}),
+		send(Message{Endpoint: paramsEndpoint, Data: Pack("oqb", uint8(64), uint64(300), []byte("val"))}),
+		ack(),
+	})
+
+	ch, err := dev.Open()
+	assert.NoError(t, err)
+
+	s, err := OpenSession(ch, time.Second)
+	assert.NoError(t, err)
+
+	updates, err := CollectParams(s, nil, 0, time.Second)
+	assert.NoError(t, err)
+	assert.Equal(t, []ParamUpdate{
+		{Ref: 64, Age: 300, Value: []byte("val")},
+	}, updates)
+
+	err = s.End(time.Second)
+	assert.NoError(t, err)
+}
+
+func TestCollectParamsExtended(t *testing.T) {
+	// bit 3 in the first map and bit 0 in the second map
+	cmd := Pack("oqqq", uint8(5), uint64(1<<3), uint64(0), uint64(1<<0))
+
+	dev := newTestDevice(t, 42, []testMessage{
+		receive(Message{Endpoint: paramsEndpoint, Data: cmd}),
+		send(Message{Endpoint: paramsEndpoint, Data: Pack("oqb", uint8(3), uint64(200), []byte("val1"))}),
+		send(Message{Endpoint: paramsEndpoint, Data: Pack("oqb", uint8(64), uint64(300), []byte("val2"))}),
+		ack(),
+	})
+
+	ch, err := dev.Open()
+	assert.NoError(t, err)
+
+	s, err := OpenSession(ch, time.Second)
+	assert.NoError(t, err)
+
+	updates, err := CollectParams(s, []uint8{3, 64}, 0, time.Second)
+	assert.NoError(t, err)
+	assert.Equal(t, []ParamUpdate{
+		{Ref: 3, Age: 200, Value: []byte("val1")},
+		{Ref: 64, Age: 300, Value: []byte("val2")},
 	}, updates)
 
 	err = s.End(time.Second)

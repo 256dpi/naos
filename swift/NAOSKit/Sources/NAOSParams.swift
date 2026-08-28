@@ -169,20 +169,26 @@ public class NAOSParams {
 	public static func collect(session: NAOSSession, refs: [UInt8]?, since: UInt64, timeout: TimeInterval = 5)
 		async throws -> [NAOSParamUpdate]
 	{
-		// prepare map
-		var map = UINT64_MAX
+		// prepare maps, a single fully set map selects all parameters
+		var maps = [UInt64](repeating: 0, count: 4)
 		if refs != nil {
-			map = UInt64(0)
 			for ref in refs! {
-				if ref >= 64 {
-					throw NAOSSessionError.invalidMessage
-				}
-				map |= (1 << ref)
+				maps[Int(ref) / 64] |= (1 << (UInt64(ref) % 64))
 			}
+		} else {
+			maps[0] = UInt64.max
+		}
+
+		// trim unused maps
+		var num = maps.count
+		while num > 1 && maps[num - 1] == 0 {
+			num -= 1
 		}
 
 		// send command
-		let cmd = pack(fmt: "oqq", args: [UInt8(5), map, since])
+		let cmd = pack(
+			fmt: "oqq" + String(repeating: "q", count: num - 1),
+			args: [UInt8(5), maps[0], since] + maps[1..<num].map { $0 as Any })
 		try await session.send(endpoint: self.endpoint, data: cmd, ackTimeout: 0)
 
 		// prepare list

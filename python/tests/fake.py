@@ -261,7 +261,16 @@ class FakeDeviceTransport(Transport):
             param["age"] += 1
             return [ack]
         if cmd == 5:  # collect
-            map_, since = struct.unpack_from("<QQ", msg.data, 1)
+            (since,) = struct.unpack_from("<Q", msg.data, 9)
+            raw = msg.data[1:9] + msg.data[17:]
+            maps = list(struct.unpack("<" + "Q" * (len(raw) // 8), raw))
+            if maps == [(1 << 64) - 1]:
+                maps = [(1 << 64) - 1] * 4
+
+            def selected(ref):
+                idx = ref // 64
+                return idx < len(maps) and maps[idx] & (1 << (ref % 64))
+
             replies = [
                 Message(
                     msg.session,
@@ -269,7 +278,7 @@ class FakeDeviceTransport(Transport):
                     struct.pack("<BQ", ref, p["age"]) + p["value"],
                 )
                 for ref, p in self.params.items()
-                if map_ & (1 << ref) and p["age"] > since
+                if selected(ref) and p["age"] > since
             ]
             return replies + [ack]
         if cmd == 6:  # clear by ref
