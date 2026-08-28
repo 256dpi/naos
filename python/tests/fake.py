@@ -278,7 +278,7 @@ class FakeDeviceTransport(Transport):
                     struct.pack("<BQ", ref, p["age"]) + p["value"],
                 )
                 for ref, p in self.params.items()
-                if selected(ref) and p["age"] > since
+                if selected(ref) and p["age"] >= since
             ]
             return replies + [ack]
         if cmd == 6:  # clear by ref
