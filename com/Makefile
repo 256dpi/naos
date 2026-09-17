@@ -72,9 +72,9 @@ debug:
 run: build flash monitor
 
 fmt:
-	clang-format -i ./src/*.c ./src/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}"
-	clang-format -i ./include/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}"
-	clang-format -i ./test/main/*.c -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false}"
+	clang-format -i ./src/*.c ./src/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false, AllowShortFunctionsOnASingleLine: None}"
+	clang-format -i ./include/*.h -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false, AllowShortFunctionsOnASingleLine: None}"
+	clang-format -i ./test/main/*.c -style="{BasedOnStyle: Google, ColumnLimit: 120, SortIncludes: false, AllowShortFunctionsOnASingleLine: None}"
 
 tzdata:
 	python3 tzdata.py
