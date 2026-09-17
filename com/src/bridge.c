@@ -48,7 +48,9 @@ static void naos_bridge_handler(naos_scope_t scope, const char *topic, const uin
   }
 }
 
-static uint16_t naos_bridge_mtu() { return 4096; }
+static uint16_t naos_bridge_mtu() {
+  return 4096;
+}
 
 static bool naos_bridge_send(const uint8_t *data, size_t len, void *ctx) {
   // publish message

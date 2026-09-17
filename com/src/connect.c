@@ -70,7 +70,7 @@ static naos_connect_state_t naos_connect_state = NAOS_CONNECT_STOPPED;
 // receive re-assembly state, only accessed from the websocket client task's
 // event handler, which dispatches events sequentially
 static naos_connect_rx_state_t naos_connect_rx_state = NAOS_CONNECT_RX_IDLE;
-static uint8_t* naos_connect_rx_buffer = NULL;
+static uint8_t *naos_connect_rx_buffer = NULL;
 static size_t naos_connect_rx_length = 0;
 
 static void naos_connect_handler(void *p, esp_event_base_t b, int32_t id, void *d);

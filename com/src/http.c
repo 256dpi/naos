@@ -192,7 +192,9 @@ static void naos_http_send_frame(void *arg) {
   free(msg);
 }
 
-static uint16_t naos_http_msg_mtu() { return 4096; }
+static uint16_t naos_http_msg_mtu() {
+  return 4096;
+}
 
 static bool naos_http_msg_send(const uint8_t *data, size_t len, void *ctx) {
   // prepare message

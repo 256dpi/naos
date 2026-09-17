@@ -8,8 +8,8 @@
 #include "utils.h"
 
 #define NAOS_NET_MAX_LINKS 4
-#define NAOS_NET_WATCHDOG_INTERVAL 5000     // 5s
-#define NAOS_NET_WATCHDOG_TIMEOUT 300000    // 5m
+#define NAOS_NET_WATCHDOG_INTERVAL 5000   // 5s
+#define NAOS_NET_WATCHDOG_TIMEOUT 300000  // 5m
 
 static naos_mutex_t naos_net_mutex;
 static naos_net_link_t naos_net_links[NAOS_NET_MAX_LINKS] = {0};

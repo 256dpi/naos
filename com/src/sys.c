@@ -342,7 +342,9 @@ bool naos_push(naos_queue_t queue, void *item, int32_t timeout_ms) {
   return true;
 }
 
-bool naos_push_isr(naos_queue_t queue, void *item) { return xQueueSendFromISR(queue, item, NULL) == pdTRUE; }
+bool naos_push_isr(naos_queue_t queue, void *item) {
+  return xQueueSendFromISR(queue, item, NULL) == pdTRUE;
+}
 
 bool naos_pop(naos_queue_t queue, void *item, int32_t timeout_ms) {
   if (timeout_ms >= 0) {
