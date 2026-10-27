@@ -4,6 +4,7 @@
 #include <naos/mqtt.h>
 #include <naos/bridge.h>
 #include <naos/debug.h>
+#include <naos/serial.h>
 
 extern const uint8_t foo_start[] asm("_binary_foo_txt_start");
 extern const uint8_t foo_end[] asm("_binary_foo_txt_end");
@@ -30,6 +31,8 @@ void app_main() {
   naos_ble_init((naos_ble_config_t){});
   naos_wifi_init();
   naos_mqtt_init(1);
+  naos_mqtt_lwt("status", "offline", 0, true, NAOS_LOCAL);
+  naos_serial_init_stdio(1);
   naos_bridge_install();
   naos_debug_install();
 
