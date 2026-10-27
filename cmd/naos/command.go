@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 )
 
@@ -17,6 +19,8 @@ type command struct {
 	aFile    string
 	aCommand string
 	aArgs    []string
+	aParam   string
+	aValue   string
 
 	// options
 	oForce       bool
@@ -33,6 +37,7 @@ type command struct {
 	oWrite       bool
 	oELF         string
 	oRemove      string
+	oPassword    string
 }
 
 func parseCommand(args []string) (*command, error) {
@@ -65,17 +70,18 @@ func newRootCommand(cmd *command) *cobra.Command {
 	root.SetHelpCommandGroupID("utilities")
 	root.SetCompletionCommandGroupID("utilities")
 
-	// prepare helper that registers a command and records its name and
-	// positional arguments when it is selected
-	add := func(group string, c *cobra.Command, args func([]string)) *cobra.Command {
+	// prepare helper that registers a command and records its path without
+	// the root (e.g. "config flash") and its positional arguments when it is
+	// selected
+	add := func(parent *cobra.Command, group string, c *cobra.Command, args func([]string)) *cobra.Command {
 		c.GroupID = group
 		c.Run = func(_ *cobra.Command, list []string) {
-			cmd.name = c.Name()
+			cmd.name = strings.TrimPrefix(c.CommandPath(), root.Name()+" ")
 			if args != nil {
 				args(list)
 			}
 		}
-		root.AddCommand(c)
+		parent.AddCommand(c)
 		return c
 	}
 
@@ -107,7 +113,7 @@ func newRootCommand(cmd *command) *cobra.Command {
 
 	/* project management */
 
-	create := add("project", &cobra.Command{
+	create := add(root, "project", &cobra.Command{
 		Use:   "create",
 		Short: "Create a new naos project in the current directory",
 		Args:  cobra.NoArgs,
@@ -115,27 +121,27 @@ func newRootCommand(cmd *command) *cobra.Command {
 	create.Flags().BoolVar(&cmd.oCMake, "cmake", false, "Create required CMake files for IDEs like CLion")
 	create.Flags().BoolVar(&cmd.oForce, "force", false, "Create a new manifest when one already exists")
 
-	install := add("project", &cobra.Command{
+	install := add(root, "project", &cobra.Command{
 		Use:   "install",
 		Short: "Download required dependencies to the 'naos' subdirectory",
 		Args:  cobra.NoArgs,
 	}, nil)
 	install.Flags().BoolVar(&cmd.oForce, "force", false, "Reinstall dependencies when they already exist")
 
-	build := add("project", &cobra.Command{
+	build := add(root, "project", &cobra.Command{
 		Use:   "build",
 		Short: "Build all source files",
 		Args:  cobra.NoArgs,
 	}, nil)
 	building(build)
 
-	add("project", &cobra.Command{
+	add(root, "project", &cobra.Command{
 		Use:   "detect",
 		Short: "Detect all connected devices",
 		Args:  cobra.NoArgs,
 	}, nil)
 
-	flash := add("project", &cobra.Command{
+	flash := add(root, "project", &cobra.Command{
 		Use:   "flash [<device>]",
 		Short: "Flash the previously built binary to an attached device",
 		Args:  cobra.MaximumNArgs(1),
@@ -143,14 +149,14 @@ func newRootCommand(cmd *command) *cobra.Command {
 	flash.Flags().BoolVar(&cmd.oAppOnly, "app-only", false, "Only flash the application")
 	flashing(flash)
 
-	attach := add("project", &cobra.Command{
+	attach := add(root, "project", &cobra.Command{
 		Use:   "attach [<device>]",
 		Short: "Open a serial communication with an attached device",
 		Args:  cobra.MaximumNArgs(1),
 	}, device)
 	attach.Flags().BoolVar(&cmd.oNoReset, "no-reset", false, "Do not reset the device when attaching")
 
-	run := add("project", &cobra.Command{
+	run := add(root, "project", &cobra.Command{
 		Use:   "run [<device>]",
 		Short: "Run 'build', 'flash', and 'attach' sequentially",
 		Args:  cobra.MaximumNArgs(1),
@@ -158,7 +164,7 @@ func newRootCommand(cmd *command) *cobra.Command {
 	building(run)
 	flashing(run)
 
-	exec := add("project", &cobra.Command{
+	exec := add(root, "project", &cobra.Command{
 		Use:   "exec [--] <command> [<args>...]",
 		Short: "Run a command in the tree",
 		Args:  cobra.MinimumNArgs(1),
@@ -168,27 +174,88 @@ func newRootCommand(cmd *command) *cobra.Command {
 	})
 	exec.Flags().SetInterspersed(false)
 
-	config := add("project", &cobra.Command{
-		Use:   "config (--read | --write) <file> [<device>]",
-		Short: "Write parameters to or read them from an attached device",
-		Args:  cobra.RangeArgs(1, 2),
-	}, func(list []string) {
+	config := &cobra.Command{
+		Use:   "config",
+		Short: "Read and write the parameters of an attached device",
+		Long: "Read and write the parameters of an attached device. All commands but 'flash' talk to the\n" +
+			"running application over its serial message channel and default to the best serial device.",
+		GroupID: "project",
+	}
+	root.AddCommand(config)
+
+	// prepare helpers for the commands using the message channel
+	password := func(c *cobra.Command) {
+		c.Flags().StringVar(&cmd.oPassword, "password", "", "The device `password` to unlock a locked session")
+	}
+	param := func(list []string) {
+		cmd.aParam = list[0]
+		cmd.aDevice = optional(list, 1)
+	}
+	file := func(list []string) {
 		cmd.aFile = list[0]
 		cmd.aDevice = optional(list, 1)
-	})
-	config.Flags().BoolVar(&cmd.oRead, "read", false, "Read the parameters from the device into the file")
-	config.Flags().BoolVar(&cmd.oWrite, "write", false, "Write the parameters from the file to the device")
-	config.MarkFlagsOneRequired("read", "write")
-	config.MarkFlagsMutuallyExclusive("read", "write")
-	baud(config)
+	}
 
-	add("project", &cobra.Command{
+	password(add(config, "", &cobra.Command{
+		Use:   "list [<device>]",
+		Short: "List the parameters with their type, mode and value",
+		Args:  cobra.MaximumNArgs(1),
+	}, device))
+
+	password(add(config, "", &cobra.Command{
+		Use:   "get <param> [<device>]",
+		Short: "Print the value of a parameter",
+		Args:  cobra.RangeArgs(1, 2),
+	}, param))
+
+	password(add(config, "", &cobra.Command{
+		Use:   "set <param> [--] <value> [<device>]",
+		Short: "Set the value of a parameter",
+		Args:  cobra.RangeArgs(2, 3),
+	}, func(list []string) {
+		cmd.aParam = list[0]
+		cmd.aValue = list[1]
+		cmd.aDevice = optional(list, 2)
+	}))
+
+	password(add(config, "", &cobra.Command{
+		Use:   "unset <param> [<device>]",
+		Short: "Clear the value of a parameter, which restores its default",
+		Args:  cobra.RangeArgs(1, 2),
+	}, param))
+
+	password(add(config, "", &cobra.Command{
+		Use:   "read <file> [<device>]",
+		Short: "Read the stored parameters into the file",
+		Args:  cobra.RangeArgs(1, 2),
+	}, file))
+
+	password(add(config, "", &cobra.Command{
+		Use:   "write <file> [<device>]",
+		Short: "Set the parameters in the file that differ, keeping all others",
+		Args:  cobra.RangeArgs(1, 2),
+	}, file))
+
+	configFlash := add(config, "", &cobra.Command{
+		Use:   "flash (--read | --write) <file> [<device>]",
+		Short: "Read or write the parameters through the bootloader",
+		Long: "Read or write the parameters through the bootloader, which works without a running\n" +
+			"application. Writing replaces the whole NVS partition with the parameters in the file.",
+		Args: cobra.RangeArgs(1, 2),
+	}, file)
+	configFlash.Flags().BoolVar(&cmd.oRead, "read", false, "Read the parameters from the device into the file")
+	configFlash.Flags().BoolVar(&cmd.oWrite, "write", false, "Write the parameters from the file to the device")
+	configFlash.MarkFlagsOneRequired("read", "write")
+	configFlash.MarkFlagsMutuallyExclusive("read", "write")
+	baud(configFlash)
+
+	add(root, "project", &cobra.Command{
 		Use:   "format",
 		Short: "Format all source files in the 'src' subdirectory",
 		Args:  cobra.NoArgs,
 	}, nil)
 
-	bundle := add("project", &cobra.Command{
+	bundle := add(root, "project", &cobra.Command{
 		Use:   "bundle [<file>]",
 		Short: "Generate a bundle of the project",
 		Args:  cobra.MaximumNArgs(1),
@@ -199,14 +266,14 @@ func newRootCommand(cmd *command) *cobra.Command {
 
 	/* utilities */
 
-	sdks := add("utilities", &cobra.Command{
+	sdks := add(root, "utilities", &cobra.Command{
 		Use:   "sdks",
 		Short: "List installed SDKs with their versions and location",
 		Args:  cobra.NoArgs,
 	}, nil)
 	sdks.Flags().StringVar(&cmd.oRemove, "remove", "", "Remove the SDKs installed for the specified `version`")
 
-	debug := add("utilities", &cobra.Command{
+	debug := add(root, "utilities", &cobra.Command{
 		Use:   "debug [<file>]",
 		Short: "Parse and print a coredump analysis",
 		Args:  cobra.MaximumNArgs(1),

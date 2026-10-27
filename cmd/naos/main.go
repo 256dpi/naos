@@ -34,8 +34,20 @@ func main() {
 		run(cmd, getProject())
 	case "exec":
 		exec(cmd, getProject())
-	case "config":
-		config(cmd, getProject())
+	case "config list":
+		configList(cmd)
+	case "config get":
+		configGet(cmd)
+	case "config set":
+		configSet(cmd)
+	case "config unset":
+		configUnset(cmd)
+	case "config read":
+		configRead(cmd)
+	case "config write":
+		configWrite(cmd)
+	case "config flash":
+		configFlash(cmd, getProject())
 	case "format":
 		format(cmd, getProject())
 	case "bundle":
@@ -109,7 +121,7 @@ func exec(cmd *command, p *naos.Project) {
 	exitIfSet(p.Exec(cmd.aCommand, cmd.aArgs, os.Stdout, os.Stdin))
 }
 
-func config(cmd *command, p *naos.Project) {
+func configFlash(cmd *command, p *naos.Project) {
 	// read or write configuration
 	if cmd.oRead {
 		exitIfSet(p.ReadConfig(cmd.aFile, cmd.aDevice, cmd.oBaudRate, os.Stdout))
