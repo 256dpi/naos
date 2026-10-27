@@ -2,6 +2,7 @@
 
 #include <esp_log.h>
 #include <esp_mqtt.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "com.h"
@@ -12,6 +13,14 @@ static naos_mutex_t naos_mqtt_mutex;
 static bool naos_mqtt_started = false;
 static bool naos_mqtt_networked = false;
 static uint32_t naos_mqtt_generation = 0;
+
+static struct {
+  char *topic;
+  char *payload;
+  int qos;
+  bool retained;
+  naos_scope_t scope;
+} naos_mqtt_lwt_config = {0};
 
 static void naos_mqtt_status_handler(esp_mqtt_status_t status) {
   // acquire mutex
@@ -87,7 +96,27 @@ static void naos_mqtt_start() {
     return;
   }
   naos_mqtt_started = true;
+
+  // resolve the last will, prefixing the base topic now as it may have changed
+  // since the will was set
+  char *lwt_topic = NULL;
+  if (naos_mqtt_lwt_config.topic != NULL) {
+    if (naos_mqtt_lwt_config.scope == NAOS_LOCAL) {
+      lwt_topic = naos_com_with_base_topic(naos_mqtt_lwt_config.topic);
+    } else {
+      lwt_topic = strdup(naos_mqtt_lwt_config.topic);
+    }
+  }
+  char *lwt_payload = naos_mqtt_lwt_config.payload != NULL ? strdup(naos_mqtt_lwt_config.payload) : NULL;
+  int lwt_qos = naos_mqtt_lwt_config.qos;
+  bool lwt_retained = naos_mqtt_lwt_config.retained;
   naos_unlock(naos_mqtt_mutex);
+
+  // configure the last will outside the mutex, as the client invokes the
+  // status handler while holding its own lock
+  esp_mqtt_lwt(lwt_topic, lwt_payload, lwt_qos, lwt_retained);
+  free(lwt_topic);
+  free(lwt_payload);
 
   // start the MQTT client
   bool ok = esp_mqtt_tls(tls, true, NULL, 0);
@@ -181,4 +210,23 @@ void naos_mqtt_init(int core) {
 
   // handle status
   naos_system_subscribe(naos_mqtt_manage);
+}
+
+void naos_mqtt_lwt(const char *topic, const char *payload, int qos, bool retained, naos_scope_t scope) {
+  // acquire mutex
+  naos_lock(naos_mqtt_mutex);
+
+  // free previous values
+  free(naos_mqtt_lwt_config.topic);
+  free(naos_mqtt_lwt_config.payload);
+
+  // store config, applied when the client is started next
+  naos_mqtt_lwt_config.topic = topic != NULL ? strdup(topic) : NULL;
+  naos_mqtt_lwt_config.payload = payload != NULL ? strdup(payload) : NULL;
+  naos_mqtt_lwt_config.qos = qos;
+  naos_mqtt_lwt_config.retained = retained;
+  naos_mqtt_lwt_config.scope = scope;
+
+  // release mutex
+  naos_unlock(naos_mqtt_mutex);
 }

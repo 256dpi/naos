@@ -24,6 +24,7 @@ void naos_com_register(naos_com_transport_t transport);
 void naos_com_subscribe(naos_com_handler_t handler);
 void naos_com_dispatch(const char *topic, const uint8_t *payload, size_t len, int qos, bool retained);
 bool naos_com_networked(uint32_t *generation);
+char *naos_com_with_base_topic(const char *topic);
 
 // naos_subscribe
 // naos_unsubscribe
