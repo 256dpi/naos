@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -12,37 +11,39 @@ import (
 
 func main() {
 	// parse command
-	cmd := parseCommand()
+	cmd, err := parseCommand(os.Args[1:])
+	if err != nil {
+		os.Exit(1)
+	}
 
 	// run desired command
-	if cmd.cCreate {
+	switch cmd.name {
+	case "create":
 		create(cmd)
-	} else if cmd.cInstall {
+	case "install":
 		install(cmd, getProject())
-	} else if cmd.cBuild {
+	case "build":
 		build(cmd, getProject())
-	} else if cmd.cDetect {
+	case "detect":
 		detect()
-	} else if cmd.cFlash {
+	case "flash":
 		flash(cmd, getProject())
-	} else if cmd.cAttach {
+	case "attach":
 		attach(cmd, getProject())
-	} else if cmd.cRun {
+	case "run":
 		run(cmd, getProject())
-	} else if cmd.cExec {
+	case "exec":
 		exec(cmd, getProject())
-	} else if cmd.cConfig {
+	case "config":
 		config(cmd, getProject())
-	} else if cmd.cFormat {
+	case "format":
 		format(cmd, getProject())
-	} else if cmd.cBundle {
+	case "bundle":
 		bundle(cmd, getProject())
-	} else if cmd.cDebug {
+	case "debug":
 		debug(cmd, getProject())
-	} else if cmd.cSDKs {
+	case "sdks":
 		sdks(cmd)
-	} else if cmd.cHelp {
-		fmt.Print(usage)
 	}
 }
 

@@ -8,13 +8,13 @@ require (
 	github.com/256dpi/gomqtt v0.14.4
 	github.com/coder/websocket v1.8.14
 	github.com/creack/pty v1.1.24
-	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
 	github.com/gdamore/tcell/v2 v2.13.8
 	github.com/gorilla/websocket v1.5.3
 	github.com/grandcat/zeroconf v1.0.0
 	github.com/rivo/tview v0.42.0
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/samber/lo v1.53.0
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	go.bug.st/serial v1.8.0
 	golang.org/x/term v0.42.0
@@ -30,6 +30,7 @@ require (
 	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.2.2 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect
 	github.com/miekg/dns v1.1.72 // indirect
@@ -40,6 +41,7 @@ require (
 	github.com/soypat/cyw43439 v0.0.0-20260410161648-eaf00b36a33a // indirect
 	github.com/soypat/lneto v0.0.0-20260411230216-9e4da57335e7 // indirect
 	github.com/soypat/seqs v0.0.0-20260125140838-2c1c6b1bd69e // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/tinygo-org/cbgo v0.0.4 // indirect
 	github.com/tinygo-org/pio v0.3.0 // indirect
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect

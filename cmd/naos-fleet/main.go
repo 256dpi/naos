@@ -17,7 +17,10 @@ import (
 
 func main() {
 	// parse command
-	cmd := parseCommand()
+	cmd, err := parseCommand(os.Args[1:])
+	if err != nil {
+		os.Exit(1)
+	}
 
 	// set default pattern
 	if cmd.aPattern == "" {
@@ -25,32 +28,31 @@ func main() {
 	}
 
 	// run desired command
-	if cmd.cCreate {
+	switch cmd.name {
+	case "create":
 		create(cmd)
-	} else if cmd.cList {
+	case "list":
 		list(cmd, getFleet())
-	} else if cmd.cCollect {
+	case "collect":
 		collect(cmd, getFleet())
-	} else if cmd.cDiscover {
+	case "discover":
 		discover(cmd, getFleet())
-	} else if cmd.cPing {
+	case "ping":
 		ping(cmd, getFleet())
-	} else if cmd.cGet {
+	case "get":
 		get(cmd, getFleet())
-	} else if cmd.cSet {
+	case "set":
 		set(cmd, getFleet())
-	} else if cmd.cUnset {
+	case "unset":
 		unset(cmd, getFleet())
-	} else if cmd.cMonitor {
+	case "monitor":
 		monitor(cmd, getFleet())
-	} else if cmd.cRecord {
+	case "record":
 		record(cmd, getFleet())
-	} else if cmd.cDebug {
+	case "debug":
 		debug(cmd, getFleet())
-	} else if cmd.cUpdate {
+	case "update":
 		update(cmd, getFleet())
-	} else if cmd.cHelp {
-		fmt.Print(usage)
 	}
 }
 

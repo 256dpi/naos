@@ -1,75 +1,20 @@
 package main
 
 import (
-	"strconv"
 	"time"
 
-	"github.com/docopt/docopt-go"
+	"github.com/spf13/cobra"
 )
 
-var usage = `Networked Artifacts Operating System
+const header = `Networked Artifacts Operating System
 © Joël Gähwiler
-https://github.com/256dpi/naos
-
-Fleet Management:
-  create   Create a new fleet file.
-  list     List all devices listed in the fleet.
-  collect  Collect devices and add them to the fleet.
-  discover Discover parameters and metrics of a device.
-  ping     Ping devices.
-  get      Read a parameter from devices.
-  set      Set a parameter on devices.
-  unset    Unset a parameter on devices.
-  monitor  Monitor system information from devices.
-  record   Record log messages from devices.
-  debug    Gather coredump from devices.
-  update   Update a firmware to devices.
-
-Utilities:
-  help     Show this help message.
-
-Usage:
-  naos-fleet create [--broker=<url>] [--hub=<url>]
-  naos-fleet list
-  naos-fleet collect [--clear --duration=<time>]
-  naos-fleet discover [<pattern>] [--jobs=<count>]
-  naos-fleet ping [<pattern>] [--jobs=<count>]
-  naos-fleet get <param> [<pattern>] [--jobs=<count>]
-  naos-fleet set <param> [--] <value> [<pattern>] [--jobs=<count>]
-  naos-fleet unset <param> [<pattern>] [--jobs=<count>]
-  naos-fleet monitor [<pattern>]
-  naos-fleet record [<pattern>]
-  naos-fleet debug [<pattern>] [--delete] [--jobs=<count>]
-  naos-fleet update <version> <file> [<pattern>] [--jobs=<count>]
-  naos-fleet help
-
-Options:
-  -b --broker=<url>     MQTT broker URL of the new fleet.
-  --hub=<url>           NAOS hub base URL of the new fleet.
-  --clear               Remove not available devices from fleet.
-  --delete              Delete loaded coredumps from the devices.
-  -d --duration=<time>  Operation duration [default: 5s].
-  -j --jobs=<count>     Number of simultaneous jobs [default: 10].
-`
+https://github.com/256dpi/naos`
 
 type command struct {
-	// commands
-	cCreate   bool
-	cList     bool
-	cCollect  bool
-	cDiscover bool
-	cPing     bool
-	cGet      bool
-	cSet      bool
-	cUnset    bool
-	cMonitor  bool
-	cRecord   bool
-	cDebug    bool
-	cUpdate   bool
-	cHelp     bool
+	// command
+	name string
 
 	// arguments
-	aDevice  string
 	aParam   string
 	aPattern string
 	aValue   string
@@ -85,60 +30,163 @@ type command struct {
 	oJobs     int
 }
 
-func parseCommand() *command {
-	a, err := docopt.Parse(usage, nil, false, "", false)
-	exitIfSet(err)
+func parseCommand(args []string) (*command, error) {
+	// prepare command
+	cmd := &command{}
+	root := newRootCommand(cmd)
+	root.SetArgs(args)
 
-	return &command{
-		// commands
-		cCreate:   getBool(a["create"]),
-		cList:     getBool(a["list"]),
-		cCollect:  getBool(a["collect"]),
-		cDiscover: getBool(a["discover"]),
-		cPing:     getBool(a["ping"]),
-		cGet:      getBool(a["get"]),
-		cSet:      getBool(a["set"]),
-		cUnset:    getBool(a["unset"]),
-		cMonitor:  getBool(a["monitor"]),
-		cRecord:   getBool(a["record"]),
-		cDebug:    getBool(a["debug"]),
-		cUpdate:   getBool(a["update"]),
-		cHelp:     getBool(a["help"]),
+	// parse arguments, cobra reports errors itself
+	err := root.Execute()
 
-		// arguments
-		aDevice:  getString(a["<device>"]),
-		aPattern: getString(a["<pattern>"]),
-		aParam:   getString(a["<param>"]),
-		aValue:   getString(a["<value>"]),
-		aVersion: getString(a["<version>"]),
-		aFile:    getString(a["<file>"]),
+	return cmd, err
+}
 
-		// options
-		oBroker:   getString(a["--broker"]),
-		oHub:      getString(a["--hub"]),
-		oClear:    getBool(a["--clear"]),
-		oDelete:   getBool(a["--delete"]),
-		oDuration: getDuration(a["--duration"]),
-		oJobs:     getInt(a["--jobs"]),
+func newRootCommand(cmd *command) *cobra.Command {
+	// keep the declaration order in the help
+	cobra.EnableCommandSorting = false
+
+	// create root
+	root := &cobra.Command{
+		Use:  "naos-fleet",
+		Long: header,
 	}
-}
 
-func getBool(field interface{}) bool {
-	val, _ := field.(bool)
-	return val
-}
+	// add groups
+	root.AddGroup(
+		&cobra.Group{ID: "fleet", Title: "Fleet Management:"},
+		&cobra.Group{ID: "utilities", Title: "Utilities:"},
+	)
+	root.SetHelpCommandGroupID("utilities")
+	root.SetCompletionCommandGroupID("utilities")
 
-func getString(field interface{}) string {
-	str, _ := field.(string)
-	return str
-}
+	// prepare helper that registers a command and records its name and
+	// positional arguments when it is selected
+	add := func(c *cobra.Command, args func([]string)) *cobra.Command {
+		c.GroupID = "fleet"
+		c.Run = func(_ *cobra.Command, list []string) {
+			cmd.name = c.Name()
+			if args != nil {
+				args(list)
+			}
+		}
+		root.AddCommand(c)
+		return c
+	}
 
-func getInt(field interface{}) int {
-	num, _ := strconv.Atoi(getString(field))
-	return num
-}
+	// prepare helper that returns an optional positional argument
+	optional := func(list []string, index int) string {
+		if len(list) > index {
+			return list[index]
+		}
+		return ""
+	}
 
-func getDuration(field interface{}) time.Duration {
-	d, _ := time.ParseDuration(getString(field))
-	return d
+	// prepare flag helper shared by several commands
+	jobs := func(c *cobra.Command) {
+		c.Flags().IntVarP(&cmd.oJobs, "jobs", "j", 10, "Number of simultaneous jobs")
+	}
+	pattern := func(list []string) {
+		cmd.aPattern = optional(list, 0)
+	}
+
+	create := add(&cobra.Command{
+		Use:   "create",
+		Short: "Create a new fleet file",
+		Args:  cobra.NoArgs,
+	}, nil)
+	create.Flags().StringVarP(&cmd.oBroker, "broker", "b", "", "MQTT broker `url` of the new fleet")
+	create.Flags().StringVar(&cmd.oHub, "hub", "", "NAOS hub base `url` of the new fleet")
+
+	add(&cobra.Command{
+		Use:   "list",
+		Short: "List all devices listed in the fleet",
+		Args:  cobra.NoArgs,
+	}, nil)
+
+	collect := add(&cobra.Command{
+		Use:   "collect",
+		Short: "Collect devices and add them to the fleet",
+		Args:  cobra.NoArgs,
+	}, nil)
+	collect.Flags().BoolVar(&cmd.oClear, "clear", false, "Remove not available devices from fleet")
+	collect.Flags().DurationVarP(&cmd.oDuration, "duration", "d", 5*time.Second, "Operation `duration`")
+
+	discover := add(&cobra.Command{
+		Use:   "discover [<pattern>]",
+		Short: "Discover parameters and metrics of a device",
+		Args:  cobra.MaximumNArgs(1),
+	}, pattern)
+	jobs(discover)
+
+	ping := add(&cobra.Command{
+		Use:   "ping [<pattern>]",
+		Short: "Ping devices",
+		Args:  cobra.MaximumNArgs(1),
+	}, pattern)
+	jobs(ping)
+
+	get := add(&cobra.Command{
+		Use:   "get <param> [<pattern>]",
+		Short: "Read a parameter from devices",
+		Args:  cobra.RangeArgs(1, 2),
+	}, func(list []string) {
+		cmd.aParam = list[0]
+		cmd.aPattern = optional(list, 1)
+	})
+	jobs(get)
+
+	set := add(&cobra.Command{
+		Use:   "set <param> [--] <value> [<pattern>]",
+		Short: "Set a parameter on devices",
+		Args:  cobra.RangeArgs(2, 3),
+	}, func(list []string) {
+		cmd.aParam = list[0]
+		cmd.aValue = list[1]
+		cmd.aPattern = optional(list, 2)
+	})
+	jobs(set)
+
+	unset := add(&cobra.Command{
+		Use:   "unset <param> [<pattern>]",
+		Short: "Unset a parameter on devices",
+		Args:  cobra.RangeArgs(1, 2),
+	}, func(list []string) {
+		cmd.aParam = list[0]
+		cmd.aPattern = optional(list, 1)
+	})
+	jobs(unset)
+
+	add(&cobra.Command{
+		Use:   "monitor [<pattern>]",
+		Short: "Monitor system information from devices",
+		Args:  cobra.MaximumNArgs(1),
+	}, pattern)
+
+	add(&cobra.Command{
+		Use:   "record [<pattern>]",
+		Short: "Record log messages from devices",
+		Args:  cobra.MaximumNArgs(1),
+	}, pattern)
+
+	debug := add(&cobra.Command{
+		Use:   "debug [<pattern>]",
+		Short: "Gather coredump from devices",
+		Args:  cobra.MaximumNArgs(1),
+	}, pattern)
+	debug.Flags().BoolVar(&cmd.oDelete, "delete", false, "Delete loaded coredumps from the devices")
+	jobs(debug)
+
+	update := add(&cobra.Command{
+		Use:   "update <version> <file> [<pattern>]",
+		Short: "Update a firmware to devices",
+		Args:  cobra.RangeArgs(2, 3),
+	}, func(list []string) {
+		cmd.aVersion = list[0]
+		cmd.aFile = list[1]
+		cmd.aPattern = optional(list, 2)
+	})
+	jobs(update)
+
+	return root
 }
