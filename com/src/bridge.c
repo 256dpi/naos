@@ -2,6 +2,7 @@
 #include <naos/sys.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "system.h"
@@ -25,11 +26,12 @@ static void naos_bridge_discover() {
   const char *app_name = naos_config()->app_name;
   const char *app_version = naos_config()->app_version;
   const char *device_name = naos_get_s("device-name");
-  const char *base_topic = naos_get_s("base-topic");
+  char *base_topic = naos_base_topic();
 
   // construct description
   char loc[128];
   snprintf(loc, sizeof(loc), "0|%s|%s|%s|%s", app_name, app_version, device_name, base_topic);
+  free(base_topic);
 
   // publish description
   naos_publish_s("naos/describe", loc, 0, false, NAOS_GLOBAL);

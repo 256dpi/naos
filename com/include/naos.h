@@ -336,6 +336,15 @@ void naos_reset();
 naos_param_t *naos_lookup(const char *name);
 
 /**
+ * Returns the configured base topic without trailing slashes, as used to prefix local topics.
+ *
+ * Note: The returned string must be freed.
+ *
+ * @return The base topic.
+ */
+char *naos_base_topic();
+
+/**
  * Subscribe to specified topic. The topic is automatically prefixed with the configured base topic if the scope is
  * local.
  *

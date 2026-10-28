@@ -17,14 +17,25 @@ static naos_com_handler_t naos_com_handlers[NAOS_COM_MAX_HANDLERS] = {0};
 static size_t naos_com_handler_count = 0;
 static naos_param_t *naos_com_base_topic = NULL;
 
+static size_t naos_com_base_topic_len() {
+  // get length without trailing slashes
+  size_t len = naos_com_base_topic->current.len;
+  while (len > 0 && naos_com_base_topic->current.buf[len - 1] == '/') {
+    len--;
+  }
+
+  return len;
+}
+
 char *naos_com_with_base_topic(const char *topic) {
   // prefix base topic
-  return naos_format("%s/%s", naos_com_base_topic->current.buf, topic);
+  return naos_format("%.*s/%s", (int)naos_com_base_topic_len(), naos_com_base_topic->current.buf, topic);
 }
 
 static naos_scope_t naos_com_scope_from_topic(const char *topic) {
-  // determine scope
-  if (strncmp(topic, (const char *)naos_com_base_topic->current.buf, naos_com_base_topic->current.len) == 0) {
+  // determine scope, local topics are the base topic followed by a slash
+  size_t len = naos_com_base_topic_len();
+  if (strncmp(topic, (const char *)naos_com_base_topic->current.buf, len) == 0 && topic[len] == '/') {
     return NAOS_LOCAL;
   } else {
     return NAOS_GLOBAL;
@@ -38,7 +49,7 @@ static const char *naos_com_without_base_topic(const char *topic) {
   }
 
   // return adjusted pointer
-  return topic + naos_com_base_topic->current.len + 1;
+  return topic + naos_com_base_topic_len() + 1;
 }
 
 void naos_com_init() {
@@ -117,6 +128,11 @@ bool naos_com_networked(uint32_t *generation) {
   naos_unlock(naos_com_mutex);
 
   return networked;
+}
+
+char *naos_base_topic() {
+  // copy base topic
+  return naos_format("%.*s", (int)naos_com_base_topic_len(), naos_com_base_topic->current.buf);
 }
 
 bool naos_subscribe(const char *topic, int qos, naos_scope_t scope) {
