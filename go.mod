@@ -20,7 +20,7 @@ require (
 	golang.org/x/term v0.42.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	tinygo.org/x/espflasher v0.8.1
+	tinygo.org/x/espflasher v0.9.2
 )
 
 require (
