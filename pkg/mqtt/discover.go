@@ -47,9 +47,9 @@ func Discover(r *Router, stop chan struct{}, cb func(Descriptor)) error {
 		})
 	}
 
-	// prepare topics
-	discoverTopic := "/naos/discover"
-	describeTopic := "/naos/describe"
+	// prepare global topics
+	discoverTopic := "naos/discover"
+	describeTopic := "naos/describe"
 
 	// subscribe to describe topic
 	id, err := r.Subscribe(describeTopic, callback)
