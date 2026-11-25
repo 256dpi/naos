@@ -417,5 +417,13 @@ func update(cmd *command, f *fleet.Fleet) {
 		// show table
 		tbl.show(0)
 	})
+
+	// save fleet, which records the versions read and installed
+	saveFleet(f)
 	exitIfSet(err)
+
+	// report if nothing had to be updated
+	if len(list) == 0 {
+		fmt.Printf("All devices run %s already.\n", cmd.aVersion)
+	}
 }

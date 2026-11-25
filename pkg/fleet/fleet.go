@@ -4,6 +4,7 @@ package fleet
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"time"
 
@@ -379,8 +380,10 @@ func (f *Fleet) Debug(pattern string, delete bool, jobs int) (map[*Device][]byte
 	return table, nil
 }
 
-// Update will update all matching devices with the specified image. The
-// specified callback is called for every change in state or progress.
+// Update will update all matching devices that do not run the specified
+// version yet with the specified image. The running version is read from the
+// devices first, and the updated devices are recorded with the new version.
+// The specified callback is called for every change in state or progress.
 func (f *Fleet) Update(version, pattern string, firmware []byte, jobs int, callback func(*Device, UpdateStatus)) error {
 	// open backend
 	backend, err := f.Backend()
@@ -391,6 +394,23 @@ func (f *Fleet) Update(version, pattern string, firmware []byte, jobs int, callb
 
 	// get devices
 	list := f.FilterDevices(pattern)
+	if len(list) == 0 {
+		return errors.New("zero devices")
+	}
+
+	// read the running versions, so that the selection below does not depend
+	// on the fleet file being fresh, a device that does not answer keeps its
+	// recorded version and reports its error through the update if selected
+	versions, err := GetParams(backend, "app-version", list, jobs)
+	if versions == nil {
+		return err
+	}
+	for i, d := range list {
+		if versions[i] != "" {
+			d.AppVersion = versions[i]
+			d.Parameters["app-version"] = versions[i]
+		}
+	}
 
 	// filter by version
 	var devices []*Device
@@ -400,11 +420,21 @@ func (f *Fleet) Update(version, pattern string, firmware []byte, jobs int, callb
 		}
 	}
 
-	// update devices
-	_, err = Update(backend, devices, firmware, jobs, callback)
-	if err != nil {
-		return err
+	// stop if all devices run the version already
+	if len(devices) == 0 {
+		return nil
 	}
 
-	return nil
+	// update devices
+	statuses, err := Update(backend, devices, firmware, jobs, callback)
+
+	// record the version on the updated devices
+	for i, d := range devices {
+		if i < len(statuses) && statuses[i].Error == nil {
+			d.AppVersion = version
+			d.Parameters["app-version"] = version
+		}
+	}
+
+	return err
 }

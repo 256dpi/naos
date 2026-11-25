@@ -57,12 +57,17 @@ func Update(backend Backend, devices []*Device, firmware []byte, jobs int, callb
 		return nil, err
 	}, nil)
 
-	// get first error
+	// get first error and carry errors that happened outside the update
+	// itself (e.g. opening the session) into the statuses
 	var firstErr error
-	for _, result := range results {
+	for i, result := range results {
 		if result.Error != nil {
-			firstErr = result.Error
-			break
+			if statuses[i].Error == nil {
+				statuses[i].Error = result.Error
+			}
+			if firstErr == nil {
+				firstErr = result.Error
+			}
 		}
 	}
 
