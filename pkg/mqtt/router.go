@@ -22,7 +22,12 @@ type Router struct {
 	qos       packet.QOS
 	counter   uint64
 	callbacks map[string][]callback
-	mutex     sync.Mutex
+	// The callback map is also read for every incoming message, on the client's
+	// only receive goroutine, so its mutex must never be held across a broker
+	// round trip: the acknowledgement would queue behind a message waiting for
+	// the mutex. Subscription changes are serialized by their own mutex.
+	mutex   sync.Mutex
+	changes sync.Mutex
 }
 
 // Connect creates a new Router connected to the given MQTT broker URL
@@ -72,31 +77,33 @@ func Connect(url, cid string, qos packet.QOS) (*Router, error) {
 // Subscribe subscribes to the given topic and registers the provided callback
 // function. It returns a handle that can be used to unsubscribe later.
 func (r *Router) Subscribe(topic string, fn func(*packet.Message, error)) (uint64, error) {
-	// acquire mutex
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	// serialize subscription changes
+	r.changes.Lock()
+	defer r.changes.Unlock()
 
-	// generate id
+	// register callback before subscribing, so that no message delivered right
+	// after the acknowledgement is missed
+	r.mutex.Lock()
 	r.counter++
 	id := r.counter
-
-	// subscribe topic if first subscriber
-	if len(r.callbacks[topic]) == 0 {
-		sf, err := r.client.Subscribe(topic, r.qos)
-		if err != nil {
-			return 0, err
-		}
-		err = sf.Wait(5 * time.Second)
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	// register callback
+	first := len(r.callbacks[topic]) == 0
 	r.callbacks[topic] = append(r.callbacks[topic], callback{
 		id: id,
 		fn: fn,
 	})
+	r.mutex.Unlock()
+
+	// subscribe topic if first subscriber
+	if first {
+		sf, err := r.client.Subscribe(topic, r.qos)
+		if err == nil {
+			err = sf.Wait(5 * time.Second)
+		}
+		if err != nil {
+			r.remove(topic, id)
+			return 0, err
+		}
+	}
 
 	return id, nil
 }
@@ -119,21 +126,15 @@ func (r *Router) Publish(topic string, payload []byte) error {
 // Unsubscribe removes the callback with the given handle from the topic and
 // unsubscribes from the topic if there are no more subscribers.
 func (r *Router) Unsubscribe(topic string, id uint64) error {
-	// acquire mutex
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	// serialize subscription changes
+	r.changes.Lock()
+	defer r.changes.Unlock()
 
 	// remove callback
-	callbacks := r.callbacks[topic]
-	for i, cb := range callbacks {
-		if cb.id == id {
-			r.callbacks[topic] = append(callbacks[:i], callbacks[i+1:]...)
-			break
-		}
-	}
+	last := r.remove(topic, id)
 
 	// unsubscribe topic if no more subscribers
-	if len(r.callbacks[topic]) == 0 {
+	if last {
 		sf, err := r.client.Unsubscribe(topic)
 		if err != nil {
 			return err
@@ -170,6 +171,32 @@ func (r *Router) Close() error {
 	}
 
 	return nil
+}
+
+// remove drops the callback with the given handle from the topic and reports
+// whether the topic has no subscribers left.
+func (r *Router) remove(topic string, id uint64) bool {
+	// acquire mutex
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	// remove callback
+	callbacks := r.callbacks[topic]
+	for i, cb := range callbacks {
+		if cb.id == id {
+			callbacks = append(callbacks[:i:i], callbacks[i+1:]...)
+			break
+		}
+	}
+
+	// drop topic if empty
+	if len(callbacks) == 0 {
+		delete(r.callbacks, topic)
+		return true
+	}
+	r.callbacks[topic] = callbacks
+
+	return false
 }
 
 func (r *Router) snapshotCallbacks(msg *packet.Message) []callback {

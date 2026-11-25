@@ -57,7 +57,9 @@ func (d *device) Open() (*msg.Channel, error) {
 		select {
 		case ch.reads <- append([]byte(nil), m.Payload...):
 		default:
-			ch.Close()
+			// close asynchronously, unsubscribing awaits an acknowledgement
+			// that this receive callback would otherwise hold up
+			go ch.Close()
 		}
 	})
 	if err != nil {
