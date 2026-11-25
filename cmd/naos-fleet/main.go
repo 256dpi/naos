@@ -387,8 +387,15 @@ func update(cmd *command, f *fleet.Fleet) {
 	// prepare list
 	list := make(map[*fleet.Device]fleet.UpdateStatus)
 
+	// prepare mutex, as parallel jobs report concurrently
+	var mutex sync.Mutex
+
 	// update devices
 	err = f.Update(cmd.aVersion, cmd.aPattern, binary, cmd.oJobs, func(d *fleet.Device, us fleet.UpdateStatus) {
+		// acquire mutex
+		mutex.Lock()
+		defer mutex.Unlock()
+
 		// save status
 		list[d] = us
 

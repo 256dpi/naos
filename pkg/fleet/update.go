@@ -14,8 +14,9 @@ type UpdateStatus struct {
 }
 
 // Update will perform a firmware update on the provided devices. If a callback
-// is provided it will be called with the current status of the update. The
-// returned list is aligned with the provided list.
+// is provided it will be called with the current status of the update,
+// potentially from multiple goroutines at once. The returned list is aligned
+// with the provided list.
 func Update(backend Backend, devices []*Device, firmware []byte, jobs int, callback func(*Device, UpdateStatus)) ([]UpdateStatus, error) {
 	// check devices
 	if len(devices) == 0 {
