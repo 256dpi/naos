@@ -235,9 +235,15 @@ func monitor(cmd *command, f *fleet.Fleet) {
 		// add rows
 		for device, heartbeat := range list {
 			// prepare free memory
-			freeMemoryAll := bytefmt.ByteSize(uint64(heartbeat.FreeMemory[0]))
-			freeMemoryInternal := bytefmt.ByteSize(uint64(heartbeat.FreeMemory[1]))
-			freeMemoryExternal := bytefmt.ByteSize(uint64(heartbeat.FreeMemory[2]))
+			freeMemory := func(i int) string {
+				if i >= len(heartbeat.FreeMemory) {
+					return "n/a"
+				}
+				return bytefmt.ByteSize(uint64(heartbeat.FreeMemory[i]))
+			}
+			freeMemoryAll := freeMemory(0)
+			freeMemoryInternal := freeMemory(1)
+			freeMemoryExternal := freeMemory(2)
 
 			// prepare uptime
 			uptime := heartbeat.UpTime.Truncate(time.Second).String()
@@ -264,8 +270,14 @@ func monitor(cmd *command, f *fleet.Fleet) {
 			}
 
 			// prepare CPU usages
-			cpu0Usage := strconv.FormatFloat(heartbeat.CPUUsage[0]*100, 'f', 0, 64) + "%"
-			cpu1Usage := strconv.FormatFloat(heartbeat.CPUUsage[1]*100, 'f', 0, 64) + "%"
+			cpuUsage := func(i int) string {
+				if i >= len(heartbeat.CPUUsage) {
+					return "n/a"
+				}
+				return strconv.FormatFloat(heartbeat.CPUUsage[i]*100, 'f', 0, 64) + "%"
+			}
+			cpu0Usage := cpuUsage(0)
+			cpu1Usage := cpuUsage(1)
 
 			// add entry
 			tbl.add(

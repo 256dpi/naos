@@ -17,10 +17,10 @@ type Heartbeat struct {
 	AppVersion     string
 	AppPartition   string
 	UpTime         time.Duration
-	BatteryLevel   float64 // -1, 0 - 1
-	FreeMemory     []float64
-	CPUUsage       []float64 // 0 - 1
-	SignalStrength int64     // -50 - -100
+	BatteryLevel   float64   // -1 (unsupported), 0 - 1
+	FreeMemory     []float64 // all, internal, external; nil if unsupported
+	CPUUsage       []float64 // 0 - 1 per core; nil if unsupported
+	SignalStrength int64     // -50 - -100; 0 if unsupported
 }
 
 // Monitor will periodically collect heartbeat information from all specified
@@ -93,20 +93,35 @@ func Monitor(backend Backend, devices []*Device, stop chan struct{}, cb func(*He
 
 				// convert dynamic params
 				uptime, _ := strconv.ParseInt(string(upTimeStr), 10, 64)
-				batteryLevel, _ := strconv.ParseFloat(string(batteryLevelStr), 64)
+				batteryLevel := -1.0
+				if ps.Has("battery") {
+					batteryLevel, _ = strconv.ParseFloat(string(batteryLevelStr), 64)
+				}
 
-				// read metrics
-				freeMemory, err := ms.Read("free-memory")
+				// read metrics, skipping those the device does not provide
+				read := func(name string) ([]float64, error) {
+					if !ms.Has(name) {
+						return nil, nil
+					}
+					return ms.Read(name)
+				}
+				freeMemory, err := read("free-memory")
 				if err != nil {
 					return nil, err
 				}
-				cpuUsage, err := ms.Read("cpu-usage")
+				cpuUsage, err := read("cpu-usage")
 				if err != nil {
 					return nil, err
 				}
-				signalStrength, err := ms.Read("wifi-rssi")
+				wifiRSSI, err := read("wifi-rssi")
 				if err != nil {
 					return nil, err
+				}
+
+				// get signal strength
+				var signalStrength int64
+				if len(wifiRSSI) > 0 {
+					signalStrength = int64(wifiRSSI[0])
 				}
 
 				// create heartbeat
@@ -121,7 +136,7 @@ func Monitor(backend Backend, devices []*Device, stop chan struct{}, cb func(*He
 					BatteryLevel:   batteryLevel,
 					FreeMemory:     freeMemory,
 					CPUUsage:       cpuUsage,
-					SignalStrength: int64(signalStrength[0]),
+					SignalStrength: signalStrength,
 				}
 
 				// call callback
